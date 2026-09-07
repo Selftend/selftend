@@ -52,9 +52,12 @@ interface DisclosureProps {
    * id rather than by an array index - which is what a filtered or reordered
    * list quietly breaks.
    *
-   * When given it also fixes the content region's id (`<id>-content`) in place
-   * of React's generated one, so the `aria-controls` edge is deterministic
-   * rather than a `useId` counter that moves with render order.
+   * Inside the component it fixes the content region's id (`<id>-content`) in
+   * place of React's generated one, so the `aria-controls` edge is deterministic
+   * rather than a `useId` counter that moves with render order. It is
+   * deliberately not put on the wrapper as well: with the prop omitted the
+   * rendered tree must be exactly today's, and an always-present `nativeID` -
+   * `undefined` or not - is not that.
    */
   id?: string;
 }
@@ -137,7 +140,7 @@ export function Disclosure({
   );
 
   return (
-    <View nativeID={id} className={cn("gap-4", className)}>
+    <View className={cn("gap-4", className)}>
       {headingLevel === undefined ? (
         trigger
       ) : (
