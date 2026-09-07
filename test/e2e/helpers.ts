@@ -125,11 +125,25 @@ export async function navigateViaPanel(page: Page, linkName: string) {
  * starred Check-in. The Tools section holds the whole catalogue whatever the favourites
  * hold, which makes this deterministic either way.
  *
+ * The testID is `card-tool-mood` and the tool is called Check-in: `mood` is the
+ * catalogue KEY (`src/features/favorites/items.ts`), which kept its original name when
+ * the tool's copy did not.
+ *
+ * ☠️ The tour is dismissed BETWEEN the two steps, not left to chance. The home tour arms
+ * a beat after Home settles - its spotlight paints on a 150ms measure - and its scrim
+ * covers the screen, so a card tap either wins that race or times out against the scrim
+ * depending on how loaded the runner is. `dismissPostSignInModals` cannot have covered
+ * it: the tour only queues on `pathname === "/"`, and `routine-complete` boots on
+ * `/routines`, so its dismissal there is a no-op and Home is first reached HERE. Proven
+ * live rather than reasoned about - with `shown_button_tours` reset to `{}` the tour
+ * renders on this navigation and this call is what clears it.
+ *
  * The destination assertion stays with the callers: each journey says for itself where it
  * expects to land.
  */
 export async function navigateToCheckInViaHome(page: Page) {
   await navigateViaPanel(page, "Home");
+  await dismissHomeTour(page);
   await page.getByTestId("home-tools").getByTestId("card-tool-mood").click();
 }
 

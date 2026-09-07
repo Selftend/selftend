@@ -77,10 +77,9 @@ test.describe("routine completes via tool use", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
-    // Panel "Home" -> the Check-in card in Home's Tools section -> tracker home
-    // (#2105: the panel's own Check-in row is going away). Tapping a score on
-    // the check-in card seeds the score in memory and pushes the bare
-    // /tools/check-in/new (#961).
+    // Home -> the Check-in card -> tracker home (the helper owns why that is
+    // the route). Tapping a score on the check-in card seeds the score in
+    // memory and pushes the bare /tools/check-in/new (#961).
     await navigateToCheckInViaHome(page);
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
 
