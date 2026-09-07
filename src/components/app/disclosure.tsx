@@ -45,19 +45,29 @@ interface DisclosureProps {
    * VoiceOver user a navigation shortcut, while a merged element costs them the
    * control itself. It also means RNTL's `*ByRole` cannot see this node - assert
    * it by props, as `disclosure.test.tsx` does.
+   *
+   * Narrowed to the six real levels rather than `number`: the absent case is
+   * `undefined`, so a plain `number` would let `headingLevel={0}` typecheck and
+   * reach the tree as an `aria-level` no outline can contain.
    */
-  headingLevel?: number;
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   /**
    * A stable identity for this disclosure, for a caller that keys open state by
    * id rather than by an array index - which is what a filtered or reordered
    * list quietly breaks.
    *
-   * Inside the component it fixes the content region's id (`<id>-content`) in
-   * place of React's generated one, so the `aria-controls` edge is deterministic
-   * rather than a `useId` counter that moves with render order. It is
-   * deliberately not put on the wrapper as well: with the prop omitted the
-   * rendered tree must be exactly today's, and an always-present `nativeID` -
-   * `undefined` or not - is not that.
+   * It names the disclosure itself, the way an `id` on any composite does, and
+   * the content region derives from it (`<id>-content`) in place of React's
+   * generated one - so the `aria-controls` edge is deterministic rather than a
+   * `useId` counter that moves with render order.
+   *
+   * Omitted, nothing is named: the wrapper carries no id and the content region
+   * falls back to `useId`, which is today's tree exactly.
+   *
+   * Uniqueness is the caller's, as it is for any id: `useId` cannot collide,
+   * this can, and two rows given the same one would point `aria-controls` at a
+   * single region. `/faq` keys off `FAQ_LAYOUT`, whose ids a partition guard
+   * already holds distinct.
    */
   id?: string;
 }
@@ -140,7 +150,7 @@ export function Disclosure({
   );
 
   return (
-    <View className={cn("gap-4", className)}>
+    <View nativeID={id} className={cn("gap-4", className)}>
       {headingLevel === undefined ? (
         trigger
       ) : (

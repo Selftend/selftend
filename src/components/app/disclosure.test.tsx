@@ -1,5 +1,5 @@
 import { fireEvent, screen, within } from "@testing-library/react-native";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -81,7 +81,10 @@ describe("Disclosure", () => {
  */
 const ROW_LABEL = "Is Selftend free?";
 
-function RowHarness({ headingLevel, id }: { headingLevel?: number; id?: string } = {}) {
+function RowHarness({
+  headingLevel,
+  id,
+}: { headingLevel?: ComponentProps<typeof Disclosure>["headingLevel"]; id?: string } = {}) {
   const [open, setOpen] = useState(false);
   return (
     <Disclosure
@@ -98,9 +101,37 @@ function RowHarness({ headingLevel, id }: { headingLevel?: number; id?: string }
   );
 }
 
+const triggerClasses = (): string[] =>
+  String(screen.getByTestId("disclosure").props.className).split(/\s+/);
+
 /**
- * The trigger's parts in tree order, so "label left, chevron right" is asserted
- * as an ordering rather than inferred from a class name.
+ * The component's outermost View - the node an `id` is supposed to name.
+ *
+ * Walked up to by its `gap-4`, not taken as the trigger's `.parent`: the
+ * Pressable's parent is not that View, so `parent?.props.nativeID` reads
+ * `undefined` whatever the component does. That assertion passed against a
+ * component hardcoded to name every wrapper, which is the whole reason this
+ * helper exists.
+ */
+function wrapper() {
+  let node = screen.getByTestId("disclosure").parent;
+  while (
+    node &&
+    !String(node.props?.className ?? "")
+      .split(/\s+/)
+      .includes("gap-4")
+  ) {
+    node = node.parent;
+  }
+  return node;
+}
+
+/**
+ * The trigger's parts in tree order.
+ *
+ * Which side the chevron sits on is a fact about child order, so it is read from
+ * the tree; how wide the trigger is is a fact about its classes, so that is read
+ * from `className`. Neither substitutes for the other.
  *
  * Composites are walked, not just host nodes: `expand-more` lives on the `Icon`
  * composite and the host `Text` the icon set renders has already consumed it, so
@@ -137,19 +168,26 @@ describe("Disclosure as a full-width heading row (#2143)", () => {
     expect(triggerOrder(ROW_LABEL)).toEqual(["chevron", "label"]);
   });
 
-  it("fills its container in row layout, and stays self-start by default", () => {
+  it("fills its container in row layout", () => {
     renderWithProviders(<RowHarness />);
-    const row = String(screen.getByTestId("disclosure").props.className).split(/\s+/);
-    expect(row).toContain("w-full");
-    expect(row).toContain("justify-between");
-    expect(row).not.toContain("self-start");
 
-    screen.unmount();
+    const tokens = triggerClasses();
+    expect(tokens).toContain("w-full");
+    expect(tokens).not.toContain("self-start");
 
+    // `flex-1` on the label, not `justify-between` on the row, is what actually
+    // holds the chevron at the edge - and it is the only one of the two that
+    // also lets a two-line question wrap instead of overflowing. Pinning the
+    // mechanism rather than the belt-and-braces beside it.
+    expect(String(screen.getByText(ROW_LABEL).props.className).split(/\s+/)).toContain("flex-1");
+  });
+
+  it("stays sized to its label by default, so the form-section control is unmoved", () => {
     renderWithProviders(<Harness />);
-    const inline = String(screen.getByTestId("disclosure").props.className).split(/\s+/);
-    expect(inline).toContain("self-start");
-    expect(inline).not.toContain("w-full");
+
+    const tokens = triggerClasses();
+    expect(tokens).toContain("self-start");
+    expect(tokens).not.toContain("w-full");
   });
 
   it("still swaps expand-more for expand-less in row layout", () => {
@@ -195,6 +233,19 @@ describe("Disclosure as a full-width heading row (#2143)", () => {
     // A form section's "More options" is a control, not a heading, and the three
     // shipped call sites must not appear in any page's outline.
     expect(screen.UNSAFE_queryAllByProps({ role: "heading" })).toHaveLength(0);
+  });
+
+  it("names the disclosure with the id it is given", () => {
+    renderWithProviders(<RowHarness id="faq-3" />);
+
+    expect(wrapper()?.props.nativeID).toBe("faq-3");
+  });
+
+  it("names nothing when no id is given, which is today's tree", () => {
+    renderWithProviders(<Harness />);
+
+    expect(wrapper()).toBeTruthy();
+    expect(wrapper()?.props.nativeID).toBeUndefined();
   });
 
   it("derives its content region from the id it is given, rather than a generated one", () => {
