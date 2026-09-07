@@ -201,6 +201,31 @@ describe("InfoScreen", () => {
       expect(screen.getAllByText(new RegExp(projectContactEmails.security))).toHaveLength(1);
     });
 
+    /**
+     * ☠️ The privacy policy is now the sharpest surface of the three, and it was
+     * the LAST to move (#2131 tranche 2): 10 of the 15 consent-bearing
+     * occurrences are in it, including the controller contact in §1 and the
+     * withdrawal route in §4. Those sections are consent-digested, so if this
+     * ever renders raw braces the fix costs a `policyVersion` bump and a re-gate
+     * of every user - unlike the FAQ, where it is free.
+     */
+    it("resolves the contact addresses on the privacy policy too", () => {
+      appEnv.privacyEmail = configured.privacyEmail;
+      appEnv.securityEmail = configured.securityEmail;
+      appEnv.supportEmail = configured.supportEmail;
+
+      renderWithProviders(
+        <InfoScreen sectionKey="privacy.sections" subtitle="How we handle data." title="Privacy" />,
+      );
+
+      // 8 of privacy's 10 are the privacy address itself.
+      expect(
+        screen.getAllByText(new RegExp(configured.privacyEmail)).length,
+      ).toBeGreaterThanOrEqual(5);
+      expect(screen.queryByText(new RegExp(projectContactEmails.privacy))).toBeNull();
+      expect(screen.queryAllByText(/\{\{/)).toEqual([]);
+    });
+
     it("leaves no unresolved interpolation on the page", () => {
       appEnv.privacyEmail = "";
       appEnv.securityEmail = "";
