@@ -26,24 +26,21 @@ import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
  * for the other two. Asserting `abbreviation` in both locales would demand a Latin
  * "CBT" in Bulgarian copy - the one spelling the app has never used.
  */
-const PANEL = { namespace: "settings", key: "onboarding.appBody1" } as const;
-
-function panelBody(locale: Locale): string {
-  const entry = LOCALE_STRINGS[locale].find(
-    ({ namespace, key }) => namespace === PANEL.namespace && key === PANEL.key,
-  );
-  if (!entry) throw new Error(`${PANEL.namespace}:${PANEL.key} is missing from ${locale}`);
+/**
+ * Throws rather than returning `undefined`, so a key that is renamed away fails here
+ * loudly instead of turning every assertion below it into a comparison against nothing.
+ */
+function value(locale: Locale, namespace: string, key: string): string {
+  const entry = LOCALE_STRINGS[locale].find((s) => s.namespace === namespace && s.key === key);
+  if (!entry) throw new Error(`${namespace}:${key} is missing from ${locale}`);
   return entry.text;
 }
+
+const panelBody = (locale: Locale) => value(locale, "settings", "onboarding.appBody1");
 
 /** The module's name as this locale writes it: `navigation:sidebar.cbt` is `КПТ` in bg. */
-function acronym(locale: Locale, key: string): string {
-  const entry = LOCALE_STRINGS[locale].find(
-    ({ namespace, key: k }) => namespace === "navigation" && k === `sidebar.${key}`,
-  );
-  if (!entry) throw new Error(`navigation:sidebar.${key} is missing from ${locale}`);
-  return entry.text;
-}
+const acronym = (locale: Locale, module: string) =>
+  value(locale, "navigation", `sidebar.${module}`);
 
 /**
  * The retired two-item list, and the string it was retired from.
