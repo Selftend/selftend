@@ -10,13 +10,17 @@ them from the sidebar"_; #2088 refused favourites in every shape) · Recorded by
 The navigation panel (`src/components/app/sidebar-nav.tsx`) is the app's only
 navigation chrome on every platform — there is no desktop rail (#667), and
 `AppShell` mounts it only inside the navigation overlay. Until #2106 it listed
-the whole product: three top rows, then a Modules group of three, a Tools group
-of eight, and an Account group of three.
+the whole product: three top rows, then a **Tools** group of eight under its own
+heading, then a **Modules** group of three — tools above modules by #1823, so
+the panel and Home agreed on the order of encounter — with a row at the end of
+each group opening that group's hub (#1841), and the account rows and Donate
+below a divider.
 
-Home had meanwhile become the surface that carries the catalogue. `today-screen.tsx`
-renders all eleven items unconditionally, sliced from the single `CATALOGUE`
-constant in `src/features/favorites/items.ts`, with a Favourites section above
-them. So the eleven panel rows were a **second list of the same items**, written
+Home had meanwhile become the surface that carries the catalogue.
+`today-screen.tsx` renders all eleven items unconditionally, drawn from the one
+catalogue in `src/features/favorites/items.ts` — the `TOOLS` and `MODULES`
+constants that `CATALOGUE` concatenates — with a Favourites section above them.
+So the eleven panel rows were a **second list of the same items**, written
 by hand as a `NavItemDef[]` and free to disagree with the first — and, because
 starring is a gesture on a card and the panel has no cards, a copy that could be
 read but not changed.
@@ -65,7 +69,7 @@ are both two taps from any screen. What changes is scanning cost, not reach.
   mirrored collection, and the drift is what makes it expensive.
 - **Shorten the panel instead — keep some catalogue rows and drop others.**
   Refused, and this is the reasoning most worth keeping, because it is the one a
-  later reader will try to reopen. ☠️ **The argument was never length.** Length
+  later reader will try to reopen. **The argument was never length.** Length
   was tested and rejected outright: Looking back and Routines are rows 2 and 3,
   and Settings and Support each have a second door in `UserMenu`, so the only
   genuinely buried _unique_ row was Reminders. An argument resting on length
@@ -77,19 +81,21 @@ are both two taps from any screen. What changes is scanning cost, not reach.
   principle above. A single fixed `Favourites` row opening Home's strip is a
   duplicated _fixed_ door, which this decision permits — it lost on **cost**:
   Home is one tap away and Favourites is its first section, so the row buys a
-  scroll rather than a tap. ⚠️ Its icon-strip variation will be re-proposed, and
+  scroll rather than a tap. Its icon-strip variation will be re-proposed, and
   it is the mirrored-collection shape in disguise: per-person items, an order it
   has to choose, unstarrable where it is shown, and icon-only makes the glyph
   ambiguous — the panel's own icon set gave `anchor` to Grounding and to DBT
-  alike. ☠️ The "it is a view of the same constant, so there is nothing to
+  alike. The "it is a view of the same constant, so there is nothing to
   drift" defence that once covered Favourites **expired the same day**: #2091
   gave it `starred-at, newest first`, an ordering rule no other surface shares,
   so a panel copy would be a hand-maintained agreement between two independently
   ordered lists.
 - **A contextual "you are here" row.** Refused: `ScreenBreadcrumb` sits in the
   shared chrome (`screen-header.tsx`, `screen-top-bar.tsx`,
-  `module-home-header.tsx`), so every tool and module screen already says where
-  it is without anything being opened.
+  `module-home-header.tsx`), so a tool or module screen carrying that chrome
+  already says where it is without anything being opened. The exception proves
+  the rule rather than undoing it: a focus session deliberately carries no
+  breadcrumb, and a panel row would not have been welcome there either.
 
 ## Consequences
 

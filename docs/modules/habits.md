@@ -285,7 +285,7 @@ Phase 1 is ready to ship when:
 - Current onboarding illustrations:
   - `assets/images/onboarding/app-journey-growth-badge.png` - welcome / compounding.
   - `assets/images/onboarding/habits-tracker-garden-badge.png` - tracking / never miss twice.
-- Both languages ship together. Translations land in `src/i18n/locales/{en,bg}/habits.json` and the relevant nav keys (`sidebar.habits`, `today.tools.habits`, `today.tools.habitsSub`) already exist - drop the `badgeSoon` once Phase 1 ships.
+- Both languages ship together. Translations land in `src/i18n/locales/{en,bg}/habits.json` and the relevant nav keys (`sidebar.habits`, `today.tools.habits`, `today.tools.habitsSub`) already exist. (There is no `badgeSoon` left to drop - #1020 took every status chip off the panel, and #2106 took the tool rows themselves.)
 
 ---
 

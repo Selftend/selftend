@@ -289,7 +289,7 @@ What it is for: **Home is the doing; the panel is everything around the doing** 
 Seven rows, no group headings, nothing per-person and nothing contextual (#2085/#2106).
 
 It is **not an index of the app**. Home carries the whole catalogue of tools and modules, drawn from
-one constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
+the one catalogue constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
 mirror a collection** ([ADR-0006](docs/adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md)).
 A hand-maintained second copy of a list is free to drift from the first, and — with no card to star
 — is a lesser copy besides. Home, Settings and Support are the permitted kind: each has a second

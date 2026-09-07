@@ -5,7 +5,8 @@ The product stays modular without implying planned tools are already ready.
 ## Current State
 
 Home carries the catalogue: every tool and every module is reached from a card on it, all of them
-sliced from the one `CATALOGUE` constant. The navigation panel (`src/components/app/sidebar-nav.tsx`)
+drawn from the one catalogue in `src/features/favorites/items.ts` (the `TOOLS` and `MODULES`
+constants, which `CATALOGUE` concatenates). The navigation panel (`src/components/app/sidebar-nav.tsx`)
 lists no tool and no module - it carries what surrounds the practice, and nothing else. The rule and
 the reasoning are in [ADR-0006](../adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md);
 `CONTEXT.md` defines the terms.
