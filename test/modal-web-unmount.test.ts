@@ -48,9 +48,11 @@ const ROOT = join(__dirname, "..");
  * body), or the file itself never ships on web.
  */
 const EXEMPT: Record<string, string> = {
-  // Hardcodes `visible` on the Modal; home-tour.tsx gates mounting with
-  // `if (!current || !targetRect) return null;`.
-  "src/features/tours/tour-overlay.tsx": "mounted only while a tour step is active",
+  // Empty since #2109 deleted `tour-overlay.tsx`, its only entry - the home
+  // tour's last stop was retired and the overlay went with it. The map stays
+  // rather than the mechanism: the exemption is still the right escape hatch
+  // for a parent-gated Modal, and the expiry test below correctly runs zero
+  // times over an empty map rather than asserting anything vacuous.
 };
 
 /** `if (!visible && Platform.OS === "web") return null;` (any prop name). */

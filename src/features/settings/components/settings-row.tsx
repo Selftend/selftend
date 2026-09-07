@@ -195,10 +195,10 @@ export function SettingsRow({
       role={role}
       {...keyActivation}
       /**
-       * The label alone, never label + description. Three e2e specs address these
-       * rows by exact button name (`Show tips again`, `Export my data`,
-       * `Delete my account`), and home's `"{name}, {stat}"` shape would break all
-       * three - a stat is part of what one press acts on, a policy sentence is not.
+       * The label alone, never label + description. e2e specs address these rows by
+       * exact button name (`Replay introduction`, `Export my data`, `Delete my
+       * account`), and home's `"{name}, {stat}"` shape would break every one of them -
+       * a stat is part of what one press acts on, a policy sentence is not.
        */
       accessibilityLabel={label}
       accessibilityHint={description}

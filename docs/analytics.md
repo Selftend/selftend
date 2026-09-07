@@ -101,8 +101,11 @@ that the figure answers "how many stop at the first screen" and nothing else.
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
 The report covers: signups, first-run introduction conversion, finish-vs-skip
 (`user_preferences.app_onboarding_completed_via` / `_at`, written when the
-one-panel introduction is finished or skipped), the Home widget selection older
-native builds still write, and home-tour engagement. The two funnel columns are
+one-panel introduction is finished or skipped) and the Home widget selection
+older native builds still write. The home-tour engagement section went with the
+tour (#2109): `shown_button_tours` is still a column and still exported, but
+nothing writes it, so reporting it would present a frozen residue as current.
+The two funnel columns are
 ordinary first-party preferences, included in `export_user_data()` and account
 deletion. The concern-distribution sections (§4a/4b) were removed with the
 `selected_concerns` column on 2026-09-05 (#1958): the introduction no longer asks

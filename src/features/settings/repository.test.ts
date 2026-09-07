@@ -1,8 +1,5 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import {
-  REPLAY_INTRODUCTION_PREFERENCES,
-  SHOW_TIPS_AGAIN_PREFERENCES,
-} from "@/src/features/settings/onboarding-reset";
+import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   deleteDevicePushToken,
   deleteUserAccount,
@@ -11,7 +8,6 @@ import {
   recordAgeAttestation,
   recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
   upsertDevicePushToken,
   upsertWebPushSubscription,
@@ -407,32 +403,11 @@ describe("settings repository", () => {
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
   });
 
-  it("updates shown button tours without sending unrelated preference columns", async () => {
-    const updatedRow = {
-      enabled_modules: ["cbt"],
-      shown_button_tours: ["program"],
-      user_id: "user-1",
-    };
-    const { upsert } = mockPreferenceUpdate(updatedRow);
-
-    await expect(updateShownButtonTours("user-1", ["program"])).resolves.toMatchObject({
-      shownButtonTours: ["program"],
-    });
-
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        shown_button_tours: ["program"],
-        user_id: "user-1",
-      },
-      { onConflict: "user_id" },
-    );
-  });
-
   it("updates onboarding state without sending unrelated preference columns", async () => {
     const updatedRow = {
       app_onboarding_completed: false,
+      app_onboarding_completed_via: "skip",
       enabled_modules: ["cbt"],
-      shown_button_tours: [],
       user_id: "user-1",
     };
     const { upsert } = mockPreferenceUpdate(updatedRow);
@@ -440,17 +415,17 @@ describe("settings repository", () => {
     await expect(
       updateOnboardingPreferences("user-1", {
         appOnboardingCompleted: false,
-        shownButtonTours: [],
+        appOnboardingCompletedVia: "skip",
       }),
     ).resolves.toMatchObject({
       appOnboardingCompleted: false,
-      shownButtonTours: [],
+      appOnboardingCompletedVia: "skip",
     });
 
     expect(upsert).toHaveBeenCalledWith(
       {
         app_onboarding_completed: false,
-        shown_button_tours: [],
+        app_onboarding_completed_via: "skip",
         user_id: "user-1",
       },
       { onConflict: "user_id" },
@@ -567,14 +542,13 @@ describe("settings repository", () => {
     );
   });
 
-  it("carries both Settings onboarding actions through to their columns", async () => {
+  it("carries the Settings onboarding action through to its column", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",
       enabled_modules: ["cbt"],
     });
 
     await updateOnboardingPreferences("user-1", REPLAY_INTRODUCTION_PREFERENCES);
-    await updateOnboardingPreferences("user-1", SHOW_TIPS_AGAIN_PREFERENCES);
 
     expect(upsert).toHaveBeenNthCalledWith(
       1,
@@ -584,15 +558,7 @@ describe("settings repository", () => {
       },
       { onConflict: "user_id" },
     );
-    expect(upsert).toHaveBeenNthCalledWith(
-      2,
-      {
-        shown_button_tours: [],
-        start_here_dismissed_at: null,
-        user_id: "user-1",
-      },
-      { onConflict: "user_id" },
-    );
+    expect(upsert).toHaveBeenCalledTimes(1);
   });
 
   it("upserts web push subscriptions for the current user", async () => {

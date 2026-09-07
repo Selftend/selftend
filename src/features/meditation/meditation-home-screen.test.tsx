@@ -52,7 +52,6 @@ jest.mock("@/src/features/meditation/queries", () => ({
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
   useUpdateUserPreferences: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
-  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
 jest.mock("@/src/components/app/meditation-info-modal", () => ({ MeditationInfo: () => null }));

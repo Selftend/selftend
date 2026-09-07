@@ -3,15 +3,14 @@ import type { updateOnboardingPreferences } from "@/src/features/settings/reposi
 type OnboardingPreferencesPatch = Parameters<typeof updateOnboardingPreferences>[1];
 
 /**
- * Settings exposes these as two separate, literal promises: replay the app's
- * introduction, or re-arm optional contextual tips. Module intro modals remain
- * available from their own info buttons and carry no persisted completion state.
+ * Settings exposes this as one literal promise: replay the app's introduction.
+ * Module intro modals remain available from their own info buttons and carry no
+ * persisted completion state.
+ *
+ * `SHOW_TIPS_AGAIN_PREFERENCES` stood beside it, re-arming `shownButtonTours` and
+ * `startHereDismissedAt`. It went with the home tour (#2109): the tours were the
+ * only thing it re-armed that anything still read.
  */
 export const REPLAY_INTRODUCTION_PREFERENCES = Object.freeze({
   appOnboardingCompleted: false,
-}) satisfies OnboardingPreferencesPatch;
-
-export const SHOW_TIPS_AGAIN_PREFERENCES = Object.freeze({
-  shownButtonTours: [],
-  startHereDismissedAt: null,
 }) satisfies OnboardingPreferencesPatch;

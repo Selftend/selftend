@@ -46,8 +46,6 @@ const RAW_MODAL_EXEMPT_FILES = [
   "src/components/app/delete-account-modal.tsx",
   // Web-only crop dialog with a visible Cancel; the native file is a null stub.
   "src/components/app/avatar-crop-modal.web.tsx",
-  // Coach-mark overlay with its own text dismissals, ruled out of scope by #1165.
-  "src/features/tours/tour-overlay.tsx",
 ];
 
 // The Origin contract (#1167 clause O3, built by #1269). #1164 decided the

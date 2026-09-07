@@ -24,7 +24,6 @@ jest.mock("expo-router", () => ({
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: undefined }),
-  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),

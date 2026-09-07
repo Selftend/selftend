@@ -101,11 +101,6 @@ test.describe("sign-up + onboarding + first record", () => {
       page.getByTestId("home-modules").locator('[data-testid^="card-module-"]'),
     ).toHaveCount(3);
 
-    // The optional Home tour may or may not fire on a brand-new account. If it
-    // appears, dismiss it so the reload assertion remains deterministic.
-    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
-    if (await skipTour.isVisible()) await skipTour.click();
-
     // Reload: the one-time widget wizard must not reappear.
     await page.reload();
     await dismissCookieBanner(page);
