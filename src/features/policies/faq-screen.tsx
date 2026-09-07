@@ -6,17 +6,12 @@ import { Disclosure } from "@/src/components/app/disclosure";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { Section } from "@/src/components/app/section";
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { FaqEntrySlug } from "@/src/features/policies/faq-layout";
 import { FAQ_ENTRY_INDEX, FAQ_LAYOUT } from "@/src/features/policies/faq-layout";
 import { PolicyPageLayout } from "@/src/features/policies/policy-page-layout";
 import type { PolicySection } from "@/src/features/policies/policy-section-cards";
+import { PolicySectionCards } from "@/src/features/policies/policy-section-cards";
 import { contactEmails } from "@/src/lib/env";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
@@ -81,6 +76,14 @@ export function FaqScreen() {
   // `t(key, { returnObjects: true })` returns a STRING when the key is missing.
   const entries = Array.isArray(sections) ? sections : [];
   const entryOf = (slug: FaqEntrySlug): PolicySection | undefined => entries[FAQ_ENTRY_INDEX[slug]];
+  /*
+    Resolve a run of slugs, dropping any the corpus does not carry. The drop is
+    the degenerate case only: `faq-layout.test.ts` pins fourteen entries in BOTH
+    locales against the fourteen slugs, so a short corpus is a red build rather
+    than a quietly shorter page.
+  */
+  const entriesOf = (slugs: readonly FaqEntrySlug[]): PolicySection[] =>
+    slugs.map(entryOf).filter((entry): entry is PolicySection => entry !== undefined);
 
   const allOpen = COLLAPSIBLE.every((slug) => openRows.has(slug));
 
@@ -100,12 +103,17 @@ export function FaqScreen() {
     <PolicyPageLayout title={t("faq.pageTitle")} subtitle={t("faq.pageDescription")}>
       <CrisisSupportCallout />
 
-      <FaqAnswerCard entry={entryOf(FAQ_LAYOUT.crisis)} />
+      {/*
+        The always-open answers render through the SAME card the six `InfoScreen`
+        routes and `/security` use, at level 3 rather than 2 (#2144's seam, given
+        a `level` on #2147). ☠️ Not a local copy of the card shape: two
+        hand-maintained copies of one structure, with nothing asserting the level
+        on either, is precisely how #2133 shipped `/security` at h1 → h3.
+      */}
+      <PolicySectionCards level={3} sections={entriesOf([FAQ_LAYOUT.crisis])} />
 
       <Section title={t("faq.startHere")} level={2}>
-        {FAQ_LAYOUT.pinned.map((slug) => (
-          <FaqAnswerCard key={slug} entry={entryOf(slug)} />
-        ))}
+        <PolicySectionCards level={3} sections={entriesOf(FAQ_LAYOUT.pinned)} />
       </Section>
 
       <View className="flex-row justify-end">
@@ -185,28 +193,6 @@ export function FaqScreen() {
         </Button>
       </View>
     </PolicyPageLayout>
-  );
-}
-
-/** An always-open answer: the crisis entry and the four "Start here" cards. */
-function FaqAnswerCard({ entry }: { entry: PolicySection | undefined }) {
-  if (!entry) return null;
-
-  return (
-    <Card>
-      <CardHeader>
-        {/*
-          Level 3 is `CardTitle`'s own default and is passed anyway. These cards
-          sit under a level-2 eyebrow while `PolicySectionCards` overrides the
-          same component to 2 on six other routes - so the level is stated where a
-          reader compares the two rather than left to be inferred from a default.
-        */}
-        <CardTitle aria-level={3}>{entry.title}</CardTitle>
-        {entry.body.map((paragraph, index) => (
-          <CardDescription key={index}>{paragraph}</CardDescription>
-        ))}
-      </CardHeader>
-    </Card>
   );
 }
 

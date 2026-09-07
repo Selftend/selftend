@@ -43,7 +43,7 @@ Surface-appropriate variants confirmed as deliberate:
 
 - `Dismiss` — `Затвори` (close a banner) / `Скрий` (hide a card)
 - `Done today` — `Направено днес` (dashboard stat: a count of things done) / `Готово за днес` (routine step state: this step is done for today)
-- `FAQ` — `ЧЗВ` (tight footer link) / `Често задавани въпроси` (page title). **The split has since closed from the other side** (#2147): `en`'s page title became `Common questions` while its footer link stayed `FAQ`, so the two locales now carry the same two forms on the same two surfaces. Kept as a record — this row is the evidence that carried the `en` rename, and the pairing it describes is still the one to preserve.
+- `FAQ` — `ЧЗВ` (tight footer link) / `Често задавани въпроси` (page title). **The split has since closed from the other side** (#2147): `en`'s page title became `Common questions` while its footer link stayed `FAQ`, so the two locales now carry the same two forms on the same two surfaces. Kept as a record — this row is the evidence that carried the `en` rename, and the pairing it describes is still the one to preserve. ⚠️ It covers the **title only**: `faq.pageDescription` is an ordinary paired string, and when `en`'s was rewritten on #2147 the `bg` line was retranslated in the same commit rather than left as a translation of a sentence that no longer exists.
 - `Finish` — `Завърши` (end a session) / `Готово` (wizard finish)
 - `Mood check-in` — full `Проверка на настроението` (notification title) / `Настроение` (width-limited tool chip)
 - `Struggle switch` — full `Превключвател на борбата`; the expansion step chip keeps the short `Превключвател` (width limit)

@@ -123,7 +123,7 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
    * The reverse direction is checked too: a label with no group is a string
    * translators are paying attention to for a heading nothing renders.
    */
-  describe.each(locales)("%s labels every group and no more", (locale, policies) => {
+  describe.each(locales)("%s labels every group and no more", (_locale, policies) => {
     const labels = (policies.faq as { groups?: Record<string, string> }).groups ?? {};
 
     it("resolves a non-empty label for every group key", () => {
@@ -145,10 +145,30 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
       expect(Object.keys(labels).sort()).toEqual(FAQ_LAYOUT.groups.map((g) => g.key).sort());
     });
 
+    /**
+     * ☠️ **The corpus is as long in this locale as the layout expects.**
+     *
+     * `/faq` reads entries by index, so an entry the locale does not carry
+     * resolves to `undefined` and renders as **nothing** - one answer missing
+     * from the page, in one language, with no error. The partition guard above
+     * pins `en` alone, so without this the whole check is `en`-only.
+     */
+    it("carries an entry for every slug the layout places", () => {
+      const localeSections = policies.faq.sections as { title: string; body: string[] }[];
+
+      expect(localeSections).toHaveLength(Object.keys(FAQ_ENTRY_INDEX).length);
+      for (const index of Object.values(FAQ_ENTRY_INDEX)) {
+        expect(localeSections[index]?.title?.length).toBeGreaterThan(0);
+      }
+    });
+
     it("names the page's own strings, so the screen has nothing to hardcode", () => {
       // The five keys `/faq` reads outside the corpus and the groups (#2147).
-      // `bg` deliberately keeps its own `pageTitle` / `pageDescription`, so those
-      // are not on this list - see `docs/i18n/bg-deliberate-divergence.md`.
+      // `pageTitle` is not on this list: `bg` keeps `Често задавани въпроси`
+      // where `en` says `Common questions`, recorded deliberate at
+      // `docs/i18n/bg-deliberate-divergence.md`. `pageDescription` IS parallel -
+      // `en`'s was rewritten here and `bg`'s retranslated with it, since the old
+      // `bg` line was a translation of an English sentence that no longer exists.
       const faq = policies.faq as unknown as Record<string, unknown>;
       for (const key of [
         "startHere",
@@ -160,7 +180,6 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
         expect(typeof faq[key]).toBe("string");
         expect((faq[key] as string).trim().length).toBeGreaterThan(0);
       }
-      expect(locale).toMatch(/^(en|bg)$/);
     });
   });
 });

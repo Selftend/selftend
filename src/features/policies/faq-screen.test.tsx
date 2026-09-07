@@ -30,10 +30,29 @@ const en = enPolicies.faq;
 const sections = en.sections as { title: string; body: string[] }[];
 const entryOf = (slug: FaqEntrySlug) => sections[FAQ_ENTRY_INDEX[slug]];
 
-/** The eight questions that collapse, in page order. */
-const COLLAPSIBLE = FAQ_LAYOUT.groups.flatMap((group) => group.entries) as FaqEntrySlug[];
-/** Everything that renders open and stays open. */
-const ALWAYS_OPEN = [FAQ_LAYOUT.crisis, ...FAQ_LAYOUT.pinned, FAQ_LAYOUT.letter] as FaqEntrySlug[];
+/**
+ * The eight questions that collapse and the six that never do — **spelled out,
+ * not re-derived from `FAQ_LAYOUT`.**
+ *
+ * Deriving them the way the screen does would make the test agree with a wrong
+ * derivation: move an entry from a group into `pinned` and both sides would
+ * follow it, leaving "only the group answers collapse" true of whatever the
+ * layout happens to say rather than of what the page is supposed to be. Written
+ * out, a change to the grouping fails here and has to be stated. Same reason
+ * `faq-layout.test.ts` pins each slug against its `en` title rather than reading
+ * the title through the index it is checking.
+ */
+const COLLAPSIBLE: FaqEntrySlug[] = [
+  "needAccount",
+  "exportDelete",
+  "minimumAge",
+  "dataCollected",
+  "reminders",
+  "tooMuch",
+  "openSource",
+  "contact",
+];
+const ALWAYS_OPEN: FaqEntrySlug[] = ["crisis", "therapy", "free", "whoCanSee", "noAi", "parents"];
 
 /**
  * The first paragraph of an answer, **as the page renders it**.
@@ -132,6 +151,13 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
     for (const section of sections) {
       expect(screen.getByText(section.title)).toBeTruthy();
     }
+
+    // The two sets above account for the whole corpus, so "only the group
+    // answers collapse" is a statement about all fourteen entries rather than
+    // about the fourteen minus whichever this file forgot to list.
+    expect([...COLLAPSIBLE, ...ALWAYS_OPEN].sort()).toEqual(
+      (Object.keys(FAQ_ENTRY_INDEX) as FaqEntrySlug[]).sort(),
+    );
   });
 
   /**
