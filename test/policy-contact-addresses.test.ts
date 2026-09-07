@@ -11,29 +11,28 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  * address reaching this project, in the document telling a stranger where to send
  * their data-deletion request.
  *
- * `faq` moved to `{{privacyEmail}}` / `{{securityEmail}}` / `{{supportEmail}}`,
- * supplied by `InfoScreen` from `contactEmails()`. What is pinned here is the
- * three ways that fix silently comes undone.
+ * Every occurrence now reads `{{privacyEmail}}` / `{{securityEmail}}` /
+ * `{{supportEmail}}`, supplied by `InfoScreen` and `ConsentGate` from
+ * `contactEmails()`. What is pinned here is the ways that fix silently comes
+ * undone.
  *
- * ☠️ This is 5 of 21 occurrences, not most of them. The `privacy`, `terms`,
- * `cookies` and `accountDeletion` sections still carry 15 literals, and that is
- * deliberate rather than an oversight: those four are hashed by
- * `src/features/policies/policy-content.test.ts`, so editing one character of them
- * fails `verify` until `policyVersion` moves, and a version bump re-presents the
- * consent gate to every existing user. They fold in on the next bump that has a
- * real disclosure to carry. `faq` is exempt from that digest, which is why it
- * could move on its own.
+ * It landed in two tranches, and the split is worth knowing because it explains
+ * the shape of the guards below:
  *
- * The 21st lived outside this namespace entirely - `settings.json`'s
- * `consent.healthDataWithdrawal`, the withdrawal route for health-data consent -
- * and moved with the same tranche, because it is not digested either. It is
- * guarded below rather than left to `consent-gate.test.tsx` alone: that suite
- * renders the sentence, this one is what notices a NEW hardcoded address landing
- * anywhere in the same copy.
+ * - **Tranche 1** (`aeab011f`) took the 5 in `faq` plus `settings.json`'s
+ *   `consent.healthDataWithdrawal` — the six that are NOT consent-digested, so
+ *   they cost nothing to move.
+ * - **Tranche 2** took the 15 in `privacy` ×10, `terms` ×3, `cookies` ×1 and
+ *   `accountDeletion` ×1. Those four ARE hashed by
+ *   `src/features/policies/policy-content.test.ts`, so one character costs a
+ *   digest move — and normally a `policyVersion` bump, which re-presents the
+ *   consent gate to every existing user. ☠️ It was free only because
+ *   `2026-09-04-teen-floor` was still unreleased when it landed, so no user had
+ *   accepted the text. That reasoning is recorded beside the digest pin itself.
  *
- * The count below is asserted rather than written in prose, so that a future
- * tranche moving those literals has to come back and update this docblock instead
- * of leaving a stale "15 remain" behind.
+ * ☠️ The direction that matters has therefore flipped. These guards no longer
+ * watch a migration in progress; they watch for a NEW hardcoded address landing
+ * in copy that is now expensive to correct.
  */
 
 const SUPPLIED_BY_INFO_SCREEN = Object.keys(contactEmails());
@@ -115,13 +114,7 @@ describe.each<Locale>(["en", "bg"])("%s: every policy placeholder is supplied", 
 });
 
 /**
- * `src/i18n/locale-parity.test.ts` checks that both locales hold the same KEYS.
- * It says nothing about what is inside them, so a Bulgarian translation that
- * dropped `{{supportEmail}}` - or wrote it as `{{supportEmai}}` - would leave the
- * bg parents letter with no address in it and the suite green.
- */
-/**
- * The 21st occurrence, which lives in `settings` rather than `policies` — the
+ * The occurrence that lives in `settings` rather than `policies` — the
  * withdrawal route for health-data consent, stated beside the tick box.
  *
  * Scoped by namespace rather than folded into the `faq` sweep above, because the
@@ -147,30 +140,59 @@ describe.each<Locale>(["en", "bg"])("%s: the health-data withdrawal route", (loc
 });
 
 /**
- * The unfinished half, pinned so it cannot drift unnoticed in either direction.
+ * ✅ Tranche 2 landed, so this is now ZERO rather than 15 — no hardcoded contact
+ * address survives anywhere in `policies.json`.
  *
- * Going UP means a new hardcoded address landed in consent-bearing copy - the
- * defect spreading. Going DOWN means someone moved a digested literal, which is
- * only legal alongside a `policyVersion` bump, and this failing beside
- * `policy-content.test.ts` is the reminder that the bump re-gates every existing
- * user.
+ * Kept as an assertion rather than deleted, because the direction that matters
+ * has flipped rather than gone away: it now catches a NEW literal landing in
+ * consent-bearing copy. That is the expensive mistake to make here — once
+ * `2026-09-04-teen-floor` releases, undoing it costs a `policyVersion` bump and a
+ * re-gate of every existing user, where today it would have been free.
  */
-describe.each<Locale>(["en", "bg"])("%s: the tranche still to move (#2131)", (locale) => {
-  it("has 15 literal addresses left in the four consent-bearing sections", () => {
-    const consentBearing = ["privacy.", "terms.", "cookies.", "accountDeletion."];
+describe.each<Locale>(["en", "bg"])(
+  "%s: no literal survives the consent copy (#2131)",
+  (locale) => {
+    it("holds no hardcoded contact address in the four consent-bearing sections", () => {
+      const consentBearing = ["privacy.", "terms.", "cookies.", "accountDeletion."];
 
-    const remaining = policyStrings(locale)
-      .filter(({ key }) => consentBearing.some((section) => key.startsWith(section)))
-      .flatMap(({ key, text }) =>
-        Object.values(projectContactEmails)
-          .filter((address) => text.includes(address))
-          .map((address) => ({ key, address })),
-      );
+      const remaining = policyStrings(locale)
+        .filter(({ key }) => consentBearing.some((section) => key.startsWith(section)))
+        .flatMap(({ key, text }) =>
+          Object.values(projectContactEmails)
+            .filter((address) => text.includes(address))
+            .map((address) => ({ key, address })),
+        );
 
-    expect(remaining).toHaveLength(15);
-  });
-});
+      expect(remaining).toEqual([]);
+    });
 
+    /**
+     * Anti-vacuity for the assertion above, and the half it cannot make: those
+     * sections must still ROUTE the reader somewhere. A pass that deleted the
+     * clauses rather than parameterising them would satisfy "no literal" perfectly.
+     */
+    it("still names a contact in each of the four, through placeholders", () => {
+      const consentBearing = ["privacy.", "terms.", "cookies.", "accountDeletion."];
+
+      for (const section of consentBearing) {
+        const used = new Set(
+          policyStrings(locale)
+            .filter(({ key }) => key.startsWith(section))
+            .flatMap(({ text }) => placeholdersIn(text)),
+        );
+
+        expect({ section, hasContact: used.size > 0 }).toEqual({ section, hasContact: true });
+      }
+    });
+  },
+);
+
+/**
+ * `src/i18n/locale-parity.test.ts` checks that both locales hold the same KEYS.
+ * It says nothing about what is inside them, so a Bulgarian translation that
+ * dropped `{{supportEmail}}` - or wrote it as `{{supportEmai}}` - would leave the
+ * bg copy with no address in it and the suite green.
+ */
 describe("both locales interpolate the same variables in the same strings", () => {
   it("matches placeholder sets key by key", () => {
     const bgByKey = new Map(policyStrings("bg").map((entry) => [entry.key, entry.text]));

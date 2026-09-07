@@ -226,13 +226,14 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
 
   /**
    * ☠️ The outline the page exists to have, asserted end to end rather than spot
-   * checked. h1 title → h3 callout → h3 crisis question → h2 *Start here* → h3 ×4
+   * checked. h1 title → h2 callout → h3 crisis question → h2 *Start here* → h3 ×4
    * pinned → then a group's h2 label followed by its questions at h3.
    *
-   * The callout's level 3 above the level-2 blocks is inherited, not invented:
-   * `/support` already ships this exact h1 → h3 → h2 order from the same
-   * component, so `/faq` matches its sibling. #2137 owns that question for all
-   * five call sites at once.
+   * ⚠️ The callout was level 3 here when the page landed, matching `/support`;
+   * #2137 moved **both** to 2 in one change, so the sibling pages still agree.
+   * At 3 it sat below the level-2 blocks that follow it - a level skipped going
+   * down, on the surface a person in distress should reach first. The three
+   * module homes keep 3, where the callout is last among level-3 Sections.
    */
   it("gives the page one h1 and a level-2/level-3 outline under it", () => {
     renderWithProviders(<FaqRoute />);
@@ -241,7 +242,7 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
 
     expect(headingLevels()).toEqual([
       1, // the page title
-      3, // the crisis callout's own CardTitle
+      2, // the crisis callout, raised from CardTitle's default 3 on #2137
       3, // entry 1, always open
       2, // Start here
       3,

@@ -17,14 +17,14 @@
           "You do not have to give us an email address. The app works without an account.",
           "What you write in the app is yours. We do not sell it, we do not show you adverts, and we do not use it to train AI. Nobody here reads it unless you ask us to, we have to investigate a security incident, or the law requires it.",
           "You can download everything you have written, or delete all of it, from Settings at any time. Deleting is permanent.",
-          "If anything here worries you, or you want something removed, write to privacy@selftend.org and a person will answer."
+          "If anything here worries you, or you want something removed, write to {{privacyEmail}} and a person will answer."
         ]
       },
       {
         "title": "1. Who we are",
         "body": [
           "Selftend is a free, open-source cognitive behavioural therapy (CBT) programme available on web, iOS, and Android.",
-          "Data controller: Selftend (operated by Vasil Yoshev), contact: privacy@selftend.org.",
+          "Data controller: Selftend (operated by Vasil Yoshev), contact: {{privacyEmail}}.",
           "This policy applies to all users of the Selftend application regardless of platform."
         ]
       },
@@ -53,7 +53,7 @@
           "Contract (Art. 6(1)(b)): Processing your email and app data is necessary to provide the service you signed up for - maintaining your account, syncing your records, and delivering the self-help features.",
           "Consent (Art. 6(1)(a)): Notification reminders are only scheduled after you explicitly opt in. You can withdraw consent at any time in Settings.",
           "Explicit consent for sensitive content (GDPR Art. 9(2)(a)): the self-help entries you save can contain wellness, mental-health, or other special-category information. We process that content only with your explicit consent, which you give as a separate, affirmative act - a step of its own, worded on its own, that everyone completes before using the app. It is never bundled into accepting these policies, and it is never inferred from your continued use. If you already have an account, you are shown that step once, the next time this policy changes.",
-          "Withdrawing that consent: you can withdraw it at any time by deleting your account in Settings, which removes the entries it covers, or by contacting privacy@selftend.org. Withdrawal does not affect processing that already took place while the consent was in force.",
+          "Withdrawing that consent: you can withdraw it at any time by deleting your account in Settings, which removes the entries it covers, or by contacting {{privacyEmail}}. Withdrawal does not affect processing that already took place while the consent was in force.",
           "The age check (Art. 6(1)(c) and Art. 9(2)(a)): we ask your age and your country so that we process special-category data only where you can consent to it yourself, and we keep the result as the record that the check happened. Section 11 explains how the minimum age is set.",
           "Legitimate interest (Art. 6(1)(f)): Minimal security logging (e.g., authentication events managed by Supabase) to protect the service and users from abuse."
         ]
@@ -87,7 +87,7 @@
         "title": "7. International data transfers",
         "body": [
           "Our data processors are based in the United States. For transfers of personal data from the European Economic Area (EEA), United Kingdom, or Switzerland, we rely on Standard Contractual Clauses (SCCs) as adopted by the European Commission, or the processor's participation in recognised data transfer frameworks.",
-          "You can request a copy of the relevant transfer safeguards by contacting privacy@selftend.org."
+          "You can request a copy of the relevant transfer safeguards by contacting {{privacyEmail}}."
         ]
       },
       {
@@ -116,7 +116,7 @@
           "Right to object: object to processing based on legitimate interest.",
           "Right to withdraw consent: withdraw consent for reminders at any time in Settings.",
           "Right to lodge a complaint: you may file a complaint with your local data protection supervisory authority.",
-          "To exercise any right not available through self-service, contact privacy@selftend.org."
+          "To exercise any right not available through self-service, contact {{privacyEmail}}."
         ]
       },
       {
@@ -127,7 +127,7 @@
           "Right to delete: you can delete your account and all data via self-service in Settings.",
           "Right to opt out of sale: we do not sell your personal data. There is nothing to opt out of.",
           "Right to non-discrimination: we will not treat you differently for exercising your privacy rights.",
-          "To exercise any right, use the in-app features or contact privacy@selftend.org."
+          "To exercise any right, use the in-app features or contact {{privacyEmail}}."
         ]
       },
       {
@@ -140,7 +140,7 @@
           "It is 16 in Croatia, Germany, Hungary, Ireland, Liechtenstein, Luxembourg, the Netherlands, Poland, Romania and Slovakia.",
           "It is never below 13, anywhere.",
           "We ask for your date of birth and your country once, before you start, and keep only the result (see section 2). There is no parental-consent route and no identity check: where the law would require one, our minimum age rises instead.",
-          "We do not knowingly collect personal data from anyone below the minimum age for their country. If we learn that we have, we delete the account and its data promptly. If you believe someone below the minimum age has an account, contact privacy@selftend.org."
+          "We do not knowingly collect personal data from anyone below the minimum age for their country. If we learn that we have, we delete the account and its data promptly. If you believe someone below the minimum age has an account, contact {{privacyEmail}}."
         ]
       },
       {
@@ -175,9 +175,9 @@
       {
         "title": "15. Contact",
         "body": [
-          "For privacy questions, data requests, or complaints: privacy@selftend.org.",
-          "For general support: support@selftend.org.",
-          "For security issues: security@selftend.org."
+          "For privacy questions, data requests, or complaints: {{privacyEmail}}.",
+          "For general support: {{supportEmail}}.",
+          "For security issues: {{securityEmail}}."
         ]
       }
     ]
@@ -296,9 +296,9 @@
       {
         "title": "14. Contact",
         "body": [
-          "For questions about these terms: support@selftend.org.",
-          "For privacy matters: privacy@selftend.org.",
-          "For security issues: security@selftend.org."
+          "For questions about these terms: {{supportEmail}}.",
+          "For privacy matters: {{privacyEmail}}.",
+          "For security issues: {{securityEmail}}."
         ]
       }
     ]
@@ -349,7 +349,7 @@
         "title": "How to delete your account",
         "body": [
           "Self-service (recommended): Go to Settings → Account → Delete my account. You will be asked to confirm before deletion proceeds.",
-          "Email request (fallback): Send a deletion request to privacy@selftend.org from the email address associated with your account. Include your account email and ask for complete account and data deletion."
+          "Email request (fallback): Send a deletion request to {{privacyEmail}} from the email address associated with your account. Include your account email and ask for complete account and data deletion."
         ]
       },
       {
@@ -402,7 +402,7 @@
         "body": [
           "You can manage your cookie and storage preferences at any time through the cookie settings available in the app footer (web) or in Settings.",
           "You can also clear all website data through your browser settings, which will remove the session token and sign you out.",
-          "For questions about our use of cookies and storage, contact privacy@selftend.org."
+          "For questions about our use of cookies and storage, contact {{privacyEmail}}."
         ]
       }
     ]
