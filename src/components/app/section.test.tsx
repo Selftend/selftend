@@ -49,6 +49,57 @@ describe("Section", () => {
     expect(label.props["aria-level"]).toBe(3);
   });
 
+  /**
+   * The eyebrow's level is the caller's to pick, defaulting to 3 (#2142).
+   *
+   * `/faq` needs this same eyebrow at **level 2**: its group labels sit above
+   * questions that are themselves level 3, and a level-3 label over level-3
+   * questions is an outline running sideways rather than down.
+   *
+   * ⚠️ The DEFAULT is not re-asserted here. The case above already pins it, and
+   * pins it harder - strict `toBe(3)`, no `Number()` coercion - so a second
+   * default assertion would add nothing but a place for the two to disagree.
+   * The default is what keeps every shipped call site still, so it is worth one
+   * assertion, not two.
+   *
+   * ☠️ The level is read through `Number(...)` because `text.tsx`'s `ARIA_LEVEL`
+   * map yields **strings** for its variants while `Section` passes a **number**.
+   * On this component the number always wins - `text.tsx` spreads `{...props}`
+   * last - which is why the default case above can be strict. The coercion here
+   * is what keeps this case honest if `Section` ever renders its label through a
+   * `variant` instead. Precedent: `act-home-screen.test.tsx`.
+   */
+  it("renders the label at the level the caller asks for", () => {
+    renderWithProviders(
+      <Section title="Your account" level={2}>
+        <Text>body</Text>
+      </Section>,
+    );
+
+    expect(Number(screen.getByRole("heading", { name: "Your account" }).props["aria-level"])).toBe(
+      2,
+    );
+  });
+
+  it("keeps the eyebrow styling at an overridden level", () => {
+    // The level is semantic; the eyebrow is visual. Changing one must not move
+    // the other, or `/faq`'s group labels would arrive as headings that look
+    // like headings and stop reading as a quiet run of labels.
+    renderWithProviders(
+      <Section title="Your account" level={2}>
+        <Text>body</Text>
+      </Section>,
+    );
+
+    const label = String(screen.getByText("Your account").props.className);
+
+    expect(label).toContain("text-[11px]");
+    expect(label).toContain("font-semibold");
+    expect(label).toContain("uppercase");
+    expect(label).toContain("tracking-[0.1em]");
+    expect(label).toContain("text-muted-foreground");
+  });
+
   it("carries a top hairline by default", () => {
     renderWithProviders(
       <Section title="Mood trend">
