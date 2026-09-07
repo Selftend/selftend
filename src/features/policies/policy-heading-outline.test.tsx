@@ -27,13 +27,19 @@ beforeEach(() => {
  * A policy page's heading outline runs h1 → h2, with no level skipped (#2133).
  *
  * `/security` is the seventh policy page and the only one that does not render
- * through `InfoScreen`: it duplicates the same `Card` / `CardHeader` /
- * `CardTitle` / `CardDescription` structure inline. The copies diverged in the
- * one place a reader notices — `info-screen.tsx` passes `aria-level={2}` on the
- * section title and `security.tsx` did not, so it fell back to `CardTitle`'s
- * default of 3 and the page shipped **h1 → h3**. A skipped level is a WCAG 1.3.1
- * / 2.4.6 problem for anyone navigating by heading, and it put `/security` out
- * of step with the six pages it links to and sits beside.
+ * through `InfoScreen`. When this guard was written it duplicated the same
+ * `Card` / `CardHeader` / `CardTitle` / `CardDescription` structure inline, and
+ * the copies had diverged in the one place a reader notices — `info-screen.tsx`
+ * passed `aria-level={2}` on the section title and `security.tsx` did not, so it
+ * fell back to `CardTitle`'s default of 3 and the page shipped **h1 → h3**. A
+ * skipped level is a WCAG 1.3.1 / 2.4.6 problem for anyone navigating by
+ * heading, and it put `/security` out of step with the six pages it links to.
+ *
+ * ✅ **The duplication is gone since #2146**: `/security` now renders through
+ * `PolicyPageLayout` and `PolicySectionCards`, the same parts the other six use,
+ * so there is one copy of the structure rather than two. That removes the cause
+ * but not the need for this file — it is what proves the fold-in did not move
+ * the outline, and it is why the `/privacy` case below is the control.
  *
  * ☠️ Nothing could have caught this. No test rendered `SecurityScreen` for its
  * STRUCTURE (`policy-origin.test.tsx` renders it, but asserts escape-origin),
@@ -51,6 +57,32 @@ beforeEach(() => {
  * `InfoScreen`, so asserting the same outline on both is what stops the two
  * structures drifting apart again — a fix to one that is not made to the other
  * turns this file red.
+ */
+/**
+ * ☠️☠️ **`getAllByRole("heading")` CANNOT SEE A `View role="heading"`, and this
+ * helper is therefore not safe to point at an arbitrary page.**
+ *
+ * RNTL's role queries filter on `isAccessibilityElement`
+ * (`helpers/accessibility.js`), which returns the `accessible` prop when it is
+ * set and otherwise only `isHostText || isHostTextInput || isHostSwitch` — plus
+ * an `Image` carrying `alt`. A plain host `View` is none of those, so it is
+ * filtered out however loudly it declares `role="heading"`. Every heading on
+ * `/security` and `/privacy` is `Text`-based (`ScreenHeader` → `Text
+ * variant="h1"`, `CardTitle` → `Text`), which is the only reason the two cases
+ * below are honest.
+ *
+ * ⚠️ **Do not extend this file to `/faq` without reading this first** (found on
+ * #2143, confirmed against `Disclosure`). The accordion pattern needs a heading
+ * *containing* a button, so `Disclosure`'s heading is a `View role="heading"` —
+ * invisible here. `/faq` also carries plenty of `Text` headings (the h1, four
+ * group eyebrows, the parents letter), so it would clear the anti-vacuity floors
+ * below **while the entire level-3 run of question headings was silently
+ * absent**, and assert a clean outline over a tree missing the very thing the
+ * page is made of. That is a false green, not a gap.
+ *
+ * For a page with non-`Text` headings, assert through
+ * `UNSAFE_getAllByProps({ role: "heading" })`, which walks the real tree, or
+ * measure in a browser.
  */
 const levelsOf = (): number[] =>
   screen.getAllByRole("heading").map((node) => Number(node.props["aria-level"]));
