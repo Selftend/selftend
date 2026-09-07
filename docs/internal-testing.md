@@ -52,15 +52,25 @@ New accounts receive the Home recommendation wizard once after consent. Finishin
 - archive saved record
 - review `/cbt/history` list and detail screen
 
-### Tools navigation
+### Home
 
-- sidebar shows Tools with CBT, Check-in, Meditation, ACT, and Gratitude log
-- Tools can collapse and expand
-- CBT can collapse and expand inside Tools, with History above Learn
-- CBT history is nested under CBT, not shown as a top-level navigation item
-- Check-in opens the working mood flow
-- Gratitude log can create, edit, list, open, and delete a private entry
-- Meditation and ACT show under-construction placeholder screens only
+Home carries the catalogue — every tool and module is reached from a card here, not from the
+navigation panel (#2085/#2106).
+
+- the Check-in card opens the working mood flow
+- the Gratitude log card can create, edit, list, open, and delete a private entry
+
+### Navigation panel
+
+The panel is the drawer behind the hamburger. It carries what surrounds the practice, never the
+practice itself.
+
+- the panel lists exactly seven rows, in this order: Home, Looking back, Routines, then a divider,
+  then Reminders, Settings, Support, Donate (six on a build with no `EXPO_PUBLIC_SPONSORS_URL` — the
+  Donate row drops rather than pointing at someone else's page, so check which build you are on)
+- no tool or module row appears anywhere in it, and there are no group headings
+- the row for the screen you are on is marked as the current page
+- Donate leaves the app and opens GitHub Sponsors in the browser
 
 ### Reminders
 
