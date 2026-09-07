@@ -216,10 +216,15 @@ describe("Disclosure as a full-width heading row (#2143)", () => {
     // the button's own focus and its expanded announcement with it. That is the
     // trade the wrapper accepts; see the component's docblock.
     const [heading] = screen.UNSAFE_getAllByProps({ role: "heading" });
-    // `Number(...)`, because `Text`'s heading variants set `aria-level` as a
-    // string while a level passed as a number stays one - the same precedent as
-    // `policy-heading-outline.test.tsx`.
-    expect(Number(heading.props["aria-level"])).toBe(3);
+    // Strict, and deliberately NOT through `Number(...)` as #2143 asks.
+    //
+    // That instruction generalises `policy-heading-outline.test.tsx`, which
+    // coerces because it reads a MIXED set: `ScreenHeader`'s variant contributes
+    // the string "1" via `text.tsx`'s `ARIA_LEVEL` map, while `CardTitle` passes
+    // a number. Here the level has one source - this component's caller - so it
+    // is always a number, the reason for coercing is absent, and `Number()`
+    // would only throw away the evidence that it stayed one.
+    expect(heading.props["aria-level"]).toBe(3);
 
     const trigger = within(heading).getByTestId("disclosure");
     expect(trigger.props.accessibilityRole).toBe("button");
