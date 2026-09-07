@@ -4,12 +4,11 @@ The product stays modular without implying planned tools are already ready.
 
 ## Current State
 
-The protected app sidebar (`src/components/app/sidebar-nav.tsx`) groups navigation as:
-
-- Home, Progress, Routines
-- Modules: CBT, ACT, DBT
-- Tools: Mood tracker, Journal, Breathing, Grounding, Gratitude log, Meditation, Sleep, Habits
-- Account: Notifications, Settings, Support
+Home carries the catalogue: every tool and every module is reached from a card on it, all of them
+sliced from the one `CATALOGUE` constant. The navigation panel (`src/components/app/sidebar-nav.tsx`)
+lists no tool and no module - it carries what surrounds the practice, and nothing else. The rule and
+the reasoning are in [ADR-0006](../adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md);
+`CONTEXT.md` defines the terms.
 
 **There is no Mindfulness entry.** The mindfulness library was absorbed into meditation in `bb5e7a9a` (2026-06-03) and its routes were deleted. Its practices are now an info-only reference section inside meditation (`/tools/meditation/practices`), and `5-4-3-2-1` is a grounding technique under `/tools/grounding`. Nothing in the app serves `/tools/mindfulness` or `/cbt/mindfulness`.
 

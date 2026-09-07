@@ -108,7 +108,7 @@ Indexes: `(user_id, logged_on desc)`, `(habit_id, logged_on desc)`.
 
 This module follows the contract in `tools.md`:
 
-- The habit module remains a **Tool**, not a clinical Module - habit formation is life-design, not a psychotherapy framework. Routes live under `/tools/habits/*`. The sidebar continues to list it under **Tools** (the existing `sidebar.habits` entry, with the **Soon** badge removed once Phase 1 ships).
+- The habit module remains a **Tool**, not a clinical Module - habit formation is life-design, not a psychotherapy framework. Routes live under `/tools/habits/*`. It is reached from its card on Home; the navigation panel lists no tools ([ADR-0006](../adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md)). The existing `sidebar.habits` entry is kept and still in use - it labels the breadcrumb and the shared-tool entries on the module homes.
 - No new `ModuleKey` is required; the feature ships under the existing tool route group. (If a future product decision elevates habits to its own enabled-modules toggle, add `"habits"` to `ModuleKey` in `src/features/modules/types.ts` and to `VALID_MODULES`.)
 - i18n namespace: `habits:*` - add `src/i18n/locales/en/habits.json` and `src/i18n/locales/bg/habits.json`. Both languages ship together.
 - New `user_preferences` field: `habitsOnboardingCompleted: boolean` (default `false`). Added to `UserPreferences`, `defaultUserPreferences`, the Supabase column, and the `export_user_data()` projection.

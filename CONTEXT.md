@@ -279,6 +279,24 @@ action reporting that a task is finished, not a way out of a screen, so neither 
 its enforcement gate governs it. A screen may carry both.
 _Avoid_: calling Done an escape hatch; a screen is not exempt from an Escape because it has a Done.
 
+**Panel** (not a way out):
+The navigation drawer behind the hamburger (`SidebarNav`, opened as an overlay), and the app's only
+navigation chrome on every platform — there is no desktop rail (#667). Not a way _out_ of a screen
+but a way _across_ to a peer, which is why it navigates `dangerouslySingular` rather than pushing.
+
+What it is for: **Home is the doing; the panel is everything around the doing** — the record
+(Looking back), the plans (Routines), the reminders, and the account, plus the outbound Donate row.
+Seven rows, no group headings, nothing per-person and nothing contextual (#2085/#2106).
+
+It is **not an index of the app**. Home carries the whole catalogue of tools and modules, drawn from
+one constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
+mirror a collection** ([ADR-0006](docs/adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md)).
+A hand-maintained second copy of a list is free to drift from the first, and — with no card to star
+— is a lesser copy besides. Home, Settings and Support are the permitted kind: each has a second
+door elsewhere, but a fixed row cannot drift, and duplicating one costs nothing.
+_Avoid_: calling it an index or a map of the app; a "you are here" row (the breadcrumb in the shared
+chrome already says where the user is, without anything being opened)
+
 ### Accounts ("optional registration")
 
 The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
