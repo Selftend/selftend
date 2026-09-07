@@ -408,8 +408,19 @@
     ]
   },
   "faq": {
-    "pageTitle": "FAQ",
-    "pageDescription": "Common questions about Selftend.",
+    "pageTitle": "Common questions",
+    "pageDescription": "What Selftend is, what it isn't, and what happens to what you write.",
+    "startHere": "Start here",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "stillNotAnswered": "Still not answered?",
+    "sendMessage": "Send a message",
+    "groups": {
+      "account": "Your account",
+      "privacy": "Privacy and data",
+      "usingIt": "Using the app",
+      "project": "The project"
+    },
     "sections": [
       {
         "title": "Is Selftend therapy?",

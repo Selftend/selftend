@@ -410,6 +410,17 @@
   "faq": {
     "pageTitle": "Често задавани въпроси",
     "pageDescription": "Често задавани въпроси за Selftend.",
+    "startHere": "Започни оттук",
+    "expandAll": "Разгъни всички",
+    "collapseAll": "Сгъни всички",
+    "stillNotAnswered": "Все още без отговор?",
+    "sendMessage": "Изпрати съобщение",
+    "groups": {
+      "account": "Твоят акаунт",
+      "privacy": "Поверителност и данни",
+      "usingIt": "Използване на приложението",
+      "project": "Проектът"
+    },
     "sections": [
       {
         "title": "Selftend терапия ли е?",

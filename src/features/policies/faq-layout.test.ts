@@ -1,7 +1,13 @@
 import { FAQ_ENTRY_INDEX, FAQ_LAYOUT, type FaqEntrySlug } from "@/src/features/policies/faq-layout";
+import bgPolicies from "@/src/i18n/locales/bg/policies.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
 
 const sections = enPolicies.faq.sections as { title: string; body: string[] }[];
+
+const locales = [
+  ["en", enPolicies],
+  ["bg", bgPolicies],
+] as const;
 
 /**
  * `FAQ_LAYOUT` places every FAQ entry exactly once (#2145).
@@ -100,5 +106,61 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
     for (const group of FAQ_LAYOUT.groups) {
       expect(group.entries.length).toBeGreaterThan(0);
     }
+  });
+
+  /**
+   * ☠️ **Every group key has a label, in both locales - and this is the one place
+   * the standing i18n gates are blind.**
+   *
+   * `/faq` resolves its group labels through a COMPOSED key,
+   * `` t(`faq.groups.${key}`) ``. `test/i18n-key-coverage.test.ts` reads literal
+   * `t("…")` strings out of the source and can never see this one, and
+   * `locale-parity` only compares the two JSON files with each other - so a fifth
+   * group added here with no label, or a `faq.groups` entry renamed in both
+   * locales at once, ships a heading that renders as the raw string
+   * `faq.groups.somethingElse` above real questions, with `verify` green.
+   *
+   * The reverse direction is checked too: a label with no group is a string
+   * translators are paying attention to for a heading nothing renders.
+   */
+  describe.each(locales)("%s labels every group and no more", (locale, policies) => {
+    const labels = (policies.faq as { groups?: Record<string, string> }).groups ?? {};
+
+    it("resolves a non-empty label for every group key", () => {
+      // Anti-vacuity: a `for` over an empty layout passes every iteration it
+      // never runs, and `FAQ_LAYOUT` is the thing under test here.
+      expect(FAQ_LAYOUT.groups.length).toBe(4);
+
+      for (const group of FAQ_LAYOUT.groups) {
+        const label = labels[group.key];
+        expect(typeof label).toBe("string");
+        expect(label.trim().length).toBeGreaterThan(0);
+        // A label that is its own key is what a missing translation looks like
+        // once i18next has fallen back to returning the key.
+        expect(label).not.toBe(`faq.groups.${group.key}`);
+      }
+    });
+
+    it("ships no label for a group that does not exist", () => {
+      expect(Object.keys(labels).sort()).toEqual(FAQ_LAYOUT.groups.map((g) => g.key).sort());
+    });
+
+    it("names the page's own strings, so the screen has nothing to hardcode", () => {
+      // The five keys `/faq` reads outside the corpus and the groups (#2147).
+      // `bg` deliberately keeps its own `pageTitle` / `pageDescription`, so those
+      // are not on this list - see `docs/i18n/bg-deliberate-divergence.md`.
+      const faq = policies.faq as unknown as Record<string, unknown>;
+      for (const key of [
+        "startHere",
+        "expandAll",
+        "collapseAll",
+        "stillNotAnswered",
+        "sendMessage",
+      ]) {
+        expect(typeof faq[key]).toBe("string");
+        expect((faq[key] as string).trim().length).toBeGreaterThan(0);
+      }
+      expect(locale).toMatch(/^(en|bg)$/);
+    });
   });
 });
