@@ -4,6 +4,7 @@ import {
   policyLastUpdated,
   policyVersion,
 } from "@/src/features/policies/policy-content";
+import { contactEmails } from "@/src/lib/env";
 import bgPolicies from "@/src/i18n/locales/bg/policies.json";
 import bgSettings from "@/src/i18n/locales/bg/settings.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
@@ -226,9 +227,43 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // two `faq` answers move nothing here, and that is correct rather than an
 // oversight: pageDescription is not inside `.sections`, and `faq` is not one of
 // the four consent-bearing keys. Only terms §3 and §5 moved this digest.
+// ⚠️ #2131 tranche 2 is the SIXTH digest-only move, and it is the largest by
+// count: 15 occurrences across all four consent-bearing sections - privacy ×10,
+// terms ×3, cookies ×1, accountDeletion ×1 - in both locales. Every one is the
+// same edit, `privacy@selftend.org` → `{{privacyEmail}}` and its two siblings,
+// so the addresses come from `EXPO_PUBLIC_*` through `contactEmails()` instead of
+// being written into the copy. Tranche 1 (`aeab011f`) did the `faq` five and
+// `settings`' health-data withdrawal route; these are the rest.
+//
+// Nothing DISCLOSED changed. For any build with the variables set - which every
+// first-party build is - the rendered address is byte-identical to what shipped
+// before. Not a processor, not a data field, not retention, not a right, not
+// eligibility, not liability. What changes is WHOSE address a fork publishes as
+// its own controller contact, which is the whole of #2131: a self-hoster was
+// telling strangers to send data-deletion requests to this project's inbox.
+//
+// ☠️ So why does a 15-string edit to consent-bearing copy not bump the version?
+// Because the version has ALREADY moved and has not shipped:
+//
+//     origin/main : 2026-08-27-feedback-processors
+//     origin/dev  : 2026-09-04-teen-floor   ← unreleased
+//
+// No user has ever been shown `2026-09-04-teen-floor`, so there is nobody whose
+// consent is attached to the text these 15 strings live in - there is nobody to
+// re-gate. And when teen-floor does release it re-gates everyone exactly once by
+// design (#1767 chose that as the delivery mechanism for the separated
+// health-data consent), so folding this in costs NOTHING additional: the same one
+// re-gate, carrying one more correction. That is the identical argument #1921 and
+// #1957 recorded above, and it is why this was worth doing before the release
+// rather than after: after it, the same edit is a real re-gate for a change that
+// discloses nothing.
+//
+// ☠️ This window is the reason for the timing, and it CLOSES at the next dev→main
+// release. A later pass that wants to move policy strings should check these two
+// refs before assuming the cost is zero - it will not be.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
-  englishDigest: "303efd286733c9deb5abe4b47cdff5e2312e19358e494b5e5b029f5fc3fde635",
+  englishDigest: "48a50348c22d1bd3c82d72cf3b84c41c5460395c63552e2f9f74ad51aea6f5bf",
 };
 
 describe("policy content - version pinning", () => {
@@ -267,8 +302,29 @@ describe.each(locales)("policy content - displayed %s section shapes", (locale, 
 });
 
 describe.each(locales)("policy content - required statements (%s)", (_locale, policies) => {
-  it("privacy policy mentions the privacy contact email", () => {
-    expect(flatBody(policies.privacy.sections)).toContain("privacy@selftend.org");
+  /**
+   * ☠️ Asserts the RESOLVED contact, not the source spelling. #2131 moved these
+   * addresses out of the copy and into `EXPO_PUBLIC_*`, so the JSON now reads
+   * `{{privacyEmail}}` and a `toContain("privacy@selftend.org")` over the raw
+   * body would fail on a policy that is perfectly correct.
+   *
+   * Resolving through `contactEmails()` keeps this a REQUIRED-STATEMENT guard
+   * rather than a spelling check: it still goes red if the clause is deleted, and
+   * it now also goes red if the placeholder is typo'd into something no call site
+   * supplies — which would print raw braces on the policy page, silently, since
+   * i18next routes that warning through a debug logger this app never enables.
+   */
+  it("privacy policy routes the reader to the privacy contact", () => {
+    const supplied = contactEmails() as unknown as Record<string, string>;
+    const resolved = flatBody(policies.privacy.sections).replace(
+      /\{\{\s*(\w+)\s*\}\}/g,
+      (raw, name: string) => supplied[name] ?? raw,
+    );
+
+    expect(resolved).toContain(contactEmails().privacyEmail);
+    // The resolution must have actually happened - an unsupplied variable would
+    // leave the braces behind and still satisfy a looser assertion.
+    expect(resolved).not.toMatch(/\{\{/);
   });
 
   // The floor itself is guarded country by country in `policy-age-floor.test.ts`,
