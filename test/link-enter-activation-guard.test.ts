@@ -71,7 +71,7 @@ const ANCHOR_BACKED: { file: string; href: string; reason: string }[] = [
     file: "src/components/app/sidebar-nav.tsx",
     href: "item.href",
     reason:
-      "the route rows - singular Links (the donate row is not one; it carries the helper). #1841 folded the group hubs in here: `All tools` and `All modules` are ordinary rows, so `item.href` covers them and the separate group-label anchor below this entry is gone",
+      "the route rows - singular Links (the donate row is not one; it carries the helper). One site, keyed on `item.href`, covering every routed row in the panel: Home, Looking back, Routines, Reminders, Settings and Support",
   },
 ];
 
