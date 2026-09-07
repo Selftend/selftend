@@ -117,7 +117,7 @@ The Play URL additionally drives the Android mobile-web download bar, and the **
 
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
 
-Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide that link - each community link is independently removable by config. The GitHub source link is always shown.
+Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide every link to it - each community link is independently removable by config. Each drives three surfaces: the navigation panel's social row, the landing footer, and one row on the support page - the subreddit under "Other ways to reach us", because it reaches people who answer, and the channel under "The project", because it does not. The GitHub source link is always shown.
 
 Donations: `EXPO_PUBLIC_SPONSORS_URL` defaults in code to the maintainer's GitHub Sponsors page and drives exactly one surface, the Donate row at the end of the app sidebar. A fork must set it to its own page or to an empty string, which removes the row - never ship a build that sends your users to someone else's donation page. The repository's own Sponsor button comes from `.github/FUNDING.yml`, which a fork edits separately.
 

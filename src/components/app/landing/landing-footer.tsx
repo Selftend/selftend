@@ -10,14 +10,16 @@ import { openExternalUrl } from "@/src/lib/linking";
 /**
  * Landing page footer: the same full safety disclaimer and crisis/terms/
  * privacy/cookies link row as `AuthLandingBlock` (the auth screen's version
- * of this notice), extended with FAQ and, when configured, Discord and the
- * subreddit.
+ * of this notice), extended with FAQ and, when configured, Discord, the
+ * subreddit and the YouTube channel.
  *
- * ☠️ The subreddit link takes `header.joinReddit`, NOT the `header.openReddit`
- * that already existed: that one is the accessible name of an icon-only button
- * in the nav panel's social row, phrased as an instruction ("Open the Selftend
- * subreddit"). Visible text in a row of one- and two-word labels needs the
- * short form, and it is the same string the support page's row carries.
+ * ☠️ The last two take `header.joinReddit` and `header.watchYoutube`, NOT the
+ * `header.openReddit` / `header.openYoutube` that already existed: those are
+ * the accessible names of icon-only buttons in the nav panel's social row, and
+ * they are phrased as instructions ("Open the Selftend subreddit"). Visible
+ * text in a row of one- and two-word labels needs the short form, and it is
+ * the same string the support page's rows carry. Both instruction forms keep
+ * their icon-button job untouched.
  *
  * Deliberately the quietest thing on the page: a hairline top border sets it
  * off as closing material rather than another pitch, and the tighter gap (3,
@@ -57,6 +59,11 @@ export function LandingFooter() {
         {appEnv.redditUrl ? (
           <Button onPress={() => openExternalUrl(appEnv.redditUrl)} variant="link" size="sm">
             <Text className="text-xs">{t("navigation:header.joinReddit")}</Text>
+          </Button>
+        ) : null}
+        {appEnv.youtubeUrl ? (
+          <Button onPress={() => openExternalUrl(appEnv.youtubeUrl)} variant="link" size="sm">
+            <Text className="text-xs">{t("navigation:header.watchYoutube")}</Text>
           </Button>
         ) : null}
       </View>
