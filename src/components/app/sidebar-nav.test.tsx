@@ -11,9 +11,10 @@ jest.mock("@/src/lib/linking", () => ({ openExternalUrl: jest.fn() }));
 
 /**
  * The panel reads `usePathname()` to decide which row is current, so a test about
- * an active state has to be able to move it. Default "/" keeps every existing case
- * exactly as it was; `beforeEach` puts it back, so one case cannot leak a route
- * into the next. The `mock` prefix is what lets the factory below close over it.
+ * an active state has to be able to move it. Default "/" is Home, which is where
+ * every case that does not care about the route wants to be; `beforeEach` puts it
+ * back, so one case cannot leak a route into the next. The `mock` prefix is what
+ * lets the factory below close over it.
  */
 let mockPathname = "/";
 
@@ -54,44 +55,61 @@ function textsInRow(accessibilityLabel: string): string[] {
 }
 
 /**
- * The sidebar carried a status chip on all three module rows: DBT read "Soon"
- * over a screen headed "On the roadmap", and CBT and ACT both read "Beta"
- * despite being fully usable. Apple cited build 6 under Guideline 2.1 *App
- * Completeness* (#998), which is exactly what a nav entry advertising a module
- * the app does not have invites. #1020 took all three off.
+ * ☠️ The panel is not a catalogue (#2085, ruled on map #2083): **it may duplicate a
+ * fixed door, it may not mirror a collection.** The eleven tool and module rows and
+ * the two hub rows left with #2106 — Home carries the catalogue now, and a
+ * hand-maintained `NavItemDef[]` beside it was a second list free to drift.
  *
- * These assertions count the text nodes in a row rather than querying for the
- * words that were removed. A `queryByText("Soon")).toBeNull()` passes just as
- * happily when the chip returns under new wording, or when the row stops
- * rendering altogether - it rots into a test of nothing. One label and nothing
- * beside it is the property that actually holds.
+ * ☠️ Asserted as an EXACT set, in order, and never as `queryByText("All tools")).toBeNull()`
+ * — an absence check on a deleted i18n key passes unconditionally and rots into a test of
+ * nothing. An equality on the whole rendered set fails both ways: a catalogue row creeping
+ * back in, and a surviving row going missing.
  */
-describe("SidebarNav module rows", () => {
-  it.each([
-    ["CBT", "CBT module - Cognitive Behavioural Therapy"],
-    ["ACT", "ACT module - Acceptance and Commitment Therapy"],
-    ["DBT", "DBT module - Dialectical Behaviour Therapy"],
-  ])("renders %s as a bare label with no status chip beside it", (label, accessibilityLabel) => {
+describe("SidebarNav panel contents", () => {
+  it("renders exactly the seven destinations, in order", () => {
     renderWithProviders(<SidebarNav />);
 
-    expect(textsInRow(accessibilityLabel)).toEqual([label]);
+    const labels = screen.getAllByRole("link").map((link) => String(link.props.accessibilityLabel));
+
+    expect(labels).toEqual([
+      "Home",
+      "Looking back",
+      "Routines",
+      "Reminders",
+      "Settings",
+      "Support",
+      "Donate to Selftend on GitHub Sponsors - opens in your browser",
+    ]);
   });
 
-  // The chip is the visible half; a screen reader heard the other half. The DBT
-  // row announced itself as "(coming soon)" whether or not the pill rendered.
-  it("announces DBT without a coming-soon suffix", () => {
+  /**
+   * ☠️ The two branches `isActive` has left, asserted together because they are each
+   * other's counterexample. The hub rows took the exact-match `activeWhen` predicate with
+   * them (#2106) and with it every case that moved `usePathname` - leaving `matchPrefix`
+   * and Home's `null` branch, which six rows and one row respectively depend on, with no
+   * coverage at all. Home is the one that can only fail silently: its `null` means "current
+   * on `/` alone", and a row that quietly claims to be the current page everywhere is a
+   * wrong `aria-current`, not a visible break.
+   *
+   * ☠️ A NESTED path, deliberately: `/routines` on its own equals the prefix, so
+   * `pathname.startsWith(matchPrefix)` would pass identically if it were written `===` and
+   * the prefix half - the whole reason the field is a prefix - would go untested. A row
+   * deeper in the section is what a person actually has on screen most of the time.
+   */
+  it("marks the row for the current route, and only that row", () => {
+    mockPathname = "/routines/morning-reset";
     renderWithProviders(<SidebarNav />);
 
-    expect(screen.getByLabelText("DBT module - Dialectical Behaviour Therapy")).toBeTruthy();
-    expect(screen.queryByLabelText(/coming soon/i)).toBeNull();
+    expect(screen.getByLabelText("Routines").props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText("Home").props.accessibilityState.selected).toBe(false);
+    expect(screen.getByLabelText("Settings").props.accessibilityState.selected).toBe(false);
   });
 
-  it("still lists all three modules", () => {
+  it("marks Home current on the root path", () => {
     renderWithProviders(<SidebarNav />);
 
-    for (const label of ["CBT", "ACT", "DBT"]) {
-      expect(screen.getByText(label)).toBeTruthy();
-    }
+    expect(screen.getByLabelText("Home").props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText("Routines").props.accessibilityState.selected).toBe(false);
   });
 });
 
@@ -123,78 +141,29 @@ describe("SidebarNav link identity", () => {
   });
 
   // Guards the assertion above against passing vacuously: an empty-array expectation is
-  // satisfied forever by a render that produces no links at all. Named destinations
-  // rather than a count, so adding a nav item doesn't fail a test about something else.
+  // satisfied forever by a render that produces no links at all. Named destinations rather
+  // than a count, so adding a nav item doesn't fail a test about something else - and
+  // containment rather than equality on purpose, because the ordered set at the top of this
+  // file is already the one place the seven rows are enumerated. A wrong href still fails
+  // here: the expected one is then absent.
   it("actually renders the destinations that assertion is about", () => {
-    renderWithProviders(<SidebarNav />);
-
-    const hrefs = screen.getAllByRole("link").map((link) => String(link.props.href));
-
-    expect(hrefs).toEqual(expect.arrayContaining(["/(app)", "/(app)/routines", "/(app)/settings"]));
-  });
-});
-
-/**
- * The two hub rows (#1841).
- *
- * ☠️ **`/tools` and `/modules` were reachable only from their own group label** — an
- * 11px uppercase muted section header. Both were genuine links with an active state,
- * so a test asserting "something links to /tools" was green throughout the defect and
- * would be green again if the rows were deleted tomorrow. These cases are written to
- * fail on the old code instead: they key on the row's own accessible name, which the
- * heading never had, and on the heading having stopped being a link at all.
- */
-describe("SidebarNav hub rows (#1841)", () => {
-  it("gives each hub a destination row of its own, named as a row and not as a heading", () => {
-    renderWithProviders(<SidebarNav />);
-
-    for (const [label, href] of [
-      ["All tools", "/tools"],
-      ["All modules", "/modules"],
-    ]) {
-      const row = screen.getByLabelText(label);
-      expect(String(row.props.href)).toBe(href);
-    }
-  });
-
-  it("leaves the group headings as headings - no second, invisible link to the same place", () => {
     renderWithProviders(<SidebarNav />);
 
     const hrefs = screen
       .getAllByRole("link")
-      .map((link) => String(link.props.href))
-      .filter((href) => href === "/tools" || href === "/modules");
+      .filter((link) => link.props.href !== undefined)
+      .map((link) => String(link.props.href));
 
-    // Exactly one route each: the row. Two would mean the heading is still a link.
-    expect(hrefs.sort()).toEqual(["/modules", "/tools"]);
-  });
-
-  it("sits at the end of its group, after the last item in it", () => {
-    renderWithProviders(<SidebarNav />);
-
-    const labels = screen.getAllByRole("link").map((link) => String(link.props.accessibilityLabel));
-
-    expect(labels.indexOf("All tools")).toBeGreaterThan(labels.indexOf("Habit tracking"));
-    expect(labels.indexOf("All modules")).toBeGreaterThan(labels.indexOf("All tools"));
-  });
-
-  /**
-   * ☠️ The reason `activeWhen` is an exact match rather than `matchPrefix: "/tools"`.
-   * A prefix lights this row on all eight tool pages beneath it, so the hub would read
-   * as the current page while a different row was - and on native `aria-selected` folds
-   * into `accessibilityState.selected` before the host node sees it.
-   */
-  it("is current on the hub itself and never on a tool beneath it", () => {
-    mockPathname = "/tools";
-    renderWithProviders(<SidebarNav />);
-    expect(screen.getByLabelText("All tools").props.accessibilityState.selected).toBe(true);
-    screen.unmount();
-
-    mockPathname = "/tools/journal";
-    renderWithProviders(<SidebarNav />);
-    expect(screen.getByLabelText("All tools").props.accessibilityState.selected).toBe(false);
-    // The row that IS current says so, so this is not just "nothing is selected".
-    expect(screen.getByLabelText("Journal").props.accessibilityState.selected).toBe(true);
+    expect(hrefs).toEqual(
+      expect.arrayContaining([
+        "/(app)",
+        "/(app)/progress",
+        "/(app)/routines",
+        "/(app)/notifications",
+        "/(app)/settings",
+        "/(app)/support",
+      ]),
+    );
   });
 });
 
