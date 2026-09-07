@@ -421,7 +421,14 @@
       "usingIt": "Using the app",
       "project": "The project"
     },
-    "parentsSubheads": ["What it is", "Minimum age", "On data", "On design", "Reaching us"],
+    "parentsSubheads": [
+      "What it is",
+      "Minimum age",
+      "On data",
+      "On design",
+      "Removing an account",
+      "Reaching us"
+    ],
     "sections": [
       {
         "title": "Is Selftend therapy?",
@@ -484,7 +491,8 @@
           "There is a minimum age, asked before anyone starts: 13 in most countries and higher in several, following the age at which a person may consent to this kind of data processing where they live. The privacy policy lists it country by country.",
           "No adverts, no advertising or analytics SDKs, no profiling, and nothing sold or shared for marketing. Entries are private to the account and encrypted at rest, with the encryption key held outside the database. Registering is optional - the app works without an email address - and everything can be exported or permanently deleted from Settings at any time.",
           "Reminders are off until someone turns them on, and go off again in one tap. Every message the app sends is one the person asked for - none of it is triggered by them being away.",
-          "If you believe someone below the minimum age for their country is using Selftend, write to {{privacyEmail}} with what you can tell us; we delete the account and its data on becoming aware. You can also ask us to delete an account belonging to a child you are responsible for. For anything else, {{supportEmail}} reaches us."
+          "If you believe someone below the minimum age for their country is using Selftend, write to {{privacyEmail}} with what you can tell us; we delete the account and its data on becoming aware. You can also ask us to delete an account belonging to a child you are responsible for.",
+          "For anything else, {{supportEmail}} reaches us."
         ]
       },
       {

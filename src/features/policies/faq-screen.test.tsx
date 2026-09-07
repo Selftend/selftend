@@ -254,14 +254,15 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
       3,
       3,
       3,
-      3, // its five sub-heads (#2149)
+      3,
+      3, // its six sub-heads (#2149)
     ]);
   });
 
   /**
-   * ☠️ **The letter's five sub-heads, each one directly above the paragraph it
-   * names (#2149).** Asserted as an INTERLEAVING rather than as five presence
-   * checks: five `getByText`s would pass just as happily with all five headings
+   * ☠️ **The letter's six sub-heads, each one directly above the paragraph it
+   * names (#2149).** Asserted as an INTERLEAVING rather than as six presence
+   * checks: six `getByText`s would pass just as happily with all six headings
    * stacked at the top of the block, or with the zip off by one and every
    * paragraph filed under its neighbour's label. Reading the rendered order
    * pins heading→body→heading→body, which is the only arrangement that means
@@ -279,7 +280,7 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
     const subheads = en.parentsSubheads;
 
     // Anti-vacuity, and the same equality `faq-layout.test.ts` guards per locale.
-    expect(subheads).toHaveLength(5);
+    expect(subheads).toHaveLength(6);
     expect(letter.body).toHaveLength(subheads.length);
 
     const interleaved = subheads.flatMap((subhead, index) => [
