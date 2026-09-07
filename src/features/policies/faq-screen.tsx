@@ -53,10 +53,11 @@ const COLLAPSIBLE: readonly FaqEntrySlug[] = FAQ_LAYOUT.groups.flatMap((group) =
  *
  * The heading outline, end to end: h1 page title → h3 callout title → h3 crisis
  * question → h2 *Start here* → h3 ×4 pinned questions → h2 ×4 group labels →
- * h3 ×8 group questions → h2 parents' letter. The callout's own level 3 is left
- * alone: `/support` already ships this exact h1 → h3 → h2 order, so `/faq`
- * inherits its sibling's outline instead of inventing one (#2137 owns the
- * cross-screen question, on all five call sites at once).
+ * h3 ×8 group questions → h2 parents' letter → h3 ×5 of its sub-heads (#2149).
+ * The callout's own level 3 is left alone: `/support` already ships this exact
+ * h1 → h3 → h2 order, so `/faq` inherits its sibling's outline instead of
+ * inventing one (#2137 owns the cross-screen question, on all five call sites
+ * at once).
  */
 export function FaqScreen() {
   const { t } = useTranslation("policies");
@@ -75,6 +76,11 @@ export function FaqScreen() {
   // The guard stays with the caller, as it does in `InfoScreen` and `/security`:
   // `t(key, { returnObjects: true })` returns a STRING when the key is missing.
   const entries = Array.isArray(sections) ? sections : [];
+
+  // The parents' letter's five sub-heads (#2149), positionally aligned with that
+  // entry's five paragraphs. Same missing-key guard as the corpus above.
+  const parentsSubheads = t("faq.parentsSubheads", { returnObjects: true }) as string[];
+  const subheads = Array.isArray(parentsSubheads) ? parentsSubheads : [];
   const entryOf = (slug: FaqEntrySlug): PolicySection | undefined => entries[FAQ_ENTRY_INDEX[slug]];
   /*
     Resolve a run of slugs, dropping any the corpus does not carry. The drop is
@@ -173,7 +179,7 @@ export function FaqScreen() {
                 {letter.title}
               </Text>
             </View>
-            <FaqAnswerBody body={letter.body} />
+            <FaqLetterBody body={letter.body} subheads={subheads} />
           </Section>
         ) : null}
       </View>
@@ -221,6 +227,44 @@ function FaqDisclosureRow({
     >
       <FaqAnswerBody body={entry.body} />
     </Disclosure>
+  );
+}
+
+/**
+ * The parents' letter, as five labelled passages rather than five paragraphs (#2149).
+ *
+ * ☠️ **The sub-heads are not decoration — they are the labelling this entry used
+ * to carry inline.** Two of its paragraphs opened `On data: ` / `On design: `,
+ * which is why stripping those prefixes and rendering these headings had to be
+ * one commit: either half alone leaves the longest single entry on the page -
+ * and the one a guardian arrives specifically to read - *less* signposted than
+ * it shipped.
+ *
+ * The zip is positional, and `parentsSubheads` is an array for exactly that
+ * reason — `faq-layout.test.ts` asserts the two lengths are equal in **both**
+ * locales, so neither a headless paragraph nor a bodiless sub-head can render.
+ * Guarding the index here too is the belt to that braces: a locale that somehow
+ * arrived short degrades to today's unlabelled paragraph rather than printing
+ * `undefined` into a page about how to reach us.
+ *
+ * Level 3 under the letter's 19px h2, and quiet: same `text-sm` as the body it
+ * introduces, separated by weight and by taking the foreground colour rather
+ * than by size. A larger sub-head would out-shout the block heading above it.
+ */
+function FaqLetterBody({ body, subheads }: { body: string[]; subheads: string[] }) {
+  return (
+    <View className="gap-4">
+      {body.map((paragraph, index) => (
+        <View key={index} className="gap-1">
+          {subheads[index] ? (
+            <Text role="heading" aria-level={3} className="text-sm font-semibold text-foreground">
+              {subheads[index]}
+            </Text>
+          ) : null}
+          <Text variant="muted">{paragraph}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
