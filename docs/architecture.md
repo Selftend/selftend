@@ -52,7 +52,7 @@ app/
 ├── account-deletion.tsx   public
 ├── faq.tsx                public
 ├── security.tsx           public
-├── (auth)/                sign-up, verify-email, reset-password, update-password, auth-callback
+├── (auth)/                sign-in, sign-up, verify-email, reset-password, update-password, auth-callback
 └── (app)/                 protected app shell
     ├── index.tsx          home
     ├── settings.tsx       settings
