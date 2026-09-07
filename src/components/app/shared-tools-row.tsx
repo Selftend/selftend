@@ -50,7 +50,9 @@ interface SharedToolsRowProps {
 export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   const { t } = useTranslation("navigation");
   // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
-  // Up climbs to `/tools` and never back to the module the user was working in.
+  // Up goes to Home and never back to the module the user was working in. (Up
+  // was `/tools` until #2096 made the segment transparent; the conclusion is
+  // unchanged - it was never the module either way.)
   // These are the off-trail pushes #1192 landed hours after the escape rule was
   // charted - the growth that made recording opt-out rather than opt-in. #1192
   // landed nine of them; the set is EIGHT today, and the count is pinned in

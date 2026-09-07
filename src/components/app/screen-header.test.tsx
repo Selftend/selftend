@@ -23,7 +23,10 @@ beforeAll(async () => {
 describe("ScreenHeader", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseBreadcrumbs.mockReturnValue([{ label: "Tools", href: "/tools" }, { label: "Check-in" }]);
+    mockUseBreadcrumbs.mockReturnValue([
+      { label: "Check-in", href: "/tools/check-in" },
+      { label: "History" },
+    ]);
   });
 
   it("renders the title", () => {

@@ -26,11 +26,9 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
-    "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
     "habits": "Habit tracking",
-    "tools": "Tools",
     "donate": "Donate",
     "donateA11y": "Donate to Selftend on GitHub Sponsors - opens in your browser"
   },

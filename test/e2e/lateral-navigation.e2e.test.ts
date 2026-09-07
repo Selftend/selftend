@@ -16,8 +16,22 @@ import { test, expect } from "./fixtures";
 
 import { dismissPostSignInModals } from "./helpers";
 
-/** One per mounted `/modules` screen. */
-const modulesRoots = (page: Page) => page.locator('h1:text-is("Modules")').count();
+/**
+ * One per mounted `/tools/check-in` screen.
+ *
+ * The subject moved here on #2096: this used to count `/modules`, whose own
+ * breadcrumb was the ancestor being returned to. There is no `Modules` crumb any
+ * more - `modules` is a transparent segment and `/modules/cbt` is its own top
+ * crumb - so the guard needed a surviving two-crumb trail rather than a deleted
+ * assertion. The bug it protects against is untouched by that.
+ *
+ * ⚠️ A TOOL home, not a module home. `ModuleHomeHeader` composes a count into the
+ * stat line beside its title, so `text-is` on a module home is a locator that
+ * breaks when the data changes; check-in's `<h1>` is the bare title. Both this
+ * header and the `ScreenHeader` this used to count render through
+ * `Text variant="h1"`, so the locator shape is unchanged.
+ */
+const checkInRoots = (page: Page) => page.locator('h1:text-is("Check-in")').count();
 
 /** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
 const privacyRoots = (page: Page) =>
@@ -36,31 +50,35 @@ const privacyRoots = (page: Page) =>
  */
 
 test("a breadcrumb returns to its ancestor instead of stacking a second copy", async ({ page }) => {
-  await page.goto("/modules");
-  await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible({
+  await page.goto("/tools/check-in");
+  await expect(page.getByRole("heading", { name: "Check-in", exact: true, level: 1 })).toBeVisible({
     timeout: 15_000,
   });
   await dismissPostSignInModals(page);
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await checkInRoots(page)).toBe(1);
 
-  // Down one level, so `/modules` is now an ancestor sitting in the stack. By testID: the
-  // card carries no `accessibilityLabel` (#1955), so its accessible name is every child it
-  // renders - the mark, the name and the subtitle - and no longer the name alone.
-  await page.getByTestId("card-module-cbt").click();
-  await expect(page).toHaveURL(/\/modules\/cbt$/, { timeout: 15_000 });
+  // Down one level, so `/tools/check-in` is now an ancestor sitting in the stack. The
+  // week strip's own door to all history is the one in-app route down; a `page.goto`
+  // here would defeat the test, because the ancestor has to be IN the stack for the
+  // duplicate to be possible at all.
+  await page.getByRole("link", { name: /Show all history/ }).click();
+  await expect(page).toHaveURL(/\/tools\/check-in\/history$/, { timeout: 15_000 });
 
-  // The breadcrumb's `Modules` crumb targets that ancestor. Before #1027 this pushed a
-  // second `/modules`, and every hook on it ran twice from then on.
-  await page.getByRole("link", { name: "Modules", exact: true }).first().click();
-  await expect(page).toHaveURL(/\/modules$/, { timeout: 15_000 });
+  // The breadcrumb's `Check-in` crumb targets that ancestor. Before #1027 this pushed a
+  // second `/tools/check-in`, and every hook on it ran twice from then on. The crumb is
+  // unambiguous now that the panel carries no per-tool rows (#2106), but `.first()` is
+  // kept: this test is about counting duplicates, so it must never be the thing that
+  // trips strict mode.
+  await page.getByRole("link", { name: "Check-in", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
   // `.last()`, and deliberately: with the duplicate present `.first()` is the HIDDEN
   // backgrounded copy, so this readiness wait would fail on visibility and the duplicate
   // would be reported as "not visible" rather than by the COUNT below, which names it.
   await expect(
-    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
+    page.getByRole("heading", { name: "Check-in", exact: true, level: 1 }).last(),
   ).toBeVisible({ timeout: 15_000 });
 
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await checkInRoots(page)).toBe(1);
 
   // Back, measured on this surface rather than assumed from the policy one: the ticket's
   // own point is that "a breadcrumb's Back expectation is not a settings menu's". Singular
@@ -69,9 +87,9 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
   // come back with it.
   await page.goBack();
   await expect(
-    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
+    page.getByRole("heading", { name: "Check-in", exact: true, level: 1 }).last(),
   ).toBeVisible({ timeout: 15_000 });
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await checkInRoots(page)).toBe(1);
 });
 
 test("policy pages that cross-link do not stack copies of each other", async ({ page }) => {

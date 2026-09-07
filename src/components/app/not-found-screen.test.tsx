@@ -46,14 +46,20 @@ describe("NotFoundScreen", () => {
   });
 
   it("escapes to the deepest real ancestor of the attempted path", () => {
-    mockPathname = "/tools/definitely-not-a-tool";
+    // ☠️ The subject moved on #2096, and the rule did not. This drove
+    // `/tools/definitely-not-a-tool` → "Back to Tools" until `/tools` stopped
+    // being a page the trail can name; that path now has no named ancestor at
+    // all and escapes to Home, which is the case ABOVE. Deleting this one would
+    // have left the deepest-real-ancestor rule with no subject, so it takes a
+    // path that still has one instead.
+    mockPathname = "/modules/cbt/definitely-not-a-thing";
     renderWithProviders(<NotFoundScreen />);
 
-    // `/tools` exists and the trail can name it, so the Escape offers it
+    // `/modules/cbt` exists and the trail can name it, so the Escape offers it
     // rather than discarding the user's place with a jump to Home.
-    fireEvent.press(screen.getByLabelText("Back to Tools"));
+    fireEvent.press(screen.getByLabelText("Back to CBT"));
 
-    expect(router.replace).toHaveBeenCalledWith("/tools");
+    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
   });
 
   // The AC is "replaced, not kept alongside" (R1 - two exits are two

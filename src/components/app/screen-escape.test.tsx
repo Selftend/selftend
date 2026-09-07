@@ -46,7 +46,6 @@ describe("ScreenEscape", () => {
 
   it("climbs to the deepest ancestor crumb, replacing rather than pushing", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
@@ -68,18 +67,24 @@ describe("ScreenEscape", () => {
   it("labels the close glyph 'Close', never the destination", () => {
     // The label follows the glyph, not the destination: on a form the promise is
     // *abandoning* this, and where it lands is secondary (R6).
-    mockUseBreadcrumbs.mockReturnValue([{ label: "Tools", href: "/tools" }, { label: "New" }]);
+    mockUseBreadcrumbs.mockReturnValue([
+      { label: "Gratitude log", href: "/tools/gratitude-log" },
+      { label: "New" },
+    ]);
     const { getByLabelText, queryByLabelText } = render(<ScreenEscape glyph="close" />);
     expect(getByLabelText("Close")).toBeTruthy();
-    expect(queryByLabelText("Back to Tools")).toBeNull();
+    expect(queryByLabelText("Back to Gratitude log")).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
   });
 
   it("does the same structural hop under either glyph", () => {
-    mockUseBreadcrumbs.mockReturnValue([{ label: "Tools", href: "/tools" }, { label: "New" }]);
+    mockUseBreadcrumbs.mockReturnValue([
+      { label: "Gratitude log", href: "/tools/gratitude-log" },
+      { label: "New" },
+    ]);
     const { getByLabelText } = render(<ScreenEscape glyph="close" />);
     fireEvent.press(getByLabelText("Close"));
-    expect(router.replace).toHaveBeenCalledWith("/tools");
+    expect(router.replace).toHaveBeenCalledWith("/tools/gratitude-log");
   });
 });
 
@@ -101,7 +106,6 @@ describe("ScreenEscape - naming the destination", () => {
 
   it("names the crumb it actually hops to, not the deepest named one", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Modules", href: "/modules" },
       { label: "CBT", href: "/modules/cbt" },
       { label: "Goals", href: "/modules/cbt/goals" },
       { label: "Entry" },
@@ -114,7 +118,6 @@ describe("ScreenEscape - naming the destination", () => {
     // `/tools/journal/[id]/edit`: Up is the record, whose crumb is the generic
     // fallback. "Back to Entry" and "Back to Journal" are both lies.
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Journal", href: "/tools/journal" },
       { label: "Entry", href: "/tools/journal/3f9a-uuid", unresolved: true },
       { label: "Edit" },
@@ -127,7 +130,6 @@ describe("ScreenEscape - naming the destination", () => {
 
   it("still hops to the unnamed record even though it will not name it", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Journal", href: "/tools/journal" },
       { label: "Entry", href: "/tools/journal/3f9a-uuid", unresolved: true },
       { label: "Edit" },
@@ -141,7 +143,6 @@ describe("ScreenEscape - naming the destination", () => {
     // The record's own crumb is unnamed, but Up from the detail screen is the
     // list above it - which has a perfectly good name.
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Journal", href: "/tools/journal" },
       { label: "Entry", unresolved: true },
     ]);

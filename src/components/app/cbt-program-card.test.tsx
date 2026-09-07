@@ -247,8 +247,9 @@ describe("CbtProgramCard", () => {
     /**
      * A programme task that leaves its own module (#1265, O3). CBT's daily
      * practice is the shared check-in, which lives under `/tools`, so its Up
-     * climbs to `/tools` and drops the user out of the programme they were
-     * working through.
+     * goes to Home and drops the user out of the programme they were working
+     * through. (It climbed to `/tools` until #2096; either way it was never
+     * back to CBT, which is the part this test is about.)
      *
      * On the store, not on `router.push`: the helper pushes through
      * `router.push`, so the assertion above holds identically whether or not

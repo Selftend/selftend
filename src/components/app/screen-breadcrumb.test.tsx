@@ -32,18 +32,18 @@ describe("ScreenBreadcrumb", () => {
 
   it("renders the trail and pushes to a parent crumb on press", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
-      { label: "Mindfulness" },
+      { label: "Meditation", href: "/tools/meditation" },
+      { label: "Practices" },
     ]);
     const { getByText, getByRole, queryByRole } = render(<ScreenBreadcrumb />);
-    expect(getByText("Mindfulness")).toBeTruthy();
+    expect(getByText("Practices")).toBeTruthy();
     // The current (last) crumb is not a link.
-    expect(queryByRole("link", { name: "Mindfulness" })).toBeNull();
-    fireEvent.press(getByRole("link", { name: "Tools" }));
+    expect(queryByRole("link", { name: "Practices" })).toBeNull();
+    fireEvent.press(getByRole("link", { name: "Meditation" }));
     // `dangerouslySingular` is part of what a crumb press IS (#1027): a crumb targets an
     // ancestor, so without it the press mounts a SECOND copy of a screen already in the
     // stack. Asserted with the option, not just the href.
-    expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
+    expect(router.push).toHaveBeenCalledWith("/tools/meditation", { dangerouslySingular: true });
   });
 
   // R7 (#1250): this component is the trail and nothing else. The leading
@@ -51,7 +51,6 @@ describe("ScreenBreadcrumb", () => {
   // it vanish on every one-crumb screen - so it must not creep back in.
   it("renders links only - the leading affordance is not its to draw", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
@@ -84,16 +83,16 @@ describe("ScreenBreadcrumb", () => {
     it("a parent crumb activates on Enter, once, with the same singular push a pointer makes", () => {
       setPlatformOS("web");
       mockUseBreadcrumbs.mockReturnValue([
-        { label: "Tools", href: "/tools" },
-        { label: "Mindfulness" },
+        { label: "Meditation", href: "/tools/meditation" },
+        { label: "Practices" },
       ]);
       const { getByRole } = render(<ScreenBreadcrumb />);
 
-      const crumb = getByRole("link", { name: "Tools" });
+      const crumb = getByRole("link", { name: "Meditation" });
       const preventDefault = jest.fn();
       crumb.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
       expect(router.push).toHaveBeenCalledTimes(1);
-      expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
+      expect(router.push).toHaveBeenCalledWith("/tools/meditation", { dangerouslySingular: true });
       expect(preventDefault).toHaveBeenCalledTimes(1);
 
       crumb.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
