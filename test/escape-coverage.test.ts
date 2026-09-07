@@ -253,7 +253,7 @@ describe("the route population (pinned, G5)", () => {
     expect(ROUTES).toHaveLength(156);
   });
 
-  it("derives exactly the eight <Redirect>-only stubs", () => {
+  it("derives exactly the ten <Redirect>-only stubs", () => {
     expect(redirectStubs).toEqual([
       // #1379 folded the alignment check-in onto the values screen, so this
       // route became a stub. The file is MANDATORY rather than deletable: the
@@ -262,7 +262,15 @@ describe("the route population (pinned, G5)", () => {
       // docblock. Pinned here deliberately, which is what this block is for.
       "app/(app)/modules/act/values/bulls-eye.tsx",
       "app/(app)/modules/cbt/[id].tsx",
+      // 8 → 10 with #2114: `/tools` and `/modules` stopped being pages. Both
+      // files re-exported a hub screen, which put them in `covered` below; they
+      // now render `<Redirect href="/" />` and nothing else, so the shape-derived
+      // classification moves them here. No route file was added or removed -
+      // `ROUTES` is still 156 - and neither URL moved. Each file's own docblock
+      // says why it survives its screen.
+      "app/(app)/modules/index.tsx",
       "app/(app)/tools/act.tsx",
+      "app/(app)/tools/index.tsx",
       "app/(app)/tools/meditation/stages/[n].tsx",
       "app/(app)/tools/mood-tracker/[id]/edit.tsx",
       "app/(app)/tools/mood-tracker/[id]/index.tsx",
@@ -281,7 +289,12 @@ describe("the route population (pinned, G5)", () => {
     // this class rather than among the stubs. Then 126 → 125 when #1959 deleted the
     // `/arrange` screen. The walk still finds all 135 routes, which is the number this
     // class exists to protect — a drop there would mean the walk itself had gone blind.
-    expect(covered).toHaveLength(146);
+    // Then 146 → 144 with #2114: `app/(app)/tools/index.tsx` and
+    // `app/(app)/modules/index.tsx` moved from this class into `redirectStubs`
+    // above, because both stopped re-exporting a hub screen and now render only
+    // `<Redirect href="/" />`. Nothing left the route population - this is the
+    // gate watching its subject change shape, not a screen losing its Escape.
+    expect(covered).toHaveLength(144);
   });
 });
 

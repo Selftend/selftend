@@ -54,7 +54,7 @@ beforeEach(() => {
  * That is the opt-out argument landing on the ticket that made it. Under an
  * opt-in scheme these two would have been left out - nobody enumerated them -
  * and would have failed the way an Origin rule always fails: invisibly, with the
- * sleep screen just quietly showing Up to `/tools`.
+ * sleep screen just quietly showing Up to the catalogue it was opened from.
  *
  * ⚠️ Both assertions are on the STORE. `usePushWithOrigin` pushes *through*
  * `router.push`, so an assertion on the router passes identically whether or not
@@ -78,8 +78,9 @@ describe("self-care records the module it was left from", () => {
   /**
    * End to end through the real route map: leave self-care for the sleep tool,
    * and the Escape over there names self-care and goes back to it - rather than
-   * climbing to `/tools`, which is where that screen's own Up leads and where
-   * the user has never been.
+   * climbing to Home, which is where that screen's own Up leads and where the
+   * user has never been. (It led to `/tools` until #2096 made the segment
+   * transparent; what matters is only that it is not self-care.)
    */
   it("lets the Escape on the tool return to self-care, named", () => {
     const session = renderWithProviders(<SelfCareScreen />);

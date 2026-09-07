@@ -232,8 +232,23 @@ env:
     timeout: 10000
 - takeScreenshot: screenshots/06-insights
 
+# The catalogue of eight tools. This shot answers Apple's 2.1 App Completeness
+# citation directly - eight working tools, each showing a real count - so it is
+# kept rather than dropped.
+#
+# It used to deep-link `/tools`. That page went with #2114 and the URL now
+# redirects to Home, which carries the same eight tools in a `Tools` section
+# below Favourites. So: land on Home and scroll the section into frame.
+#
+# ☠️ Both selectors here are SECTION IDS, per rule 1 above, and that is
+# load-bearing rather than tidy. Home renders a favourited item TWICE - once
+# under Favourites, again in its catalogue position - through the same component
+# with the same `testID`. A tool NAME as the scroll target would stop on the
+# Favourites copy whenever the demo account happens to have that tool starred,
+# and this shot would silently photograph the wrong rows. `home-tools` is on the
+# section itself, so there is exactly one of it.
 - openLink:
-    link: ${APP_LINK}tools
+    link: ${APP_LINK}
 - runFlow:
     when:
       visible: ".*Open in.*"
@@ -241,8 +256,13 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: "Standalone trackers any module can call into. Use them on their own, too."
+      id: "home-favourites"
     timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "home-tools"
+    direction: DOWN
+    timeout: 20000
 - waitForAnimationToEnd:
     timeout: 10000
 - takeScreenshot: screenshots/07-tools

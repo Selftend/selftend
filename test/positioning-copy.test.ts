@@ -638,8 +638,9 @@ const MANAGEMENT_VERB_ON_HEALTH: Rule[] = [
  * CARRIES.** Positioning mandates the spelling of the frame word and says
  * nothing about DBT. It is guarded anyway because the two render *side by side*
  * - `navigation.json` sidebar has "CBT module - Cognitive Behavioural Therapy"
- * two lines above the DBT label, and the Modules screen lists all three names in
- * one column. A British frame word directly above an American sibling is the
+ * two lines above the DBT label, and Home's module cards list all three names in
+ * one column (that column was the Modules screen's until #2114 deleted it; the
+ * cards moved rather than went). A British frame word directly above an American sibling is the
  * exact carelessness this invariant exists to remove, one row down. So: the CBT
  * halves are positioning, the DBT half is the consistency that keeps them
  * credible. #1627 respelled DBT for that reason and this rule holds it.

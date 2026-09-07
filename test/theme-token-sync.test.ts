@@ -289,7 +289,7 @@ describe("primary ink meets WCAG AA on the neutral app surface", () => {
 
   // The pairing that actually failed. Primary text almost never lands on a bare
   // surface: it sits on a wash of primary — the `bg-primary/15` Beta chip and
-  // `/modules` mark, the `bg-primary/10` ready banner, the `bg-primary/5`
+  // module-card mark, the `bg-primary/10` ready banner, the `bg-primary/5`
   // program container — and a wash of the accent pulls the surface toward the
   // ink, costing contrast rather than adding it. Same alphas as the hue block.
   it.each(["light", "dark"] as const)("primary ink passes on washes of the accent in %s", (s) => {

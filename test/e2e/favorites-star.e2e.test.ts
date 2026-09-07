@@ -22,10 +22,22 @@ async function pressStarAndAwaitWrite(page: Page, star: Locator, method: "POST" 
 }
 
 /**
- * The star is LIVE on `/tools` and `/modules` (#1955): a press writes a `favorites` row,
- * the filled state survives a reload, a second press reverses it, and nothing toasts on
- * the way. Home renders the same rows under Favourites (#1956); this spec proves the write
- * on the catalogue pages, where the star first landed.
+ * The star is LIVE on Home's catalogue (#1955): a press writes a `favorites` row, the
+ * filled state survives a reload, a second press reverses it, and nothing toasts on the
+ * way.
+ *
+ * The subject moved here on #2114: this ran on `/tools` and `/modules`, which are no
+ * longer pages. Home is where the catalogue always was in full — the hubs listed a
+ * subset of it — and it renders the same rows through the same `item-card.tsx`.
+ *
+ * ☠️ **Every card and star lookup is SCOPED to its section, and it has to be.** Home
+ * renders a favourited item TWICE: once under Favourites (#1956) and again in its
+ * catalogue position, through the same component with the same `testID`. This suite is
+ * the one that creates that duplicate — the first press does it — so a bare
+ * `getByTestId("card-star-tool-grounding")` is a strict-mode violation from that moment
+ * on, and the post-reload re-lookups are worse. `getByTestId("home-tools")` /
+ * `("home-modules")` are the scopes; they are also the readiness signal, since Home
+ * renders both sections for every account with no data gate in front of either.
  *
  * The star's state is read through `aria-pressed`, which `toggleButtonStateProps` puts
  * on the star's Pressable on web - the same attribute a screen reader announces.
@@ -35,7 +47,7 @@ async function pressStarAndAwaitWrite(page: Page, star: Locator, method: "POST" 
  *
  * Written on the parallel build of #1955 (PR #1969, superseded) and adopted here.
  */
-test.describe("favourites: the star on the catalogue pages", () => {
+test.describe("favourites: the star on Home's catalogue", () => {
   test.beforeEach(async ({ user }) => {
     await deleteAllFavoritesForUser(user.id);
   });
@@ -43,16 +55,15 @@ test.describe("favourites: the star on the catalogue pages", () => {
     await deleteAllFavoritesForUser(user.id);
   });
 
-  test("starring a tool on /tools persists across a reload and a second press undoes it", async ({
+  test("starring a tool on Home persists across a reload and a second press undoes it", async ({
     page,
   }) => {
-    await page.goto("/tools");
-    await expect(page.getByText("Standalone trackers", { exact: false })).toBeVisible({
-      timeout: 15_000,
-    });
+    await page.goto("/");
+    const tools = page.getByTestId("home-tools");
+    await expect(tools).toBeVisible({ timeout: 15_000 });
     await dismissPostSignInModals(page);
 
-    const star = page.getByTestId("card-star-tool-grounding");
+    const star = tools.getByTestId("card-star-tool-grounding");
     // No star is drawn until the favourites list is in; this wait IS that load.
     await expect(star).toBeVisible({ timeout: 15_000 });
     await expect(star).toHaveAttribute("aria-pressed", "false");
@@ -63,13 +74,17 @@ test.describe("favourites: the star on the catalogue pages", () => {
     await expect(star).toHaveAccessibleName("Remove Grounding from favourites");
     // No success toast (ADR-0004): the star's own state is the whole feedback.
     await expect(page.getByTestId("app-toast")).toHaveCount(0);
+    // The second card the scoping exists for: the press put Grounding under
+    // Favourites too, so the unscoped testID now matches twice.
+    await expect(
+      page.getByTestId("home-favourites").getByTestId("card-tool-grounding"),
+    ).toBeVisible({ timeout: 15_000 });
 
     // The write, not the optimistic flip: a fresh load reads the row back.
     await page.reload();
-    await expect(page.getByText("Standalone trackers", { exact: false })).toBeVisible({
-      timeout: 15_000,
-    });
-    const starAfterReload = page.getByTestId("card-star-tool-grounding");
+    const toolsAfterReload = page.getByTestId("home-tools");
+    await expect(toolsAfterReload).toBeVisible({ timeout: 15_000 });
+    const starAfterReload = toolsAfterReload.getByTestId("card-star-tool-grounding");
     await expect(starAfterReload).toBeVisible({ timeout: 15_000 });
     await expect(starAfterReload).toHaveAttribute("aria-pressed", "true");
 
@@ -77,37 +92,35 @@ test.describe("favourites: the star on the catalogue pages", () => {
     await expect(starAfterReload).toHaveAttribute("aria-pressed", "false");
 
     await page.reload();
-    await expect(page.getByText("Standalone trackers", { exact: false })).toBeVisible({
-      timeout: 15_000,
-    });
-    const starAfterUndo = page.getByTestId("card-star-tool-grounding");
+    const toolsAfterUndo = page.getByTestId("home-tools");
+    await expect(toolsAfterUndo).toBeVisible({ timeout: 15_000 });
+    const starAfterUndo = toolsAfterUndo.getByTestId("card-star-tool-grounding");
     await expect(starAfterUndo).toBeVisible({ timeout: 15_000 });
     await expect(starAfterUndo).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("starring a module on /modules persists, and the star never opens the module", async ({
+  test("starring a module on Home persists, and the star never opens the module", async ({
     page,
   }) => {
-    await page.goto("/modules");
-    await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await page.goto("/");
+    const modules = page.getByTestId("home-modules");
+    await expect(modules).toBeVisible({ timeout: 15_000 });
     await dismissPostSignInModals(page);
 
-    const star = page.getByTestId("card-star-module-dbt");
+    const star = modules.getByTestId("card-star-module-dbt");
     await expect(star).toBeVisible({ timeout: 15_000 });
     await expect(star).toHaveAttribute("aria-pressed", "false");
 
     await pressStarAndAwaitWrite(page, star, "POST");
     await expect(star).toHaveAttribute("aria-pressed", "true");
     // The star is a sibling of the navigating region, not a child: pressing it stays put.
-    await expect(page).toHaveURL(/\/modules$/);
+    // Home is the origin now, so the assertion is that the URL still has no path at all.
+    await expect(page).toHaveURL(/:\d+\/$/);
 
     await page.reload();
-    await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible(
-      { timeout: 15_000 },
-    );
-    const starAfterReload = page.getByTestId("card-star-module-dbt");
+    const modulesAfterReload = page.getByTestId("home-modules");
+    await expect(modulesAfterReload).toBeVisible({ timeout: 15_000 });
+    const starAfterReload = modulesAfterReload.getByTestId("card-star-module-dbt");
     await expect(starAfterReload).toBeVisible({ timeout: 15_000 });
     await expect(starAfterReload).toHaveAttribute("aria-pressed", "true");
   });

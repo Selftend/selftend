@@ -8,9 +8,10 @@ import type { MaterialIconName } from "@/src/components/react-native-reusables/i
  *
  * Favourites is this array FILTERED, never sorted and never stored with a position: a
  * favourited item holds the same relative position it holds in the catalogue below it.
- * `/tools` renders the first eight, `/modules` the last three, Home renders all of it
- * twice over — and every one of those surfaces slices this constant, so nothing can be
- * ordered wrongly.
+ * Home renders all of it twice over — the whole catalogue in two sections, and the
+ * favourited subset again above them. It is the only surface that renders the array
+ * since #2114 deleted `/tools` and `/modules`, which took the first eight and the last
+ * three; every consumer slices this constant, so nothing can be ordered wrongly.
  *
  * It lives under the favourites feature because the array's reason to be single is the
  * filter; every other consumer only slices it.

@@ -6,7 +6,7 @@ Delivery: one WAV per line id → Drive `vo/mood-journal-gratitude/`.
 | Id    | Register       | Section                    | Line                                                                                                   |
 | ----- | -------------- | -------------------------- | ------------------------------------------------------------------------------------------------------ |
 | MJ-01 | echo           | Hook (dark type)           | Somewhere to put the day down.                                                                         |
-| MJ-02 | conversational | Orientation                | Three small tools for the same job — noticing how things are. You'll find them all in Tools.           |
+| MJ-02 | conversational | Orientation                | Three small tools for the same job — noticing how things are. You'll find them all on Home.            |
 | MJ-10 | conversational | Step 1 · Check in          | A check-in is one tap: how are you feeling, right now?                                                 |
 | MJ-11 | conversational | Step 1                     | Add a word or two if you want. Or don't — both count.                                                  |
 | MJ-20 | conversational | Step 2 · Write it down     | When there's more to say, the journal is a private page.                                               |

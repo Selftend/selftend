@@ -11,8 +11,9 @@ import { dismissPostSignInModals } from "./helpers";
  * than of three bold, tracked characters. Nothing in the repo could fail on it:
  *
  * - **The accessibility tree cannot see a wrap.** The text content is `CBT` on one line
- *   or two, so `modules-screen.test.tsx`'s `getByText("CBT")` passed throughout, and so
- *   did every card-list assertion in `today-screen.test.tsx`.
+ *   or two, so the modules hub's own `getByText("CBT")` passed throughout (that screen
+ *   has since gone with #2114), and so did every card-list assertion in
+ *   `today-screen.test.tsx`.
  * - **NativeWind resolves no width into `props.style` under jest** — measured while
  *   fixing this: a module mark's flattened style is `{"fontFamily":"NotoSans_700Bold"}`
  *   and a tool mark's is `undefined`. A `props.style` width assertion, which is how this
@@ -30,6 +31,17 @@ import { dismissPostSignInModals } from "./helpers";
  * The viewport is pinned to the size the defect was reported at (390×844). `shrink-0`
  * pinned the width, so the wrap happened at every viewport rather than only narrow ones
  * — the pin documents the report, it is not what makes the test work.
+ *
+ * The subject moved to Home on #2114, which deleted `/modules` and `/tools`. It is a
+ * better subject than the two it replaces: both kinds render on ONE page through the
+ * same `ItemCardRow`, so the column relation is measured across a single layout pass
+ * instead of across two navigations.
+ *
+ * ☠️ Both marks are SECTION-SCOPED. Home renders a favourited item twice — once under
+ * Favourites, again in its catalogue position — under the same `testID`, so an unscoped
+ * `card-mark-module-cbt` is a strict-mode violation for any pool user who happens to
+ * carry a leftover star. This spec stars nothing, which is exactly why it must not
+ * depend on nothing being starred.
  */
 test.describe("the one card's mark column (#2059)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -37,13 +49,12 @@ test.describe("the one card's mark column (#2059)", () => {
   test("a module abbreviation renders on one line, in the same column as a tool's glyph", async ({
     page,
   }) => {
-    await page.goto("/modules");
-    await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await page.goto("/");
+    const modules = page.getByTestId("home-modules");
+    await expect(modules).toBeVisible({ timeout: 15_000 });
     await dismissPostSignInModals(page);
 
-    const abbreviation = page.getByTestId("card-mark-module-cbt");
+    const abbreviation = modules.getByTestId("card-mark-module-cbt");
     await expect(abbreviation).toBeVisible({ timeout: 15_000 });
 
     const mark = await abbreviation.evaluate((element) => {
@@ -58,13 +69,9 @@ test.describe("the one card's mark column (#2059)", () => {
     // does not fail it. Before the fix this read 2 (40px tall over a 20px line-height).
     expect(mark.lines).toBeLessThan(1.5);
 
-    await page.goto("/tools");
-    await expect(page.getByText("Standalone trackers", { exact: false })).toBeVisible({
-      timeout: 15_000,
-    });
-    await dismissPostSignInModals(page);
-
-    const glyph = page.getByTestId("card-mark-tool-grounding");
+    // No second navigation: the tool row is further down the SAME page, so the two
+    // measurements share one layout rather than being compared across two loads.
+    const glyph = page.getByTestId("home-tools").getByTestId("card-mark-tool-grounding");
     await expect(glyph).toBeVisible({ timeout: 15_000 });
     const glyphWidth = await glyph.evaluate((element) => element.getBoundingClientRect().width);
 
