@@ -27,7 +27,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/notifications": "sidebar.notifications",
   "/settings": "sidebar.settings",
 
-  "/modules": "sidebar.modules",
   "/modules/act": "sidebar.act",
   "/modules/act/choice-point": "act:choicePoint.title",
   "/modules/act/committed-action": "breadcrumb.committedAction",
@@ -76,7 +75,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt/opposite-action": "breadcrumb.oppositeAction",
   "/modules/dbt/scripts": "breadcrumb.scripts",
 
-  "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
   "/tools/check-in/history": "breadcrumb.history",
   "/tools/check-in/new": "breadcrumb.new",
@@ -144,7 +142,18 @@ const STATIC_ROUTES: Record<string, string> = {
 // index: a list there would duplicate `/modules/cbt/history`, and nothing in
 // the app ever navigates to the bare path. #1251's `breadcrumb.saved` label
 // left with it - the trail now ends in the generic "Entry" and Up is CBT.
-const TRANSPARENT_SEGMENTS = new Set(["session", "sessions", "saved"]);
+//
+// `tools` and `modules` joined them on #2096, and their two `STATIC_ROUTES` rows
+// left in the same change. They are route DIRECTORIES with no page: a static row
+// there names a `<Redirect>` stub as an ancestor and sends Up into it.
+//
+// ☠️ Deleting the rows WITHOUT this is worse than doing neither. The segment
+// falls through to the generic branch instead, so `/tools/check-in` reads
+// `Entry · Check-in`, that `Entry` crumb carries an href into the stub, and
+// because it is `unresolved` the Escape degrades from "Back to Home" to a bare
+// "Go back". The two edits are one change; `breadcrumbs.test.ts` fails on the
+// crumb count if only half of it is made.
+const TRANSPARENT_SEGMENTS = new Set(["session", "sessions", "saved", "tools", "modules"]);
 
 // Known named sub-segments that appear after dynamic segments
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {

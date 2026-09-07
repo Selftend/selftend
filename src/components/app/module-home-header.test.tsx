@@ -164,13 +164,22 @@ describe("ModuleHomeHeader shell", () => {
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
-  it("renders breadcrumb, h1 and tagline", () => {
+  it("renders the escape, h1 and tagline", () => {
     renderWithProviders(
       <ModuleHomeHeader title="Check-in" description="Log how you're feeling." tourScope="mood" />,
     );
 
-    // The breadcrumb eyebrow, which the field header used to render in white ink.
-    expect(screen.getByLabelText("Back to Modules")).toBeTruthy();
+    // ☠️ This announced "Back to Modules" until #2096. `/modules/cbt` is its own
+    // top crumb now, so the trail is a lone crumb, the eyebrow stays hidden and
+    // the bare `←` goes Home - which is the whole of the decision, seen from the
+    // one header that renders it.
+    //
+    // Left on the real pathname rather than given a two-crumb one to keep the
+    // eyebrow in the picture: EVERY caller of this component is a tool or module
+    // home, so a fixture with a trail would depict a screen the app cannot
+    // produce. (That the eyebrow is now unreachable from here is worth a look of
+    // its own; it is not this ticket's to remove.)
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
   });

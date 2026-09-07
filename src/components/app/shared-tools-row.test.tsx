@@ -55,7 +55,7 @@ describe("SharedToolsRow", () => {
    * These chips are the off-trail pushes #1192 landed hours after the escape
    * rule was charted - the growth that made recording opt-out rather than
    * opt-in (#1265, O3). A chip leaves CBT for a tool that lives under
-   * `/tools`, so the tool's own Up climbs to `/tools` and never back to the
+   * `/tools`, so the tool's own Up goes to Home and never back to the
    * module the user was working in.
    *
    * `targetPathname` rather than a literal, because `SharedTool.route` is an

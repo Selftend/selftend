@@ -16,8 +16,29 @@ import { test, expect } from "./fixtures";
 
 import { dismissPostSignInModals } from "./helpers";
 
-/** One per mounted `/modules` screen. */
-const modulesRoots = (page: Page) => page.locator('h1:text-is("Modules")').count();
+/**
+ * One per mounted `/tools/check-in` screen.
+ *
+ * The subject moved here on #2096: this used to count `/modules`, whose own
+ * breadcrumb was the ancestor being returned to. There is no `Modules` crumb any
+ * more - `modules` is a transparent segment and `/modules/cbt` is its own top
+ * crumb - so the guard needed a surviving two-crumb trail rather than a deleted
+ * assertion. The bug it protects against is untouched by that.
+ *
+ * ☠️ The pair is chosen for having NO DATA GATE, which cost a CI round to learn.
+ * The obvious substitute - check-in, drilling into all-history - fails for a pool
+ * user who has never logged a mood: the week section carrying the history link is
+ * wrapped in `hasAnyCheckIn`, so the link is not merely hidden, it is never
+ * rendered at all. (`log-mood` clicks that same link happily, because it saves an
+ * entry first - which is exactly why the locator looked safe.) This screen's
+ * header is a literal string and its cards come from a static `HABITS_LEARN_CARDS`
+ * array, so both ends of the journey exist for a brand-new account.
+ *
+ * The title is distinctive enough to need no scoping, and `ScreenHeader` renders
+ * it through `Text variant="h1"` - the same element the `/modules` count read.
+ */
+const learnRoots = (page: Page) =>
+  page.locator('h1:text-is("Habit building - core ideas")').count();
 
 /** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
 const privacyRoots = (page: Page) =>
@@ -36,31 +57,36 @@ const privacyRoots = (page: Page) =>
  */
 
 test("a breadcrumb returns to its ancestor instead of stacking a second copy", async ({ page }) => {
-  await page.goto("/modules");
-  await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible({
-    timeout: 15_000,
-  });
+  await page.goto("/tools/habits/learn");
+  await expect(
+    page.getByRole("heading", { name: "Habit building - core ideas", exact: true, level: 1 }),
+  ).toBeVisible({ timeout: 15_000 });
   await dismissPostSignInModals(page);
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await learnRoots(page)).toBe(1);
 
-  // Down one level, so `/modules` is now an ancestor sitting in the stack. By testID: the
-  // card carries no `accessibilityLabel` (#1955), so its accessible name is every child it
-  // renders - the mark, the name and the subtitle - and no longer the name alone.
-  await page.getByTestId("card-module-cbt").click();
-  await expect(page).toHaveURL(/\/modules\/cbt$/, { timeout: 15_000 });
+  // Down one level, so `/tools/habits/learn` is now an ancestor sitting in the stack.
+  // Through the card, never a `page.goto`: the bug needs the ancestor to be IN the
+  // stack, and a hard navigation would replace the stack instead of growing it. A
+  // `Pressable` with `role="button"`, not a link - it pushes through the Origin helper.
+  await page.getByRole("button", { name: "The 1% compounding effect", exact: true }).click();
+  await expect(page).toHaveURL(/\/tools\/habits\/learn\/compounding$/, { timeout: 15_000 });
 
-  // The breadcrumb's `Modules` crumb targets that ancestor. Before #1027 this pushed a
-  // second `/modules`, and every hook on it ran twice from then on.
-  await page.getByRole("link", { name: "Modules", exact: true }).first().click();
-  await expect(page).toHaveURL(/\/modules$/, { timeout: 15_000 });
+  // The breadcrumb's `Learn` crumb targets that ancestor. Before #1027 this pushed a
+  // second `/tools/habits/learn`, and every hook on it ran twice from then on. The trail
+  // reads `Habits · Learn · The 1% compounding effect` - crumb 0 is `Habits` rather than
+  // `Tools`, which is #2096 in the one place a user actually reads it.
+  await page.getByRole("link", { name: "Learn", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/tools\/habits\/learn$/, { timeout: 15_000 });
   // `.last()`, and deliberately: with the duplicate present `.first()` is the HIDDEN
   // backgrounded copy, so this readiness wait would fail on visibility and the duplicate
   // would be reported as "not visible" rather than by the COUNT below, which names it.
   await expect(
-    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
+    page
+      .getByRole("heading", { name: "Habit building - core ideas", exact: true, level: 1 })
+      .last(),
   ).toBeVisible({ timeout: 15_000 });
 
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await learnRoots(page)).toBe(1);
 
   // Back, measured on this surface rather than assumed from the policy one: the ticket's
   // own point is that "a breadcrumb's Back expectation is not a settings menu's". Singular
@@ -69,9 +95,11 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
   // come back with it.
   await page.goBack();
   await expect(
-    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
+    page
+      .getByRole("heading", { name: "Habit building - core ideas", exact: true, level: 1 })
+      .last(),
   ).toBeVisible({ timeout: 15_000 });
-  expect(await modulesRoots(page)).toBe(1);
+  expect(await learnRoots(page)).toBe(1);
 });
 
 test("policy pages that cross-link do not stack copies of each other", async ({ page }) => {

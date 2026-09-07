@@ -20,7 +20,9 @@ import { Text } from "@/src/components/react-native-reusables/text";
  * The Escape follows the trail of the *attempted* path, exactly as chrome does
  * everywhere: a wholly unknown path is a one-crumb screen whose trail hides and
  * whose hop is Home ("Back to Home"); a path with a real ancestor offers that
- * ancestor instead (`/tools/whatever` says "Back to Tools"). An unknown
+ * ancestor instead (`/modules/cbt/whatever` says "Back to CBT"). Since #2096
+ * `/tools/whatever` is the FIRST case, not the second: `tools` and `modules` are
+ * transparent segments now, so they name no ancestor and the hop is Home. An unknown
  * ancestor announces "Go back" and lands here again, one segment shallower -
  * still an exit each time, converging on Home.
  */
