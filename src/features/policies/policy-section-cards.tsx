@@ -14,9 +14,9 @@ interface PolicySectionCardsProps {
   /**
    * ☠️ A RESOLVED array, never an i18n key, and that is the whole point of the
    * seam. `/security` reads a different namespace - `useTranslation("security")`,
-   * key `page.sections` - and folds into this component on #2146. A component
-   * that took a key would have to know which namespace to read, which makes that
-   * fold-in impossible without a second prop that only one caller ever sets.
+   * key `page.sections` - and folded into this component on #2146. A component
+   * that took a key would have to know which namespace to read, which would have
+   * made that fold-in impossible without a second prop only one caller ever sets.
    *
    * Callers resolve their own sections and hand over the array.
    */

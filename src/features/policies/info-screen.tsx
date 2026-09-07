@@ -33,8 +33,10 @@ interface InfoScreenProps extends PropsWithChildren {
 /**
  * The six policy routes that share one shape: `/privacy`, `/terms`, `/cookies`,
  * `/crisis`, `/account-deletion` and `/faq`. (`/security` is the seventh policy
- * page and does NOT render through this - it hand-rolls the same structure
- * inline, and folds in on #2146.)
+ * page and still does NOT render through this - it reads the `security`
+ * namespace, which this component cannot, since it hardcodes `policies`. Since
+ * #2146 it shares the same PARTS - `PolicyPageLayout` and `PolicySectionCards` -
+ * without going through this wrapper.)
  *
  * ☠️ **This component's public interface is frozen by #2144.** The props below -
  * their names, their optionality, their defaults and their order - are the

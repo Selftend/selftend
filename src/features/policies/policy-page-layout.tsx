@@ -23,9 +23,10 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  *
  * Extracted from `info-screen.tsx` on #2144, which is a PURE REFACTOR - the six
  * routes that render through `InfoScreen` produce exactly what they produced
- * before. The extraction exists so `/security`, which hand-rolls this same
- * structure inline, can fold into it (#2146), and so `/faq` can build its own
- * body on the shared chrome (#2147) instead of forking the whole screen.
+ * before. The extraction existed so `/security`, which hand-rolled this same
+ * structure inline, could fold into it - which it did on #2146, leaving one copy
+ * of the chrome where there were two - and so `/faq` can build its own body on
+ * the shared chrome (#2147) instead of forking the whole screen.
  *
  * ⚠️ **No column class here, deliberately.** The 672px content column is the
  * next slice (#2148). Keeping it out is what lets this one be reviewed against
