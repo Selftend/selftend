@@ -21,8 +21,13 @@ beforeEach(() => {
 /**
  * ⚠️ The component is `CrisisSupportCallout`; `safety-callout.tsx` is only the
  * file name, so a sweep grepping for `<SafetyCallout` finds nothing. It is the
- * loud destructive-red twin of `CrisisSupportBar`, and renders on the two module
- * homes that carry one - ACT's and DBT's.
+ * loud destructive-red twin of `CrisisSupportBar`.
+ *
+ * ☠️ It has **five** call sites, not the two this docblock claimed until #2137:
+ * the ACT, CBT and DBT module homes, `/support`, and `/faq`. The count mattered
+ * the moment the heading level became a per-caller decision - a reader trusting
+ * "two module homes" would have reasoned about the blast radius of that change
+ * from a number less than half the real one.
  */
 describe("CrisisSupportCallout", () => {
   it("opens the crisis page", () => {
@@ -31,6 +36,33 @@ describe("CrisisSupportCallout", () => {
     fireEvent.press(screen.getByText("Open crisis guidance"));
 
     expect(router.push).toHaveBeenCalledWith("/crisis");
+  });
+
+  /**
+   * ☠️ **The heading level, both halves (#2137).**
+   *
+   * The default has to be pinned as hard as the override: every call site shipped
+   * at `CardTitle`'s 3, three of them still pass nothing, and a change of default
+   * would silently move the outline on the ACT, CBT and DBT homes - screens whose
+   * own tests assert their level runs and would then fail somewhere else entirely.
+   *
+   * ☠️ Levels through `Number(...)`: `text.tsx`'s `ARIA_LEVEL` map yields the
+   * STRING `"3"` while `CardTitle` passes a number, so a bare `toBe(3)` fails on a
+   * correct tree. Host nodes only - `role="heading"` on our `Text` is visible on
+   * the composite and on the host, which is two nodes for one heading.
+   */
+  it.each([
+    [undefined, 3],
+    [2 as const, 2],
+  ])("renders its title at level %s -> %s", (level, expected) => {
+    renderWithProviders(<CrisisSupportCallout level={level} />);
+
+    const headings = screen
+      .UNSAFE_getAllByProps({ role: "heading" })
+      .filter((node) => typeof node.type === "string");
+
+    expect(headings).toHaveLength(1);
+    expect(Number(headings[0].props["aria-level"])).toBe(expected);
   });
 
   /**

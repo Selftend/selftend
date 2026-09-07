@@ -236,8 +236,16 @@ export default function SupportScreen() {
         <Text variant="muted">{t("supportPage.description")}</Text>
       </View>
 
-      {/* The page's ONE crisis notice. No second card, no crisis row below. */}
-      <CrisisSupportCallout />
+      {/*
+        The page's ONE crisis notice. No second card, no crisis row below.
+
+        ☠️ `level={2}` (#2137): the callout is followed by the feedback block's
+        own level-2 heading, so at `CardTitle`'s default 3 this page ran
+        h1 → h3 → h2 - a level skipped on the way down and a safety surface
+        sitting below the ordinary content after it. The three module homes keep
+        the default, where the callout is last among level-3 Sections.
+      */}
+      <CrisisSupportCallout level={2} />
 
       {/*
         The form and the four Sections sit in ONE no-gap group: each carries its

@@ -51,13 +51,17 @@ const COLLAPSIBLE: readonly FaqEntrySlug[] = FAQ_LAYOUT.groups.flatMap((group) =
  * `docs/child-safety-review.md` both cite that entry when they say the boundary is
  * stated to users, so it is a pinned always-open answer rather than a row.
  *
- * The heading outline, end to end: h1 page title → h3 callout title → h3 crisis
+ * The heading outline, end to end: h1 page title → h2 callout title → h3 crisis
  * question → h2 *Start here* → h3 ×4 pinned questions → h2 ×4 group labels →
  * h3 ×8 group questions → h2 parents' letter → h3 ×6 of its sub-heads (#2149).
- * The callout's own level 3 is left alone: `/support` already ships this exact
- * h1 → h3 → h2 order, so `/faq` inherits its sibling's outline instead of
- * inventing one (#2137 owns the cross-screen question, on all five call sites
- * at once).
+ *
+ * ⚠️ The callout was level 3 when this page landed, matching `/support`, and
+ * **both moved to 2 together** on #2137 - so the two sibling pages still agree,
+ * which was the point of rendering the shipped component unmodified. At 3 the
+ * callout sat below the level-2 blocks that follow it: a level skipped on the
+ * way down, on the one surface a person in distress needs to reach first. The
+ * three module homes keep the default 3, where the callout is the last block
+ * among level-3 `Section` eyebrows and 3 is already consistent.
  */
 export function FaqScreen() {
   const { t } = useTranslation("policies");
@@ -107,7 +111,14 @@ export function FaqScreen() {
 
   return (
     <PolicyPageLayout title={t("faq.pageTitle")} subtitle={t("faq.pageDescription")}>
-      <CrisisSupportCallout />
+      {/*
+        ☠️ `level={2}` (#2137). This page's blocks below are level 2, so the
+        callout's default 3 put a safety surface under the ordinary content that
+        follows it. `/support` takes the same value in the same change, so the
+        two sibling pages still agree - which was the point of rendering the
+        shipped component unmodified in the first place.
+      */}
+      <CrisisSupportCallout level={2} />
 
       {/*
         The always-open answers render through the SAME card the six `InfoScreen`
