@@ -130,6 +130,26 @@ describe("DbtHomeScreen", () => {
     expect(renderedTextInOrder().join(" ")).not.toMatch(/roadmap|coming soon|\bsoon\b/i);
   });
 
+  /**
+   * ☠️ **The crisis callout is a level-2 block, not a child of the skill groups**
+   * (#2167). This screen was the sharpest case: the callout renders directly after
+   * *The four skill groups*' `h2` with nothing between, so at level 3 a reader
+   * navigating by heading found *Use urgent support for urgent risk* as a part of
+   * the skill groups. It belongs to no skill group.
+   *
+   * Asserted HERE and not only on `safety-callout.test.tsx` because the component
+   * takes the level from a default, and before #2167 nothing on this screen
+   * noticed the callout's level at all.
+   */
+  it("keeps the crisis callout out of the skill-groups section, at level 2", () => {
+    renderWithProviders(<DbtHomeScreen />);
+
+    const callout = screen.getByText("Use urgent support for urgent risk");
+
+    expect(callout.props.role ?? callout.props.accessibilityRole).toBe("heading");
+    expect(Number(callout.props["aria-level"])).toBe(2);
+  });
+
   it("still explains all four skill groups", () => {
     renderWithProviders(<DbtHomeScreen />);
 
