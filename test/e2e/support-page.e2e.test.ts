@@ -41,13 +41,24 @@ const THROWAWAY_PASSWORD = "throwaway-support-pass-123";
 const SEND_FEEDBACK_ROUTE = "**/functions/v1/send-feedback";
 
 /**
- * The page's heading outline, top to bottom: h1 Support, the callout's h3 (a
- * CardTitle), the form's h2, and the four Section eyebrows as h3s. The delete
- * section is title-less, so it adds nothing here.
+ * The page's heading outline, top to bottom: h1 Support, the callout's h2, the
+ * form's h2, and the four Section eyebrows as h3s. The delete section is
+ * title-less, so it adds nothing here.
+ *
+ * ☠️ **This list is the browser proof for #2137, and it used to encode the bug.**
+ * The callout was `3` here - above the form's `2` - which is a level skipped on
+ * the way down and a safety surface filed below the ordinary content after it.
+ * jest cannot catch that: it runs `ios`, and on web RNW resolves levels itself.
+ * Reading `aria-level` off real DOM nodes in document order is the only check
+ * that sees the outline a screen-reader user actually gets.
+ *
+ * ⚠️ The three module homes deliberately keep the callout at 3 (there it is the
+ * last block among level-3 Sections), so this `2` is a per-caller decision, not
+ * a new global default. `safety-callout.test.tsx` pins the default at 3.
  */
 const EXPECTED_OUTLINE = [
   `1 ${supportPage.title}`,
-  `3 ${safety.title}`,
+  `2 ${safety.title}`,
   `2 ${feedback.title}`,
   `3 ${feedback.otherChannels}`,
   `3 ${supportPage.handles}`,
@@ -142,7 +153,7 @@ test.describe("support page", () => {
     await signInWithPasswordViaUi(page, throwawayEmail, THROWAWAY_PASSWORD);
     await openSupport(page);
 
-    await test.step("the column reads h1 → callout h3 → form h2 → four h3s, and the callout opens /crisis", async () => {
+    await test.step("the column reads h1 → callout h2 → form h2 → four h3s, and the callout opens /crisis", async () => {
       expect(await readOutline(page)).toEqual(EXPECTED_OUTLINE);
 
       await page.getByRole("button", { name: safety.openCrisis, exact: true }).click();
@@ -170,6 +181,14 @@ test.describe("support page", () => {
       await expect(page).toHaveURL(/\/faq$/);
       await expect(
         page.getByRole("heading", { name: enPolicies.faq.pageTitle, exact: true, level: 1 }),
+      ).toBeVisible({ timeout: 10_000 });
+
+      // ☠️ #2137's other half, proved in the browser on the page that shares the
+      // component with /support. Both sibling pages moved 3 → 2 together, so if
+      // one is ever changed alone this is the assertion that says so. jest runs
+      // `ios` and cannot see a rendered heading level at all.
+      await expect(
+        page.getByRole("heading", { name: safety.title, exact: true, level: 2 }),
       ).toBeVisible({ timeout: 10_000 });
 
       await page.goBack();
