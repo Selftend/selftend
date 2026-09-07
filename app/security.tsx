@@ -41,7 +41,12 @@ export default function SecurityScreen() {
             ? sections.map((section, index) => (
                 <Card key={index}>
                   <CardHeader>
-                    <CardTitle>{section.title}</CardTitle>
+                    {/*
+                      Level 2, matching `info-screen.tsx` (#2133). `CardTitle`
+                      defaults to 3, which made this page - the one policy screen
+                      that does not render through `InfoScreen` - ship h1 → h3.
+                    */}
+                    <CardTitle aria-level={2}>{section.title}</CardTitle>
                     {section.body.map((paragraph, pIndex) => (
                       <CardDescription key={pIndex}>{paragraph}</CardDescription>
                     ))}

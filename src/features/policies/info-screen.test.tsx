@@ -27,9 +27,17 @@ describe("InfoScreen", () => {
    * a one-crumb screen with no way back - a user in distress mid-exercise could
    * only leave by jumping to Home, discarding where they were.
    *
-   * The seven policy routes all render through this component, so one assertion
-   * here covers `/faq`, `/privacy`, `/terms`, `/cookies`, `/security` and
-   * `/account-deletion` with it.
+   * ☠️ SIX of the seven policy routes render through this component, so one
+   * assertion here covers `/faq`, `/privacy`, `/terms`, `/cookies` and
+   * `/account-deletion` with it. **`/security` is NOT among them** - it
+   * hand-rolls the same card structure inline and takes its Escape from
+   * `ScreenHeader` directly, so nothing here has ever said anything about it.
+   *
+   * This claim used to name `/security` too, and the false coverage it implied
+   * is part of why the page shipped an h1 → h3 outline unnoticed (#2133): two
+   * copies of one structure, and a comment asserting the copy was covered. Its
+   * heading outline now has a real guard in `policy-heading-outline.test.tsx`,
+   * which renders `/security` and `/privacy` and asserts they agree.
    */
   it("carries an Escape on a one-crumb policy route (#1250)", () => {
     renderWithProviders(
