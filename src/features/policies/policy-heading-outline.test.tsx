@@ -27,19 +27,13 @@ beforeEach(() => {
  * A policy page's heading outline runs h1 → h2, with no level skipped (#2133).
  *
  * `/security` is the seventh policy page and the only one that does not render
- * through `InfoScreen`. When this guard was written it duplicated the same
- * `Card` / `CardHeader` / `CardTitle` / `CardDescription` structure inline, and
- * the copies had diverged in the one place a reader notices — `info-screen.tsx`
- * passed `aria-level={2}` on the section title and `security.tsx` did not, so it
- * fell back to `CardTitle`'s default of 3 and the page shipped **h1 → h3**. A
- * skipped level is a WCAG 1.3.1 / 2.4.6 problem for anyone navigating by
- * heading, and it put `/security` out of step with the six pages it links to.
- *
- * ✅ **The duplication is gone since #2146**: `/security` now renders through
- * `PolicyPageLayout` and `PolicySectionCards`, the same parts the other six use,
- * so there is one copy of the structure rather than two. That removes the cause
- * but not the need for this file — it is what proves the fold-in did not move
- * the outline, and it is why the `/privacy` case below is the control.
+ * through `InfoScreen`: it duplicates the same `Card` / `CardHeader` /
+ * `CardTitle` / `CardDescription` structure inline. The copies diverged in the
+ * one place a reader notices — `info-screen.tsx` passes `aria-level={2}` on the
+ * section title and `security.tsx` did not, so it fell back to `CardTitle`'s
+ * default of 3 and the page shipped **h1 → h3**. A skipped level is a WCAG 1.3.1
+ * / 2.4.6 problem for anyone navigating by heading, and it put `/security` out
+ * of step with the six pages it links to and sits beside.
  *
  * ☠️ Nothing could have caught this. No test rendered `SecurityScreen` for its
  * STRUCTURE (`policy-origin.test.tsx` renders it, but asserts escape-origin),
