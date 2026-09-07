@@ -131,7 +131,7 @@
     "checkbox": "I agree to the current Privacy Policy and Terms of Service.",
     "healthDataTitle": "Consent to processing your entries",
     "healthDataCheckbox": "I consent to Selftend processing the self-help entries I choose to save, including any wellness or mental-health reflection they contain, only to provide the app features I use.",
-    "healthDataWithdrawal": "This is a separate consent. You can withdraw it at any time by deleting your account or contacting privacy@selftend.org.",
+    "healthDataWithdrawal": "This is a separate consent. You can withdraw it at any time by deleting your account or contacting {{privacyEmail}}.",
     "submitting": "Saving...",
     "submit": "Accept and continue",
     "error": "Unable to save consent. Please try again."

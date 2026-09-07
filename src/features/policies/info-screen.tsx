@@ -17,6 +17,7 @@ import { policyLastUpdated } from "@/src/features/policies/policy-content";
 import { PolicyPageLayout } from "@/src/features/policies/policy-page-layout";
 import type { PolicySection } from "@/src/features/policies/policy-section-cards";
 import { PolicySectionCards } from "@/src/features/policies/policy-section-cards";
+import { contactEmails } from "@/src/lib/env";
 
 interface InfoScreenProps extends PropsWithChildren {
   actions?: PolicyAction[];
@@ -51,7 +52,16 @@ export function InfoScreen({
   title,
 }: InfoScreenProps) {
   const { t } = useTranslation("policies");
-  const sections = t(sectionKey, { returnObjects: true }) as PolicySection[];
+  // i18next recurses into the object `returnObjects` returns, so a `{{var}}` in a
+  // nested `body[]` string interpolates like any other. Supplied to every policy
+  // screen rather than the FAQ alone: the addresses appear in `privacy`, `terms`,
+  // `cookies` and `accountDeletion` too, and those move to placeholders on the
+  // next `policyVersion` bump (#2131) - an unsupplied variable would render the
+  // raw `{{privacyEmail}}` on a legal page, so the values arrive first.
+  const sections = t(sectionKey, {
+    returnObjects: true,
+    ...contactEmails(),
+  }) as PolicySection[];
 
   return (
     <PolicyPageLayout
