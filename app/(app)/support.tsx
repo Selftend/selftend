@@ -501,6 +501,25 @@ export default function SupportScreen() {
               testID="support-row-contributing"
             />
             {/*
+            ☠️ The channel sits HERE, not in "Other ways to reach us". That
+            section is contact - every row in it reaches a person who can
+            answer (an inbox, an issue tracker, a chat, a public thread).
+            YouTube answers nobody; it is project material, like the repository
+            and the contribution guide above it. A broadcast channel filed under
+            "ways to reach us" would be the section's title telling a small lie
+            to someone who may be trying to reach a human.
+          */}
+            {appEnv.youtubeUrl ? (
+              <SettingsRow
+                icon="smart-display"
+                label={t("supportPage.openYoutube")}
+                description={t("supportPage.youtubeMeta")}
+                trailing={{ kind: "external" }}
+                onPress={() => openExternalUrl(appEnv.youtubeUrl)}
+                testID="support-row-youtube"
+              />
+            ) : null}
+            {/*
             Store referral is a web-only surface: advertising the Android app
             inside the Android app is noise. Gated here, at the mount point, for
             the same `Children.toArray` reason as the Discord row.

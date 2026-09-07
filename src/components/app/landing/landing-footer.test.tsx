@@ -34,6 +34,7 @@ jest.mock("@/src/lib/env", () => ({
   appEnv: {
     discordUrl: "https://discord.gg/pdaAr9FhcQ",
     redditUrl: "https://www.reddit.com/r/Selftend/",
+    youtubeUrl: "https://www.youtube.com/@Selftend",
   },
 }));
 
@@ -46,6 +47,7 @@ function linkHref(name: string) {
 beforeEach(() => {
   appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
   appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
+  appEnv.youtubeUrl = "https://www.youtube.com/@Selftend";
   jest.clearAllMocks();
 });
 
@@ -113,15 +115,34 @@ describe("LandingFooter", () => {
     expect(screen.getByText("Join our Discord")).toBeTruthy();
   });
 
-  it("closes the row with Discord then the subreddit, after the policy links", () => {
+  it("opens the YouTube channel externally when appEnv.youtubeUrl is set", () => {
     renderWithProviders(<LandingFooter />);
 
-    // Order is the assertion: both are external buttons appended to the same
-    // wrapping row, so either could land anywhere in it and still be found by
-    // the presence checks above. `getAllByText` returns them in tree order.
-    expect(screen.getAllByText(/^Join /).map((node) => node.props.children)).toEqual([
+    fireEvent.press(screen.getByText("Watch on YouTube"));
+
+    expect(mockOpen).toHaveBeenCalledWith("https://www.youtube.com/@Selftend");
+  });
+
+  it("hides the YouTube link when appEnv.youtubeUrl is empty, keeping its neighbours", () => {
+    appEnv.youtubeUrl = "";
+
+    renderWithProviders(<LandingFooter />);
+
+    expect(screen.queryByText("Watch on YouTube")).toBeNull();
+    expect(screen.getByText("Join our Discord")).toBeTruthy();
+    expect(screen.getByText("Join r/Selftend")).toBeTruthy();
+  });
+
+  it("closes the row with Discord, the subreddit, then YouTube, after the policy links", () => {
+    renderWithProviders(<LandingFooter />);
+
+    // Order is the assertion: all three are external buttons appended to the
+    // same wrapping row, so any of them could land anywhere in it and still be
+    // found by the presence checks above. `getAllByText` returns tree order.
+    expect(screen.getAllByText(/^(Join|Watch) /).map((node) => node.props.children)).toEqual([
       "Join our Discord",
       "Join r/Selftend",
+      "Watch on YouTube",
     ]);
   });
 });

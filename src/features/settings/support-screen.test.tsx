@@ -247,6 +247,7 @@ describe("SupportScreen column (#1726)", () => {
     // subreddit in `env.ts`, so an unset field here would make the row's
     // presence a fact about production config rather than about this test.
     appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
+    appEnv.youtubeUrl = "https://www.youtube.com/@Selftend";
     appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.selftend.app";
     appEnv.appStoreUrl = "https://apps.apple.com/app/selftend/id0000000000";
     mockInvoke.mockResolvedValue({ error: null });
@@ -398,6 +399,42 @@ describe("SupportScreen column (#1726)", () => {
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
       "https://github.com/Selftend/selftend/blob/main/.github/CONTRIBUTING.md",
     );
+
+    fireEvent.press(screen.getByRole("link", { name: "Watch on YouTube" }));
+    expect(mockOpenExternalUrl).toHaveBeenLastCalledWith("https://www.youtube.com/@Selftend");
+    expect(screen.getByText("YouTube · @Selftend")).toBeTruthy();
+  });
+
+  // ☠️ The channel is project material, not contact. Every row in "Other ways
+  // to reach us" reaches someone who can answer; YouTube answers nobody, so it
+  // belongs beside the repository rather than beside the inbox. This is the
+  // assertion that stops a later "all the socials together" tidy-up from
+  // quietly making the section's title false.
+  it("files the channel under the project, never among the ways to reach us", () => {
+    renderWithProviders(<SupportScreen />);
+
+    expect(
+      screen
+        .getAllByTestId(/^support-row-(email|github|discord|reddit|repo|contributing|youtube)$/)
+        .map((row) => row.props.testID),
+    ).toEqual([
+      "support-row-email",
+      "support-row-github",
+      "support-row-discord",
+      "support-row-reddit",
+      "support-row-repo",
+      "support-row-contributing",
+      "support-row-youtube",
+    ]);
+  });
+
+  it("without a YouTube URL the row is absent, and the project run keeps its others", () => {
+    appEnv.youtubeUrl = "";
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.queryByRole("link", { name: "Watch on YouTube" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Open repository" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open contribution guide" })).toBeTruthy();
   });
 
   // Advertising the Android app inside the Android app is noise, so the store
