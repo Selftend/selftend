@@ -39,8 +39,18 @@ const SHOTS = {
 
   // The shot's SUBJECT moved rather than being cut: `/tools` stopped being a page
   // on #2114 and redirects to Home, which lists the same tools and more.
+  //
+  // Not `browse(h, "/", …)`: that returns to the top, which is `home` above, and
+  // the two shots would be the same footage. The Tools section is below the
+  // greeting, so this one scrolls down and HOLDS on the catalogue instead.
   async tools(h) {
-    await browse(h, "/", 750, 3000);
+    const { page } = h;
+    await goto(page, "/", 1000);
+    await lib.cursorTo(page, 960, 700, 600);
+    await lib.smoothScroll(page, 750, 2400); // past the greeting, into the tool rows
+    await lib.sleep(4000); // the hold this shot exists for
+    await lib.smoothScroll(page, 450, 2400); // on down through the modules
+    await lib.sleep(3000);
   },
 
   // SETTINGS — palette, privacy rows, then account menu (theme/language) (GS-4, XX-90)

@@ -105,7 +105,7 @@ From the dashboard, open the **Check-in** card and log a mood — pick a face, s
 
 Then open its **history** to show the entry you just made sitting in the list with the others.
 
-> ⚠️ On screen the tool is called **"Check-in"** — that is what the **breadcrumb above it** says, and what the card you opened it from says. Where the steps here write "Mood tracker", it is the same tool under this script's older name.
+> ⚠️ On screen the tool is called **"Check-in"** — that is what the **breadcrumb above it** says, and what the card you opened it from says. Earlier cuts of this script called it "Mood tracker"; no step here does any more, and it was always the same tool.
 
 ### 6. A journal entry, saved and shown in its history
 

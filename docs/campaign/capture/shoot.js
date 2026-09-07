@@ -277,8 +277,19 @@ const SHOTS = {
   // ---- read-mostly walkthrough shots: navigate, hold, gentle scroll ----
   // The shot's SUBJECT moved rather than being cut: `/tools` stopped being a page
   // on #2114 and redirects to Home, which lists the same tools and more.
+  //
+  // It cannot be `browse(h, "/", …)`: that is exactly what `home` above already
+  // does, and the two shots would be the same footage. The Tools section sits
+  // below Favourites, so this one scrolls PAST the greeting and holds there -
+  // the catalogue is the subject, not the top of the page.
   async tools(h) {
-    await browse(h, "https://selftend.org/", 900);
+    const { page } = h;
+    await page.goto("https://selftend.org/", { waitUntil: "networkidle", timeout: 60000 });
+    await lib.sleep(2500);
+    await lib.smoothScroll(page, 900, 2200); // past the greeting, into the tool rows
+    await lib.sleep(4000); // the hold this shot exists for
+    await lib.smoothScroll(page, 500, 2200); // on down through the modules
+    await lib.sleep(2500);
   },
   async lookback(h) {
     const { page } = h;

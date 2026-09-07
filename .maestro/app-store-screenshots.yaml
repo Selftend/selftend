@@ -239,8 +239,14 @@ env:
 # It used to deep-link `/tools`. That page went with #2114 and the URL now
 # redirects to Home, which carries the same eight tools in a `Tools` section
 # below Favourites. So: land on Home and scroll the section into frame.
-# `Habit tracking` is the LAST tool in the catalogue order, which is what makes
-# it the right scroll target - reaching it means the whole section is behind us.
+#
+# ☠️ Both selectors here are SECTION IDS, per rule 1 above, and that is
+# load-bearing rather than tidy. Home renders a favourited item TWICE - once
+# under Favourites, again in its catalogue position - through the same component
+# with the same `testID`. A tool NAME as the scroll target would stop on the
+# Favourites copy whenever the demo account happens to have that tool starred,
+# and this shot would silently photograph the wrong rows. `home-tools` is on the
+# section itself, so there is exactly one of it.
 - openLink:
     link: ${APP_LINK}
 - runFlow:
@@ -250,11 +256,11 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: "Tools"
+      id: "home-favourites"
     timeout: 30000
 - scrollUntilVisible:
     element:
-      text: "Habit tracking"
+      id: "home-tools"
     direction: DOWN
     timeout: 20000
 - waitForAnimationToEnd:
