@@ -9,7 +9,6 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
-  // `HomeTour` reads it, and only gates its queue on being at "/".
   usePathname: () => "/",
 }));
 
@@ -23,7 +22,6 @@ jest.mock("@/src/features/profile/queries", () => ({
 
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: { appOnboardingCompleted: false, shownButtonTours: [] } }),
-  useUpdateShownButtonTours: () => ({ mutate: jest.fn(), mutateAsync: jest.fn() }),
 }));
 
 jest.mock("@/src/stores/selected-date-store", () => ({

@@ -62,11 +62,10 @@ export default function SettingsScreen() {
   const { data } = useUserPreferences(user?.id ?? null);
 
   const { canSignOut, signOut: handleSignOut } = useSignOut(user);
-  const {
-    replayIntroduction,
-    showTipsAgain,
-    isPending: onboardingPending,
-  } = useOnboardingActions(user, data?.appOnboardingCompletedVia);
+  const { replayIntroduction, isPending: onboardingPending } = useOnboardingActions(
+    user,
+    data?.appOnboardingCompletedVia,
+  );
 
   const onboardingDisabled = !data || onboardingPending;
 
@@ -175,16 +174,6 @@ export default function SettingsScreen() {
                 pendingLabel={t("onboarding.saving")}
                 onPress={() => void replayIntroduction()}
                 testID="settings-row-replay-introduction"
-              />
-              <SettingsRow
-                icon="lightbulb"
-                label={t("onboardingSection.showTipsAgain")}
-                trailing={{ kind: "act" }}
-                disabled={onboardingDisabled}
-                pending={onboardingPending}
-                pendingLabel={t("onboarding.saving")}
-                onPress={() => void showTipsAgain()}
-                testID="settings-row-show-tips-again"
               />
             </SettingsRun>
 

@@ -23,11 +23,13 @@ import { rawModalRenderers, sourceFiles, stripComments } from "./source-scan";
  *
  * Deliberately a SEPARATE suite from `modal-web-unmount.test.ts`, with its
  * own `EXEMPT` map, because the exemption sets differ and will keep
- * differing: `tour-overlay.tsx` is exempt from the unmount gate (its parent
- * gates the mount) but MUST register here (it covers the screen while
- * mounted), and the update popup will be exempt here (self-registration
- * would oscillate the gate its own render raises, spec §2) while carrying
- * the unmount gate through the wrapper.
+ * differing: the update popup is exempt here (self-registration would
+ * oscillate the gate its own render raises, spec §2) while carrying the
+ * unmount gate through the wrapper. The clearest case of the split ran the
+ * other way and is gone - `tour-overlay.tsx` was exempt from the unmount gate,
+ * its parent gating the mount, but had to register here because it covered the
+ * screen while mounted. It was deleted with the home tour (#2109); the
+ * asymmetry it illustrated is not.
  *
  * Like its sibling, this suite DERIVES the file list from source rather than
  * pinning it, so a new raw `<Modal>` lands already registered or fails CI

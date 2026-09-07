@@ -11,7 +11,6 @@
 import { expect, test } from "@playwright/test";
 
 import { deleteGuest, startGuestSession } from "./guest-session";
-import { dismissHomeTour } from "./helpers";
 
 test.describe("guest chrome", () => {
   let guestId: string;
@@ -29,11 +28,6 @@ test.describe("guest chrome", () => {
     await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
-
-    // The Home tour arms a beat after the screen settles for this fresh
-    // account, and its scrim intercepts the header clicks below - the waiting
-    // helper, not a single isVisible sample (which raced and lost in CI).
-    await dismissHomeTour(page);
 
     // The guest's planted prefs carry email_verified: false - exactly the
     // state in which a broken guard would render the banner.
@@ -75,7 +69,6 @@ test.describe("guest chrome", () => {
     await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
-    await dismissHomeTour(page);
 
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();
     // The identity row names the state the door is offered for (#1829/#1810) -

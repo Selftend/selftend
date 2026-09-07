@@ -10,7 +10,7 @@ import {
   useDefusionLogs,
 } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
-import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -31,7 +31,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -48,9 +47,6 @@ jest.mock("@/src/features/act/use-act-program", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
 const mockUseDefusionLogs = useDefusionLogs as jest.MockedFunction<typeof useDefusionLogs>;
 const mockUseActProgram = useActProgram as jest.MockedFunction<typeof useActProgram>;
 const mockUseChoicePointCount = useChoicePointCount as jest.MockedFunction<
@@ -109,10 +105,6 @@ describe("ActHomeScreen", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseUpdateShownButtonTours.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
     mockUseUserPreferences.mockReturnValue({
       data: null,
       isLoading: false,
