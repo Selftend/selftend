@@ -20,7 +20,12 @@ const locales = [
   ["bg", bgPolicies],
 ] as const;
 
-const sectionKeys = ["privacy", "terms", "crisis", "accountDeletion", "cookies"] as const;
+// `faq` joined on #2145. It was excluded only because nothing needed it, and it
+// is admissible precisely because the FAQ redesign kept all fourteen entries in
+// the uniform `{ title, body: string[] }` shape rather than re-nesting them -
+// so one word here buys the non-empty-title / body-is-an-array / every-paragraph
+// -is-a-non-empty-string assertion over `faq` in BOTH locales, for free.
+const sectionKeys = ["privacy", "terms", "crisis", "accountDeletion", "cookies", "faq"] as const;
 
 function assertSectionsShape(name: string, sections: DisplayedSection[]) {
   it(`${name} sections are non-empty with title and body strings`, () => {
