@@ -414,7 +414,13 @@ const TAIL_DIRS = [
   "src/features/security",
   "src/features/settings",
   "src/features/sleep",
-  "src/features/tools",
+  // NOT `src/features/tools`: #2114 deleted the tools hub screen and its test,
+  // which were the directory's entire contents, so the directory itself is gone.
+  // The walker `readdirSync`s every entry here with no existence check, so a
+  // stale name throws and takes the whole suite down - and only on a fresh
+  // checkout, since git does not track the empty directory left behind locally.
+  // `src/features/modules` above stays: it still holds `program-types.ts` and
+  // `types.ts`.
 ];
 
 /**
@@ -428,7 +434,8 @@ const ROOMLESS_TAIL_DIRS = [
   "src/features/modules",
   "src/features/security",
   "src/features/settings",
-  "src/features/tools",
+  // `src/features/tools` is absent here for the same reason as above: #2114
+  // deleted the directory along with the hub screen it existed for.
 ];
 
 /**

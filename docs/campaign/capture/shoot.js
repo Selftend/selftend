@@ -275,8 +275,10 @@ const SHOTS = {
   },
 
   // ---- read-mostly walkthrough shots: navigate, hold, gentle scroll ----
+  // The shot's SUBJECT moved rather than being cut: `/tools` stopped being a page
+  // on #2114 and redirects to Home, which lists the same tools and more.
   async tools(h) {
-    await browse(h, "https://selftend.org/tools", 900);
+    await browse(h, "https://selftend.org/", 900);
   },
   async lookback(h) {
     const { page } = h;

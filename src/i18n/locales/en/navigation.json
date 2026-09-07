@@ -338,10 +338,6 @@
     "recoveryTitle": "Your recovery plan",
     "recoveryDescription": "What you wrote about what helps."
   },
-  "tools": {
-    "title": "Tools",
-    "description": "Standalone trackers any module can call into. Use them on their own, too."
-  },
   "headerButton": {
     "tune": "Customise",
     "notifications": "Reminders",
@@ -397,11 +393,6 @@
     "resetPassword": "Reset password",
     "updatePassword": "Update password",
     "verifyEmail": "Verify email"
-  },
-  "modulesPage": {
-    "title": "Modules",
-    "description": "Structured therapeutic programmes you can work through over time. Each draws on the shared tools.",
-    "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine."
   },
   "plan": {
     "wizard": {
