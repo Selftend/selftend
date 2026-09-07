@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 
 import { ConsentGate } from "./consent-gate";
 import { policyVersion } from "@/src/features/policies/policy-content";
+import { appEnv } from "@/src/lib/env";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -180,6 +181,41 @@ describe("ConsentGate - explicit Art. 9 consent (#1766)", () => {
         "This is a separate consent. You can withdraw it at any time by deleting your account or contacting privacy@selftend.org.",
       ),
     ).toBeTruthy();
+  });
+
+  /**
+   * The address in that sentence is configuration, not copy (#2131), and this is
+   * the assertion that says so.
+   *
+   * ☠️ The test above cannot say it. With no `EXPO_PUBLIC_PRIVACY_EMAIL` set -
+   * which is the case under jest - `contactEmails()` falls back to this project's
+   * own address, so the sentence renders identically whether it interpolates or
+   * hardcodes. Only configuring a DIFFERENT address separates the two.
+   *
+   * It matters here more than anywhere else the addresses appear: this is the
+   * withdrawal route for health-data consent, so a fork that hardcoded ours would
+   * be telling a person to send a withdrawal of consent over their own mental
+   * health entries to an operator who does not hold them.
+   */
+  it("takes the withdrawal address from the build's configuration", () => {
+    const original = appEnv.privacyEmail;
+    appEnv.privacyEmail = "privacy@fork.example";
+
+    try {
+      renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
+
+      expect(
+        screen.getByText(
+          "This is a separate consent. You can withdraw it at any time by deleting your account or contacting privacy@fork.example.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByText(/privacy@selftend\.org/)).toBeNull();
+      // An unsupplied variable renders the raw braces and logs nothing, because
+      // i18next routes that warning through its debug logger and `debug` is off.
+      expect(screen.queryByText(/\{\{/)).toBeNull();
+    } finally {
+      appEnv.privacyEmail = original;
+    }
   });
 
   it("cannot be satisfied by accepting the terms alone", async () => {

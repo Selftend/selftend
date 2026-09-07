@@ -94,6 +94,32 @@ EXPO_PUBLIC_PRIVACY_EMAIL=privacy@example.org
 EXPO_PUBLIC_SECURITY_EMAIL=security@example.org
 ```
 
+The three addresses are required in a stronger sense than the store and community
+URLs below, which you can set to an empty string to drop their surfaces. These
+have no empty state: the copy that names a contact cannot drop the clause, and a
+policy naming no contact is a broken document rather than a configured one. So an
+empty value resolves the same way an unset one does — to Selftend's own address —
+and `validateRequiredEnv` logs a warning naming the missing variables when a
+production build starts.
+
+> ☠️ **These variables do not yet cover your whole deployment.** As of
+> [#2131](https://github.com/Selftend/selftend/issues/2131) the **FAQ** (including
+> the parents letter) and the **health-data consent gate** read them. The
+> `privacy`, `terms`, `cookies` and `accountDeletion` sections still carry
+> `privacy@selftend.org`, `support@selftend.org` and `security@selftend.org` as
+> hardcoded literals — **15 occurrences** — so setting these three variables
+> **does not change those four screens**. Until that tranche moves, a fork
+> publishing this app is publishing Selftend's address as its own controller
+> contact in its privacy policy, and must patch those strings itself. They are
+> held back because they are hashed by
+> `src/features/policies/policy-content.test.ts`: editing one character requires a
+> `policyVersion` bump, and a bump re-presents the consent gate to every existing
+> user, so they ride the next bump that carries a real disclosure change.
+>
+> The warning above is a `console.warn` from a runtime provider, not a build-time
+> failure — on a shipped native release nothing reads it. Treat these three as
+> your own release checklist item rather than something the tooling will catch.
+
 Optional:
 
 ```bash
