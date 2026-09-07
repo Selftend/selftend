@@ -53,7 +53,7 @@ const COLLAPSIBLE: readonly FaqEntrySlug[] = FAQ_LAYOUT.groups.flatMap((group) =
  *
  * The heading outline, end to end: h1 page title → h3 callout title → h3 crisis
  * question → h2 *Start here* → h3 ×4 pinned questions → h2 ×4 group labels →
- * h3 ×8 group questions → h2 parents' letter → h3 ×5 of its sub-heads (#2149).
+ * h3 ×8 group questions → h2 parents' letter → h3 ×6 of its sub-heads (#2149).
  * The callout's own level 3 is left alone: `/support` already ships this exact
  * h1 → h3 → h2 order, so `/faq` inherits its sibling's outline instead of
  * inventing one (#2137 owns the cross-screen question, on all five call sites
@@ -77,8 +77,8 @@ export function FaqScreen() {
   // `t(key, { returnObjects: true })` returns a STRING when the key is missing.
   const entries = Array.isArray(sections) ? sections : [];
 
-  // The parents' letter's five sub-heads (#2149), positionally aligned with that
-  // entry's five paragraphs. Same missing-key guard as the corpus above.
+  // The parents' letter's six sub-heads (#2149), positionally aligned with that
+  // entry's six paragraphs. Same missing-key guard as the corpus above.
   const parentsSubheads = t("faq.parentsSubheads", { returnObjects: true }) as string[];
   const subheads = Array.isArray(parentsSubheads) ? parentsSubheads : [];
   const entryOf = (slug: FaqEntrySlug): PolicySection | undefined => entries[FAQ_ENTRY_INDEX[slug]];
@@ -231,7 +231,7 @@ function FaqDisclosureRow({
 }
 
 /**
- * The parents' letter, as five labelled passages rather than five paragraphs (#2149).
+ * The parents' letter, as six labelled passages rather than a run of paragraphs (#2149).
  *
  * ☠️ **The sub-heads are not decoration — they are the labelling this entry used
  * to carry inline.** Two of its paragraphs opened `On data: ` / `On design: `,
@@ -239,6 +239,14 @@ function FaqDisclosureRow({
  * one commit: either half alone leaves the longest single entry on the page -
  * and the one a guardian arrives specifically to read - *less* signposted than
  * it shipped.
+ *
+ * ☠️ **The underage-report route has its own sub-head, and is not folded in with
+ * the contact address.** #2149 originally merged them, which the spec specified
+ * and which read fine as prose - but it put the one passage a worried guardian
+ * is scanning for behind a heading (*Reaching us*) that names a different job.
+ * AGENTS.md asks that safety guidance stay "visible, calm, and clearly separate";
+ * a shared paragraph is the opposite of separate. Splitting it back out is why
+ * the letter has six passages rather than five.
  *
  * The zip is positional, and `parentsSubheads` is an array for exactly that
  * reason — `faq-layout.test.ts` asserts the two lengths are equal in **both**

@@ -166,10 +166,10 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
      * ☠️ **The parents' letter's sub-heads are zipped POSITIONALLY with its
      * paragraphs, so the two lengths have to agree — in each locale separately.**
      *
-     * `parentsSubheads` is an array rather than five named keys precisely so this
+     * `parentsSubheads` is an array rather than six named keys precisely so this
      * alignment is a checkable fact rather than a convention. Nothing else can
      * see a break in it: `locale-parity` compares the two files with each other
-     * and would be perfectly happy with five sub-heads over six paragraphs in
+     * and would be perfectly happy with five sub-heads over seven paragraphs in
      * *both*, and `i18n-key-coverage` only asks whether the key resolves. The
      * failure it prevents is a sixth paragraph added to the letter in one locale
      * and rendering unlabelled, or a sub-head left behind by a merge and
@@ -188,7 +188,7 @@ describe("FAQ_LAYOUT places every entry exactly once", () => {
       // Anti-vacuity: `undefined === undefined` would pass a bare equality, and
       // two empty arrays would pass it as well.
       expect(Array.isArray(subheads)).toBe(true);
-      expect(letter.body).toHaveLength(5);
+      expect(letter.body).toHaveLength(6);
       expect(subheads).toHaveLength(letter.body.length);
 
       for (const subhead of subheads ?? []) {
