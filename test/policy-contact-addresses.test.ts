@@ -15,13 +15,24 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  * supplied by `InfoScreen` from `contactEmails()`. What is pinned here is the
  * three ways that fix silently comes undone.
  *
- * ☠️ The `privacy`, `terms`, `cookies` and `accountDeletion` sections still carry
- * the literals, and that is deliberate rather than an oversight: those four are
- * hashed by `src/features/policies/policy-content.test.ts`, so editing one
- * character of them fails `verify` until `policyVersion` moves, and a version bump
- * re-presents the consent gate to every existing user. They fold in on the next
- * bump that has a real disclosure to carry. `faq` is exempt from that digest,
- * which is why it could move on its own.
+ * ☠️ This is 5 of 21 occurrences, not most of them. The `privacy`, `terms`,
+ * `cookies` and `accountDeletion` sections still carry 15 literals, and that is
+ * deliberate rather than an oversight: those four are hashed by
+ * `src/features/policies/policy-content.test.ts`, so editing one character of them
+ * fails `verify` until `policyVersion` moves, and a version bump re-presents the
+ * consent gate to every existing user. They fold in on the next bump that has a
+ * real disclosure to carry. `faq` is exempt from that digest, which is why it
+ * could move on its own.
+ *
+ * ☠️ The 21st lives outside this namespace entirely - `settings.json`'s
+ * `consent.healthDataWithdrawal`, the withdrawal route for health-data consent.
+ * It is NOT digested, so it is as cheap to move as these five were, and it is
+ * pinned verbatim by `src/components/app/consent-gate.test.tsx`. It is left here
+ * only because it belongs to the same undecided ruling, not because it is safe.
+ *
+ * The count below is asserted rather than written in prose, so that a future
+ * tranche moving those literals has to come back and update this docblock instead
+ * of leaving a stale "15 remain" behind.
  */
 
 const SUPPLIED_BY_INFO_SCREEN = Object.keys(contactEmails());
@@ -108,6 +119,31 @@ describe.each<Locale>(["en", "bg"])("%s: every policy placeholder is supplied", 
  * dropped `{{supportEmail}}` - or wrote it as `{{supportEmai}}` - would leave the
  * bg parents letter with no address in it and the suite green.
  */
+/**
+ * The unfinished half, pinned so it cannot drift unnoticed in either direction.
+ *
+ * Going UP means a new hardcoded address landed in consent-bearing copy - the
+ * defect spreading. Going DOWN means someone moved a digested literal, which is
+ * only legal alongside a `policyVersion` bump, and this failing beside
+ * `policy-content.test.ts` is the reminder that the bump re-gates every existing
+ * user.
+ */
+describe.each<Locale>(["en", "bg"])("%s: the tranche still to move (#2131)", (locale) => {
+  it("has 15 literal addresses left in the four consent-bearing sections", () => {
+    const consentBearing = ["privacy.", "terms.", "cookies.", "accountDeletion."];
+
+    const remaining = policyStrings(locale)
+      .filter(({ key }) => consentBearing.some((section) => key.startsWith(section)))
+      .flatMap(({ key, text }) =>
+        Object.values(projectContactEmails)
+          .filter((address) => text.includes(address))
+          .map((address) => ({ key, address })),
+      );
+
+    expect(remaining).toHaveLength(15);
+  });
+});
+
 describe("both locales interpolate the same variables in the same strings", () => {
   it("matches placeholder sets key by key", () => {
     const bgByKey = new Map(policyStrings("bg").map((entry) => [entry.key, entry.text]));

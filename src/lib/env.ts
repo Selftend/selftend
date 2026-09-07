@@ -68,8 +68,14 @@ export const projectContactEmails = {
  * email row when the address is unset, but "write to  with what you can tell us"
  * is not an option, and a privacy policy that names no controller contact is a
  * broken document rather than a configurable one. A fork that sets nothing
- * therefore ships ours - loudly, via `validateRequiredEnv` - which is strictly
- * better than a reader with no route at all.
+ * therefore ships ours, which is the lesser harm: mail reaching a real monitored
+ * inbox beats a reader with no route at all.
+ *
+ * ⚠️ `validateRequiredEnv` warns about that, but do not overstate what the
+ * warning buys. It is a `console.warn` from a runtime provider, not a build
+ * failure, and nothing reads the console on a shipped native release - it reaches
+ * a fork developing against the web build and nobody else. The real mitigation is
+ * `docs/self-hosting.md`.
  *
  * A function, not a constant: `appEnv` is a plain mutable object that tests
  * assign to, and a module-level derivation would freeze the value at import.
