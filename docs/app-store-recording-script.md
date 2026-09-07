@@ -105,7 +105,7 @@ From the dashboard, open the **Check-in** card and log a mood — pick a face, s
 
 Then open the navigation and go to **Tools › Mood tracker** to show the entry you just made sitting in the list with the others.
 
-> ⚠️ The tools hub calls this **"Mood tracker"**. The navigation sidebar calls the same thing **"Check-in"**. Both are correct; they are the same tool.
+> ⚠️ On screen the tool is called **"Check-in"** — that is what the **breadcrumb above it** says, and what the card you opened it from says. Where the steps here write "Mood tracker", it is the same tool under this script's older name.
 
 ### 6. A journal entry, saved and shown in its history
 
