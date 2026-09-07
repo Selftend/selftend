@@ -1,7 +1,6 @@
 import * as Linking from "expo-linking";
 import type { PropsWithChildren } from "react";
-import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,7 +14,9 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { PolicyAction } from "@/src/features/policies/policy-content";
 import { policyLastUpdated } from "@/src/features/policies/policy-content";
-import { ScreenHeader } from "@/src/components/app/screen-header";
+import { PolicyPageLayout } from "@/src/features/policies/policy-page-layout";
+import type { PolicySection } from "@/src/features/policies/policy-section-cards";
+import { PolicySectionCards } from "@/src/features/policies/policy-section-cards";
 
 interface InfoScreenProps extends PropsWithChildren {
   actions?: PolicyAction[];
@@ -28,11 +29,18 @@ interface InfoScreenProps extends PropsWithChildren {
   title: string;
 }
 
-interface TranslatedSection {
-  title: string;
-  body: string[];
-}
-
+/**
+ * The six policy routes that share one shape: `/privacy`, `/terms`, `/cookies`,
+ * `/crisis`, `/account-deletion` and `/faq`. (`/security` is the seventh policy
+ * page and does NOT render through this - it hand-rolls the same structure
+ * inline, and folds in on #2146.)
+ *
+ * ☠️ **This component's public interface is frozen by #2144.** The props below -
+ * their names, their optionality, their defaults and their order - are the
+ * entire guarantee that the routes this slice does not touch render exactly what
+ * they rendered before. The body was rebuilt on `PolicyPageLayout` and
+ * `PolicySectionCards`; the surface was not.
+ */
 export function InfoScreen({
   actions = [],
   children,
@@ -43,66 +51,62 @@ export function InfoScreen({
   title,
 }: InfoScreenProps) {
   const { t } = useTranslation("policies");
-  const sections = t(sectionKey, { returnObjects: true }) as TranslatedSection[];
+  const sections = t(sectionKey, { returnObjects: true }) as PolicySection[];
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={title} />
-            <Text variant="muted">
-              {subtitle}
-              {showLastUpdated ? ` ${t("lastUpdated", { date: policyLastUpdated })}` : null}
-            </Text>
-          </View>
+    <PolicyPageLayout
+      title={title}
+      subtitle={
+        /*
+          ☠️ Passed as a FRAGMENT, not a concatenated string. These are two
+          children of one `Text` today, and joining them into a single string
+          would change the rendered node tree - enough to move an RNTL
+          `getByText` on a page nothing in this slice is supposed to touch.
+        */
+        <>
+          {subtitle}
+          {showLastUpdated ? ` ${t("lastUpdated", { date: policyLastUpdated })}` : null}
+        </>
+      }
+    >
+      {notice ? (
+        <Card>
+          <CardHeader>
+            <CardTitle aria-level={2}>{t("launchReview")}</CardTitle>
+            <CardDescription>{notice}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
 
-          {notice ? (
-            <Card>
-              <CardHeader>
-                <CardTitle aria-level={2}>{t("launchReview")}</CardTitle>
-                <CardDescription>{notice}</CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
+      {actions.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle aria-level={2}>{t("helpfulLinks")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              {actions.map((action) => (
+                <Button
+                  key={action.url}
+                  onPress={() => void Linking.openURL(action.url)}
+                  variant="secondary"
+                >
+                  <Text>{action.label}</Text>
+                </Button>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+      ) : null}
 
-          {actions.length ? (
-            <Card>
-              <CardHeader>
-                <CardTitle aria-level={2}>{t("helpfulLinks")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View className="gap-3">
-                  {actions.map((action) => (
-                    <Button
-                      key={action.url}
-                      onPress={() => void Linking.openURL(action.url)}
-                      variant="secondary"
-                    >
-                      <Text>{action.label}</Text>
-                    </Button>
-                  ))}
-                </View>
-              </CardContent>
-            </Card>
-          ) : null}
+      {children}
 
-          {children}
-
-          {Array.isArray(sections)
-            ? sections.map((section, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <CardTitle aria-level={2}>{section.title}</CardTitle>
-                    {section.body.map((paragraph, pIndex) => (
-                      <CardDescription key={pIndex}>{paragraph}</CardDescription>
-                    ))}
-                  </CardHeader>
-                </Card>
-              ))
-            : null}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/*
+        The guard stays with the caller, not inside `PolicySectionCards`:
+        `t(key, { returnObjects: true })` returns a STRING when the key is
+        missing, and the key is this component's to get wrong.
+      */}
+      {Array.isArray(sections) ? <PolicySectionCards sections={sections} /> : null}
+    </PolicyPageLayout>
   );
 }
