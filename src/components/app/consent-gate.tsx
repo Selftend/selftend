@@ -15,6 +15,7 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useRecordPolicyConsent } from "@/src/features/settings/queries";
+import { contactEmails } from "@/src/lib/env";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
@@ -159,7 +160,15 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                     and appending the escape route to it would make the act
                     longer to hear and no clearer. */}
                 <Text className="text-muted-foreground text-xs">
-                  {t("consent.healthDataWithdrawal")}
+                  {/* The address is configuration, not copy (#2131). This is the
+                      21st and last of the hardcoded contact addresses outside the
+                      digested policy sections, and arguably the sharpest: it is
+                      the withdrawal route for HEALTH-DATA consent, so on a fork
+                      it pointed the person at this project rather than at the
+                      operator actually holding their entries. */}
+                  {t("consent.healthDataWithdrawal", {
+                    privacyEmail: contactEmails().privacyEmail,
+                  })}
                 </Text>
               </View>
               <Button

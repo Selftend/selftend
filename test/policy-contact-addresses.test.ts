@@ -24,11 +24,12 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  * real disclosure to carry. `faq` is exempt from that digest, which is why it
  * could move on its own.
  *
- * ☠️ The 21st lives outside this namespace entirely - `settings.json`'s
- * `consent.healthDataWithdrawal`, the withdrawal route for health-data consent.
- * It is NOT digested, so it is as cheap to move as these five were, and it is
- * pinned verbatim by `src/components/app/consent-gate.test.tsx`. It is left here
- * only because it belongs to the same undecided ruling, not because it is safe.
+ * The 21st lived outside this namespace entirely - `settings.json`'s
+ * `consent.healthDataWithdrawal`, the withdrawal route for health-data consent -
+ * and moved with the same tranche, because it is not digested either. It is
+ * guarded below rather than left to `consent-gate.test.tsx` alone: that suite
+ * renders the sentence, this one is what notices a NEW hardcoded address landing
+ * anywhere in the same copy.
  *
  * The count below is asserted rather than written in prose, so that a future
  * tranche moving those literals has to come back and update this docblock instead
@@ -119,6 +120,32 @@ describe.each<Locale>(["en", "bg"])("%s: every policy placeholder is supplied", 
  * dropped `{{supportEmail}}` - or wrote it as `{{supportEmai}}` - would leave the
  * bg parents letter with no address in it and the suite green.
  */
+/**
+ * The 21st occurrence, which lives in `settings` rather than `policies` — the
+ * withdrawal route for health-data consent, stated beside the tick box.
+ *
+ * Scoped by namespace rather than folded into the `faq` sweep above, because the
+ * thing worth catching is different: there, that a contact answer stopped naming
+ * a contact; here, that a consent surface started naming an operator.
+ */
+describe.each<Locale>(["en", "bg"])("%s: the health-data withdrawal route", (locale) => {
+  function withdrawalCopy(): string {
+    const entry = LOCALE_STRINGS[locale].find(
+      ({ namespace, key }) => namespace === "settings" && key === "consent.healthDataWithdrawal",
+    );
+    if (!entry) throw new Error(`settings:consent.healthDataWithdrawal missing in ${locale}`);
+    return entry.text;
+  }
+
+  it("names no address of its own", () => {
+    expect(withdrawalCopy()).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  });
+
+  it("still routes the person somewhere, through the privacy placeholder", () => {
+    expect(placeholdersIn(withdrawalCopy())).toEqual(["privacyEmail"]);
+  });
+});
+
 /**
  * The unfinished half, pinned so it cannot drift unnoticed in either direction.
  *

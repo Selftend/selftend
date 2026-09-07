@@ -103,15 +103,15 @@ and `validateRequiredEnv` logs a warning naming the missing variables when a
 production build starts.
 
 > ☠️ **These variables do not yet cover your whole deployment.** As of
-> [#2131](https://github.com/Selftend/selftend/issues/2131) only the **FAQ** reads
-> them. The `privacy`, `terms`, `cookies` and `accountDeletion` sections still
-> carry `privacy@selftend.org`, `support@selftend.org` and
-> `security@selftend.org` as hardcoded literals — 15 occurrences — as does
-> `settings.json`'s `healthDataWithdrawal`, the withdrawal route for health-data
-> consent. Setting these three variables **does not change those screens**. Until
-> that tranche moves, a fork publishing this app is publishing Selftend's address
-> as its own controller contact in its privacy policy, and must patch those
-> strings itself. They are held back because they are hashed by
+> [#2131](https://github.com/Selftend/selftend/issues/2131) the **FAQ** (including
+> the parents letter) and the **health-data consent gate** read them. The
+> `privacy`, `terms`, `cookies` and `accountDeletion` sections still carry
+> `privacy@selftend.org`, `support@selftend.org` and `security@selftend.org` as
+> hardcoded literals — **15 occurrences** — so setting these three variables
+> **does not change those four screens**. Until that tranche moves, a fork
+> publishing this app is publishing Selftend's address as its own controller
+> contact in its privacy policy, and must patch those strings itself. They are
+> held back because they are hashed by
 > `src/features/policies/policy-content.test.ts`: editing one character requires a
 > `policyVersion` bump, and a bump re-presents the consent gate to every existing
 > user, so they ride the next bump that carries a real disclosure change.

@@ -90,9 +90,9 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the GitHub Actions variable and redeploy.
 
-The three contact addresses are read by `/support`, `/security`, and — as of #2131 — the **FAQ**, which interpolates them instead of hardcoding them. A build that leaves one unset falls back to the address above and logs a startup warning naming the variable — harmless here, since these values are this project's own, but it is the signal a fork needs.
+The three contact addresses are read by `/support`, `/security`, and — as of #2131 — the **FAQ** and the health-data consent gate, which interpolate them instead of hardcoding them. A build that leaves one unset falls back to the address above and logs a startup warning naming the variable — harmless here, since these values are this project's own, but it is the signal a fork needs.
 
-⚠️ The FAQ is only 5 of the 21 places these addresses appear in copy. The other 16 — 15 across the `privacy`, `terms`, `cookies` and `accountDeletion` sections, plus `settings.json`'s `healthDataWithdrawal` — are still literals, so setting these variables does **not** yet change what those screens print. The 15 are held back because they are hashed by `policy-content.test.ts` and moving one character costs a `policyVersion` bump, which re-presents the consent gate to every existing user. See [self-hosting.md](self-hosting.md) for what that means for a fork.
+⚠️ That is 6 of the 21 places these addresses appear in copy. The remaining **15** live in the `privacy`, `terms`, `cookies` and `accountDeletion` sections and are still literals, so setting these variables does **not** yet change what those four screens print. They are held back because they are hashed by `policy-content.test.ts` and moving one character costs a `policyVersion` bump, which re-presents the consent gate to every existing user. See [self-hosting.md](self-hosting.md) for what that means for a fork.
 
 `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
 
