@@ -350,8 +350,14 @@ describe("computeBreadcrumbs - the hub segments are transparent (#2096)", () => 
     // `SLUG_LABEL_KEYS` is keyed on the PARENT PATH, which still contains
     // `/tools` even though no crumb does - so making the segment transparent
     // cannot silently unname these.
+    //
+    // ☠️ The WHOLE array, not just the last label. `at(-1)` alone is true with or
+    // without the transparency edit - the slug branch never read crumb 0 - so it
+    // would have passed under a half-applied change and proved nothing about the
+    // sentence above it. The first element is what carries the claim: `Habits`,
+    // not the `Entry` the generic branch would put there.
     const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
 
-    expect(crumbs.at(-1)?.label).toBe("The 1% compounding effect");
+    expect(crumbs.map((c) => c.label)).toEqual(["Habits", "Learn", "The 1% compounding effect"]);
   });
 });

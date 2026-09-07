@@ -164,7 +164,6 @@ describe("ScreenEscape - naming the destination in Bulgarian", () => {
 
   it("interpolates the name rather than concatenating English around it", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Инструменти", href: "/tools" },
       { label: "Дневник", href: "/tools/journal" },
       { label: "Запис" },
     ]);
@@ -176,7 +175,6 @@ describe("ScreenEscape - naming the destination in Bulgarian", () => {
     // The whole reason the marker is structural: this branch is chosen without
     // ever comparing a label to the word "Entry", which reads "Запис" here.
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Инструменти", href: "/tools" },
       { label: "Дневник", href: "/tools/journal" },
       { label: "Запис", href: "/tools/journal/3f9a-uuid", unresolved: true },
       { label: "Редактиране" },
