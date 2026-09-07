@@ -1,7 +1,9 @@
 import { screen } from "@testing-library/react-native";
+import { ScrollView } from "react-native";
 
 import { PolicyPageLayout } from "@/src/features/policies/policy-page-layout";
 import i18n from "@/src/i18n";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/crisis";
@@ -72,5 +74,39 @@ describe("PolicyPageLayout", () => {
 
     expect(screen.getByText(/How we handle your data\./)).toBeTruthy();
     expect(screen.getByText(/Last updated 4 September 2026\./)).toBeTruthy();
+  });
+
+  /**
+   * All seven policy routes sit in the 672px column their siblings already show
+   * (#2148, ruled on #2136). One assertion covers all seven, because since #2146
+   * there is one copy of this chrome: the six that go through `InfoScreen` and
+   * `/security`, which composes this layout directly.
+   *
+   * ☠️ **`p-6` is asserted on the SAME element, and that is the whole test.**
+   * `HOME_COLUMN` is 720. Beside `p-6` on the scroll box it reads 720 − 2×24 =
+   * 672; moved to the inner `View` inside those gutters it reads the full 720 and
+   * the page ships 48px wide of spec, looking correct in every other assertion
+   * here. Co-location is the only thing that distinguishes the two, which is why
+   * `legal-screen.test.tsx` and `progress-screen.test.tsx` both pin it this way.
+   *
+   * ☠️ Asserted as class TOKENS, not a computed width: jest does not run
+   * NativeWind's compiler, so `className` never becomes a style. The plain RN
+   * `ScrollView` keeps `contentContainerClassName` as a raw string prop — a
+   * NativeWind-wrapped `AnimatedScrollView` would strip it into
+   * `contentContainerStyle` instead and this query would return undefined.
+   */
+  it("puts the shared 672px column on the padded scroll box", () => {
+    renderWithProviders(<PolicyPageLayout subtitle="How we handle your data." title="Privacy" />);
+
+    const tokens = String(
+      screen.UNSAFE_getByType(ScrollView).props.contentContainerClassName,
+    ).split(/\s+/);
+
+    // Anti-vacuity: `every` over an empty token list would pass.
+    expect(HOME_COLUMN.split(/\s+/).length).toBeGreaterThan(0);
+    for (const token of HOME_COLUMN.split(/\s+/)) {
+      expect(tokens).toContain(token);
+    }
+    expect(tokens).toContain("p-6");
   });
 });

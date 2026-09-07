@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { HOME_COLUMN } from "@/src/lib/layout";
+import { cn } from "@/lib/utils";
 
 interface PolicyPageLayoutProps extends PropsWithChildren {
   /**
@@ -28,9 +30,18 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  * of the chrome where there were two - and so `/faq` can build its own body on
  * the shared chrome (#2147) instead of forking the whole screen.
  *
- * ⚠️ **No column class here, deliberately.** The 672px content column is the
- * next slice (#2148). Keeping it out is what lets this one be reviewed against
- * the only gate that matters for a refactor: the diff changes nothing on screen.
+ * ☠️ **The column goes on the PADDED BOX, not the inner `View`** (#2148, ruled on
+ * #2136). `HOME_COLUMN` is 720; merged into `contentContainerClassName` beside
+ * `p-6` it reads 720 outer − 2×24 gutters = the **672** that `/support`,
+ * `/legal` and `/progress` already show. On the inner `View` the same constant
+ * would read the full 720 — the module-home width, not this page's. `layout.ts`
+ * documents the distinction; #1721 is where it was learned, and a previous
+ * ticket got it backwards.
+ *
+ * Before this, all seven policy routes were exactly the defect `layout.ts` opens
+ * by describing: edge-to-edge on a 1440px browser. `/legal` was the sharpest
+ * case — a 672px page whose whole body is five buttons opening five of these
+ * routes, so every click dropped out of the column that #1721 had just given it.
  *
  * The Escape is not conditional and never was: `ScreenHeader` renders
  * `<ScreenEscape />` unconditionally and its docblock forbids gating it. The
@@ -41,7 +52,7 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
 export function PolicyPageLayout({ children, subtitle, title }: PolicyPageLayoutProps) {
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
+      <ScrollView contentContainerClassName={cn("grow p-6", HOME_COLUMN)}>
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={title} />
