@@ -83,5 +83,7 @@ none.
 
 - `fixtures.ts` — per-worker pool users (`e2e-w<n>`), auto sign-in.
 - `helpers.ts` — service-role seed/cleanup helpers (re-exported from
-  `test/integration/helpers.ts`).
+  `test/integration/helpers.ts`), plus the shared UI steps every spec needs:
+  sign-in, gate and modal dismissal, and the named navigation routes
+  (`navigateViaPanel`, `navigateToCheckInViaHome`).
 - `playwright.config.ts` (repo root) — web server on `:8099`, workers, ports.

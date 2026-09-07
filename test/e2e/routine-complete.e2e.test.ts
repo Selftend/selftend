@@ -4,6 +4,7 @@ import {
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  navigateToCheckInViaHome,
   navigateViaPanel,
 } from "./helpers";
 
@@ -76,9 +77,10 @@ test.describe("routine completes via tool use", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
-    // Panel "Check-in" -> tracker home; tapping a score on the check-in card
-    // seeds the score in memory and pushes the bare /tools/check-in/new (#961).
-    await navigateViaPanel(page, "Check-in");
+    // Home -> the Check-in card -> tracker home (the helper owns why that is
+    // the route). Tapping a score on the check-in card seeds the score in
+    // memory and pushes the bare /tools/check-in/new (#961).
+    await navigateToCheckInViaHome(page);
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
