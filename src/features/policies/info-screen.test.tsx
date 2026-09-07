@@ -19,9 +19,11 @@ beforeAll(async () => {
 /**
  * ☠️ SIX of the seven policy routes render through this component: `/crisis`,
  * `/privacy`, `/terms`, `/cookies`, `/account-deletion` and `/faq`. **`/security`
- * is NOT among them** - it hand-rolls the same card structure inline and takes
- * its Escape from `ScreenHeader` directly, so nothing here has ever said
- * anything about it.
+ * is NOT among them** - this component hardcodes the `policies` namespace and
+ * that page reads `security`, so it composes `PolicyPageLayout` and
+ * `PolicySectionCards` itself (#2146). Nothing here has ever said anything about
+ * it, and after the fold-in that is still true: its guards are
+ * `security-screen.test.tsx` and `policy-heading-outline.test.tsx`.
  *
  * This claim used to name `/security` too, and the false coverage it implied is
  * part of why that page shipped an h1 → h3 outline unnoticed (#2133). Its
