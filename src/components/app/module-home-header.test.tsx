@@ -117,11 +117,17 @@ describe("ModuleHomeHeader action buttons", () => {
     expect(onPressProgram).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * ☠️ Both strings this looked for were a TOUR's, and #2109 deleted the tour and
+   * `Skip all tips` with it - so that half can never match again and proves nothing
+   * on its own. `Got it` is the half that still bites: it is live copy, rendered by
+   * the meditation and mood onboarding modals, so this stays a real assertion that
+   * the module header does not grow a modal of its own on first render.
+   */
   it("renders no first-run coach-mark overlay for any action", () => {
     renderHeader({ includeProgram: true });
 
     expect(screen.queryByText("Got it")).toBeNull();
-    expect(screen.queryByText("Skip all tips")).toBeNull();
   });
 
   it("renders no tour even when actions were never dismissed", () => {

@@ -129,21 +129,18 @@ export async function navigateViaPanel(page: Page, linkName: string) {
  * catalogue KEY (`src/features/favorites/items.ts`), which kept its original name when
  * the tool's copy did not.
  *
- * ☠️ The tour is dismissed BETWEEN the two steps, not left to chance. The home tour arms
- * a beat after Home settles - its spotlight paints on a 150ms measure - and its scrim
- * covers the screen, so a card tap either wins that race or times out against the scrim
- * depending on how loaded the runner is. `dismissPostSignInModals` cannot have covered
- * it: the tour only queues on `pathname === "/"`, and `routine-complete` boots on
- * `/routines`, so its dismissal there is a no-op and Home is first reached HERE. Proven
- * live rather than reasoned about - with `shown_button_tours` reset to `{}` the tour
- * renders on this navigation and this call is what clears it.
+ * ☠️ This used to dismiss the home tour between the two steps, because routing a journey
+ * through Home ARMED it: the tour queued only on `pathname === "/"`, so a spec booting on
+ * `/routines` had `dismissPostSignInModals` no-op, reached Home first HERE, and met a
+ * scrim that covered the screen - a card tap then either won a 150ms measure race or
+ * timed out, depending on runner load. #2109 retired the tour outright, so the hazard is
+ * gone at the source rather than worked around; nothing arms on arriving at Home now.
  *
  * The destination assertion stays with the callers: each journey says for itself where it
  * expects to land.
  */
 export async function navigateToCheckInViaHome(page: Page) {
   await navigateViaPanel(page, "Home");
-  await dismissHomeTour(page);
   await page.getByTestId("home-tools").getByTestId("card-tool-mood").click();
 }
 
@@ -265,28 +262,6 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(skipButton).toBeEnabled({ timeout: 5_000 });
     await skipButton.click();
     await expect(wizardTitle).toBeHidden({ timeout: 10_000 });
-  }
-
-  await dismissHomeTour(page);
-}
-
-/**
- * Home tour spotlight: one "Skip all tips" dismisses all four home stops.
- *
- * Waits rather than sampling `isVisible()` once - the tour arms a beat after the screen
- * settles, so a single sample sees nothing and the tour then appears mid-test. Its scrim
- * sits ABOVE an open nav panel, so an undismissed tour blocks the panel's links, not just
- * the header it points at.
- */
-export async function dismissHomeTour(page: Page) {
-  const skipAllTips = page.getByRole("button", { name: "Skip all tips", exact: true });
-  const tourVisible = await skipAllTips
-    .waitFor({ state: "visible", timeout: 3_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (tourVisible) {
-    await skipAllTips.click();
-    await expect(skipAllTips).toBeHidden({ timeout: 10_000 });
   }
 }
 

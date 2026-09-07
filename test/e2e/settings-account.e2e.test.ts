@@ -275,7 +275,7 @@ test.describe("settings - onboarding actions", () => {
     await restoreFavorites();
   });
 
-  test("replays the introduction, re-arms tips separately, and preserves Home favourites", async ({
+  test("replays the introduction, leaves unrelated columns alone, and preserves Home favourites", async ({
     page,
   }) => {
     const admin = createServiceClient();
@@ -296,9 +296,9 @@ test.describe("settings - onboarding actions", () => {
     await page.goto("/(app)/settings");
     await dismissPostSignInModals(page);
 
-    // The `Onboarding` card heading is gone (#982) - both rows now sit in the `App`
-    // run - so the wait is on the button this test actually presses. Its name
-    // survives verbatim.
+    // The `Onboarding` card heading is gone (#982) and `Show tips again` went with the
+    // home tour (#2109), so Replay introduction is the run's only onboarding action now.
+    // Its name survives verbatim.
     const replay = page.getByRole("button", { name: "Replay introduction", exact: true });
     await expect(replay).toBeVisible({ timeout: 10_000 });
 
@@ -309,7 +309,10 @@ test.describe("settings - onboarding actions", () => {
     // it. Scoped to the toast so this cannot pass against a stale permanent node.
     await expectSuccessToast(page, /app introduction will be shown again/i, { timeout: 8_000 });
 
-    // Replaying the app introduction does not silently alter contextual tips.
+    // ☠️ The replay is an UPSERT, so the risk it carries is clobbering columns it does
+    // not name. `shown_button_tours` is the probe: seeded above, inert since #2109
+    // retired the tour, and read back unchanged here. A dead column is the sharpest
+    // possible probe for this - nothing else in the app can be writing it.
     const { data: replayed } = await admin
       .from("user_preferences")
       .select("app_onboarding_completed, shown_button_tours")
@@ -317,16 +320,6 @@ test.describe("settings - onboarding actions", () => {
       .single();
     expect(replayed?.app_onboarding_completed).toBe(false);
     expect(replayed?.shown_button_tours).toEqual(["home:navigation"]);
-
-    await page.getByRole("button", { name: "Show tips again", exact: true }).click();
-    await expectSuccessToast(page, /button tips.*can appear again/i, { timeout: 8_000 });
-    const { data: tips } = await admin
-      .from("user_preferences")
-      .select("shown_button_tours, start_here_dismissed_at")
-      .eq("user_id", USER_ID)
-      .single();
-    expect(tips?.shown_button_tours ?? []).toEqual([]);
-    expect(tips?.start_here_dismissed_at).toBeNull();
 
     expect(await getFavoriteRows()).toEqual([
       { kind: "module", key: "cbt" },

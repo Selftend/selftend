@@ -423,27 +423,6 @@ export async function updateUserPreferences(userId: string, patch: Partial<UserP
   throw new Error("updateUserPreferences: exhausted missing-column retries");
 }
 
-export async function updateShownButtonTours(userId: string, shownButtonTours: ButtonTourKey[]) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        shown_button_tours: shownButtonTours,
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapPreferences(data as UserPreferenceRow);
-}
-
 /**
  * The keys an onboarding write may name.
  *
@@ -456,7 +435,6 @@ type OnboardingPreferencesPatch = Partial<
     | "appOnboardingCompleted"
     | "appOnboardingCompletedVia"
     | "appOnboardingCompletedAt"
-    | "shownButtonTours"
     | "startHereDismissedAt"
   >
 >;

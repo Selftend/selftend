@@ -8,11 +8,7 @@ import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habit
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { addDays, currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
 import type { HabitLog } from "@/src/features/habits/types";
-import {
-  useUpdateShownButtonTours,
-  useUpdateUserPreferences,
-  useUserPreferences,
-} from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -50,7 +46,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -66,9 +61,6 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -106,10 +98,6 @@ function mockDefaults() {
     isPending: false,
     mutateAsync: jest.fn(),
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-  mockUseUpdateShownButtonTours.mockReturnValue({
-    isPending: false,
-    mutateAsync: jest.fn(),
-  } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
 
   mockUseHabits.mockReturnValue({
     data: [

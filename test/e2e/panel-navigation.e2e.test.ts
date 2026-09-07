@@ -15,7 +15,7 @@ import type { Page } from "@playwright/test";
 
 import { test, expect } from "./fixtures";
 
-import { dismissHomeTour, dismissPostSignInModals, navigateViaPanel } from "./helpers";
+import { dismissPostSignInModals, navigateViaPanel } from "./helpers";
 
 /** Counts hidden roots too, which is the whole point — the stale copy is invisible. */
 const homeRoots = (page: Page) => page.getByTestId("home-layout").count();
@@ -41,7 +41,6 @@ test("returning to Home through the panel does not mount a second Home", async (
     await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
-    await dismissHomeTour(page);
 
     expect(await homeRoots(page)).toBe(1);
   }

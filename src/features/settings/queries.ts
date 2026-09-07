@@ -1,10 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  mergeUserPreferences,
-  type ButtonTourKey,
-  type UserPreferences,
-} from "@/src/features/modules/types";
+import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import {
   deleteUserAccount,
   exportUserData,
@@ -12,7 +8,6 @@ import {
   recordAgeAttestation,
   recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 
@@ -64,24 +59,6 @@ export function useUpdateUserPreferences(userId: string | null) {
     // rollback above already restored the cache.
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
-    },
-  });
-}
-
-export function useUpdateShownButtonTours(userId: string | null) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (shownButtonTours: ButtonTourKey[]) =>
-      updateShownButtonTours(userId!, shownButtonTours),
-    // Both callers treat tour-seen writes as best-effort; a failure must stay invisible.
-    meta: { suppressGlobalErrorToast: true },
-    onSuccess: async () => {
-      if (!userId) {
-        return;
-      }
-
       await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
     },
   });

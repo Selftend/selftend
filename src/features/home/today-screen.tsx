@@ -13,7 +13,6 @@ import { parseLocalNoon } from "@/src/utils/date";
 import { favoriteItems, MODULES, TOOLS } from "@/src/features/favorites/items";
 import { ItemCardRow } from "@/src/features/favorites/item-card";
 import { useFavorites } from "@/src/features/favorites/queries";
-import { HomeTour } from "@/src/features/tours/home-tour";
 import { HOME_COLUMN } from "@/src/lib/layout";
 
 const PADDING = 24;
@@ -163,7 +162,6 @@ export default function HomeScreen() {
           </View>
         </AnimatedScrollView>
       </View>
-      <HomeTour />
     </SafeAreaView>
   );
 }

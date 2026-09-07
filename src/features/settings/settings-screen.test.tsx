@@ -1,14 +1,11 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { Platform, Text as mockText, View as mockView, useWindowDimensions } from "react-native";
 import type { ReactNode } from "react";
 import { router } from "expo-router";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import {
-  REPLAY_INTRODUCTION_PREFERENCES,
-  SHOW_TIPS_AGAIN_PREFERENCES,
-} from "@/src/features/settings/onboarding-reset";
+import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -215,20 +212,25 @@ describe("SettingsScreen structure", () => {
      *
      * - `Support` — the drawn "within a couple of days" contradicts the FAQ's
      *   "within a week", and a response-time promise lives in ONE place.
-     * - `Replay introduction`, `Show tips again`, `Cookies` — the drawing gives
-     *   them empty descriptions on BOTH frames.
+     * - `Replay introduction`, `Cookies` — the drawing gives them empty
+     *   descriptions on BOTH frames.
+     *
+     * ☠️ `Show tips again` was the third of those and is no longer a row at all
+     * (#2109). The drawing still shows it, so the design file is STALE here on
+     * purpose, not ahead of the code: the button's only live subject was the home
+     * tour's last stop, and retiring the tour left it promising tips that could
+     * never appear. Do not restore it from the drawing.
      */
-    it.each([
-      "settings-row-support",
-      "settings-row-replay-introduction",
-      "settings-row-show-tips-again",
-    ])("leaves %s bare", async (testID) => {
-      renderWithProviders(<SettingsScreen />);
-      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+    it.each(["settings-row-support", "settings-row-replay-introduction"])(
+      "leaves %s bare",
+      async (testID) => {
+        renderWithProviders(<SettingsScreen />);
+        await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
 
-      // A bare row passes no hint, because the hint IS the description.
-      expect(screen.getByTestId(testID).props.accessibilityHint).toBeUndefined();
-    });
+        // A bare row passes no hint, because the hint IS the description.
+        expect(screen.getByTestId(testID).props.accessibilityHint).toBeUndefined();
+      },
+    );
 
     /**
      * ⚠️ Cookies needs its own case: the row is WEB-ONLY, so under jest's
@@ -700,7 +702,6 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByLabelText("Replay introduction").props.accessibilityState.disabled).toBe(
       true,
     );
-    expect(screen.getByLabelText("Show tips again").props.accessibilityState.disabled).toBe(true);
     // Nothing else waits.
     expect(screen.getByLabelText("Export my data").props.accessibilityState.disabled).toBe(false);
   });
@@ -841,14 +842,30 @@ describe("SettingsScreen onboarding actions", () => {
     });
   });
 
-  it("re-arms contextual tips without replaying the app introduction", async () => {
+  /**
+   * ☠️ `Show tips again` sat directly below Replay introduction, and its case stood
+   * here asserting it wrote `SHOW_TIPS_AGAIN_PREFERENCES` and nothing else. Both went
+   * with the home tour (#2109) - the tips it re-armed had no stops left to show.
+   *
+   * ☠️ Replaced by an EXACT set over the run that held it, not by a
+   * `queryByTestId("settings-row-show-tips-again")).toBeNull()`. An absence check on a
+   * row nothing renders passes for the rest of time and stops testing anything; an
+   * equality over the run fails both ways - the row creeping back, and a surviving
+   * row going missing.
+   */
+  it("holds exactly the App rows, with no tips row among them", async () => {
     renderWithProviders(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByText("Show tips again")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Replay introduction")).toBeTruthy());
 
-    fireEvent.press(screen.getByText("Show tips again"));
+    const rows = within(screen.getByTestId("settings-run-app"))
+      .getAllByTestId(/^settings-row-/)
+      .map((row) => String(row.props.testID));
 
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(SHOW_TIPS_AGAIN_PREFERENCES);
-    });
+    // Under jest's default iOS the native-only App lock row renders; on web it does not.
+    expect(rows).toEqual([
+      "settings-row-reminders",
+      "settings-row-app-lock",
+      "settings-row-replay-introduction",
+    ]);
   });
 });
