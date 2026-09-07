@@ -108,9 +108,9 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     "src/components/app/cbt-program-card.tsx",
   ],
   "the module and tool listings": [
-    "src/features/modules/modules-screen.tsx",
-    "src/features/tools/tools-screen.tsx",
-    // The one card both of those render through, and Home (#1955).
+    // The one card the listings render through. It had two other surfaces until
+    // #2114 deleted the `/tools` and `/modules` hub screens; Home is the listing
+    // now, and this file is still where its hue would come back (#1955).
     "src/features/favorites/item-card.tsx",
     // The CBT home's pillar cards and the shared-tool pills beneath them are a
     // tool listing wearing a different frame: both took the owning pillar's hue,

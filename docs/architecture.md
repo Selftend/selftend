@@ -50,15 +50,23 @@ app/
 ├── cookies.tsx            public
 ├── crisis.tsx             public
 ├── account-deletion.tsx   public
-├── (auth)/                sign-up, verify-email, reset-password, update-password, auth-callback
+├── faq.tsx                public
+├── security.tsx           public
+├── (auth)/                sign-in, sign-up, verify-email, reset-password, update-password, auth-callback
 └── (app)/                 protected app shell
-    ├── index.tsx          home (Today)
+    ├── index.tsx          home
     ├── settings.tsx       settings
-    ├── cbt/               index, learn, new, [id], history
-    ├── tools/             check-in, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
+    ├── progress.tsx       looking back
+    ├── notifications.tsx  reminders
     ├── legal.tsx
-    └── support.tsx
+    ├── support.tsx
+    ├── routines/          index, new, [id], [id]/edit
+    ├── modules/           act, cbt, dbt  (index.tsx redirects to home)
+    └── tools/             check-in, journal, breathing, grounding, gratitude-log,
+                           meditation, sleep, habits  (index.tsx redirects to home)
 ```
+
+The two `index.tsx` redirects are [#2114](https://github.com/Selftend/selftend/issues/2114): `/tools` and `/modules` stopped being pages, because each listed a subset of what Home lists. The files stay because both segments are real route directories - a bookmarked or typed `/tools` would otherwise render `+not-found` - and every deeper URL is unchanged.
 
 Public routes stay reachable without sign-in. The `(app)` group is gated by [src/providers/session-provider.tsx](../src/providers/session-provider.tsx).
 

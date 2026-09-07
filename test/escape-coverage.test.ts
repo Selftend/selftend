@@ -253,7 +253,14 @@ describe("the route population (pinned, G5)", () => {
     expect(ROUTES).toHaveLength(156);
   });
 
-  it("derives exactly the eight <Redirect>-only stubs", () => {
+  it("derives exactly the ten <Redirect>-only stubs", () => {
+    // 8 → 10: #2114 deleted the `/tools` and `/modules` hub SCREENS, not their
+    // route files. Both files re-exported a default and rendered no tag of their
+    // own, which is why the walk read them as covered routes reaching chrome
+    // through the hop; both now render `<Redirect>` and nothing else, so the
+    // shape-derived class they belong to changed and they moved here out of
+    // `covered` below. The route POPULATION is untouched at 156 — this is the
+    // gate watching its subject change class, not a route appearing or leaving.
     expect(redirectStubs).toEqual([
       // #1379 folded the alignment check-in onto the values screen, so this
       // route became a stub. The file is MANDATORY rather than deletable: the
@@ -262,7 +269,14 @@ describe("the route population (pinned, G5)", () => {
       // docblock. Pinned here deliberately, which is what this block is for.
       "app/(app)/modules/act/values/bulls-eye.tsx",
       "app/(app)/modules/cbt/[id].tsx",
+      // The two hub stubs (#2114). Unlike the others they redirect to `/` rather
+      // than to a sibling: the page they replace listed a subset of Home, so Home
+      // IS where its content went. Kept as files because `tools` and `modules` are
+      // real route directories — a bookmarked or typed `/tools` would otherwise
+      // render `+not-found`.
+      "app/(app)/modules/index.tsx",
       "app/(app)/tools/act.tsx",
+      "app/(app)/tools/index.tsx",
       "app/(app)/tools/meditation/stages/[n].tsx",
       "app/(app)/tools/mood-tracker/[id]/edit.tsx",
       "app/(app)/tools/mood-tracker/[id]/index.tsx",
@@ -281,7 +295,11 @@ describe("the route population (pinned, G5)", () => {
     // this class rather than among the stubs. Then 126 → 125 when #1959 deleted the
     // `/arrange` screen. The walk still finds all 135 routes, which is the number this
     // class exists to protect — a drop there would mean the walk itself had gone blind.
-    expect(covered).toHaveLength(146);
+    // 146 → 144: `app/(app)/tools/index.tsx` and `app/(app)/modules/index.tsx` moved from
+    // this class to the redirect stubs above when #2114 deleted the two hub screens. Both
+    // ends of that move are pinned, so the pair has to be accounted for on one side or the
+    // other — a route dropping out of the walk entirely could not hide in this number.
+    expect(covered).toHaveLength(144);
   });
 });
 

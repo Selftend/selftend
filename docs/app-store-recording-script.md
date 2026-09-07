@@ -103,13 +103,13 @@ Scroll the dashboard slowly to the bottom and back up.
 
 From the dashboard, open the **Check-in** card and log a mood — pick a face, save it.
 
-Then open the navigation and go to **Tools › Mood tracker** to show the entry you just made sitting in the list with the others.
+Then go back to **Home**, open the **Check-in** card again, and open its history to show the entry you just made sitting in the list with the others.
 
 > ⚠️ On screen the tool is called **"Check-in"** — that is what the **breadcrumb above it** says, and what the card you opened it from says. Where the steps here write "Mood tracker", it is the same tool under this script's older name.
 
 ### 6. A journal entry, saved and shown in its history
 
-Go to **Tools › Journal**, tap to add an entry, type two or three sentences of ordinary text, and save.
+From **Home**, open the **Journal** card, tap to add an entry, type two or three sentences of ordinary text, and save.
 
 Show the saved entry in the journal list.
 
@@ -117,7 +117,7 @@ Show the saved entry in the journal list.
 
 ### 7. A timed breathing session, run to completion
 
-Go to **Tools › Breathing** and start a session. **Let it run to the end** rather than cutting away — the point is that a timed exercise actually completes and is recorded.
+From **Home**, open the **Breathing** card and start a session. **Let it run to the end** rather than cutting away — the point is that a timed exercise actually completes and is recorded.
 
 When it finishes you may see **"Nice work. Want a daily reminder?"** with **Set reminder** and **No thanks**.
 

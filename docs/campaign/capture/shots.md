@@ -19,7 +19,7 @@ in frame before keeping the take (notably the CBT learn-page copy).
 | Shot id        | Route / surface                           | Action captured                                         | Used in                              |
 | -------------- | ----------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
 | HOME           | `/`                                       | dashboard hold, gentle scroll                           | trailer b2, GS-1                     |
-| TOOLS          | `/tools`                                  | index scroll, hover pauses                              | GS-2, MJ orientation, BG orientation |
+| TOOLS          | `/` (tools section)                       | scroll to the tools section, hover pauses               | GS-2, MJ orientation, BG orientation |
 | CHECKIN        | `/tools/check-in/new`                     | pick mood, short note, save                             | trailer b3, GS-3, MJ-1               |
 | JOURNAL        | `/tools/journal/new`                      | type a short entry, save                                | trailer b5, MJ-2                     |
 | GRATITUDE      | `/tools/gratitude-log/new`                | three items, save                                       | MJ-3                                 |
@@ -51,6 +51,12 @@ in frame before keeping the take (notably the CBT learn-page copy).
 
 Capture notes:
 
+- **TOOLS moved, it was not cut.** It shot `/tools` until [#2114](https://github.com/Selftend/selftend/issues/2114)
+  stopped that being a page; the same eight tools live in Home's tools section, so the shot
+  keeps its id, its action and all three uses and changes only where it points. ⚠️ This
+  implies **no re-shoot** — the campaign is parked pending a UI redesign, and the edit exists
+  so a parked script does not encode a dead URL. When the shoot does run, TOOLS and HOME both
+  start on `/`; give TOOLS the tools section rather than repeating HOME's opening hold.
 - **Segment slack:** record each shot with ≥2s of still hold at both ends — the edit needs
   trim room, and the walkthrough VO lines run 2–7s each.
 - **NOTIF-OPTIN:** the browser permission dialog is chrome, not page — grant notification

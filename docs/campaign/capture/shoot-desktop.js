@@ -37,8 +37,10 @@ const SHOTS = {
     await lib.sleep(3200); // closing hold on greeting
   },
 
+  // The shot's SUBJECT moved, the shot was not cut: `/tools` stopped being a page
+  // (#2114) and Home carries the tools section it used to be.
   async tools(h) {
-    await browse(h, "/tools", 750, 3000);
+    await browse(h, "/", 750, 3000);
   },
 
   // SETTINGS — palette, privacy rows, then account menu (theme/language) (GS-4, XX-90)

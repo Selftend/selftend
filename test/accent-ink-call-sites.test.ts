@@ -399,7 +399,18 @@ describe("act and home never reach for room ink", () => {
 // when the site was judged (deleted by #1292 - every backdrop is the neutral
 // app surface now, which was always the harder pairing of the two).
 
-/** Every area of the tail, including the four that now hold no sites. */
+/**
+ * Every area of the tail, including the four that now hold no sites.
+ *
+ * ☠️ Every entry must be a directory that EXISTS. `test/source-scan.ts` walks each
+ * one with a bare `readdirSync`, so a listed directory that has gone throws ENOENT
+ * and takes this whole file down rather than failing one assertion — and it does so
+ * only on a fresh checkout, because git does not track empty directories, so the
+ * folder is still lying there on the machine that deleted its last file. #2114 lost
+ * `src/features/tools` that way (its only two files were the hub screen and its
+ * test); `src/features/modules` stayed, because `program-types.ts` and `types.ts`
+ * outlived the screen beside them.
+ */
 const TAIL_DIRS = [
   "src/features/breathing",
   "src/features/cbt",
@@ -414,7 +425,6 @@ const TAIL_DIRS = [
   "src/features/security",
   "src/features/settings",
   "src/features/sleep",
-  "src/features/tools",
 ];
 
 /**
@@ -428,7 +438,6 @@ const ROOMLESS_TAIL_DIRS = [
   "src/features/modules",
   "src/features/security",
   "src/features/settings",
-  "src/features/tools",
 ];
 
 /**

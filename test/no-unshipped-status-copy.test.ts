@@ -31,19 +31,23 @@ function readNamespace(language: string, namespace: string): Record<string, unkn
 
 /**
  * The surfaces that tell a user - or a reviewer - what the app contains: the
- * nav rows, the `/modules` index and its tiles, and the DBT module's own
- * namespace (which absorbed the overview screen's copy under #1980).
+ * nav rows, Home's module tiles, and the DBT module's own namespace (which
+ * absorbed the overview screen's copy under #1980).
+ *
+ * `navigation.modulesPage` was a fourth root until #2114 deleted the `/modules`
+ * index. Its tiles did not move to Home, they were ALREADY Home's - the index
+ * rendered the same catalogue through the same card - so the corpus loses a
+ * duplicate, not a surface. The root is removed rather than left pointing at a
+ * missing block: `walk(undefined, …)` contributes nothing and reads as coverage.
  */
 function surfaceStrings(language: string): { key: string; value: string }[] {
   const navigation = readNamespace(language, "navigation") as {
     sidebar: unknown;
-    modulesPage: unknown;
     today: { modules: unknown };
   };
 
   const roots: Record<string, unknown> = {
     "navigation.sidebar": navigation.sidebar,
-    "navigation.modulesPage": navigation.modulesPage,
     "navigation.today.modules": navigation.today.modules,
     dbt: readNamespace(language, "dbt"),
   };
@@ -84,8 +88,7 @@ describe("module and navigation copy promises nothing the build does not ship", 
 
   // A guard that only reads copy would pass if someone re-added the chip with
   // fresh wording. These are the two key sets the chips were driven by: the
-  // sidebar's badge keys are gone outright, and `modulesPage.stats` now holds
-  // exactly one value, the one the DBT tile uses to say what it is.
+  // sidebar's badge keys, and the module tile's `stats` block.
   it.each(LANGUAGES)("%s has no sidebar status-badge keys left", (language) => {
     const sidebar = readNamespace(language, "navigation").sidebar as Record<string, unknown>;
 
@@ -96,13 +99,23 @@ describe("module and navigation copy promises nothing the build does not ship", 
   // the neutral "Overview", and a status has no slot to come back to. So the key set is
   // asserted absent as a whole — a `stats` object reappearing here, under any wording,
   // is the chip's slot being rebuilt.
+  //
+  // ☠️ The subject MOVED on #2114, it did not die. This read `navigation.modulesPage`
+  // until the `/modules` index was deleted, at which point the cast handed `undefined`
+  // to a property read and the case threw rather than rotting. The module tile now
+  // exists only on Home, so `navigation.today.modules` is where the slot would be
+  // rebuilt - and it is the block the tiles actually render from, which the old subject
+  // had stopped being.
   it.each(LANGUAGES)("%s offers no module-tile status at all", (language) => {
-    const modulesPage = readNamespace(language, "navigation").modulesPage as Record<
-      string,
-      unknown
-    >;
+    const today = readNamespace(language, "navigation").today as Record<string, unknown>;
+    const modules = today.modules as Record<string, unknown>;
 
-    expect(modulesPage.stats).toBeUndefined();
+    // Anti-vacuity: an absence assertion is worthless if the block it reads has
+    // itself moved away, which is exactly what happened to the old subject. The
+    // DBT tile's name is the one string this guard was written for (#1020 - the
+    // entry Apple most plausibly read as unshipped), so it is the witness.
+    expect(modules.dbtName).toBeTruthy();
+    expect(modules.stats).toBeUndefined();
   });
 
   it("both locales carry the same module-surface keys", () => {
