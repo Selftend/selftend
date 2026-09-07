@@ -206,7 +206,9 @@
     "reportOnGitHub": "Докладвай в GitHub",
     "reportOnGitHubDescription": "Публичен тракер за грешки и заявки за нови функции.",
     "joinDiscord": "Присъедини се към нашия Discord",
-    "joinDiscordDescription": "Други хора, които използват приложението, и хората, които го поддържат."
+    "joinDiscordDescription": "Други хора, които използват приложението, и хората, които го поддържат.",
+    "joinReddit": "Присъедини се към r/Selftend",
+    "joinRedditDescription": "Публични теми за новите версии и въпроси."
   },
   "onboardingSection": {
     "replayIntroduction": "Покажи въведението отново"
