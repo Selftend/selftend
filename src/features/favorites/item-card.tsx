@@ -73,6 +73,18 @@ const MARK_COLUMN = "w-8 shrink-0";
  * A tool card draws its stat only once loaded (`ToolStat` renders nothing before that),
  * and the star only once the favourites have loaded: a hollow star and a zero are both
  * claims, and a loading surface makes none.
+ *
+ * ☠️ **That absence is a RULING, not a gap — do not fill it** (#2040, decided
+ * 2026-09-08). The question asked was whether a module card should carry a figure of
+ * its own, and the answer is no. A use count on a card is the product reading the
+ * user's record back at them, which ADR-0004 and `docs/product-principles.md` §12
+ * refuse; the FAQ answers the same question in the same voice — *"Not by count. No
+ * number of records is watched, and none is judged."* A tool card's stat is not the
+ * counter-example it looks like: it names what the tool holds, on the surface you go
+ * to in order to use it, and it is still absent until loaded for the reason above.
+ *
+ * ⚠️ If this is ever revisited, a figure cannot ship on jest evidence alone — the
+ * card reflows, and jest(ios) cannot see the reflow, so it needs an e2e.
  */
 
 export function ItemCard({ item, userId, favorites }: ItemCardProps) {
