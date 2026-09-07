@@ -25,13 +25,18 @@ import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 // Completeness* - a nav entry advertising a module the app does not have. BETA
 // went with it: CBT and ACT are both fully usable, so the word understated them
 // and handed the same reviewer a second thing to doubt.
+//
+// `activeWhen` and `a11yKey` went the same way with #2106, and for the same reason.
+// The exact-match predicate existed for the two hub rows and the CBT row; the
+// accessibility override existed for the three module rows. The catalogue left the
+// panel, so both reached zero users, and an optional field nothing sets is a corpse
+// waiting for a caller. `matchPrefix` stays - six of the seven rows use it, and Home
+// is still the `null` branch.
 interface NavItemDef {
   labelKey: string;
   href: Href;
   icon: MaterialIconName;
   matchPrefix: string | null;
-  activeWhen?: (pathname: string) => boolean;
-  a11yKey?: string;
 }
 
 const TODAY_ITEM: NavItemDef = {
@@ -61,117 +66,15 @@ const ROUTINES_ITEM: NavItemDef = {
   matchPrefix: "/routines",
 };
 
-/**
- * The two hub rows (#1841).
- *
- * ☠️ **`/tools` and `/modules` existed and were all but unreachable.** Both hubs
- * were linked only from their own group label — an 11px uppercase muted section
- * header. They were genuine links, with `accessibilityRole="link"` and an active
- * state, and nothing about section-header styling reads as a destination. A
- * complete list can ship and still go unseen.
- *
- * Owner ruling 2026-09-06: an explicit row at the **end of each group**, rather
- * than restyling the headers or adding peer rows beside Home. The header stays a
- * header, the destination looks like every other destination, and the primary nav
- * does not grow. ⚠️ The group labels consequently **stop being links** — with a
- * real row below them, a second invisible link to the same place is the confusion
- * this ticket describes rather than a second chance at it.
- *
- * ⚠️ `activeWhen` is an exact match, deliberately. `matchPrefix: "/tools"` would
- * light this row on every one of the eight tool pages beneath it, so the hub would
- * read as active while a different row was.
- */
-const ALL_TOOLS_ITEM: NavItemDef = {
-  labelKey: "sidebar.allTools",
-  href: "/tools",
-  icon: "apps",
-  matchPrefix: null,
-  activeWhen: (pathname) => pathname === "/tools",
-};
-
-const ALL_MODULES_ITEM: NavItemDef = {
-  labelKey: "sidebar.allModules",
-  href: "/modules",
-  icon: "view-list",
-  matchPrefix: null,
-  activeWhen: (pathname) => pathname === "/modules",
-};
-
-const MODULE_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.cbt",
-    href: "/modules/cbt",
-    icon: "psychology",
-    matchPrefix: "/modules/cbt",
-    activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
-    a11yKey: "sidebar.cbtA11y",
-  },
-  {
-    labelKey: "sidebar.act",
-    href: "/modules/act",
-    icon: "explore",
-    matchPrefix: "/modules/act",
-    a11yKey: "sidebar.actA11y",
-  },
-  {
-    labelKey: "sidebar.dbt",
-    href: "/modules/dbt",
-    icon: "anchor",
-    matchPrefix: "/modules/dbt",
-    a11yKey: "sidebar.dbtA11y",
-  },
-];
-
-const TOOL_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.moodTracker",
-    href: "/tools/check-in",
-    icon: "mood",
-    matchPrefix: "/tools/check-in",
-  },
-  {
-    labelKey: "sidebar.journal",
-    href: "/tools/journal",
-    icon: "edit-note",
-    matchPrefix: "/tools/journal",
-  },
-  {
-    labelKey: "sidebar.breathing",
-    href: "/tools/breathing",
-    icon: "air",
-    matchPrefix: "/tools/breathing",
-  },
-  {
-    labelKey: "sidebar.grounding",
-    href: "/tools/grounding",
-    icon: "anchor",
-    matchPrefix: "/tools/grounding",
-  },
-  {
-    labelKey: "sidebar.gratitudeLog",
-    href: "/tools/gratitude-log",
-    icon: "favorite",
-    matchPrefix: "/tools/gratitude-log",
-  },
-  {
-    labelKey: "sidebar.meditation",
-    href: "/tools/meditation",
-    icon: "self-improvement",
-    matchPrefix: "/tools/meditation",
-  },
-  {
-    labelKey: "sidebar.sleep",
-    href: "/tools/sleep",
-    icon: "bedtime",
-    matchPrefix: "/tools/sleep",
-  },
-  {
-    labelKey: "sidebar.habits",
-    href: "/tools/habits",
-    icon: "task-alt",
-    matchPrefix: "/tools/habits",
-  },
-];
+// ☠️ The eleven catalogue rows and the two hub rows are gone (#2106, ruled on #2085).
+// **The panel may duplicate a fixed door; it may not mirror a collection.** Home renders
+// the whole catalogue from the single `CATALOGUE` constant, and this file's rows were a
+// second, hand-maintained list free to drift from it - and unstarrable besides, so the
+// copy was a lesser one. What is left is what the panel is FOR: the record, the plans,
+// the reminders and the account, none of which Home carries.
+//
+// Do not read that as "delete anything with a second door" - Home is a row here and
+// stays one. A fixed row cannot drift and is not a lesser copy of anything.
 
 const ACCOUNT_ITEMS: NavItemDef[] = [
   {
@@ -205,10 +108,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   const insets = useSafeAreaInsets();
 
   function isActive(item: NavItemDef) {
-    if (item.activeWhen) {
-      return item.activeWhen(pathname);
-    }
-
     const { matchPrefix } = item;
     if (matchPrefix) {
       return pathname.startsWith(matchPrefix);
@@ -219,7 +118,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   function renderNavItem(item: NavItemDef) {
     const active = isActive(item);
     const label = t(item.labelKey);
-    const accessibilityLabel = item.a11yKey ? t(item.a11yKey) : label;
 
     return (
       // `dangerouslySingular` (#989): the panel is LATERAL navigation between peer
@@ -232,7 +130,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       // no panel destination is dynamic anyway.
       <Link href={item.href} key={item.labelKey} dangerouslySingular asChild>
         <Pressable
-          accessibilityLabel={accessibilityLabel}
+          accessibilityLabel={label}
           accessibilityRole="link"
           {...currentStateProps(active, "page")}
           onPress={() => {
@@ -251,7 +149,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             breathing row — which is the clearest "distinguishes items in a set"
             case in the app and the one the ruling names outright. What the
             colour here has to carry is WHICH ROW IS ACTIVE, and that is one bit,
-            not eleven; it is the app accent's job.
+            not one per destination; it is the app accent's job.
 
             The three channels stay as they were, because they were never about
             the hue: the chip fill, this glyph and the ink label all move
@@ -287,26 +185,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           */}
         </Pressable>
       </Link>
-    );
-  }
-
-  /**
-   * A heading, and only a heading (#1841).
-   *
-   * ☠️ It used to take an optional `href` and render as a `link` when given one,
-   * which is how `/tools` and `/modules` were reachable — and effectively how they
-   * were not. `ALL_TOOLS_ITEM` and `ALL_MODULES_ITEM` are the destinations now, so
-   * the link branch is gone rather than left beside them: two links to one place,
-   * one of them invisible, is the defect and not a fallback for it.
-   */
-  function renderGroupLabel(label: string) {
-    return (
-      <Text
-        className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
-        key={`group-${label}`}
-      >
-        {label}
-      </Text>
     );
   }
 
@@ -365,21 +243,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           {renderNavItem(TODAY_ITEM)}
           {renderNavItem(PROGRESS_ITEM)}
           {renderNavItem(ROUTINES_ITEM)}
-
-          {/*
-            TOOLS above MODULES (#1823, a sequence call rather than a positioning
-            consequence): Home leads with the tools and lists the modules after them,
-            and a panel that led with the modules would make the two surfaces disagree
-            about the order of encounter. The group labels stay neutral — no hue per
-            group, and no status chip on any row (#1020).
-          */}
-          {renderGroupLabel(t("sidebar.tools"))}
-          {TOOL_ITEMS.map((item) => renderNavItem(item))}
-          {renderNavItem(ALL_TOOLS_ITEM)}
-
-          {renderGroupLabel(t("sidebar.modules"))}
-          {MODULE_ITEMS.map((item) => renderNavItem(item))}
-          {renderNavItem(ALL_MODULES_ITEM)}
         </View>
 
         <View className="grow" />
