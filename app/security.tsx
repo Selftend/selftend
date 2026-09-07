@@ -13,7 +13,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { appEnv } from "@/src/lib/env";
+import { contactEmails } from "@/src/lib/env";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 interface TranslatedSection {
@@ -26,7 +26,10 @@ export default function SecurityScreen() {
   const { t } = useTranslation("security");
   const sections = t("page.sections", { returnObjects: true }) as TranslatedSection[];
 
-  const securityEmail = appEnv.securityEmail || "security@selftend.org";
+  // Was this file's own `|| "security@selftend.org"` literal. The fallback rule
+  // is unchanged; it just lives in one place now, beside the address it falls
+  // back to and the policy copy that publishes the same one (#2131).
+  const { securityEmail } = contactEmails();
 
   return (
     <SafeAreaView className="flex-1 bg-background">

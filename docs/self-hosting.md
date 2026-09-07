@@ -94,6 +94,15 @@ EXPO_PUBLIC_PRIVACY_EMAIL=privacy@example.org
 EXPO_PUBLIC_SECURITY_EMAIL=security@example.org
 ```
 
+The three addresses are required in a stronger sense than the store and community
+URLs below, which you can set to an empty string to drop their surfaces. These
+have no empty state: the privacy policy, the terms, the FAQ and the parents
+letter all name a contact, and a policy naming none is a broken document rather
+than a configured one. Leave them unset and the app publishes **Selftend's own**
+addresses — `privacy@selftend.org` and its siblings — in your policy copy, which
+would send your users' data-deletion requests to a maintainer who cannot action
+them. A production build warns on startup when any of the three is missing.
+
 Optional:
 
 ```bash

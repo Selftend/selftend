@@ -90,6 +90,8 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the GitHub Actions variable and redeploy.
 
+The three contact addresses are read by `/support`, `/security`, and the policy and FAQ copy, which interpolate them rather than hardcoding them. A build that leaves one unset falls back to the address above and logs a startup warning naming the variable — harmless here, since these values are this project's own, but it is the signal a fork needs. See [self-hosting.md](self-hosting.md) for the fork side of that rule.
+
 `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
 
 ### Web Push Reminders
