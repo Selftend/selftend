@@ -70,8 +70,9 @@ const ALWAYS_OPEN: FaqEntrySlug[] = ["crisis", "therapy", "free", "whoCanSee", "
  * to write to `{{supportEmail}}`.
  */
 const resolved = contactEmails() as Record<string, string>;
-const answerText = (slug: FaqEntrySlug): string =>
-  entryOf(slug).body[0].replace(/\{\{(\w+)\}\}/g, (match, name: string) => resolved[name] ?? match);
+const interpolate = (text: string): string =>
+  text.replace(/\{\{(\w+)\}\}/g, (match, name: string) => resolved[name] ?? match);
+const answerText = (slug: FaqEntrySlug): string => interpolate(entryOf(slug).body[0]);
 
 const escapeForPattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -249,7 +250,62 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
       3, // the four pinned questions
       ...groupRuns,
       2, // the parents' letter
+      3,
+      3,
+      3,
+      3,
+      3, // its five sub-heads (#2149)
     ]);
+  });
+
+  /**
+   * ☠️ **The letter's five sub-heads, each one directly above the paragraph it
+   * names (#2149).** Asserted as an INTERLEAVING rather than as five presence
+   * checks: five `getByText`s would pass just as happily with all five headings
+   * stacked at the top of the block, or with the zip off by one and every
+   * paragraph filed under its neighbour's label. Reading the rendered order
+   * pins heading→body→heading→body, which is the only arrangement that means
+   * anything to someone navigating this letter by its headings.
+   *
+   * The paragraphs go through `interpolate` because the last one carries
+   * `{{privacyEmail}}` and `{{supportEmail}}` - and a raw-string query would come
+   * back null whether the screen supplied the values or not, quietly turning the
+   * final pair of this assertion into nothing.
+   */
+  it("puts each of the parents' letter's sub-heads above its own paragraph", () => {
+    renderWithProviders(<FaqRoute />);
+
+    const letter = entryOf("parents");
+    const subheads = en.parentsSubheads;
+
+    // Anti-vacuity, and the same equality `faq-layout.test.ts` guards per locale.
+    expect(subheads).toHaveLength(5);
+    expect(letter.body).toHaveLength(subheads.length);
+
+    const interleaved = subheads.flatMap((subhead, index) => [
+      subhead,
+      interpolate(letter.body[index]),
+    ]);
+
+    expect(orderOf(...interleaved)).toEqual(interleaved);
+  });
+
+  /**
+   * ☠️ The labelling MOVED; it was not duplicated. Two of these paragraphs used
+   * to open with a literal `On data: ` / `On design: `, and the strip and the
+   * sub-heads had to land together - either half alone leaves the letter either
+   * less signposted than it shipped, or saying the same word twice in a row.
+   * This is the half a later "restore the prefix" edit would trip.
+   */
+  it("moves the letter's inline labels into its sub-heads rather than showing both", () => {
+    renderWithProviders(<FaqRoute />);
+
+    for (const prefix of ["On data: ", "On design: "]) {
+      expect(screen.queryByText(new RegExp(`^${escapeForPattern(prefix)}`))).toBeNull();
+    }
+
+    expect(screen.getByText("On data")).toBeTruthy();
+    expect(screen.getByText("On design")).toBeTruthy();
   });
 
   /**
