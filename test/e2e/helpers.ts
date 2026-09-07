@@ -107,6 +107,32 @@ export async function navigateViaPanel(page: Page, linkName: string) {
     .click();
 }
 
+/**
+ * Home -> the Check-in tool, without touching the panel's catalogue (#2105).
+ *
+ * The panel is about to stop listing tools and modules (#2106); its `Home` row survives
+ * that, its `Check-in` row does not. So the two journeys that log a mood take the route a
+ * person will still have: open Home from the panel, then tap Check-in in Home's Tools
+ * section. It is green against the panel exactly as it stands today, and green after.
+ *
+ * In-app throughout, and deliberately so: a `page.goto` would skip the navigation these
+ * journeys exist to exercise, and would re-arm the consent-gate deep-link hijack their
+ * boot sequence dismisses.
+ *
+ * ☠️ The card lookup is scoped to `home-tools` rather than taken bare. A favourited item
+ * renders TWICE on Home - once in Favourites, once in the catalogue below (#1956) - so a
+ * bare `card-tool-mood` is a strict-mode violation the moment the worker's user has
+ * starred Check-in. The Tools section holds the whole catalogue whatever the favourites
+ * hold, which makes this deterministic either way.
+ *
+ * The destination assertion stays with the callers: each journey says for itself where it
+ * expects to land.
+ */
+export async function navigateToCheckInViaHome(page: Page) {
+  await navigateViaPanel(page, "Home");
+  await page.getByTestId("home-tools").getByTestId("card-tool-mood").click();
+}
+
 // The cookie consent banner overlays the bottom of the screen on first load.
 // We dismiss it with "Essential only" so no analytics consent is implied.
 // Best-effort: if it isn't there or has already animated out, do nothing.

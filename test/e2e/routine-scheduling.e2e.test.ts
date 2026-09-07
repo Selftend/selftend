@@ -5,6 +5,7 @@ import {
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
   HOME_HEADING,
+  navigateToCheckInViaHome,
   navigateViaPanel,
 } from "./helpers";
 
@@ -103,8 +104,12 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
     // --- Manual run: off-schedule still tracks (independent-fact rule) ---
-    // Log a mood through the normal check-in flow (the routine's only step).
-    await navigateViaPanel(page, "Check-in");
+    // Log a mood through the normal check-in flow (the routine's only step),
+    // reached from Home's Tools section rather than the panel (#2105: the
+    // panel's Check-in row is going away; its Home row is not). The spec is
+    // already standing on Home here, and the helper re-selects it anyway - one
+    // step either way, and the call site does not have to know which.
+    await navigateToCheckInViaHome(page);
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
     await page.getByRole("radio", { name: "Okay", exact: true }).click();
     // No query string any more (#961): the score is seeded in memory, so the URL is
