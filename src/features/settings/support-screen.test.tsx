@@ -267,7 +267,13 @@ describe("SupportScreen column (#1726)", () => {
     const headings = screen.getAllByRole("heading");
     // `Number(...)`: the display heading carries its level as a string, the cards
     // and sections as a number - the outline is the same either way.
-    expect(headings.map((h) => Number(h.props["aria-level"]))).toEqual([1, 3, 2, 3, 3, 3, 3]);
+    //
+    // ☠️ The callout is `2`, not `3` (#2137). At 3 it sat ABOVE the form's 2 - a
+    // level skipped on the way down, putting the page's safety surface below the
+    // ordinary content that follows it. `/faq` moved with it in the same change,
+    // so the two pages sharing the component still agree; the three module homes
+    // keep the default 3, where the callout is last among level-3 Sections.
+    expect(headings.map((h) => Number(h.props["aria-level"]))).toEqual([1, 2, 2, 3, 3, 3, 3]);
     expect(headings.map((h) => h.props.children)).toEqual([
       "Support",
       "Use urgent support for urgent risk",
