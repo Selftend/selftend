@@ -126,13 +126,13 @@ When it finishes you may see **"Nice work. Want a daily reminder?"** with **Set 
 
 Then show the session in the breathing history.
 
-### 8. The tools hub and the modules
+### 8. The catalogue — eight tools and three modules
 
-Open **Tools**. Let the list sit for ~3 seconds. It shows **eight** tools: Mood tracker, Journal, Breathing, Gratitude log, Grounding, Meditation, Sleep tracker, Habit tracking.
+Go back to **Home** and scroll to the **Tools** section. Let it sit for ~3 seconds. It shows **eight** tools: Check-in, Journal, Breathing, Gratitude log, Grounding, Meditation, Sleep, Habit tracking.
 
-> This shot matters more than it looks. Apple cited **2.1 App Completeness** — the guideline for apps that look unfinished. A hub of eight working tools, each showing real counts, is the direct answer.
+> This shot matters more than it looks. Apple cited **2.1 App Completeness** — the guideline for apps that look unfinished. Eight working tools, each showing a real count, is the direct answer.
 
-Then open **Modules** and let that sit. Open **CBT** briefly, then go back.
+Keep scrolling to the **Modules** section below it and let that sit — CBT, ACT and DBT. Open **CBT** briefly, then go back.
 
 ### 9. Enable a reminder — the notification prompt
 
@@ -196,7 +196,7 @@ Every item below must be visible in the footage. A recording missing one is wors
 - [ ] A mood entry created **and** shown in its history
 - [ ] A journal entry created **and** shown in its history
 - [ ] A breathing session run to completion **and** shown in its history
-- [ ] The tools hub showing eight tools
+- [ ] Home's Tools section showing eight tools
 - [ ] The **notification** permission prompt, granted
 - [ ] The **photo library** permission prompt, granted
 - [ ] Account deletion, end to end, on `vasil.yoshev+delete-demo@gmail.com` — **never** `demo@selftend.org`

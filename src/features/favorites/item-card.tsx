@@ -28,7 +28,8 @@ interface ItemCardProps {
  * ☠️ It used to be 24px, which is the width of a glyph and not the width of a mark.
  * `size-6` is right for an icon and about six pixels too narrow for three bold, tracked
  * characters, so every module card wrapped its abbreviation onto a second line — `CB/T`,
- * `AC/T`, `DB/T` — in Favourites, on Home and on the modules screen alike. `shrink-0`
+ * `AC/T`, `DB/T` — in Favourites and in Home's catalogue alike (and on the modules
+ * screen, which #2114 has since deleted). `shrink-0`
  * pins the width, so this happened at EVERY viewport rather than only narrow ones, and
  * no amount of free row space reached it.
  *

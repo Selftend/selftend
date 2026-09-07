@@ -50,8 +50,10 @@ export interface DbtGroup {
   tools: DbtTool[];
   /**
    * The everyday tools this group draws on (spec §8.2, CBT's `Shared tools`
-   * row). A chip leaves the module, so its Up climbs to `/tools` rather than
-   * back here - that is `SharedToolsRow`'s standing trade, unchanged.
+   * row). A chip leaves the module, so its Up goes to Home rather than back
+   * here - that is `SharedToolsRow`'s standing trade, unchanged. (It was
+   * `/tools` until #2096 made the segment transparent; the conclusion never
+   * depended on which, since it was not the module either way.)
    */
   shared: SharedTool[];
 }

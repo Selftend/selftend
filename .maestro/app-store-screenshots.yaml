@@ -232,8 +232,17 @@ env:
     timeout: 10000
 - takeScreenshot: screenshots/06-insights
 
+# The catalogue of eight tools. This shot answers Apple's 2.1 App Completeness
+# citation directly - eight working tools, each showing a real count - so it is
+# kept rather than dropped.
+#
+# It used to deep-link `/tools`. That page went with #2114 and the URL now
+# redirects to Home, which carries the same eight tools in a `Tools` section
+# below Favourites. So: land on Home and scroll the section into frame.
+# `Habit tracking` is the LAST tool in the catalogue order, which is what makes
+# it the right scroll target - reaching it means the whole section is behind us.
 - openLink:
-    link: ${APP_LINK}tools
+    link: ${APP_LINK}
 - runFlow:
     when:
       visible: ".*Open in.*"
@@ -241,8 +250,13 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: "Standalone trackers any module can call into. Use them on their own, too."
+      text: "Tools"
     timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "Habit tracking"
+    direction: DOWN
+    timeout: 20000
 - waitForAnimationToEnd:
     timeout: 10000
 - takeScreenshot: screenshots/07-tools
