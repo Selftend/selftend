@@ -43,7 +43,7 @@ function surfaceStrings(language: string): { key: string; value: string }[] {
 
   const roots: Record<string, unknown> = {
     "navigation.sidebar": navigation.sidebar,
-    // `navigation.modulesPage` was a third root until #2114 deleted the `/modules`
+    // `navigation.modulesPage` was a fourth root until #2114 deleted the `/modules`
     // page it headed. It is removed rather than left in place: `walk(undefined, …)`
     // contributes nothing silently, which reads as coverage and provides none.
     "navigation.today.modules": navigation.today.modules,
