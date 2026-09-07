@@ -236,9 +236,9 @@ function FaqDisclosureRow({
  * ☠️ **The sub-heads are not decoration — they are the labelling this entry used
  * to carry inline.** Two of its paragraphs opened `On data: ` / `On design: `,
  * which is why stripping those prefixes and rendering these headings had to be
- * one commit: either half alone leaves the longest entry on the page (28.8% of
- * its answer text, and the one a guardian arrives specifically to read) *less*
- * signposted than it shipped.
+ * one commit: either half alone leaves the longest single entry on the page -
+ * and the one a guardian arrives specifically to read - *less* signposted than
+ * it shipped.
  *
  * The zip is positional, and `parentsSubheads` is an array for exactly that
  * reason — `faq-layout.test.ts` asserts the two lengths are equal in **both**

@@ -304,8 +304,11 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
       expect(screen.queryByText(new RegExp(`^${escapeForPattern(prefix)}`))).toBeNull();
     }
 
-    expect(screen.getByText("On data")).toBeTruthy();
-    expect(screen.getByText("On design")).toBeTruthy();
+    // The literals above are historical - the strings that USED to be prefixes -
+    // so they stay literal. The sub-heads carrying those words now are read from
+    // the JSON, as every other copy assertion in this file is.
+    expect(screen.getByText(en.parentsSubheads[2])).toBeTruthy();
+    expect(screen.getByText(en.parentsSubheads[3])).toBeTruthy();
   });
 
   /**
