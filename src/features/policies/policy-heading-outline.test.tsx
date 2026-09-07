@@ -67,6 +67,32 @@ beforeEach(() => {
  * could regress every page at once, which is a wider blast radius than the bug
  * this file was written for, not a narrower one.
  */
+/**
+ * ☠️☠️ **`getAllByRole("heading")` CANNOT SEE A `View role="heading"`, and this
+ * helper is therefore not safe to point at an arbitrary page.**
+ *
+ * RNTL's role queries filter on `isAccessibilityElement`
+ * (`helpers/accessibility.js`), which returns the `accessible` prop when it is
+ * set and otherwise only `isHostText || isHostTextInput || isHostSwitch` — plus
+ * an `Image` carrying `alt`. A plain host `View` is none of those, so it is
+ * filtered out however loudly it declares `role="heading"`. Every heading on
+ * `/security` and `/privacy` is `Text`-based (`ScreenHeader` → `Text
+ * variant="h1"`, `CardTitle` → `Text`), which is the only reason the two cases
+ * below are honest.
+ *
+ * ⚠️ **Do not extend this file to `/faq` without reading this first** (found on
+ * #2143, confirmed against `Disclosure`). The accordion pattern needs a heading
+ * *containing* a button, so `Disclosure`'s heading is a `View role="heading"` —
+ * invisible here. `/faq` also carries plenty of `Text` headings (the h1, four
+ * group eyebrows, the parents letter), so it would clear the anti-vacuity floors
+ * below **while the entire level-3 run of question headings was silently
+ * absent**, and assert a clean outline over a tree missing the very thing the
+ * page is made of. That is a false green, not a gap.
+ *
+ * For a page with non-`Text` headings, assert through
+ * `UNSAFE_getAllByProps({ role: "heading" })`, which walks the real tree, or
+ * measure in a browser.
+ */
 const levelsOf = (): number[] =>
   screen.getAllByRole("heading").map((node) => Number(node.props["aria-level"]));
 
