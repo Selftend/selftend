@@ -9,7 +9,6 @@ import {
   useExportUserData,
   useRecordPolicyConsent,
   useUpdateOnboardingPreferences,
-  useUpdateShownButtonTours,
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
@@ -19,7 +18,6 @@ import {
   getUserPreferences,
   recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
@@ -32,7 +30,6 @@ jest.mock("@/src/features/settings/repository", () => ({
   getUserPreferences: jest.fn(),
   recordPolicyConsent: jest.fn(),
   updateOnboardingPreferences: jest.fn(),
-  updateShownButtonTours: jest.fn(),
   updateUserPreferences: jest.fn(),
 }));
 
@@ -40,9 +37,6 @@ const mockUpdateUserPreferences = updateUserPreferences as jest.MockedFunction<
   typeof updateUserPreferences
 >;
 const mockGetUserPreferences = getUserPreferences as jest.MockedFunction<typeof getUserPreferences>;
-const mockUpdateShownButtonTours = updateShownButtonTours as jest.MockedFunction<
-  typeof updateShownButtonTours
->;
 const mockUpdateOnboardingPreferences = updateOnboardingPreferences as jest.MockedFunction<
   typeof updateOnboardingPreferences
 >;
@@ -62,7 +56,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUpdateUserPreferences.mockResolvedValue(defaultUserPreferences);
   mockGetUserPreferences.mockResolvedValue(defaultUserPreferences);
-  mockUpdateShownButtonTours.mockResolvedValue(defaultUserPreferences);
   mockUpdateOnboardingPreferences.mockResolvedValue(defaultUserPreferences);
   mockRecordPolicyConsent.mockResolvedValue(undefined);
   mockDeleteUserAccount.mockResolvedValue(undefined);
@@ -220,12 +213,6 @@ describe("useUpdateUserPreferences - invalidation", () => {
 // exact preferences detail key) and null user (mutationFn runs, invalidate skipped).
 // ---------------------------------------------------------------------------
 const invalidatingMutations = [
-  [
-    "useUpdateShownButtonTours",
-    useUpdateShownButtonTours,
-    mockUpdateShownButtonTours,
-    ["tour-a"] as const,
-  ],
   [
     "useUpdateOnboardingPreferences",
     useUpdateOnboardingPreferences,

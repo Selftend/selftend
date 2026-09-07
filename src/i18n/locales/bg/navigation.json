@@ -348,13 +348,6 @@
     "program": "КПТ програма",
     "info": "За този модул"
   },
-  "homeTour": {
-    "skipAll": "Пропусни всички",
-    "navigation": {
-      "description": "Тук ще намериш всички модули и инструменти.",
-      "dismiss": "Разбрах"
-    }
-  },
   "breadcrumb": {
     "session": "Сесия",
     "history": "История",

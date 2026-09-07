@@ -1,9 +1,12 @@
 -- Onboarding funnel report. Aggregate-only by policy (docs/analytics.md):
 -- no per-user rows, no user ids, no emails.
 --
--- Column types verified against migrations:
---   shown_button_tours: text[]  (20260543_button_tours.sql)
--- All use unnest() / array_length() as written below (no jsonb variant needed).
+-- Home tour engagement (the old §6) is GONE with the tour itself (#2109,
+-- following #2106): the panel it pointed at holds neither a tool row nor a
+-- module row, so the last stop was retired and the machinery with it. The
+-- `shown_button_tours` COLUMN stays - `export_user_data()` bakes it in and ~18
+-- migrations re-emit that function verbatim - but nothing writes it now, so a
+-- section reporting it would report a frozen residue as though it were current.
 --
 -- Concern distribution (the old §4a/4b) is GONE with the `selected_concerns`
 -- column (#1958, 20260909000000_onboarding_one_panel.sql): the one-panel
@@ -93,15 +96,3 @@ select a.account, w.widget_id, count(*) as users
 from public.widget_preferences w
 join accounts a on a.user_id = w.user_id
 group by 1, 2 order by 3 desc, 2, 1;
-
-\echo
-\echo '=== 6) Home tour engagement: how many of the 3 current Home stops each user has seen ==='
-select a.account,
-       ( select count(*) from unnest(p.shown_button_tours) k
-         where k in ('home:checkin','home:edit','home:navigation') )
-         as home_stops_seen,
-       count(*) as users
-from public.user_preferences p
-join accounts a on a.user_id = p.user_id
-where p.app_onboarding_completed
-group by 1, 2 order by 2, 1;

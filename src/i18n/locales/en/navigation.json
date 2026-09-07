@@ -348,13 +348,6 @@
     "program": "CBT programme",
     "info": "About this module"
   },
-  "homeTour": {
-    "skipAll": "Skip all tips",
-    "navigation": {
-      "description": "Find all Modules and Tools here.",
-      "dismiss": "Got it"
-    }
-  },
   "breadcrumb": {
     "session": "Session",
     "history": "History",

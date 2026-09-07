@@ -16,8 +16,10 @@ import { expect, test } from "./fixtures";
  *
  * ☠️ The suppression test's blocker is the settings delete-account modal,
  * opened through a real UI path by an awaited click — deliberately NOT the
- * home tour, whose 150/450/900ms measurement delay is a race, and these tests
- * stay off the home route entirely so the tour never arms over them.
+ * home tour, whose 150/450/900ms measurement delay was a race, and these tests
+ * stayed off the home route entirely so it could never arm over them. The tour was
+ * retired with #2109, so that particular race is gone; the specs stay off Home
+ * anyway, because the popup's own subject has nothing to do with that route.
  *
  * Accepted gaps (#1155, restated on #1476 — all six stand): C1's property is
  * e2e-only by construction; Android hardware back is device-only (§6's manual

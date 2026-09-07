@@ -2,19 +2,22 @@ import type { User } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
 
 import { useUpdateOnboardingPreferences } from "@/src/features/settings/queries";
-import {
-  REPLAY_INTRODUCTION_PREFERENCES,
-  SHOW_TIPS_AGAIN_PREFERENCES,
-} from "@/src/features/settings/onboarding-reset";
+import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import { useToastStore } from "@/src/stores/toast-store";
 
 /**
- * Settings' two explicit onboarding actions and their feedback.
+ * Settings' one explicit onboarding action and its feedback.
  *
  * The `setErrorMessage`/`setSuccessMessage` injection is gone with the R7 banner
- * pair. Both outcomes were already toasting from here; the banners repeated the
- * same sentence 200px further up the page, and neither outcome is a state that
- * persists - the introduction either replays on the next Home visit or it does not.
+ * pair. The outcome was already toasting from here; the banner repeated the same
+ * sentence 200px further up the page, and it is not a state that persists - the
+ * introduction either replays on the next Home visit or it does not.
+ *
+ * `showTipsAgain` stood beside it and re-armed `shownButtonTours`. Its only live
+ * subject was the home tour's one remaining stop, which #2109 retired along with
+ * the tour itself, so a button promising tips would have promised nothing. The
+ * union types below are single literals rather than pairs for the same reason -
+ * they name what a caller may actually pass, and there is one caller.
  */
 export function useOnboardingActions(
   user: User | null,
@@ -26,8 +29,8 @@ export function useOnboardingActions(
 
   const run = async (
     patch: Parameters<typeof updateOnboarding.mutateAsync>[0],
-    successKey: "onboarding.replaySaved" | "onboarding.tipsSaved",
-    errorKey: "onboarding.replayError" | "onboarding.tipsError",
+    successKey: "onboarding.replaySaved",
+    errorKey: "onboarding.replayError",
   ) => {
     if (!user) {
       return;
@@ -65,12 +68,8 @@ export function useOnboardingActions(
       "onboarding.replayError",
     );
 
-  const showTipsAgain = () =>
-    run(SHOW_TIPS_AGAIN_PREFERENCES, "onboarding.tipsSaved", "onboarding.tipsError");
-
   return {
     replayIntroduction,
-    showTipsAgain,
     isPending: updateOnboarding.isPending,
   };
 }

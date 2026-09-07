@@ -7,7 +7,6 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 /**
  * How tall the header row is, below the status-bar inset - its `py-2` (8px each
@@ -48,7 +47,6 @@ interface InvisibleHeaderProps {
 export function InvisibleHeader({ onMenuPress, homeHref }: InvisibleHeaderProps) {
   const { t } = useTranslation("navigation");
   const insets = useSafeAreaInsets();
-  const navTargetRef = useTourTargetRef("home-navigation");
 
   return (
     <View
@@ -61,17 +59,15 @@ export function InvisibleHeader({ onMenuPress, homeHref }: InvisibleHeaderProps)
           left-to-right layout. The absolute brand layer sits between the two
           buttons in the DOM without disturbing the row's justify-between. */}
       {onMenuPress ? (
-        <View ref={navTargetRef}>
-          <Pressable
-            accessibilityLabel={t("header.openNav")}
-            accessibilityRole="button"
-            role="button"
-            onPress={onMenuPress}
-            className="rounded-full border border-border bg-card p-3 shadow-md active:bg-muted/50 web:hover:bg-muted/50"
-          >
-            <Icon name="menu" className="size-6 text-foreground" />
-          </Pressable>
-        </View>
+        <Pressable
+          accessibilityLabel={t("header.openNav")}
+          accessibilityRole="button"
+          role="button"
+          onPress={onMenuPress}
+          className="rounded-full border border-border bg-card p-3 shadow-md active:bg-muted/50 web:hover:bg-muted/50"
+        >
+          <Icon name="menu" className="size-6 text-foreground" />
+        </Pressable>
       ) : (
         <View testID="invisible-header-nav-spacer" className="size-12" />
       )}

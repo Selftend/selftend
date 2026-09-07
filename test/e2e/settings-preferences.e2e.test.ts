@@ -59,7 +59,7 @@ test.describe("settings - language switch", () => {
 
   test("switching to Bulgarian updates the UI and persists across reload", async ({ page }) => {
     await page.goto("/");
-    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    // Clear the cookie banner and the first-run wizard before touching the header.
     await dismissPostSignInModals(page);
 
     // Open the user-menu popover (header avatar button).
@@ -113,7 +113,7 @@ test.describe("settings - theme switch", () => {
     page,
   }) => {
     await page.goto("/");
-    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    // Clear the cookie banner and the first-run wizard before touching the header.
     await dismissPostSignInModals(page);
 
     // Open user-menu popover.
@@ -146,7 +146,7 @@ test.describe("settings - theme switch", () => {
     page,
   }) => {
     await page.goto("/");
-    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
+    // Clear the cookie banner and the first-run wizard before touching the header.
     await dismissPostSignInModals(page);
 
     await page.getByRole("button", { name: "Open account menu", exact: true }).click();

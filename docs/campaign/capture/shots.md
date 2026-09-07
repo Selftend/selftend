@@ -56,6 +56,7 @@ Capture notes:
 - **NOTIF-OPTIN:** the browser permission dialog is chrome, not page — grant notification
   permission at the Playwright context level and let the in-app confirmation carry the moment;
   the real OS prompt appears only in the native WIDGET session if wanted.
-- **Known interaction traps (#511):** tour tips, reminder prompts, and the routine FAB can
-  intercept clicks — dismiss or click around them; the harness has fallbacks.
+- **Known interaction traps (#511):** reminder prompts and the routine FAB can intercept
+  clicks — dismiss or click around them; the harness has fallbacks. Tour tips were the
+  third and are gone (#2109), so nothing coach-marks a capture any more.
 - **Naming:** `<SHOT-ID>-vNN.webm` into Drive `captures/<video>/`, logged per the runbook.
