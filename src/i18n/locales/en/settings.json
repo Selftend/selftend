@@ -225,7 +225,9 @@
     "reportOnGitHub": "Report on GitHub",
     "reportOnGitHubDescription": "Public issue tracker for bugs and feature requests.",
     "joinDiscord": "Join our Discord",
-    "joinDiscordDescription": "Other people using the app, plus the maintainers."
+    "joinDiscordDescription": "Other people using the app, plus the maintainers.",
+    "joinReddit": "Join r/Selftend",
+    "joinRedditDescription": "Public threads for releases and questions."
   },
   "appearance": {
     "title": "Appearance",

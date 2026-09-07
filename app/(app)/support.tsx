@@ -406,9 +406,16 @@ export default function SupportScreen() {
         <Section title={t("feedback.otherChannels")}>
           {/*
           A hairline run: the section already carries the chrome, and a card
-          here would be a box inside a box. The Discord row is gated at the
-          mount point (`Children.toArray` drops a null CHILD, not a child that
-          renders null), so a blank URL leaves no rule behind.
+          here would be a box inside a box. The Discord and Reddit rows are
+          gated at the mount point (`Children.toArray` drops a null CHILD, not
+          a child that renders null), so a blank URL leaves no rule behind.
+
+          ☠️ Both wear a MaterialIcons glyph, not their brand mark. The nav
+          panel's social row is Ionicons `logo-discord` / `logo-reddit`, and
+          `AGENTS.md` does allow Ionicons for platform brand marks - but this
+          run is four rows sharing one icon column, and one brand logo among
+          `mail-outline` and `bug-report` reads as a different kind of row.
+          `forum` is already Discord's, so the subreddit takes `groups`.
         */}
           <SettingsRun surface="hairline">
             <SettingsRow
@@ -440,6 +447,16 @@ export default function SupportScreen() {
                 trailing={{ kind: "external" }}
                 onPress={() => openExternalUrl(appEnv.discordUrl)}
                 testID="support-row-discord"
+              />
+            ) : null}
+            {appEnv.redditUrl ? (
+              <SettingsRow
+                icon="groups"
+                label={t("feedback.joinReddit")}
+                description={t("feedback.joinRedditDescription")}
+                trailing={{ kind: "external" }}
+                onPress={() => openExternalUrl(appEnv.redditUrl)}
+                testID="support-row-reddit"
               />
             ) : null}
           </SettingsRun>

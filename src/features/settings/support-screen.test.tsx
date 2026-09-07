@@ -243,6 +243,10 @@ describe("SupportScreen column (#1726)", () => {
     appEnv.supportEmail = "support@selftend.org";
     appEnv.githubRepoUrl = "https://github.com/Selftend/selftend";
     appEnv.discordUrl = "https://discord.gg/selftend";
+    // Set, never left to the default: `redditUrl` ships with the real
+    // subreddit in `env.ts`, so an unset field here would make the row's
+    // presence a fact about production config rather than about this test.
+    appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
     appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.selftend.app";
     appEnv.appStoreUrl = "https://apps.apple.com/app/selftend/id0000000000";
     mockInvoke.mockResolvedValue({ error: null });
@@ -290,7 +294,7 @@ describe("SupportScreen column (#1726)", () => {
     ).toBeTruthy();
   });
 
-  it("offers three ways out of the app: mail, the issue tracker, and Discord", () => {
+  it("offers four ways out of the app: mail, the issue tracker, Discord, and the subreddit", () => {
     renderWithProviders(<SupportScreen />);
 
     fireEvent.press(screen.getByRole("link", { name: "Email support" }));
@@ -306,6 +310,10 @@ describe("SupportScreen column (#1726)", () => {
 
     fireEvent.press(screen.getByRole("link", { name: "Join our Discord" }));
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith("https://discord.gg/selftend");
+
+    fireEvent.press(screen.getByRole("link", { name: "Join r/Selftend" }));
+    expect(mockOpenExternalUrl).toHaveBeenLastCalledWith("https://www.reddit.com/r/Selftend/");
+    expect(screen.getByText("Public threads for releases and questions.")).toBeTruthy();
   });
 
   it("without a support email: no form, and the Email row is off with the reason as its second line", () => {
@@ -324,6 +332,31 @@ describe("SupportScreen column (#1726)", () => {
     renderWithProviders(<SupportScreen />);
 
     expect(screen.queryByRole("link", { name: "Join our Discord" })).toBeNull();
+  });
+
+  it("without a Reddit URL the row is absent, and the rest of the run is untouched", () => {
+    appEnv.redditUrl = "";
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.queryByRole("link", { name: "Join r/Selftend" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Join our Discord" })).toBeTruthy();
+  });
+
+  it("runs the channels mail → tracker → Discord → subreddit, in that order", () => {
+    renderWithProviders(<SupportScreen />);
+
+    // The order is the assertion: a row appended to the end of the run rather
+    // than after Discord would still pass every presence check above.
+    expect(
+      screen
+        .getAllByTestId(/^support-row-(email|github|discord|reddit)$/)
+        .map((row) => row.props.testID),
+    ).toEqual([
+      "support-row-email",
+      "support-row-github",
+      "support-row-discord",
+      "support-row-reddit",
+    ]);
   });
 
   it("lists five things support can help with and four it cannot, then the FAQ", () => {
