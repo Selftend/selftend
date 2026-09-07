@@ -112,13 +112,12 @@ export function FaqScreen() {
   return (
     <PolicyPageLayout title={t("faq.pageTitle")} subtitle={t("faq.pageDescription")}>
       {/*
-        ☠️ `level={2}` (#2137). This page's blocks below are level 2, so the
-        callout's default 3 put a safety surface under the ordinary content that
-        follows it. `/support` takes the same value in the same change, so the
-        two sibling pages still agree - which was the point of rendering the
-        shipped component unmodified in the first place.
+        Rendered unmodified, as #2129 ruled - including its heading level, which
+        is 2 from the component's own default on all five screens (#2137, #2167).
+        Passing nothing here is what keeps this page and `/support` agreeing by
+        construction rather than by two call sites happening to match.
       */}
-      <CrisisSupportCallout level={2} />
+      <CrisisSupportCallout />
 
       {/*
         The always-open answers render through the SAME card the six `InfoScreen`

@@ -329,6 +329,30 @@ describe("ActHomeScreen", () => {
     expect(Number(heading.props["aria-level"])).toBe(3);
   });
 
+  /**
+   * ☠️ **The crisis callout is a level-2 block, not a child of the framework**
+   * (#2167). It renders last, after *The framework*'s `h2`, so at level 3 it read
+   * as one of that section's parts - a reader navigating by heading found urgent
+   * support filed inside the ACT framework. It belongs to no framework.
+   *
+   * Asserted HERE and not only on `safety-callout.test.tsx` because the component
+   * takes the level from a default: before #2167 nothing on this screen noticed
+   * the callout's level at all, and a change to that default moved three module
+   * homes with only one central test to catch it.
+   *
+   * ⚠️ *Recent defusion logs* is still level 3 under that same `h2` and is still
+   * wrong; that half of #2167 needs a per-screen ruling on what the framework
+   * actually owns. Not asserted as correct here - just not this test's subject.
+   */
+  it("keeps the crisis callout out of the framework section, at level 2", () => {
+    renderWithProviders(<ActHomeScreen />);
+
+    const callout = screen.getByText("Use urgent support for urgent risk");
+
+    expect(callout.props.role ?? callout.props.accessibilityRole).toBe("heading");
+    expect(Number(callout.props["aria-level"])).toBe(2);
+  });
+
   it("keeps the framework block's own heading above it in the outline", () => {
     renderWithProviders(<ActHomeScreen />);
 

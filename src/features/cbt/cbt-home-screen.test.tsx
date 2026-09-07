@@ -519,6 +519,29 @@ describe("CbtHomeScreen layout (#1386)", () => {
    * than being one. Flattening it would leave the page with no outline. Pinned
    * so the exception cannot be quietly flattened, nor quietly lose its role.
    */
+  /**
+   * ☠️ **The crisis callout is a level-2 block, not a child of the framework**
+   * (#2167). It renders last, after *The Think · Act · Be framework*'s `h2`, so at
+   * level 3 it read as one of that section's parts - urgent support filed inside
+   * the CBT framework. It belongs to no framework.
+   *
+   * Asserted HERE and not only on `safety-callout.test.tsx` because the component
+   * takes the level from a default, and before #2167 nothing on this screen
+   * noticed the callout's level at all.
+   *
+   * ⚠️ *Review* is still level 3 under that same `h2` and is still wrong; that
+   * half of #2167 needs a per-screen ruling.
+   */
+  it("keeps the crisis callout out of the framework section, at level 2", () => {
+    fillTheScreen();
+    renderWithProviders(<CbtHomeScreen />);
+
+    const callout = screen.getByText("Use urgent support for urgent risk");
+
+    expect(callout.props.role ?? callout.props.accessibilityRole).toBe("heading");
+    expect(Number(callout.props["aria-level"])).toBe(2);
+  });
+
   it("keeps the framework heading a real heading, one level above the sections", () => {
     fillTheScreen();
     renderWithProviders(<CbtHomeScreen />);

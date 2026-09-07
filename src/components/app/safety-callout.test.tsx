@@ -39,21 +39,25 @@ describe("CrisisSupportCallout", () => {
   });
 
   /**
-   * ☠️ **The heading level, both halves (#2137).**
+   * ☠️ **The heading level, both halves (#2137, #2167).**
    *
-   * The default has to be pinned as hard as the override: every call site shipped
-   * at `CardTitle`'s 3, three of them still pass nothing, and a change of default
-   * would silently move the outline on the ACT, CBT and DBT homes - screens whose
-   * own tests assert their level runs and would then fail somewhere else entirely.
+   * ☠️ **The DEFAULT is the one that matters now** - all five call sites pass
+   * nothing, so this assertion is the only thing standing between them and a
+   * silent outline change on five screens at once. It carries more weight than
+   * the override case below, which no shipped caller exercises.
+   *
+   * The override is still pinned, because a prop that is never proven to work is
+   * a prop that quietly stops working. `3` is used as the sample precisely
+   * because it is the value the callout used to ship at.
    *
    * ☠️ Levels through `Number(...)`: `text.tsx`'s `ARIA_LEVEL` map yields the
-   * STRING `"3"` while `CardTitle` passes a number, so a bare `toBe(3)` fails on a
+   * STRING `"2"` while `CardTitle` passes a number, so a bare `toBe(2)` fails on a
    * correct tree. Host nodes only - `role="heading"` on our `Text` is visible on
    * the composite and on the host, which is two nodes for one heading.
    */
   it.each([
-    [undefined, 3],
-    [2 as const, 2],
+    [undefined, 2],
+    [3 as const, 3],
   ])("renders its title at level %s -> %s", (level, expected) => {
     renderWithProviders(<CrisisSupportCallout level={level} />);
 
