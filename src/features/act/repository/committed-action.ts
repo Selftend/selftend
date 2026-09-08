@@ -2,6 +2,7 @@ import type {
   ACTLifeDomain,
   ActionStatus,
   CommittedAction,
+  CommittedActionArchiveStatus,
   CommittedActionInput,
   CommittedActionPatch,
 } from "@/src/features/act/types";
@@ -128,27 +129,26 @@ export async function listCommittedActions(userId: string, status?: ActionStatus
 }
 
 /**
- * The statuses that are history rather than a working set.
- *
- * Exported so the screen's "everything not in this list is still live" split and the read
- * agree by construction — a fourth status added to one and not the other would silently
- * vanish from both sections.
- */
-export const COMMITTED_ACTION_ARCHIVE_STATUSES = ["completed", "abandoned"] as const;
-
-/**
- * One page of the finished committed actions, newest first (#1517).
+ * One page of the finished committed actions at ONE status, newest first (#1517).
  *
  * This is the half of the committed-action list that grows without bound: a user only ever
  * adds to what they have completed or abandoned, while the active set stays a working list
  * they keep short themselves. Bounding the growing half is what makes the unbounded read
  * above safe to keep — see its docblock for why a cap on `active` is the worse failure.
  *
+ * ☠️ One status per page, never both (#2186). The screen renders Completed and Abandoned as
+ * separate sections, and a page that took both statuses together was split client-side:
+ * whenever the 20 newest finished rows were all one status, the other section rendered
+ * nothing — no heading, no rows — while a generic "Show more" below named no section. The
+ * status is a required argument rather than an optional filter so that a caller cannot
+ * quietly re-widen the read.
+ *
  * Keyset on the plaintext `created_at`, never `.range()`, for ADR-0001's reason: an offset
  * page re-reads and re-decrypts every row it skips.
  */
 export async function listCommittedActionArchivePage(
   userId: string,
+  status: CommittedActionArchiveStatus,
   limit: number,
   cursor: RecordCursor | null,
 ) {
@@ -157,7 +157,7 @@ export async function listCommittedActionArchivePage(
       .from("act_committed_actions")
       .select("*")
       .eq("user_id", userId)
-      .in("status", [...COMMITTED_ACTION_ARCHIVE_STATUSES])
+      .eq("status", status)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false });
     if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));

@@ -20,7 +20,7 @@ import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-deta
 import {
   useActionSteps,
   useCommittedAction,
-  useCommittedActions,
+  useListedCommittedActions,
   useDeleteActionStep,
   useDeleteCommittedAction,
   useSaveActionStep,
@@ -53,7 +53,7 @@ export default function ActCommittedActionDetailScreen() {
   const { selectedDate } = useSelectedDate();
 
   const { item: action, isLoading } = useCachedItem(
-    useCommittedActions,
+    useListedCommittedActions,
     useCommittedAction,
     user?.id ?? null,
     actionId,

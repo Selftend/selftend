@@ -1,4 +1,4 @@
-import type { ActionStatus } from "@/src/features/act/types";
+import type { ActionStatus, CommittedActionArchiveStatus } from "@/src/features/act/types";
 
 export const u = (userId: string | null) => userId ?? "anonymous";
 
@@ -84,11 +84,13 @@ export const actKeys = {
   // Prefix matcher used by mutations to invalidate every status filter at once.
   committedActionListPrefix: (userId: string | null) =>
     ["act", "committedAction", "list", u(userId)] as const,
-  // The finished half only (completed + abandoned). The active section stays on the
-  // unbounded `committedActionList(userId, "active")` read — #1517 split the screen's
-  // fetch by status rather than flattening its three sections into one keyset page.
-  committedActionArchivePages: (userId: string | null) =>
-    ["act", "committedAction", "list", u(userId), "archivePages"] as const,
+  // The finished half only, one archive per finished status (#2186). The active section
+  // stays on the unbounded `committedActionList(userId, "active")` read — #1517 split the
+  // screen's fetch by status rather than flattening its three sections into one keyset
+  // page, and #2186 split the finished half again so neither section can page the other
+  // out of sight.
+  committedActionArchivePages: (userId: string | null, status: CommittedActionArchiveStatus) =>
+    ["act", "committedAction", "list", u(userId), "archivePages", status] as const,
   // `status` may be undefined - that is ACT home's lifetime count, and it is a distinct
   // cache entry from any single status's, not a wider read of the same one (#1378).
   committedActionCount: (userId: string | null, status?: ActionStatus) =>

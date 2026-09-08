@@ -40,8 +40,13 @@ const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
  *   routines engine and the programme each treat a missing row as a row that does not
  *   exist, so a cap here would silently drop a commitment a user is still working on —
  *   a worse failure than an expensive read (#1516's argument, which stands).
- * - **Completed and abandoned are paged.** They are the only half that grows without end,
- *   and the only half that is history.
+ * - **Completed and abandoned are each paged on their own.** They are the only half that
+ *   grows without end, and the only half that is history. ☠️ Not one page split in two:
+ *   #1517 first paged both finished statuses as one read and carved the sections out of it
+ *   client-side, and the raggedness argument above applied between them just as it did
+ *   against active — twenty recent completions filled the whole page and the Abandoned
+ *   section vanished, heading and all, behind a "Show more" that named no section (#2186).
+ *   Each section pages itself, so an empty section means there is nothing in it.
  *
  * Status sectioning names no day, so none of this is a #1513 second-frame problem. The
  * day-namer on a row is `formatDayKey(targetDate)` — a `YYYY-MM-DD` the user PICKED,
@@ -52,33 +57,26 @@ export default function ActCommittedActionListScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["act", "errors"]);
   const { user } = useSession();
+  const userId = user?.id ?? null;
   const {
     data: activeActions,
     isLoading,
     isError: activeFailed,
     refetch: refetchActive,
-  } = useCommittedActions(user?.id ?? null, "active");
-  const {
-    data: archivePages,
-    fetchNextPage,
-    hasNextPage,
-    isError: archiveFailed,
-    isFetchingNextPage,
-    isPending: archivePending,
-    refetch: refetchArchive,
-  } = useCommittedActionArchivePages(user?.id ?? null);
+  } = useCommittedActions(userId, "active");
+  const completedArchive = useCommittedActionArchivePages(userId, "completed");
+  const abandonedArchive = useCommittedActionArchivePages(userId, "abandoned");
 
-  if (isLoading || archivePending) {
+  if (isLoading || completedArchive.isPending || abandonedArchive.isPending) {
     return <ScreenLoading title={t("committedAction.listTitle")} />;
   }
 
-  const readFailed = activeFailed || archiveFailed;
+  const readFailed = activeFailed || completedArchive.isError || abandonedArchive.isError;
   const active = activeActions ?? [];
-  const archive = archivePages?.pages.flat() ?? [];
-  // The archive read filters to these two statuses in SQL; splitting the page here is
-  // presentation, and it keeps the shipped three-section shape rather than flattening it.
-  const completed = archive.filter((a) => a.status === "completed");
-  const abandoned = archive.filter((a) => a.status === "abandoned");
+  // Each archive read filters to its own status in SQL, so a section is exactly the pages
+  // of its own read — nothing is split here.
+  const completed = completedArchive.data?.pages.flat() ?? [];
+  const abandoned = abandonedArchive.data?.pages.flat() ?? [];
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -100,7 +98,7 @@ export default function ActCommittedActionListScreen() {
           <SharedToolsRow heading={t("alsoTry")} tools={[ACT_SHARED_TOOLS.habits]} />
 
           {/*
-            ☠️ A failed read is NOT an empty list. Either half failing has to say so:
+            ☠️ A failed read is NOT an empty list. Any of the three failing has to say so:
             "No committed actions yet" over an error tells a user who is mid-commitment
             that nothing was ever recorded, and on the ACTIVE half it also contradicts the
             widget and the routines engine, which are reading the same rows successfully.
@@ -114,11 +112,12 @@ export default function ActCommittedActionListScreen() {
                 label: t("errors:fallback.retry"),
                 onPress: () => {
                   if (activeFailed) void refetchActive();
-                  if (archiveFailed) void refetchArchive();
+                  if (completedArchive.isError) void completedArchive.refetch();
+                  if (abandonedArchive.isError) void abandonedArchive.refetch();
                 },
               }}
             />
-          ) : active.length === 0 && archive.length === 0 ? (
+          ) : active.length === 0 && completed.length === 0 && abandoned.length === 0 ? (
             <Text variant="muted">{t("committedAction.noActions")}</Text>
           ) : null}
 
@@ -126,33 +125,58 @@ export default function ActCommittedActionListScreen() {
             <ActionGroup title={t("committedAction.activeTitle")} items={active} />
           ) : null}
 
+          {/*
+            ⚠️ "Show more" buttons rather than an infinite `FlatList`: the three sections
+            live inside this `ScrollView`, and a nested virtualised list there is the React
+            Native anti-pattern that breaks both scrollers. Each finished section carries
+            its own control, under its own rows, naming its own status — a single button
+            below all three said nothing about WHICH section had more behind it (#2186).
+          */}
           {completed.length > 0 ? (
-            <ActionGroup title={t("committedAction.completedTitle")} items={completed} />
+            <View className="gap-3">
+              <ActionGroup title={t("committedAction.completedTitle")} items={completed} />
+              {completedArchive.hasNextPage ? (
+                <ShowMoreButton
+                  label={t("committedAction.showMoreCompleted")}
+                  pending={completedArchive.isFetchingNextPage}
+                  onPress={() => void completedArchive.fetchNextPage()}
+                />
+              ) : null}
+            </View>
           ) : null}
 
           {abandoned.length > 0 ? (
-            <ActionGroup title={t("committedAction.abandonedTitle")} items={abandoned} />
-          ) : null}
-
-          {/*
-            ⚠️ A "Show more" button rather than an infinite `FlatList`: the three sections
-            live inside this `ScrollView`, and a nested virtualised list there is the React
-            Native anti-pattern that breaks both scrollers. One control extends the archive
-            as a whole, because both finished sections are pages of the same read.
-          */}
-          {hasNextPage ? (
-            <Button
-              variant="secondary"
-              disabled={isFetchingNextPage}
-              onPress={() => void fetchNextPage()}
-            >
-              {isFetchingNextPage ? <ActivityIndicator /> : null}
-              <Text>{t("committedAction.showMore")}</Text>
-            </Button>
+            <View className="gap-3">
+              <ActionGroup title={t("committedAction.abandonedTitle")} items={abandoned} />
+              {abandonedArchive.hasNextPage ? (
+                <ShowMoreButton
+                  label={t("committedAction.showMoreAbandoned")}
+                  pending={abandonedArchive.isFetchingNextPage}
+                  onPress={() => void abandonedArchive.fetchNextPage()}
+                />
+              ) : null}
+            </View>
           ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function ShowMoreButton({
+  label,
+  onPress,
+  pending,
+}: {
+  label: string;
+  onPress: () => void;
+  pending: boolean;
+}) {
+  return (
+    <Button variant="secondary" disabled={pending} onPress={onPress}>
+      {pending ? <ActivityIndicator /> : null}
+      <Text>{label}</Text>
+    </Button>
   );
 }
 

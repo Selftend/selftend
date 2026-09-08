@@ -16,7 +16,11 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
-import { useChoicePoint, useChoicePoints, useDeleteChoicePoint } from "@/src/features/act/queries";
+import {
+  useChoicePoint,
+  useChoicePointPages,
+  useDeleteChoicePoint,
+} from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -30,7 +34,7 @@ export default function ActChoicePointDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: cp, isLoading } = useCachedItem(
-    useChoicePoints,
+    useChoicePointPages,
     useChoicePoint,
     user?.id ?? null,
     cpId,
