@@ -30,6 +30,7 @@ import {
   useUpdateRoutine,
 } from "@/src/features/routines/queries";
 import { ROUTINE_NAME_MAX, routineInputSchema } from "@/src/features/routines/schemas";
+import { isWritableStepToolId } from "@/src/features/routines/step-tool-rollout";
 import type {
   RoutineCadence,
   RoutineInput,
@@ -119,6 +120,24 @@ export const STEP_TOOL_GROUPS: readonly {
   },
   { key: "habits", tools: ["habits"] },
 ];
+
+/**
+ * The groups the picker actually renders: {@link STEP_TOOL_GROUPS} with every
+ * withheld tool dropped, and a group left with no tools dropped whole (#2203).
+ *
+ * ☠️ The partition above stays complete on purpose - it is the map of the read
+ * vocabulary, and the editor test asserts every steppable tool sits in exactly
+ * one group, so a newly admitted tool cannot go unhomed. What rollout gates is
+ * only what a person can ADD today: a chip for a tool the shipped native
+ * client cannot read would compose a step that phone can never tick, never
+ * complete and cannot even name. A disabled chip was refused - "here is a
+ * thing you may not have" is noise on a screen whose job is composing a
+ * routine; the group simply returns when the tools do.
+ */
+export const OFFERABLE_STEP_TOOL_GROUPS = STEP_TOOL_GROUPS.map((group) => ({
+  ...group,
+  tools: group.tools.filter((toolId) => isWritableStepToolId(toolId)),
+})).filter((group) => group.tools.length > 0);
 
 export function RoutineEditorScreen({
   fallbackHref,
@@ -519,7 +538,7 @@ export function RoutineEditorScreen({
 
       <View className="gap-3">
         <Label>{t("form.addStepLabel")}</Label>
-        {STEP_TOOL_GROUPS.map((group) => (
+        {OFFERABLE_STEP_TOOL_GROUPS.map((group) => (
           <View key={group.key} className="gap-2">
             <Text variant="muted" className="text-xs font-semibold uppercase tracking-wide">
               {t(`form.groups.${group.key}` as const)}

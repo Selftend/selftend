@@ -1,13 +1,15 @@
 import { z } from "zod";
 
-import { isSteppableToolId } from "@/src/features/routines/derive";
+import { isWritableStepToolId } from "@/src/features/routines/step-tool-rollout";
 import { ROUTINE_CADENCES } from "@/src/features/routines/types";
 
 // Mirrors the DB guards: routines_guard caps the name at 120 and rejects
 // blank; reminder hour/minute CHECKs are 0-23 / 0-59; cadence/custom_days
 // CHECKs are routines_data_cadence_valid / _custom_days_valid (custom needs
 // 1-7 distinct getDay() values); routine_steps.position must be a
-// non-negative integer and tool_id one of the steppable set.
+// non-negative integer and tool_id one of the ALLOWLISTED steppable ids
+// (routine_steps_tool_id_allowlisted, #2203 - the write vocabulary, which is
+// the read vocabulary minus whatever is still withheld for rollout).
 export const ROUTINE_NAME_MAX = 120;
 
 const trimmedRequiredName = z
@@ -44,6 +46,8 @@ export const routineUpdateSchema = routineFieldsSchema
   .refine(customNeedsDays, { message: "custom cadence needs at least one day" });
 
 export const routineStepInputSchema = z.object({
-  toolId: z.string().refine(isSteppableToolId, { message: "unknown tool" }),
+  // Withheld ids fail here too: a step the shipped native client cannot read
+  // must never be written, whatever composed it (#2203).
+  toolId: z.string().refine(isWritableStepToolId, { message: "unknown tool" }),
   position: z.number().int().min(0),
 });

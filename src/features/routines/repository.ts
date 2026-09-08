@@ -1,4 +1,5 @@
 import type { SteppableToolId } from "@/src/features/routines/derive";
+import { isWritableStepToolId } from "@/src/features/routines/step-tool-rollout";
 import type {
   Routine,
   RoutineCadence,
@@ -178,12 +179,25 @@ export async function deleteRoutine(userId: string, id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * The one place `routine_steps` rows are created - the editor's chips and the
+ * starter offer's "Keep" both land here through `useAddStep`.
+ *
+ * ☠️ The tool id is checked against the WRITE vocabulary before the round
+ * trip (#2203): a step id the shipped native client cannot read must never
+ * reach the table, whatever composed it. The database enforces the same
+ * allowlist (`routine_steps_tool_id_allowlisted`), so this guard exists to
+ * fail early and legibly rather than to be the only line of defence.
+ */
 export async function addStep(
   userId: string,
   routineId: string,
   toolId: SteppableToolId,
   position: number,
 ): Promise<RoutineStep> {
+  if (!isWritableStepToolId(toolId)) {
+    throw new Error(`Routine step tool is not writable: ${toolId}`);
+  }
   const client = requireSupabase();
   const { data, error } = await client
     .from("routine_steps")
