@@ -74,13 +74,35 @@ import { useToastStore } from "@/src/stores/toast-store";
  * one: a refetch landing mid-edit would throw away what the person had just
  * typed. Gating instead means the seed happens exactly once, from a document
  * `CopingPlanBuilder` cannot mount without.
+ *
+ * ☠️ **`isPending` is not "a request is in flight"** (#2231). Queries keep
+ * TanStack's default `networkMode: "online"` - only mutations are set to
+ * `"always"` - so an offline read never starts: the query sits at
+ * `status: "pending"` / `fetchStatus: "paused"`, which reads as `isPending`
+ * true with `isFetching`, `isLoading` and `isError` all false. Gating on
+ * `isPending` alone parked an offline arrival on a spinner that could never
+ * reach the error branch below it, because a paused query never errors. So a
+ * read that is pending AND paused counts as a read that did not happen: the
+ * same shut door and the same Try again, said honestly.
+ *
+ * ☠️ It has to be `isPending && isPaused`, never `isPaused` alone - a
+ * background refetch pausing mid-edit is `isPaused` with `status: "success"`,
+ * and unmounting the builder for that would throw away everything the person
+ * had typed. And never `isLoading` alone in the gate either: that falls
+ * through to the builder against `undefined` and reopens #2204.
  */
 export default function DbtCopingPlanEditorScreen() {
   const { t } = useTranslation("dbt");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: existing, isPending, isError, refetch } = useCopingPlan(userId);
+  const { data: existing, isError, isPaused, isPending, refetch } = useCopingPlan(userId);
+
+  // Pending AND paused means there is no network, so the read has not started
+  // and will not start on its own account. Nothing was read either way, so it
+  // takes the branch a failed read takes - and it clears itself when the
+  // connection returns, because query-core resumes the paused fetch.
+  const unread = isError || (isPending && isPaused);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -88,13 +110,12 @@ export default function DbtCopingPlanEditorScreen() {
           waiting and failed bodies drop INTO a screen that already has its
           Escape, so the bar is never absent and never mounted twice. */}
       <ScreenTopBar leading="close" />
-      {isPending ? (
-        <View className={cn(FORM_COLUMN, "grow justify-center p-6")}>
-          <LoadingState title={t("copingPlan.editTitle")} />
-        </View>
-      ) : isError ? (
+      {unread ? (
         /* Nothing was read, so nothing may be replaced: the builder stays shut
-           and the person is offered the read again rather than a blank plan. */
+           and the person is offered the read again rather than a blank plan.
+           The body already names the connection, which is exactly what an
+           offline arrival needs to hear, and the app-wide offline banner sits
+           below this screen saying the rest. */
         <View className={cn(FORM_COLUMN, "grow justify-center gap-4 p-6")}>
           <ErrorState
             title={t("copingPlan.loadErrorTitle")}
@@ -103,6 +124,10 @@ export default function DbtCopingPlanEditorScreen() {
           <Button variant="outline" onPress={() => void refetch()}>
             <Text>{t("copingPlan.retry")}</Text>
           </Button>
+        </View>
+      ) : isPending ? (
+        <View className={cn(FORM_COLUMN, "grow justify-center p-6")}>
+          <LoadingState title={t("copingPlan.editTitle")} />
         </View>
       ) : (
         <CopingPlanBuilder existing={existing ?? null} userId={userId} />
