@@ -13,6 +13,7 @@ import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
 import { AgeGate } from "@/src/components/app/age-gate";
 import { UnderFloorScreen } from "@/src/components/app/under-floor-screen";
+import { PreferencesUnavailableScreen } from "@/src/components/app/preferences-unavailable-screen";
 import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
 import type { UserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
@@ -40,6 +41,7 @@ export default function ProtectedLayout() {
     data: preferences,
     isLoading: prefsLoading,
     isError: prefsError,
+    refetch: refetchPreferences,
   } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
@@ -175,13 +177,36 @@ export default function ProtectedLayout() {
   // environments can't mint an unconfirmed session at all (GoTrue rejects
   // the sign-in), so nothing slips through while configs differ.
 
-  // A failed preferences fetch WITH nothing cached leaves the acceptance state
-  // UNKNOWN — gating on it would re-prompt users who already accepted (#164:
-  // transient network errors flashed the gate). Fail open only then; TanStack's
-  // retry/refocus refetch re-evaluates once a load succeeds. When cached data
+  // A failed preferences fetch WITH nothing cached leaves BOTH legal verdicts -
+  // the age attestation and the policy acceptance - UNKNOWN. When cached data
   // exists the state is known even if the latest refetch errored, so a stale
-  // acceptance still gates.
+  // acceptance still gates; this is only the nothing-at-all case.
   const prefsUnknown = prefsError && !preferences;
+
+  // ☠️☠️ Unknown fails CLOSED (#2200). This used to fall through: `prefsUnknown`
+  // was a conjunct of both `needsAgeAttestation` and `needsConsent`, so on an
+  // errored, empty preferences query both gates evaluated false and the full
+  // app shell rendered. That let a person below their country's statutory floor
+  // - the gate ships for the first time in this release - into the whole app
+  // with no attestation on file, free to write thought records and journal
+  // entries, which are GDPR Art. 9 special-category data. A fail-open on a
+  // legal gate is not something to inherit from a comment.
+  //
+  // ⚠️ #164's objection to failing closed still stands and is answered rather
+  // than overruled: what it forbade was showing a GATE on a transient error,
+  // because a gate re-asks a person who already answered. This is not a gate.
+  // It asks nothing, records nothing, and its only control re-runs the fetch,
+  // so an already-attested user pays a tap and an unattested one cannot walk
+  // past. TanStack's own retry/refocus refetch closes it too - the retry button
+  // exists so the person is never waiting on that alone.
+  //
+  // ⚠️ It must stay BELOW the `!session` and under-floor branches above: a
+  // signed-out person has no preferences row to fail on and belongs on the
+  // landing, and a blocked device must see the block rather than a retry that
+  // could never help it.
+  if (prefsUnknown) {
+    return <PreferencesUnavailableScreen onRetry={() => void refetchPreferences()} />;
+  }
   // The age gate (#1764, spec #227 §3) sits ABOVE the consent gate in this same
   // slot, which is what gives it all four entry paths - email/password, Google,
   // Apple and the silent guest - instead of the two §3 was written against.
@@ -209,15 +234,12 @@ export default function ProtectedLayout() {
   const needsAgeAttestation =
     !ageAttested &&
     !prefsLoading &&
-    // ⚠️ Fail-open, and it is worth naming rather than inheriting silently: on
-    // a preferences error with nothing cached, the attestation state is
-    // UNKNOWN and this lets the person through until a fetch succeeds. Failing
-    // closed instead would block every user whose first fetch of a cold start
-    // failed, since nothing in that state distinguishes a new guest from a
-    // ten-month user. The consent gate below makes the same call for the same
-    // reason (#164), so this is no weaker than the legal gate beside it - but
-    // it is a gap, and it is recorded in docs/age-floor.md rather than only
-    // here.
+    // Unreachable as false since #2200 - the early return above owns the
+    // unknown state - and kept anyway, as the belt to that braces. This clause
+    // is what USED to make the branch fail open, so if the return above is ever
+    // moved or removed, the failure this restores is "the gate is skipped", not
+    // "the gate is shown to someone who already answered". Do not delete it as
+    // dead code without moving the guard, not after it.
     !prefsUnknown &&
     // Not redundant with the two above: the query is DISABLED while there is
     // no user id, and a disabled query is neither loading nor errored - it

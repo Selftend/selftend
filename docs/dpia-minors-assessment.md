@@ -287,9 +287,12 @@ irreversible, so two things guard the path to it. An impossible date ("31
 February") is caught by the calendar check _before_ the floor is measured and
 shown as a correctable field error rather than an exit. And the account being
 deleted is one that has never been through the consent gate, so in the ordinary
-case it holds nothing yet. The exception is an account that reached the shell
-during the fail-open window in R7 below; that combination is the one way a typo
-could cost someone content, and it is recorded rather than argued away.
+case it holds nothing yet. The exception used to be an account that reached the
+shell during the fail-open window in R7 below — the one way a typo could cost
+someone content. [#2200](https://github.com/Selftend/selftend/issues/2200)
+closed that window: an unknown attestation now renders a retry surface rather
+than the shell, so there is no longer a state in which content accumulates
+before the gate has run.
 
 ## 3. Risks to rights and freedoms (Art. 35(7)(c))
 
@@ -305,15 +308,16 @@ and after them in the fifth.
 | R4  | The age answer itself becomes a profile, or a permanent label                                                     | Low        | Medium   | Three columns, no date of birth, no minor flag, no age band; the answer is exported to the person and deleted with their account                                                                                                                                                                                                                                                                                                                                                                         | Low      |
 | R5  | The exit screen distresses a young person who has just been turned away                                           | Medium     | Medium   | Calm, non-shaming copy that states what happened and why; `/crisis` and Find A Helpline reachable without an account; no lecture, and no appeal that could only be settled by collecting more data                                                                                                                                                                                                                                                                                                       | Low      |
 | R6  | Engagement mechanics extend or compel a minor's use                                                               | Low        | High     | Principle 12 _Fulfilling, And Done_ and [ADR-0004](adr/0004-retention-by-return-not-engagement.md): nothing counts days or run-lengths, no levels or badges, nothing varies by date or visit, no contact triggered by non-use, reminders opt-in and off by default. `test/practice-copy.test.ts` holds the copy half of that line as a merge gate — it bans copy that prescribes a return or names a run to keep, and does not police the mechanics, which rest on the principle and the reviewer bullet | Low      |
-| R7  | The gate fails open on a preferences error and a person reaches the shell un-attested                             | Low        | Medium   | Recorded rather than hidden, in [age-floor.md](age-floor.md). Failing closed would block every user whose first fetch of a cold start failed, with nothing in that state to tell a new guest from a long-standing user; the consent gate makes the identical call for the identical reason                                                                                                                                                                                                               | Medium   |
+| R7  | The gate fails open on a preferences error and a person reaches the shell un-attested                             | Low        | Medium   | Closed by [#2200](https://github.com/Selftend/selftend/issues/2200): an unknown attestation renders an error surface with a retry, not the shell, so nothing below the floor is reachable while the verdict is unknown. Failing closed does not re-ask anybody — the surface is not a gate, it asks nothing and records nothing — and it is not a lockout, because the retry and TanStack's own refetch both clear it. Pinned by `protected-layout.test.tsx`                                             | Low      |
 | R8  | A guest account belonging to an under-floor person cannot be found when someone reports it                        | Medium     | Medium   | The runbook says so plainly and gives the only real answer — Settings → Delete account on the device holding the session — rather than implying a lookup exists; the dormancy job collects the row after twelve months                                                                                                                                                                                                                                                                                   | Medium   |
 | R9  | The content itself harms a young reader (medical implication, treatment framing, crisis material presented badly) | Low        | High     | The module-by-module [child-safety content review](child-safety-review.md) across all 20 namespaces in both languages; crisis guidance kept on its own page with its own vocabulary; the wellness-not-diagnosis boundary in principle 6                                                                                                                                                                                                                                                                  | Low      |
 | R10 | Data reaches a third country without adequate safeguards                                                          | Low        | Medium   | SCCs and processor DPAs; a transfer impact assessment in the runbook; the processor list is short and each entry has a stated role                                                                                                                                                                                                                                                                                                                                                                       | Low      |
 | R11 | A support conversation collects an age dossier while enforcing the age floor                                      | Low        | Medium   | The runbook forbids asking for a date of birth or a document, forbids reading someone's records to age them, and forbids recording an age in the request log                                                                                                                                                                                                                                                                                                                                             | Low      |
 | R12 | A deletion is aimed at someone by a stranger, as harassment                                                       | Low        | High     | The three-way credibility rule in the runbook: the account holder acts; a parent or guardian with a plausible connection triggers one message to the holder first; a reporter with no plausible connection is refused                                                                                                                                                                                                                                                                                    | Low      |
 
-Three residual mediums — R2, R7 and R8 — are carried deliberately, and §7 says
-why.
+Two residual mediums — R2 and R8 — are carried deliberately, and §7 says why.
+R7 was a third until [#2200](https://github.com/Selftend/selftend/issues/2200)
+closed it.
 
 ## 4. Measures (Art. 35(7)(d))
 
@@ -471,20 +475,23 @@ obligation — is where it is written down.
 
 ## 7. Residual risk and conclusion
 
-**Three residual risks are carried deliberately**, and none of them is high:
+**Two residual risks are carried deliberately**, and neither of them is high:
 
 - **R2, a false attestation.** Unresolvable without age verification, which spec
   §10 refuses on data-minimisation grounds. The mitigation is not a better gate;
   it is that the product is built to be safe for a 13-year-old whether or not the
   gate was answered honestly, and that a report from outside leads to deletion.
-- **R7, the gate failing open on a preferences error.** The alternative — a
-  closed gate — would lock out every user whose first fetch failed on a cold
-  start, with nothing in that state to tell a new guest from a long-standing
-  user. The legal consent gate beside it makes the same call, so the age gate is
-  no weaker than the gate it stands in front of.
 - **R8, an unreachable guest account.** The consequence of an entry path that
   asks for nothing. Answering it would mean identifying guests — costing every
   guest their anonymity to make a rare report actionable.
+
+R7 — the gate failing open on a preferences error — was carried here until
+[#2200](https://github.com/Selftend/selftend/issues/2200). It is no longer a
+residual risk: the unknown state renders a retry surface instead of the shell.
+The objection that closing it would lock out every user whose first fetch failed
+is answered by the shape of what replaces the shell — an error screen with a
+retry asks the person nothing and holds nobody permanently, where a _gate_ shown
+on the same state would have re-asked somebody who had already answered.
 
 **Conclusion: the residual risk is not high**, and no prior consultation with a
 supervisory authority under Art. 36(1) is required. The processing is small in
