@@ -66,8 +66,9 @@ The panel is the drawer behind the hamburger. It carries what surrounds the prac
 practice itself.
 
 - the panel lists exactly seven rows, in this order: Home, Looking back, Routines, then a divider,
-  then Reminders, Settings, Support, Donate (six on a build with no `EXPO_PUBLIC_SPONSORS_URL` — the
-  Donate row drops rather than pointing at someone else's page, so check which build you are on)
+  then Reminders, Settings, Support, Donate (six on a build whose `EXPO_PUBLIC_SPONSORS_URL` is set
+  to an empty string — the Donate row drops rather than pointing at someone else's page, so check
+  which build you are on; an unset variable falls back to the maintainer's page and keeps the row)
 - no tool or module row appears anywhere in it, and there are no group headings
 - the row for the screen you are on is marked as the current page
 - Donate leaves the app and opens GitHub Sponsors in the browser

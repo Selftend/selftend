@@ -310,6 +310,29 @@ describe("under-floor copy", () => {
     "във фонов режим",
   ];
 
+  /**
+   * ☠️☠️ Wording that would tell the person their account holds nothing (#2240).
+   *
+   * `erasureFailed` said the account "is empty" - true by construction while
+   * only a brand-new account could reach this screen, and false since #2227
+   * widened the gate to accounts created on shipped 0.17.0, which has no age
+   * gate: those people have used the app and may hold entries by the time they
+   * first meet the question (`docs/age-floor.md`, `docs/dpia-minors-assessment.md`).
+   * A person told their account is empty may reasonably not pursue the removal
+   * of data that does exist, and by the product's own posture that person may
+   * be a child. Only the `erased` state may say nothing was kept, and it does so
+   * in `retention`, after observing the removal.
+   */
+  const EMPTY_CLAIM = [
+    "it is empty",
+    "is empty",
+    "holds nothing",
+    "nothing in it",
+    "той е празен",
+    "е празен",
+    "няма нищо в него",
+  ];
+
   function contains(block: Record<string, string>, phrases: readonly string[]): boolean {
     const joined = Object.values(block).join(" ").toLowerCase();
     return phrases.some((phrase) => joined.includes(phrase));
@@ -325,6 +348,10 @@ describe("under-floor copy", () => {
 
   it.each(locales)("promises the %s reader no work the app never does", (_language, block) => {
     expect(contains(block, KEEPS_WORKING)).toBe(false);
+  });
+
+  it.each(locales)("never tells the %s reader the account is empty", (_language, block) => {
+    expect(contains(block, EMPTY_CLAIM)).toBe(false);
   });
 
   it("would catch copy that scolded or invited a retry", () => {
@@ -347,6 +374,19 @@ describe("under-floor copy", () => {
         { erasureFailed: "Той е празен и Selftend ще продължи да работи по премахването му." },
         KEEPS_WORKING,
       ),
+    ).toBe(true);
+  });
+
+  it("would catch the emptiness claim this screen used to make, in both locales", () => {
+    // The exact sentences that shipped before #2240.
+    expect(
+      contains(
+        { erasureFailed: "It is empty, and Selftend will not remove it on its own." },
+        EMPTY_CLAIM,
+      ),
+    ).toBe(true);
+    expect(
+      contains({ erasureFailed: "Той е празен и Selftend няма да го премахне сам." }, EMPTY_CLAIM),
     ).toBe(true);
   });
 

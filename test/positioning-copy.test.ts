@@ -4,6 +4,12 @@ import path from "path";
 
 import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 import { APP_STORE_CAPS } from "@/test/store-caps";
+import {
+  APPLE_INFO_SURFACE,
+  PLAY_VERBATIM_SURFACE,
+  STORE_LISTING_TEXT as STORE_LISTING_ENTRIES,
+  storeListingText,
+} from "@/test/store-listing-text";
 
 /**
  * The merge-gate half of `docs/positioning.md` (#1611, spec'd by #1606).
@@ -380,68 +386,14 @@ const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
     all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
 );
 
-const APPLE_INFO_SURFACE = "store/apple-info.json";
-const PLAY_VERBATIM_SURFACE = "store/play-listing.md";
-
-/** Where `store/play-listing.md` starts quoting the listing rather than describing it. */
-const PLAY_VERBATIM_HEADING = "## Verbatim, as saved";
-
 /**
- * The text that is actually ON a store listing, pulled out of the two files
- * that mirror them. See the `#1760` describe near the bottom for why this
- * corpus exists at all, and why it is the listing text rather than the files.
- *
- * ☠️ **THROWS rather than returning an empty list.** Both halves are extracted
- * by structure — JSON fields, and the blockquote under a heading — and both can
- * silently yield nothing when the file is reorganised. A corpus that quietly
- * empties leaves every rule vacuously green while looking covered, which is the
- * #1908 / #2019 failure mode this file has already paid for twice.
- *
- * ⚠️ Takes the file contents rather than reading them, so the extraction can be
- * exercised on synthetic input. Nothing else here is testable without it.
+ * The text that is actually ON a store listing — `store/apple-info.json`'s
+ * fields and the Play verbatim block. The extractor moved to
+ * `test/store-listing-text.ts` on #2216 so that `restraint-copy.test.ts` reads
+ * the same corpus; see that module for why it THROWS on an empty half, and the
+ * `#1760` describe near the bottom for why this corpus exists at all.
  */
-function storeListingText(appleInfoJson: string, playListingMd: string): Scanned[] {
-  const entries: Scanned[] = [];
-
-  const apple = JSON.parse(appleInfoJson) as Record<string, unknown>;
-  for (const [field, value] of Object.entries(apple)) {
-    if (typeof value === "string") {
-      entries.push({ surface: APPLE_INFO_SURFACE, id: field, text: value });
-    } else if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
-      entries.push({
-        surface: APPLE_INFO_SURFACE,
-        id: field,
-        text: (value as string[]).join(", "),
-      });
-    }
-  }
-  if (entries.length === 0) {
-    throw new Error(`${APPLE_INFO_SURFACE} yielded no listing fields`);
-  }
-
-  const at = playListingMd.indexOf(PLAY_VERBATIM_HEADING);
-  if (at === -1) {
-    throw new Error(`${PLAY_VERBATIM_SURFACE} has no "${PLAY_VERBATIM_HEADING}" section`);
-  }
-  const verbatim = playListingMd
-    .slice(at)
-    .split("\n")
-    .filter((line) => line.startsWith(">"))
-    .map((line) => line.replace(/^>\s?/, ""))
-    .join("\n")
-    .trim();
-  if (verbatim === "") {
-    throw new Error(`${PLAY_VERBATIM_SURFACE}'s "${PLAY_VERBATIM_HEADING}" block quotes nothing`);
-  }
-  entries.push({ surface: PLAY_VERBATIM_SURFACE, id: "verbatim", text: verbatim });
-
-  return entries;
-}
-
-const STORE_LISTING_TEXT: Scanned[] = storeListingText(
-  fs.readFileSync(path.join(ROOT, APPLE_INFO_SURFACE), "utf8"),
-  fs.readFileSync(path.join(ROOT, PLAY_VERBATIM_SURFACE), "utf8"),
-);
+const STORE_LISTING_TEXT: Scanned[] = STORE_LISTING_ENTRIES;
 
 interface Rule {
   name: string;
@@ -2058,6 +2010,95 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
     expect(section.id).toBe("9. r/example");
     expect(CATEGORY.en.test(section.text)).toBe(true);
     expect(METHOD.en.test(section.text)).toBe(false);
+  });
+
+  /**
+   * The everyday tools as a draft would name them, per locale (#1901).
+   *
+   * Clause 1's own sentence forbids a second thing besides the bare inventory:
+   * _the tools are still never enumerated in prose: the sentence says what
+   * they are for; the page shows which ones exist_. Five of the seven drafts
+   * named the category, named the method, and then listed the tools flat —
+   * the one form `docs/positioning.md` § _The hard rule_ recorded as checked
+   * by nothing, and the drift #1817 named on the r/bulgaria draft in the
+   * ticket's own body. So this is the narrow, checkable form of that sentence:
+   * **a count is not an enumeration**, and within one draft naming a tool or
+   * two in passing is not either, but four distinct tool nouns is a list.
+   *
+   * ☠️ Plain substrings, no `\b` and no `\w`, for the Cyrillic reason `METHOD`
+   * gives; the cost is that a substring can over-match (`сън` inside another
+   * word), and that only ever raises the count, never hides a list. The
+   * threshold is one per NOUN, not per mention — a draft saying "journal"
+   * three times has named one tool.
+   */
+  const TOOL_NOUNS: Record<Locale, RegExp[]> = {
+    en: [
+      /mood/i,
+      /journal/i,
+      /gratitude/i,
+      /breathing/i,
+      /grounding/i,
+      /sitting|meditation/i,
+      /sleep/i,
+      /habits?/i,
+      /routines?/i,
+    ],
+    bg: [
+      /настроение/i,
+      /дневник/i,
+      /благодарност/i,
+      /дишане/i,
+      /заземяване/i,
+      /седене|медитация/i,
+      /сън/i,
+      /навици/i,
+      /рутини/i,
+    ],
+  };
+
+  /** How many distinct everyday tools one flattened draft names, across both locales. */
+  function toolNounsNamed(text: string): number {
+    return (["en", "bg"] as const)
+      .map((locale) => TOOL_NOUNS[locale].filter((noun) => noun.test(text)).length)
+      .reduce((a, b) => Math.max(a, b), 0);
+  }
+
+  /** Four is a list; three or fewer is a tool mentioned in passing. */
+  const FLAT_LIST = 4;
+
+  it("does not enumerate the tools flat in any Reddit draft (#1901)", () => {
+    const sections = draftSections(readFile(DRAFTS_DOC).text);
+
+    // Positive control, for the same reason as the method rule above: an
+    // empty section list would pass by never running.
+    expect(sections.length).toBeGreaterThanOrEqual(8);
+
+    for (const { id, text } of sections) {
+      expect({ id, toolNounsNamed: Math.min(toolNounsNamed(text), FLAT_LIST) }).not.toEqual({
+        id,
+        toolNounsNamed: FLAT_LIST,
+      });
+    }
+  });
+
+  /**
+   * The rule on synthetic input, both locales, so the threshold is pinned
+   * rather than inferred from whatever the drafts happen to say today.
+   */
+  it("counts a flat list of the tools as one, and a tool named in passing as none (#1901)", () => {
+    const flat =
+      "9. r/example\n\n> Everyday side: mood check-in, journal, gratitude, breathing and\n> grounding, sleep log, habits and routines.\n";
+    const flatBg =
+      "9. r/example\n\n> Ежедневните инструменти: настроение, дневник, благодарности, дишане и\n> заземяване, сън, навици и рутини.\n";
+    const passing =
+      "9. r/example\n\n> Eight small tools that ask nothing of you. The journal is the one I\n> use most, and the breathing tool the one I built first.\n";
+
+    for (const listed of [flat, flatBg]) {
+      const [section] = draftSections(`\n### ${listed}`);
+      expect(toolNounsNamed(section.text)).toBeGreaterThanOrEqual(FLAT_LIST);
+    }
+    const [section] = draftSections(`\n### ${passing}`);
+    expect(toolNounsNamed(section.text)).toBe(2);
   });
 
   /**

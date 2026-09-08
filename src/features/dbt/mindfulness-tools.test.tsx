@@ -306,6 +306,58 @@ describe("the judgement record", () => {
     });
   });
 
+  /**
+   * ☠️ A live defusion draft outranks the seed (#2197). That store IS the ACT form's
+   * state, held for "Finish later" with no undo; the sibling door (emotion record → CBT
+   * thought record) already gives a live draft precedence over its prefill, and this
+   * door used to invert that — one whole-object replace, no read of what was there.
+   * The test above runs on an empty store, so it could never tell the two apart.
+   */
+  it("leaves a defusion entry held for Finish later alone, and still opens the form", () => {
+    mockPathname = "/modules/dbt/judgements/j-1";
+    const held = {
+      fusedThought: "I never get anything right",
+      thoughtCategory: null,
+      fusionLevelBefore: 70,
+      techniqueUsed: null,
+      defusedVersion: "",
+      fusionLevelAfter: null,
+      notes: "",
+    };
+    useActDefusionLogDraftStore.getState().setValues(held);
+    renderWithProviders(<DbtJudgementDetailScreen id="j-1" />);
+
+    fireEvent.press(screen.getByText("Unhook from it"));
+
+    expect(useActDefusionLogDraftStore.getState().values).toEqual(held);
+    expect(router.push).toHaveBeenCalledWith("/modules/act/defusion/new");
+  });
+
+  /**
+   * Content, not presence: the ACT form writes the store on every keystroke, so a draft
+   * object with every field back at empty is not unsaved work, and the seed takes it.
+   */
+  it("still seeds over a draft that holds nothing", () => {
+    mockPathname = "/modules/dbt/judgements/j-1";
+    useActDefusionLogDraftStore.getState().setValues({
+      fusedThought: "   ",
+      thoughtCategory: null,
+      fusionLevelBefore: null,
+      techniqueUsed: null,
+      defusedVersion: "",
+      fusionLevelAfter: null,
+      notes: "",
+    });
+    renderWithProviders(<DbtJudgementDetailScreen id="j-1" />);
+
+    fireEvent.press(screen.getByText("Unhook from it"));
+
+    expect(useActDefusionLogDraftStore.getState().values).toMatchObject({
+      fusedThought: "She is ignoring me",
+      thoughtCategory: "selfJudgment",
+    });
+  });
+
   it("says so plainly when the judgement is gone", () => {
     mockPathname = "/modules/dbt/judgements/j-1";
     (useJudgement as unknown as jest.Mock).mockReturnValue({ data: null, isPending: false });

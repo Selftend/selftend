@@ -10,6 +10,7 @@ import {
   useConnectionLogPages,
   useDefusionLogPages,
   useExpansionLogPages,
+  useListedCommittedActions,
   useObservingSelfSessionPages,
   useUrgeSurfLog,
   useUrgeSurfLogPages,
@@ -24,6 +25,7 @@ jest.mock("@/src/features/act/repository", () => ({
   listBullsEyeSnapshotsPage: jest.fn(),
   listChoicePointsPage: jest.fn(),
   listCommittedActionArchivePage: jest.fn(),
+  listCommittedActions: jest.fn(),
   listConnectionLogsPage: jest.fn(),
   listDefusionLogsPage: jest.fn(),
   listExpansionLogsPage: jest.fn(),
@@ -42,56 +44,85 @@ function row(i: number, field: string) {
   return { id: `id-${i}`, [field]: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00Z` };
 }
 
+/**
+ * `[label, hook, repository read, timestamp field, cache key, leading read arguments]`.
+ *
+ * The last column is what the read takes BETWEEN the user id and the page arguments:
+ * empty for the seven flat archives, the status for the committed-action archive, which
+ * pages each finished status on its own (#2186).
+ */
 const ARCHIVES = [
-  ["defusion", useDefusionLogPages, repo.listDefusionLogsPage, "createdAt", "defusionHistoryPages"],
+  [
+    "defusion",
+    useDefusionLogPages,
+    repo.listDefusionLogsPage,
+    "createdAt",
+    actKeys.defusionHistoryPages("u1"),
+    [],
+  ],
   [
     "expansion",
     useExpansionLogPages,
     repo.listExpansionLogsPage,
     "createdAt",
-    "expansionHistoryPages",
+    actKeys.expansionHistoryPages("u1"),
+    [],
   ],
   [
     "connection",
     useConnectionLogPages,
     repo.listConnectionLogsPage,
     "createdAt",
-    "connectionHistoryPages",
+    actKeys.connectionHistoryPages("u1"),
+    [],
   ],
   [
     "observing self",
     useObservingSelfSessionPages,
     repo.listObservingSelfSessionsPage,
     "createdAt",
-    "observingHistoryPages",
+    actKeys.observingHistoryPages("u1"),
+    [],
   ],
   [
     "choice point",
     useChoicePointPages,
     repo.listChoicePointsPage,
     "createdAt",
-    "choicePointHistoryPages",
+    actKeys.choicePointHistoryPages("u1"),
+    [],
   ],
   [
     "urge surf",
     useUrgeSurfLogPages,
     repo.listUrgeSurfLogsPage,
     "createdAt",
-    "urgeSurfHistoryPages",
+    actKeys.urgeSurfHistoryPages("u1"),
+    [],
   ],
   [
     "bull's-eye",
     useBullsEyeSnapshotPages,
     repo.listBullsEyeSnapshotsPage,
     "reviewedAt",
-    "bullsEyeHistoryPages",
+    actKeys.bullsEyeHistoryPages("u1"),
+    [],
   ],
   [
-    "committed action archive",
-    useCommittedActionArchivePages,
+    "completed committed action archive",
+    (userId: string | null) => useCommittedActionArchivePages(userId, "completed"),
     repo.listCommittedActionArchivePage,
     "createdAt",
-    "committedActionArchivePages",
+    actKeys.committedActionArchivePages("u1", "completed"),
+    ["completed"],
+  ],
+  [
+    "abandoned committed action archive",
+    (userId: string | null) => useCommittedActionArchivePages(userId, "abandoned"),
+    repo.listCommittedActionArchivePage,
+    "createdAt",
+    actKeys.committedActionArchivePages("u1", "abandoned"),
+    ["abandoned"],
   ],
 ] as const;
 
@@ -99,7 +130,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyName) => {
+describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, key, leading) => {
   const repoFn = () => read as jest.Mock;
 
   it("does not read anything for a signed-out user", () => {
@@ -116,7 +147,7 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(repoFn()).toHaveBeenCalledWith("u1", ACT_HISTORY_PAGE_SIZE, null);
+    expect(repoFn()).toHaveBeenCalledWith("u1", ...leading, ACT_HISTORY_PAGE_SIZE, null);
   });
 
   /**
@@ -155,7 +186,7 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
 
     const last = page[page.length - 1];
     await waitFor(() =>
-      expect(repoFn()).toHaveBeenLastCalledWith("u1", ACT_HISTORY_PAGE_SIZE, {
+      expect(repoFn()).toHaveBeenLastCalledWith("u1", ...leading, ACT_HISTORY_PAGE_SIZE, {
         timestamp: last[field as keyof typeof last],
         id: last.id,
       }),
@@ -175,7 +206,6 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
     const { result } = renderHook(() => useHook("u1"), { wrapper: wrap(client) });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const key = actKeys[keyName]("u1");
     expect(client.getQueryData(key)).toMatchObject({ pages: [[]] });
   });
 });
@@ -217,5 +247,106 @@ describe("useUrgeSurfLog", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockGet()).toHaveBeenCalledWith("u1", "log-1");
     expect(result.current.data).toMatchObject({ urgeDescription: "an urge" });
+  });
+});
+
+/**
+ * The committed-action detail's cache probe (#2190): the whole active set plus every
+ * loaded page of both finished archives, so a tapped row paints from whatever the list
+ * screen already holds.
+ */
+describe("useListedCommittedActions", () => {
+  const mockActive = () => repo.listCommittedActions as jest.Mock;
+  const mockArchive = () => repo.listCommittedActionArchivePage as jest.Mock;
+  const action = (id: string, status: string) => ({
+    id,
+    status,
+    createdAt: "2026-05-01T09:00:00Z",
+  });
+  /** A read that never lands — one entry still in flight while another is warm. */
+  const pending = () => new Promise<never>(() => {});
+
+  it("reads nothing for a signed-out user and holds no rows", () => {
+    const { result } = renderHook(() => useListedCommittedActions(null), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    expect(mockActive()).not.toHaveBeenCalled();
+    expect(mockArchive()).not.toHaveBeenCalled();
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it("reads the whole active set and the first page of each finished archive, in that order", async () => {
+    mockActive().mockResolvedValue([action("a1", "active")]);
+    mockArchive().mockImplementation((_u: string, status: string) =>
+      Promise.resolve([action(`${status}-1`, status)]),
+    );
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    // Nothing has landed yet: no entry, rather than an empty union that a detail screen
+    // would read as "not found".
+    expect(result.current.data).toBeUndefined();
+
+    await waitFor(() => expect(result.current.data).toHaveLength(3));
+    expect(mockActive()).toHaveBeenCalledWith("u1", "active");
+    expect(mockArchive()).toHaveBeenCalledWith("u1", "completed", ACT_HISTORY_PAGE_SIZE, null);
+    expect(mockArchive()).toHaveBeenCalledWith("u1", "abandoned", ACT_HISTORY_PAGE_SIZE, null);
+    expect(result.current.data?.map((a) => a.id)).toEqual(["a1", "completed-1", "abandoned-1"]);
+  });
+
+  /**
+   * ☠️ Any ONE warm entry is enough to paint from. The detail screen probes this on the
+   * list-to-detail hop, and waiting for all three reads before offering any rows would
+   * put the spinner back on exactly the hop the probe exists to make instant.
+   */
+  it("offers the active set while both archives are still in flight", async () => {
+    mockActive().mockResolvedValue([action("a1", "active")]);
+    mockArchive().mockImplementation(pending);
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    expect(result.current.data?.[0].id).toBe("a1");
+  });
+
+  it("offers a landed archive while the active read is still in flight", async () => {
+    mockActive().mockImplementation(pending);
+    mockArchive().mockImplementation((_u: string, status: string) =>
+      status === "completed" ? Promise.resolve([action("c1", "completed")]) : pending(),
+    );
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    expect(result.current.data?.[0].id).toBe("c1");
+  });
+
+  /**
+   * A row on page two of an archive is a row the list screen showed, so the detail must
+   * find it: the probe flattens EVERY loaded page, not the first.
+   */
+  it("carries every loaded page of an archive, not only the first", async () => {
+    const client = createTestQueryClient();
+    mockActive().mockResolvedValue([]);
+    mockArchive().mockResolvedValue([]);
+    client.setQueryData(actKeys.committedActionArchivePages("u1", "abandoned"), {
+      pages: [[action("x1", "abandoned")], [action("x2", "abandoned")]],
+      pageParams: [null, { timestamp: "2026-05-01T09:00:00Z", id: "x1" }],
+    });
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(client),
+    });
+
+    await waitFor(() =>
+      expect(result.current.data?.map((a) => a.id)).toEqual(expect.arrayContaining(["x1", "x2"])),
+    );
   });
 });

@@ -13,7 +13,7 @@ import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { DBT_SHARED_TOOLS } from "@/src/features/dbt/dbt-shared-tools";
-import { useScriptPages } from "@/src/features/dbt/queries";
+import { useDoneScriptPages, useOpenScripts } from "@/src/features/dbt/queries";
 import { orderScriptsAsLadder } from "@/src/features/dbt/repository";
 import type { Script } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
@@ -37,9 +37,19 @@ export default function DbtScriptListScreen() {
   const { t } = useTranslation(["dbt", "errors"]);
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useScriptPages(user?.id ?? null);
-  const scripts = useMemo(() => orderScriptsAsLadder(data?.pages.flat() ?? []), [data]);
+  // Two reads, because the ladder needs every OPEN script before it can put
+  // the easiest first (#2196): the open rungs come whole and server-ordered,
+  // the done ones page underneath them. Ordering a recency page and calling it
+  // a ladder showed the easiest of the newest twenty, not the easiest.
+  const open = useOpenScripts(user?.id ?? null);
+  const done = useDoneScriptPages(user?.id ?? null);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = done;
+  const isPending = open.isPending || done.isPending;
+  const isError = open.isError || done.isError;
+  const scripts = useMemo(
+    () => orderScriptsAsLadder([...(open.data ?? []), ...(done.data?.pages.flat() ?? [])]),
+    [open.data, done.data],
+  );
 
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
@@ -82,7 +92,13 @@ export default function DbtScriptListScreen() {
               icon="cloud-off"
               title={t("errors:fallback.title")}
               description={t("errors:fallback.description")}
-              action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+              action={{
+                label: t("errors:fallback.retry"),
+                onPress: () => {
+                  void open.refetch();
+                  void done.refetch();
+                },
+              }}
             />
           ) : (
             <Text variant="muted">{t("dbt:scripts.empty")}</Text>

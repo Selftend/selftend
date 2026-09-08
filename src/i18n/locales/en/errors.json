@@ -21,5 +21,8 @@
   "saveFailed": {
     "title": "Couldn't save",
     "description": "Your changes are still on this screen. Check your connection and try again."
+  },
+  "loadMore": {
+    "failed": "Couldn't load more entries."
   }
 }

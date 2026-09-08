@@ -72,10 +72,28 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
 export default function MeditationSessionsScreen() {
   const { t } = useTranslation("meditation");
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useMeditationSessionPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isPaused,
+    isPending,
+    refetch,
+  } = useMeditationSessionPages(user?.id ?? null);
 
   const sessions = useMemo(() => data?.pages.flat() ?? [], [data]);
+
+  // ☠️ `isPending` is not "a request is in flight" (#2237). Queries keep
+  // `networkMode: "online"`, so an offline first read never starts: it sits at
+  // `isPending` true / `isPaused` true, and a paused query never errors. Keyed
+  // on `isPending` alone, an offline arrival spun forever with the retry beside
+  // it unreachable. Pending AND paused is a read that did not happen, and takes
+  // the failed read's branch; query-core resumes it when the connection
+  // returns. `isPending && isPaused`, never `isPaused` alone - a later page
+  // pausing over pages already read is `isPaused` with `status: "success"`.
+  const unread = isError || (isPending && isPaused);
 
   const loadMore = useCallback(() => {
     // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
@@ -116,17 +134,17 @@ export default function MeditationSessionsScreen() {
           // hundreds of sits that their record is gone. A failed background
           // refetch that still has pages cached never reaches this branch,
           // because the list is not empty.
-          isPending ? (
-            <View className="py-10">
-              <ActivityIndicator />
-            </View>
-          ) : isError ? (
+          unread ? (
             <ErrorState
               icon="cloud-off"
               title={t("module.sessions.error.title")}
               description={t("module.sessions.error.description")}
               action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
             />
+          ) : isPending ? (
+            <View className="py-10">
+              <ActivityIndicator />
+            </View>
           ) : (
             // The message IS the title here: `module.sessions.title` is already
             // the screen heading two nodes up, and repeating it puts the same

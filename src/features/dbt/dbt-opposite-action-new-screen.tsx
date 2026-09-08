@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -13,7 +12,6 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
-import { EMOTION_GROUPS } from "@/src/constants/emotions";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
@@ -21,6 +19,7 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { cn } from "@/lib/utils";
 import { familyForEmotion } from "@/src/features/dbt/opposite-action-families";
 import { useSaveOppositeActionPlan } from "@/src/features/dbt/queries";
+import { SingleEmotionPicker } from "@/src/features/dbt/single-emotion-picker";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -39,7 +38,6 @@ import { useToastStore } from "@/src/stores/toast-store";
  */
 export default function DbtOppositeActionNewScreen() {
   const { t } = useTranslation("dbt");
-  const { t: tCbt } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const saveMutation = useSaveOppositeActionPlan(user?.id ?? null);
@@ -109,36 +107,16 @@ export default function DbtOppositeActionNewScreen() {
             <Text variant="muted" className="text-[12.5px]">
               {t("oppositeAction.emotionHint")}
             </Text>
-            {EMOTION_GROUPS.map((group) => (
-              <View key={group.valence} className="gap-1.5">
-                <Text
-                  variant="muted"
-                  className="text-[11px] font-semibold uppercase tracking-[0.1em]"
-                >
-                  {group.valence === "difficult"
-                    ? tCbt("emotions.groupDifficult")
-                    : tCbt("emotions.groupPleasant")}
-                </Text>
-                {group.ids.map((id) => {
-                  const label = tCbt(`emotions.${id.toLowerCase()}`);
-                  const pick = () => {
-                    setError(null);
-                    // One feeling, not a set: this plan is about one pull.
-                    setEmotion(emotion === id ? null : id);
-                  };
-                  return (
-                    <View key={id} className="flex-row items-center gap-3">
-                      <Checkbox
-                        accessibilityLabel={label}
-                        checked={emotion === id}
-                        onCheckedChange={pick}
-                      />
-                      <Label onPress={pick}>{label}</Label>
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
+            {/* One feeling, not a set: this plan is about one pull. A radio
+                group, so the exclusivity is announced rather than implied. */}
+            <SingleEmotionPicker
+              accessibilityLabel={t("oppositeAction.emotionLabel")}
+              value={emotion}
+              onChange={(next) => {
+                setError(null);
+                setEmotion(next);
+              }}
+            />
           </View>
 
           <View className="gap-2">

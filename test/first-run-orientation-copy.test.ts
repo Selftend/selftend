@@ -21,10 +21,16 @@ import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
  *   Derived from `MODULES` rather than restated, so a fourth module fails here on the
  *   day it lands rather than the day someone rereads the welcome copy.
  *
- * ☠️ The acronym is read per locale out of `navigation:sidebar.<key>` rather than from
- * `MODULES.abbreviation`, because bg ships **КПТ** for CBT and the Latin `ACT` / `DBT`
- * for the other two. Asserting `abbreviation` in both locales would demand a Latin
+ * ☠️ The acronym is read per locale out of `routines:form.groups.<key>` rather than
+ * from `MODULES.abbreviation`, because bg ships **КПТ** for CBT and **ДПТ** for DBT
+ * beside a Latin `ACT`. Asserting `abbreviation` in both locales would demand a Latin
  * "CBT" in Bulgarian copy - the one spelling the app has never used.
+ *
+ * ⚠️ It used to read `navigation:sidebar.<key>`, and that encoded #2191: the sidebar
+ * label is the one slot where the DBT spec (§8.6) lets bg keep Latin `DBT`, so reading
+ * the acronym from there demanded "КПТ, ACT или DBT" in body copy - the mixed line the
+ * issue was filed on. `routines:form.groups` is body copy in both locales, which is
+ * what the welcome panel is; `test/bg-dbt-abbreviation.test.ts` pins the rule itself.
  */
 /**
  * Throws rather than returning `undefined`, so a key that is renamed away fails here
@@ -38,9 +44,9 @@ function value(locale: Locale, namespace: string, key: string): string {
 
 const panelBody = (locale: Locale) => value(locale, "settings", "onboarding.appBody1");
 
-/** The module's name as this locale writes it: `navigation:sidebar.cbt` is `КПТ` in bg. */
+/** The module's name as this locale's body copy writes it: `КПТ` / `ACT` / `ДПТ` in bg. */
 const acronym = (locale: Locale, module: string) =>
-  value(locale, "navigation", `sidebar.${module}`);
+  value(locale, "routines", `form.groups.${module}`);
 
 /**
  * The retired two-item list, and the string it was retired from.
