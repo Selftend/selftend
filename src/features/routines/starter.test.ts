@@ -6,6 +6,7 @@ import {
   STARTER_STEP_MIN,
 } from "@/src/features/routines/starter";
 import { DISTINCT_STEPPABLE_TOOLS } from "@/src/features/routines/starter-offer";
+import { WITHHELD_STEP_TOOL_IDS } from "@/src/features/routines/step-tool-rollout";
 
 /**
  * The starter composes from the steppable tools the person has RECORDS in (#1954,
@@ -13,13 +14,17 @@ import { DISTINCT_STEPPABLE_TOOLS } from "@/src/features/routines/starter-offer"
  * its order is the fixed candidate array; recency never enters.
  */
 describe("STARTER_CANDIDATE_TOOLS", () => {
-  it("is every distinct steppable tool except habits - twenty-four of them", () => {
+  it("is every distinct steppable tool except habits and whatever rollout withholds", () => {
     // #31 keeps Habits out of auto-composition; dropAnchor is already out of the
-    // DISTINCT list because it is a subset of connection.
+    // DISTINCT list because it is a subset of connection. The third exclusion is
+    // rollout (#2203): "Keep" is a WRITE, so a candidate the shipped native
+    // client cannot read would compose a step that phone can never tick.
     expect(STARTER_CANDIDATE_TOOLS).toEqual(
-      DISTINCT_STEPPABLE_TOOLS.filter((tool) => tool !== "habits"),
+      DISTINCT_STEPPABLE_TOOLS.filter(
+        (tool) => tool !== "habits" && !WITHHELD_STEP_TOOL_IDS.includes(tool),
+      ),
     );
-    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(24);
+    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(18);
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("habits");
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("dropAnchor");
   });
@@ -36,9 +41,13 @@ describe("STARTER_CANDIDATE_TOOLS", () => {
     // ☠️ DBT sits behind every ACT exercise (#1980), which is what keeps the
     // widening self-limiting: with the cap at three, a DBT record composes a
     // step only for someone with fewer than three records across the rest.
-    const firstDbt = STARTER_CANDIDATE_TOOLS.indexOf("muscleRelaxation");
-    expect(firstDbt).toBeGreaterThan(STARTER_CANDIDATE_TOOLS.indexOf("committedAction"));
-    expect(STARTER_CANDIDATE_TOOLS.slice(firstDbt)).toEqual([
+    // Asserted on the underlying order rather than on the candidate list,
+    // because rollout currently trims DBT off the end entirely (#2203) - the
+    // ordering rule has to stay pinned for the day it comes back.
+    const ordered = DISTINCT_STEPPABLE_TOOLS.filter((tool) => tool !== "habits");
+    const firstDbt = ordered.indexOf("muscleRelaxation");
+    expect(firstDbt).toBeGreaterThan(ordered.indexOf("committedAction"));
+    expect(ordered.slice(firstDbt)).toEqual([
       "muscleRelaxation",
       "wiseMind",
       "judgement",
@@ -46,6 +55,13 @@ describe("STARTER_CANDIDATE_TOOLS", () => {
       "oppositeAction",
       "script",
     ]);
+  });
+
+  it("composes none of the withheld tools while they are withheld", () => {
+    for (const tool of WITHHELD_STEP_TOOL_IDS) {
+      expect(STARTER_CANDIDATE_TOOLS).not.toContain(tool);
+      expect(buildStarterSteps([tool, ...WITHHELD_STEP_TOOL_IDS])).toBeNull();
+    }
   });
 });
 
@@ -104,10 +120,11 @@ describe("buildStarterSteps", () => {
   });
 
   it("can compose from any steppable tool the records hook knows", () => {
-    // A tool added to STEPPABLE_TOOL_IDS later is either a candidate or one of the two
-    // deliberate exclusions - never silently dropped.
+    // A tool added to STEPPABLE_TOOL_IDS later is either a candidate or one of the
+    // three deliberate exclusions - never silently dropped.
     for (const tool of STEPPABLE_TOOL_IDS) {
-      const excluded = tool === "habits" || tool === "dropAnchor";
+      const excluded =
+        tool === "habits" || tool === "dropAnchor" || WITHHELD_STEP_TOOL_IDS.includes(tool);
       expect(STARTER_CANDIDATE_TOOLS.includes(tool)).toBe(!excluded);
     }
   });

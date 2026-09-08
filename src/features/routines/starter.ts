@@ -1,5 +1,6 @@
 import type { SteppableToolId } from "@/src/features/routines/derive";
 import { DISTINCT_STEPPABLE_TOOLS } from "@/src/features/routines/starter-offer";
+import { isWritableStepToolId } from "@/src/features/routines/step-tool-rollout";
 
 // Pure builder for the declinable pre-composed starter routine (spec #37,
 // "Onboarding starter routine"; recomposed by #1954, spec #1885 §5.3).
@@ -23,7 +24,9 @@ export const STARTER_STEP_MIN = 2;
 
 /**
  * Every tool a starter may compose from, in the ONE order a starter is ever
- * composed in: `DISTINCT_STEPPABLE_TOOLS` minus `habits` - twenty-four tools.
+ * composed in: `DISTINCT_STEPPABLE_TOOLS` minus `habits` - twenty-four tools -
+ * and then minus whatever is still withheld from writing, which today leaves
+ * eighteen.
  *
  * - `habits` is a valid manual step but excluded from auto-composition (#31,
  *   2026-07-15). `dropAnchor` is absent from the distinct list already: a
@@ -39,6 +42,11 @@ export const STARTER_STEP_MIN = 2;
  * - The six DBT tools (#1980) land LAST, after every ACT exercise, so the
  *   self-limiting property above only tightens: a DBT record composes a step
  *   only for someone with fewer than three records across the other eighteen.
+ *   ☠️ They are also WITHHELD from writing until the native rollout catches up
+ *   (#2203), so today they compose nothing at all - a one-tap "Keep" is a
+ *   write, and it must not compose a step a phone on the shipped release
+ *   cannot read. They return here the moment `WITHHELD_STEP_TOOL_IDS` empties;
+ *   nothing else about the order changes.
  *
  * ☠️ Fixed order, NEVER recency. Ordering by the newest record would make the
  * same surface show a different routine on different visits, the shape
@@ -48,7 +56,7 @@ export const STARTER_STEP_MIN = 2;
  */
 export const STARTER_CANDIDATE_TOOLS: readonly SteppableToolId[] = DISTINCT_STEPPABLE_TOOLS.filter(
   (tool) => tool !== "habits",
-);
+).filter((tool) => isWritableStepToolId(tool));
 
 /**
  * Compose the starter's steps from the steppable tools the person has records in.
