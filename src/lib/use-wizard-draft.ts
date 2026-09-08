@@ -10,8 +10,10 @@ type WizardStoreHook<TForm> = UseBoundStore<StoreApi<WizardDraftStore<TForm>>>;
 
 // One persist write at most ~every 800ms while typing: fast enough that an
 // accidental refresh loses a sentence at worst, slow enough that AsyncStorage
-// is not hammered on every keystroke.
-const DRAFT_CAPTURE_DEBOUNCE_MS = 800;
+// is not hammered on every keystroke. Exported so a persisted draft that is
+// not a react-hook-form wizard (the DBT emotion record) debounces at the same
+// rate rather than inventing its own (#2202).
+export const DRAFT_CAPTURE_DEBOUNCE_MS = 800;
 
 interface UseWizardDraftArgs<TForm extends FieldValues, TSaved> {
   useDraftStore: WizardStoreHook<TForm>;

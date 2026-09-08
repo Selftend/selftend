@@ -15,6 +15,7 @@ import {
   useDeleteOppositeActionPlan,
   useDeleteScript,
   useDeleteWiseMindCheckin,
+  useDoneScriptPages,
   useEmotionRecord,
   useEmotionRecordCount,
   useEmotionRecordPages,
@@ -25,6 +26,7 @@ import {
   useJudgements,
   useMarkOppositeActionPlanDone,
   useMarkScriptDone,
+  useOpenScripts,
   useOppositeActionPlan,
   useOppositeActionPlanCount,
   useOppositeActionPlanPages,
@@ -39,7 +41,6 @@ import {
   useSaveWiseMindCheckin,
   useScript,
   useScriptCount,
-  useScriptPages,
   useScripts,
   useWiseMindCheckin,
   useWiseMindCheckinCount,
@@ -78,8 +79,9 @@ jest.mock("@/src/features/dbt/repository", () => ({
   listJudgementsPage: jest.fn(),
   listOppositeActionPlans: jest.fn(),
   listOppositeActionPlansPage: jest.fn(),
+  listDoneScriptsPage: jest.fn(),
+  listOpenScripts: jest.fn(),
   listScripts: jest.fn(),
-  listScriptsPage: jest.fn(),
   listWiseMindCheckins: jest.fn(),
   listWiseMindCheckinsPage: jest.fn(),
   markOppositeActionPlanDone: jest.fn(),
@@ -137,7 +139,8 @@ const listHooks = [
   ["useOppositeActionPlanPages", useOppositeActionPlanPages, repo.listOppositeActionPlansPage],
   ["useScripts", useScripts, repo.listScripts],
   ["useScriptCount", useScriptCount, repo.countScripts],
-  ["useScriptPages", useScriptPages, repo.listScriptsPage],
+  ["useOpenScripts", useOpenScripts, repo.listOpenScripts],
+  ["useDoneScriptPages", useDoneScriptPages, repo.listDoneScriptsPage],
 ] as const;
 
 describe.each(listHooks)("%s enabled gate", (_name, useHook, repoFn) => {
@@ -243,14 +246,17 @@ const pagedHooks = [
   ["judgements", useJudgementPages, repo.listJudgementsPage],
   ["emotion records", useEmotionRecordPages, repo.listEmotionRecordsPage],
   ["opposite action", useOppositeActionPlanPages, repo.listOppositeActionPlansPage],
-  ["scripts", useScriptPages, repo.listScriptsPage],
+  ["done scripts", useDoneScriptPages, repo.listDoneScriptsPage],
 ] as const;
 
 describe.each(pagedHooks)("%s paging", (_name, useHook, repoFn) => {
+  // `doneAt` is the done-scripts page's cursor key (#2196); the rest key on
+  // `createdAt` and ignore it.
   const rows = (count: number) =>
     Array.from({ length: count }, (_, i) => ({
       id: `row-${i}`,
       createdAt: `2026-06-${String(i + 1).padStart(2, "0")}T09:00:00.000Z`,
+      doneAt: `2026-07-${String(i + 1).padStart(2, "0")}T09:00:00.000Z`,
     }));
 
   it("asks for one page at the shared size, with no cursor first", async () => {

@@ -16,22 +16,26 @@
     "distressTolerance": {
       "ordinal": "1",
       "name": "Distress tolerance",
-      "desc": "Getting through a hard moment without making it worse."
+      "desc": "Getting through a hard moment without making it worse.",
+      "sub": "Ride it out & calm the body"
     },
     "mindfulness": {
       "ordinal": "2",
       "name": "Mindfulness",
-      "desc": "Noticing what is here, without judgement."
+      "desc": "Noticing what is here, without judgement.",
+      "sub": "Wise mind & judgements"
     },
     "emotionRegulation": {
       "ordinal": "3",
       "name": "Emotion regulation",
-      "desc": "Reducing vulnerability, understanding emotions, changing painful ones."
+      "desc": "Reducing vulnerability, understanding emotions, changing painful ones.",
+      "sub": "Emotion records & opposite action"
     },
     "interpersonal": {
       "ordinal": "4",
       "name": "Interpersonal effectiveness",
-      "desc": "Asking, saying no, and keeping the relationship and self-respect intact."
+      "desc": "Asking, saying no, and keeping the relationship and self-respect intact.",
+      "sub": "Scripts for asking & saying no"
     }
   },
   "tools": {

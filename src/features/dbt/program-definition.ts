@@ -94,7 +94,7 @@ export const DBT_PROGRAM: DbtProgramPhase[] = [
   {
     key: "distressTolerance",
     themeLabelKey: "groups.distressTolerance.name",
-    themeSubKey: "groups.distressTolerance.desc",
+    themeSubKey: "groups.distressTolerance.sub",
     themeDescKey: "groups.distressTolerance.desc",
     milestones: [
       {
@@ -138,7 +138,7 @@ export const DBT_PROGRAM: DbtProgramPhase[] = [
   {
     key: "mindfulness",
     themeLabelKey: "groups.mindfulness.name",
-    themeSubKey: "groups.mindfulness.desc",
+    themeSubKey: "groups.mindfulness.sub",
     themeDescKey: "groups.mindfulness.desc",
     milestones: [
       {
@@ -170,7 +170,7 @@ export const DBT_PROGRAM: DbtProgramPhase[] = [
   {
     key: "emotionRegulation",
     themeLabelKey: "groups.emotionRegulation.name",
-    themeSubKey: "groups.emotionRegulation.desc",
+    themeSubKey: "groups.emotionRegulation.sub",
     themeDescKey: "groups.emotionRegulation.desc",
     milestones: [
       {
@@ -209,7 +209,7 @@ export const DBT_PROGRAM: DbtProgramPhase[] = [
   {
     key: "interpersonal",
     themeLabelKey: "groups.interpersonal.name",
-    themeSubKey: "groups.interpersonal.desc",
+    themeSubKey: "groups.interpersonal.sub",
     themeDescKey: "groups.interpersonal.desc",
     milestones: [
       {

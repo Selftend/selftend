@@ -14,14 +14,15 @@ import {
 import {
   useDeleteOppositeActionPlan,
   useDeleteScript,
+  useDoneScriptPages,
   useMarkOppositeActionPlanDone,
   useMarkScriptDone,
+  useOpenScripts,
   useOppositeActionPlan,
   useOppositeActionPlanPages,
   useSaveOppositeActionPlan,
   useSaveScript,
   useScript,
-  useScriptPages,
 } from "@/src/features/dbt/queries";
 import { orderScriptsAsLadder } from "@/src/features/dbt/repository";
 import type { Script } from "@/src/features/dbt/types";
@@ -47,7 +48,8 @@ jest.mock("@/src/features/dbt/queries", () => ({
   useMarkOppositeActionPlanDone: jest.fn(),
   useDeleteOppositeActionPlan: jest.fn(),
   useSaveScript: jest.fn(),
-  useScriptPages: jest.fn(),
+  useOpenScripts: jest.fn(),
+  useDoneScriptPages: jest.fn(),
   useScript: jest.fn(),
   useMarkScriptDone: jest.fn(),
   useDeleteScript: jest.fn(),
@@ -140,7 +142,13 @@ beforeEach(() => {
   });
   (useScript as unknown as jest.Mock).mockReturnValue({ data: SCRIPT, isPending: false });
   (useOppositeActionPlanPages as unknown as jest.Mock).mockReturnValue(pages([PLAN]));
-  (useScriptPages as unknown as jest.Mock).mockReturnValue(pages([SCRIPT]));
+  (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+    data: [SCRIPT],
+    isError: false,
+    isPending: false,
+    refetch: jest.fn(),
+  });
+  (useDoneScriptPages as unknown as jest.Mock).mockReturnValue(pages([]));
 });
 
 // ---------------------------------------------------------------------------
@@ -269,6 +277,56 @@ describe("the opposite-action plan", () => {
       }),
     );
   });
+
+  /**
+   * ☠️ "Skip the note" means the note is NOT saved (#2198). Both buttons used
+   * to call the same handler, so the skip wrote whatever had been typed - the
+   * one affordance for declining to record something did the opposite.
+   */
+  it("does not write a typed note when the person skips it", async () => {
+    mockPathname = "/modules/dbt/opposite-action/p-1";
+    renderWithProviders(<DbtOppositeActionDetailScreen id="p-1" />);
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.changeText(screen.getByLabelText("What shifted"), "he shouted and I cried");
+    fireEvent.press(screen.getByText("Skip the note"));
+
+    await waitFor(() => expect(markPlanDone).toHaveBeenCalledTimes(1));
+    const [{ input }] = markPlanDone.mock.calls[0] as [{ input: { whatShifted: string } }];
+    expect(input.whatShifted).toBe("");
+  });
+
+  it("writes the typed note when the person saves it", async () => {
+    mockPathname = "/modules/dbt/opposite-action/p-1";
+    renderWithProviders(<DbtOppositeActionDetailScreen id="p-1" />);
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.changeText(screen.getByLabelText("What shifted"), "it passed");
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(markPlanDone).toHaveBeenCalledTimes(1));
+    const [{ input }] = markPlanDone.mock.calls[0] as [{ input: { whatShifted: string } }];
+    expect(input.whatShifted).toBe("it passed");
+  });
+
+  /**
+   * ☠️ One feeling is a RADIO group, not 22 checkboxes (#2199). Picking one
+   * silently drops the last, and a checkbox promises the opposite: a reader
+   * told "checkbox, checked" on Sad hears nothing about Angry coming unchecked.
+   */
+  it("offers the feeling as a radio group, so picking one unchecks the last audibly", () => {
+    renderWithProviders(<DbtOppositeActionNewScreen />);
+
+    expect(screen.getByLabelText("The feeling").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+
+    fireEvent.press(screen.getByLabelText("Angry"));
+    fireEvent.press(screen.getByLabelText("Sad"));
+
+    expect(screen.getByRole("radio", { name: "Sad" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Angry" })).not.toBeChecked();
+    expect(screen.getAllByRole("radio", { checked: true })).toHaveLength(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -309,6 +367,49 @@ describe("the script", () => {
     expect(await screen.findByText("Add the I think line")).toBeTruthy();
   });
 
+  /**
+   * ☠️ The segment the screen paints as chosen is the answer it saves (#2192).
+   * The control used to be fed `wantChanged ?? "moreOf"` over a state that
+   * started null, so agreeing with the visible default and never tapping it
+   * saved "not answered".
+   */
+  it("saves the answer it shows as selected when the person never taps it", async () => {
+    renderWithProviders(<DbtScriptNewScreen />);
+
+    fireEvent.changeText(screen.getByLabelText("What's going on"), "He is late a lot");
+    fireEvent.press(screen.getByText("Next"));
+    fireEvent.changeText(screen.getByLabelText("I think"), "You were late twice");
+    fireEvent.changeText(screen.getByLabelText("I want"), "a text when you'll be late");
+    fireEvent.press(screen.getByText("Next"));
+    fireEvent.press(screen.getByText("Save script"));
+
+    await waitFor(() => expect(saveScript).toHaveBeenCalledTimes(1));
+    const [payload] = saveScript.mock.calls[0] as [Record<string, unknown>];
+    expect(payload.wantChanged).toBe("moreOf");
+  });
+
+  /** The same radio rule as the plan's picker (#2199), on the script's feeling. */
+  it("offers the feeling as a radio group", () => {
+    renderWithProviders(<DbtScriptNewScreen />);
+
+    fireEvent.changeText(screen.getByLabelText("What's going on"), "He is late a lot");
+    fireEvent.press(screen.getByText("Next"));
+
+    // The group shares the field's name with its textarea; the group is the
+    // one carrying the role.
+    const group = screen
+      .getAllByLabelText("I feel")
+      .find((node) => node.props.accessibilityRole === "radiogroup");
+    expect(group).toBeTruthy();
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+
+    fireEvent.press(screen.getByLabelText("Frustrated"));
+    fireEvent.press(screen.getByLabelText("Sad"));
+
+    expect(screen.getAllByRole("radio", { checked: true })).toHaveLength(1);
+    expect(screen.getByRole("radio", { name: "Sad" })).toBeChecked();
+  });
+
   /** ☠️ No `who` field, and nothing structured about the other person. */
   it("stores nothing about the other person", () => {
     renderWithProviders(<DbtScriptNewScreen />);
@@ -345,6 +446,70 @@ describe("the script", () => {
     expect(screen.queryByText(/rung|step \d+ of|exposure/i)).toBeNull();
   });
 
+  /**
+   * ☠️ The top row is the easiest script the person HAS, not the easiest of
+   * the newest page (#2196). The open rungs arrive whole from their own read
+   * and sit above the done pages, whatever recency says: here the easiest open
+   * script is the OLDEST row, and the done one is the newest.
+   */
+  it("puts the easiest open script first, above the done pages", () => {
+    mockPathname = "/modules/dbt/scripts";
+    (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+      data: [
+        {
+          ...SCRIPT,
+          id: "hard",
+          iWant: "ask-hard",
+          difficulty: 80,
+          createdAt: "2026-06-09T09:00:00.000Z",
+        },
+        {
+          ...SCRIPT,
+          id: "easy",
+          iWant: "ask-easy",
+          difficulty: 20,
+          createdAt: "2026-06-01T09:00:00.000Z",
+        },
+      ],
+      isError: false,
+      isPending: false,
+      refetch: jest.fn(),
+    });
+    (useDoneScriptPages as unknown as jest.Mock).mockReturnValue(
+      pages([
+        {
+          ...SCRIPT,
+          id: "done",
+          iWant: "ask-done",
+          difficulty: 10,
+          createdAt: "2026-06-10T09:00:00.000Z",
+          doneAt: "2026-06-11T09:00:00.000Z",
+        },
+      ]),
+    );
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.getAllByText(/^ask-/).map((node) => node.props.children)).toEqual([
+      "ask-easy",
+      "ask-hard",
+      "ask-done",
+    ]);
+  });
+
+  it("shows an error rather than an empty ladder when either read failed", () => {
+    mockPathname = "/modules/dbt/scripts";
+    (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+      data: undefined,
+      isError: true,
+      isPending: false,
+      refetch: jest.fn(),
+    });
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.queryByText("No scripts yet.")).toBeNull();
+    expect(screen.getByText("Retry")).toBeTruthy();
+  });
+
   it("reads the four lines back on the card, with no crisis bar", () => {
     mockPathname = "/modules/dbt/scripts/s-1";
     renderWithProviders(<DbtScriptDetailScreen id="s-1" />);
@@ -377,5 +542,32 @@ describe("the script", () => {
     fireEvent.press(screen.getByText("Skip the note"));
 
     await waitFor(() => expect(markScriptDone).toHaveBeenCalledTimes(1));
+  });
+
+  /** ☠️ Skip means skip (#2198): the typed words are not sent. */
+  it("does not write a typed note when the person skips it", async () => {
+    mockPathname = "/modules/dbt/scripts/s-1";
+    renderWithProviders(<DbtScriptDetailScreen id="s-1" />);
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.changeText(screen.getByLabelText("How did it go?"), "he shouted and I cried");
+    fireEvent.press(screen.getByText("Skip the note"));
+
+    await waitFor(() => expect(markScriptDone).toHaveBeenCalledTimes(1));
+    const [{ input }] = markScriptDone.mock.calls[0] as [{ input: { howItWent: string } }];
+    expect(input.howItWent).toBe("");
+  });
+
+  it("writes the typed note when the person saves it", async () => {
+    mockPathname = "/modules/dbt/scripts/s-1";
+    renderWithProviders(<DbtScriptDetailScreen id="s-1" />);
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.changeText(screen.getByLabelText("How did it go?"), "it went fine");
+    fireEvent.press(screen.getByText("Save"));
+
+    await waitFor(() => expect(markScriptDone).toHaveBeenCalledTimes(1));
+    const [{ input }] = markScriptDone.mock.calls[0] as [{ input: { howItWent: string } }];
+    expect(input.howItWent).toBe("it went fine");
   });
 });

@@ -26,7 +26,9 @@ const PAGE_READS = [
   ["dbt/repository/judgements.ts", "listJudgementsPage"],
   ["dbt/repository/emotion-records.ts", "listEmotionRecordsPage"],
   ["dbt/repository/opposite-action.ts", "listOppositeActionPlansPage"],
-  ["dbt/repository/scripts.ts", "listScriptsPage"],
+  // The scripts ladder pages only its DONE half (#2196); the open half is one
+  // whole, server-ordered read with no page at all, so it is not listed here.
+  ["dbt/repository/scripts.ts", "listDoneScriptsPage"],
 ] as const;
 
 function exportedFunction(file: string, name: string): string {

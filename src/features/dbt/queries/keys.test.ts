@@ -28,7 +28,8 @@ describe("dbtKeys", () => {
       dbtKeys.oppositeActionList("u"),
     ],
     ["scriptCount", dbtKeys.scriptCount("u"), dbtKeys.scriptList("u")],
-    ["scriptHistoryPages", dbtKeys.scriptHistoryPages("u"), dbtKeys.scriptList("u")],
+    ["scriptOpen", dbtKeys.scriptOpen("u"), dbtKeys.scriptList("u")],
+    ["scriptDonePages", dbtKeys.scriptDonePages("u"), dbtKeys.scriptList("u")],
   ])("%s nests under its list prefix", (_name, key, prefix) => {
     expect(startsWith(key, prefix)).toBe(true);
     expect(key.length).toBeGreaterThan(prefix.length);

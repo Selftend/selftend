@@ -80,6 +80,22 @@ describe("the DBT programme's shape", () => {
     }
   });
 
+  /**
+   * ☠️ The kicker and the description are two strings, not one key twice
+   * (#2205): both slots render unconditionally on the phase header and on the
+   * home's group card, so a shared key printed the same sentence twice. ACT's
+   * phases pin the same pair.
+   */
+  it("gives each phase a kicker of its own, distinct from its description", () => {
+    for (const phase of DBT_PROGRAM) {
+      expect(phase.themeSubKey).toBe(`groups.${phase.key}.sub`);
+      expect(phase.themeDescKey).toBe(`groups.${phase.key}.desc`);
+      const group = (enDbt.groups as Record<string, { sub: string; desc: string }>)[phase.key]!;
+      expect(group.sub).toBeTruthy();
+      expect(group.sub).not.toBe(group.desc);
+    }
+  });
+
   it("gives every task a label in the copy", () => {
     for (const phase of DBT_PROGRAM) {
       for (const task of [

@@ -66,7 +66,9 @@ function mapScript(row: ScriptRow): Script {
 /**
  * The list IS the ladder (#1989): open scripts first, rated ones easiest-first,
  * unrated after them newest-first; done scripts below by done-day. Pure, so the
- * screen and its test share one ordering.
+ * screen and its test share one ordering. The server delivers what this sort
+ * needs - every open script via `listOpenScripts`, done ones paged by `done_at`
+ * - so it never orders a recency window and calls it a ladder (#2196).
  */
 export function orderScriptsAsLadder(scripts: Script[]): Script[] {
   const open = scripts.filter((script) => !script.doneAt);
@@ -100,15 +102,55 @@ export async function listScripts(userId: string, limit = 50) {
   );
 }
 
-export async function listScriptsPage(userId: string, limit: number, cursor: RecordCursor | null) {
+/**
+ * Ceiling on the open rungs fetched in one read. Not a page: the open scripts
+ * ARE the ladder, and a ladder paged by recency put the easiest of the twenty
+ * newest at the top instead of the easiest the person has (#2196). Because the
+ * ORDER is the server's, the rows a ceiling would drop are the hardest, never
+ * the top of the climb.
+ */
+export const OPEN_SCRIPT_LIMIT = 200;
+
+/**
+ * Every open script, in ladder order, sorted by the database: rated ones
+ * easiest-first, unrated after them (`nullsFirst: false`), newest-first within
+ * a rung. The same rule `orderScriptsAsLadder` applies, so the client's re-sort
+ * over the merged list is a no-op on complete data rather than a repair.
+ */
+export async function listOpenScripts(userId: string, limit = OPEN_SCRIPT_LIMIT) {
+  return selectList<ScriptRow, Script>(
+    (c) =>
+      c
+        .from("dbt_scripts")
+        .select("*")
+        .eq("user_id", userId)
+        .is("done_at", null)
+        .order("difficulty", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(limit),
+    mapScript,
+  );
+}
+
+/**
+ * The done scripts, newest-done first, paged by keyset on `done_at` - the key
+ * the list orders them by, so a page boundary never splits the order.
+ */
+export async function listDoneScriptsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
   return selectList<ScriptRow, Script>((c) => {
     let query = c
       .from("dbt_scripts")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .not("done_at", "is", null)
+      .order("done_at", { ascending: false })
       .order("id", { ascending: false });
-    if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));
+    if (cursor) query = query.or(descendingCursorFilter("done_at", cursor));
     return query.limit(limit);
   }, mapScript);
 }
