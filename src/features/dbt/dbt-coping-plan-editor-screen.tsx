@@ -90,6 +90,16 @@ import { useToastStore } from "@/src/stores/toast-store";
  * and unmounting the builder for that would throw away everything the person
  * had typed. And never `isLoading` alone in the gate either: that falls
  * through to the builder against `undefined` and reopens #2204.
+ *
+ * ☠️ **And never bare `isError` either** (#2236), for the same reason as the
+ * pause half: a background refetch that FAILS over a plan already read sets
+ * `status: "error"` without clearing `data` - query-core names that state
+ * `isRefetchError` - so a focus refetch that fails a minute into an edit would
+ * swap the builder for the shut door and take every pick and every typed line
+ * with it. The error half of the gate is therefore "failed AND nothing read":
+ * `data` is `undefined` only before the first read lands (`null` is a read
+ * that found no plan yet, and a first-time builder is editing over exactly
+ * that), so a failed refetch over anything read keeps the builder up.
  */
 export default function DbtCopingPlanEditorScreen() {
   const { t } = useTranslation("dbt");
@@ -102,7 +112,11 @@ export default function DbtCopingPlanEditorScreen() {
   // and will not start on its own account. Nothing was read either way, so it
   // takes the branch a failed read takes - and it clears itself when the
   // connection returns, because query-core resumes the paused fetch.
-  const unread = isError || (isPending && isPaused);
+  //
+  // `existing === undefined`, not nullish: `null` IS a read - one that found
+  // no plan - and a failed refetch over it must not unmount a first plan
+  // mid-build (#2236).
+  const unread = (isError && existing === undefined) || (isPending && isPaused);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -260,7 +274,12 @@ function CopingPlanBuilder({ existing, userId }: CopingPlanBuilderProps) {
   }
 
   const save = useSingleFlight(async () => {
-    if (fallback.length > 0 && (fallback.length < FALLBACK_MIN || fallback.length > FALLBACK_MAX)) {
+    // ☠️ No empty-list exemption (#2194): `dbt_coping_plans_guard` rejects a
+    // fallback list shorter than FALLBACK_MIN on insert and update alike, with
+    // no zero-length escape. An exemption here sent a plan the database always
+    // refused, and the person heard only "That did not save" with no field
+    // named. The rule is the registry's: three to six, always.
+    if (fallback.length < FALLBACK_MIN || fallback.length > FALLBACK_MAX) {
       setError(t("copingPlan.fallback.error"));
       return;
     }
@@ -396,10 +415,14 @@ function CopingPlanBuilder({ existing, userId }: CopingPlanBuilderProps) {
                       accessibilityRole="checkbox"
                       aria-checked={on}
                       aria-disabled={full}
+                      // ☠️ Both branches name the item (#2201): the label
+                      // overrides the visible text for a screen reader, so a
+                      // bare "Add to the list" made every candidate announce
+                      // the same thing.
                       accessibilityLabel={
                         on
                           ? t("copingPlan.fallback.remove", { item: text })
-                          : t("copingPlan.fallback.add")
+                          : t("copingPlan.fallback.add", { item: text })
                       }
                       disabled={full}
                       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
