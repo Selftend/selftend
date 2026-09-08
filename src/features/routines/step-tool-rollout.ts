@@ -62,7 +62,7 @@ export const WITHHELD_STEP_TOOL_IDS: readonly SteppableToolId[] = [
  * The steppable ids a routine step may carry today: every steppable tool that
  * is not withheld, in {@link STEPPABLE_TOOL_IDS} order. This is the set the
  * database CHECK constraint mirrors, in
- * `supabase/migrations/20260911000000_routine_step_tool_allowlist.sql`.
+ * `supabase/migrations/20260912000000_routine_step_tool_allowlist.sql`.
  */
 export const WRITABLE_STEP_TOOL_IDS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
   (tool) => !(WITHHELD_STEP_TOOL_IDS as readonly string[]).includes(tool),
