@@ -19,7 +19,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
 import {
   useConnectionLog,
-  useConnectionLogs,
+  useConnectionLogPages,
   useDeleteConnectionLog,
 } from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
@@ -35,7 +35,7 @@ export default function ActConnectionDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: log, isLoading } = useCachedItem(
-    useConnectionLogs,
+    useConnectionLogPages,
     useConnectionLog,
     user?.id ?? null,
     logId,

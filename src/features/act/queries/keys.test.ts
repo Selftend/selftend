@@ -65,7 +65,14 @@ describe("actKeys", () => {
       [actKeys.choicePointList("u1"), actKeys.choicePointHistoryPages("u1")],
       [actKeys.urgeSurfList("u1"), actKeys.urgeSurfHistoryPages("u1")],
       [actKeys.bullsEyeList("u1"), actKeys.bullsEyeHistoryPages("u1")],
-      [actKeys.committedActionListPrefix("u1"), actKeys.committedActionArchivePages("u1")],
+      [
+        actKeys.committedActionListPrefix("u1"),
+        actKeys.committedActionArchivePages("u1", "completed"),
+      ],
+      [
+        actKeys.committedActionListPrefix("u1"),
+        actKeys.committedActionArchivePages("u1", "abandoned"),
+      ],
     ] as const;
 
     for (const [list, archive] of pairs) {
@@ -81,8 +88,19 @@ describe("actKeys", () => {
    */
   it("keeps each archive key distinct from the list key it hangs under", () => {
     expect(actKeys.defusionHistoryPages("u1")).not.toEqual(actKeys.defusionList("u1"));
-    expect(actKeys.committedActionArchivePages("u1")).not.toEqual(
+    expect(actKeys.committedActionArchivePages("u1", "completed")).not.toEqual(
       actKeys.committedActionList("u1", "active"),
+    );
+  });
+
+  /**
+   * ☠️ Completed and Abandoned are two archives, not one (#2186). On a shared entry the
+   * twenty newest finished rows of one status paged the other status out of sight — its
+   * heading and every row of it — behind a "Show more" that named no section.
+   */
+  it("keeps each finished status's archive on its own entry", () => {
+    expect(actKeys.committedActionArchivePages("u1", "completed")).not.toEqual(
+      actKeys.committedActionArchivePages("u1", "abandoned"),
     );
   });
 

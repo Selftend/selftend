@@ -272,6 +272,20 @@ export const EXPANSION_TECHNIQUES: ExpansionTechnique[] = [
 
 export type ActionStatus = "active" | "completed" | "abandoned";
 
+/**
+ * The statuses that are history rather than a working set.
+ *
+ * Exported so the list screen's sections and the archive read agree by construction — a
+ * fourth status added to one and not the other would silently vanish from both. Each of
+ * these is paged on its own (#2186): one page shared across both would let 20 newer rows
+ * of one status hide every row of the other.
+ */
+export const COMMITTED_ACTION_ARCHIVE_STATUSES = [
+  "completed",
+  "abandoned",
+] as const satisfies readonly ActionStatus[];
+export type CommittedActionArchiveStatus = (typeof COMMITTED_ACTION_ARCHIVE_STATUSES)[number];
+
 export interface CommittedAction {
   id: string;
   userId: string;

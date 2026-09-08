@@ -56,11 +56,6 @@ jest.mock("@/src/features/act/queries", () => ({
   useExpansionLogPages: jest.fn(),
   useObservingSelfSessionPages: jest.fn(),
   useUrgeSurfLogPages: jest.fn(),
-  useChoicePoints: jest.fn(),
-  useConnectionLogs: jest.fn(),
-  useDefusionLogs: jest.fn(),
-  useExpansionLogs: jest.fn(),
-  useObservingSelfSessions: jest.fn(),
   useChoicePoint: jest.fn(),
   useConnectionLog: jest.fn(),
   useDefusionLog: jest.fn(),
@@ -115,14 +110,6 @@ const PAGE_HOOKS = [
   "useUrgeSurfLogPages",
 ];
 
-const LIST_HOOKS = [
-  "useChoicePoints",
-  "useConnectionLogs",
-  "useDefusionLogs",
-  "useExpansionLogs",
-  "useObservingSelfSessions",
-];
-
 const ITEM_HOOKS = [
   "useChoicePoint",
   "useConnectionLog",
@@ -132,11 +119,13 @@ const ITEM_HOOKS = [
   "useUrgeSurfLog",
 ];
 
-/** Every paged and list read returns the given rows; every single-row read misses. */
+/**
+ * Every paged read returns the given rows; every single-row read misses. The detail
+ * screens paint from the paged read too — `useCachedItem` probes the archive the list
+ * screen filled (#2190) — which is why no plain list hook is mocked here at all.
+ */
 function feed(rows: unknown[]) {
   for (const name of PAGE_HOOKS) mocked[name].mockReturnValue(pageResult(rows));
-  // `useCachedItem` reads the list hook first, so the detail screens paint from here.
-  for (const name of LIST_HOOKS) mocked[name].mockReturnValue({ data: rows });
   for (const name of ITEM_HOOKS) mocked[name].mockReturnValue({ data: null, isLoading: false });
 }
 

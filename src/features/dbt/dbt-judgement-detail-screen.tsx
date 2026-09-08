@@ -16,7 +16,10 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { useDeleteJudgement, useJudgement } from "@/src/features/dbt/queries";
-import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
+import {
+  hasDefusionDraftContent,
+  useActDefusionLogDraftStore,
+} from "@/src/stores/act-defusion-log-draft-store";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -33,6 +36,13 @@ import { useToastStore } from "@/src/stores/toast-store";
  * ⚠️ A cross-MODULE hand-off, which is new for a detail screen. It is the same
  * departure the learn pages' chips make, and it is argued the same way: this is
  * where the workbook's own next step already lives in this app.
+ *
+ * ☠️ A live defusion draft outranks the seed (#2197). That store IS the ACT
+ * form's state, held for "Finish later", and it has no undo; the emotion
+ * record's sibling door into the CBT thought record already gives a live
+ * draft precedence over its prefill (`use-thought-record-editor.ts`), and the
+ * two doors shipping in one release must not disagree. Only an empty form
+ * takes the judgement.
  */
 export default function DbtJudgementDetailScreen({ id }: { id: string }) {
   const { t } = useTranslation("dbt");
@@ -123,15 +133,20 @@ export default function DbtJudgementDetailScreen({ id }: { id: string }) {
               variant="outline"
               onPress={() => {
                 // ACT's own draft store, in memory - never a route parameter.
-                setDefusionDraft({
-                  fusedThought: judgement.judgement,
-                  thoughtCategory: "selfJudgment",
-                  fusionLevelBefore: null,
-                  techniqueUsed: null,
-                  defusedVersion: "",
-                  fusionLevelAfter: null,
-                  notes: "",
-                });
+                // Unsaved work already held there wins: the person can come back
+                // through this door in one tap once that entry is saved or
+                // discarded, while the draft, once overwritten, is gone.
+                if (!hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
+                  setDefusionDraft({
+                    fusedThought: judgement.judgement,
+                    thoughtCategory: "selfJudgment",
+                    fusionLevelBefore: null,
+                    techniqueUsed: null,
+                    defusedVersion: "",
+                    fusionLevelAfter: null,
+                    notes: "",
+                  });
+                }
                 pushWithOrigin("/modules/act/defusion/new");
               }}
             >

@@ -20,7 +20,7 @@ import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-deta
 import {
   useDeleteObservingSelfSession,
   useObservingSelfSession,
-  useObservingSelfSessions,
+  useObservingSelfSessionPages,
 } from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
@@ -35,7 +35,7 @@ export default function ActObservingSelfDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: session, isLoading } = useCachedItem(
-    useObservingSelfSessions,
+    useObservingSelfSessionPages,
     useObservingSelfSession,
     user?.id ?? null,
     sessionId,
