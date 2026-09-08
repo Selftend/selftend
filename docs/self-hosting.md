@@ -114,7 +114,10 @@ production build starts.
 > held back because they are hashed by
 > `src/features/policies/policy-content.test.ts`: editing one character requires a
 > `policyVersion` bump, and a bump re-presents the consent gate to every existing
-> user, so they ride the next bump that carries a real disclosure change.
+> user — plus, for the length of the rollout, once per cold start to anyone
+> whose phone is still on the previous build ([the shared-column skew
+> rule](releasing.md#the-same-rule-between-two-clients-shared-column-skew)) — so
+> they ride the next bump that carries a real disclosure change.
 >
 > The warning above is a `console.warn` from a runtime provider, not a build-time
 > failure — on a shipped native release nothing reads it. Treat these three as
