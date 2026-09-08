@@ -28,7 +28,7 @@ import {
   type EmotionRecordPartValues,
 } from "@/src/features/dbt/emotion-record-parts";
 import { useSaveEmotionRecord } from "@/src/features/dbt/queries";
-import { selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
+import { DRAFT_CAPTURE_DEBOUNCE_MS, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useDbtEmotionRecordDraftStore } from "@/src/stores/dbt-emotion-record-draft-store";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -98,13 +98,63 @@ function EmotionRecordForm({ initialValues }: { initialValues: EmotionRecordPart
   const [discardOpen, setDiscardOpen] = useState(false);
   const whatHappenedRef = useRef<TextInput>(null);
 
+  // The draft is captured from an EFFECT on `values`, debounced at the wizard
+  // rate - never from inside the state updater (#2202). Six 4000-character
+  // parts serialised and written to AsyncStorage once per keystroke was the
+  // longest form in the app doing the most storage work; the updater is also
+  // React's, and an external write inside it runs during render whenever the
+  // eager path is not taken. `useWizardDraft` debounces the same way for every
+  // other persisted draft; this form is not a react-hook-form wizard, so it
+  // carries the same rule by hand.
+  const pendingDraftRef = useRef<EmotionRecordPartValues | null>(null);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set once the draft is finished with (saved or discarded), so neither the
+  // pending timer nor the unmount flush can write the record back afterwards.
+  const draftClosedRef = useRef(false);
+  const firstCaptureRef = useRef(true);
+
+  function closeDraft() {
+    draftClosedRef.current = true;
+    pendingDraftRef.current = null;
+    if (draftTimerRef.current) {
+      clearTimeout(draftTimerRef.current);
+      draftTimerRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    // The mount value is the draft (or empty) - writing it back would be a
+    // no-op at best and, on a clean form, would turn `values: null` into an
+    // empty record the store then treats as a draft worth restoring.
+    if (firstCaptureRef.current) {
+      firstCaptureRef.current = false;
+      return;
+    }
+    if (draftClosedRef.current) return;
+    pendingDraftRef.current = values;
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => {
+      draftTimerRef.current = null;
+      pendingDraftRef.current = null;
+      setDraftValues(values);
+    }, DRAFT_CAPTURE_DEBOUNCE_MS);
+  }, [values, setDraftValues]);
+
+  // "Finish later" is a labelled exit over the autosave: leaving mid-debounce
+  // flushes the last words rather than dropping up to 800ms of them.
+  useEffect(
+    () => () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+      const pending = pendingDraftRef.current;
+      pendingDraftRef.current = null;
+      if (pending && !draftClosedRef.current) setDraftValues(pending);
+    },
+    [setDraftValues],
+  );
+
   function update(patch: Partial<EmotionRecordPartValues>) {
     setError(null);
-    setValues((prev) => {
-      const next = { ...prev, ...patch };
-      setDraftValues(next);
-      return next;
-    });
+    setValues((prev) => ({ ...prev, ...patch }));
   }
 
   const filled = useMemo(() => filledEmotionRecordParts(values), [values]);
@@ -140,6 +190,7 @@ function EmotionRecordForm({ initialValues }: { initialValues: EmotionRecordPart
         createdAt: occurrence.occurredAt,
         createdOffsetMinutes: occurrence.occurredOffsetMinutes,
       });
+      closeDraft();
       resetDraft();
       clearPersistedDraft();
       showToast({
@@ -156,6 +207,7 @@ function EmotionRecordForm({ initialValues }: { initialValues: EmotionRecordPart
   });
 
   function discard() {
+    closeDraft();
     resetDraft();
     clearPersistedDraft();
     setValues(emptyEmotionRecordValues());

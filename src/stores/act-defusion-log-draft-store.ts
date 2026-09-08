@@ -39,3 +39,30 @@ export interface ActDefusionLogDraft {
  * One draft, so it never needs an entity id: `hydrate()` targets the null draft.
  */
 export const useActDefusionLogDraftStore = createDraftStore<ActDefusionLogDraft>();
+
+/**
+ * Whether the held draft has anything the person put there — the check a hand-off
+ * runs before it seeds this store (#2197).
+ *
+ * ☠️ A live draft outranks a hand-off. Unsaved work the person typed here beats a
+ * prefill they can re-pick in one step — the rule the CBT thought record already
+ * applies to its own doors (`use-thought-record-editor.ts`), and the one "Finish
+ * later" promises: the entry is held. A door from another module that replaced it
+ * would be the only writer to break that promise, with no warning and no undo,
+ * because this store is the form's state and has no history.
+ *
+ * Content, not presence: the form writes the store on every keystroke, so a draft can
+ * exist with every field back at empty, and that one is free to take a seed.
+ */
+export function hasDefusionDraftContent(draft: ActDefusionLogDraft | null): boolean {
+  if (!draft) return false;
+  return (
+    draft.fusedThought.trim() !== "" ||
+    draft.thoughtCategory !== null ||
+    draft.fusionLevelBefore !== null ||
+    draft.techniqueUsed !== null ||
+    draft.defusedVersion.trim() !== "" ||
+    draft.fusionLevelAfter !== null ||
+    draft.notes.trim() !== ""
+  );
+}

@@ -11,6 +11,7 @@ import {
   useWiseMindCheckinCount,
 } from "@/src/features/dbt/queries";
 import { useDbtProgram } from "@/src/features/dbt/use-dbt-program";
+import enDbt from "@/src/i18n/locales/en/dbt.json";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -171,6 +172,23 @@ describe("DbtHomeScreen", () => {
    * negative assertion on the module's own copy is the only thing that keeps it
    * reworded, since the surrounding callout is allowed to say it.
    */
+  /**
+   * ☠️ Each group card carries a short kicker on the title row AND a
+   * description beneath it, and they are different strings (#2205). One key in
+   * both slots printed the sentence twice on all four cards, in both languages.
+   */
+  it("prints each group's sentence once, under a kicker of its own", () => {
+    renderWithProviders(<DbtHomeScreen />);
+
+    const text = renderedTextInOrder();
+    for (const key of ["distressTolerance", "mindfulness", "emotionRegulation", "interpersonal"]) {
+      const group = (enDbt.groups as Record<string, { sub: string; desc: string }>)[key]!;
+      expect(text).toContain(group.sub);
+      expect(text.filter((line) => line === group.desc)).toHaveLength(1);
+      expect(group.sub).not.toBe(group.desc);
+    }
+  });
+
   it("does not call an ordinary hard moment a crisis", () => {
     renderWithProviders(<DbtHomeScreen />);
 

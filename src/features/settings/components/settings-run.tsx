@@ -10,17 +10,24 @@ interface SettingsRunProps {
    *
    * Optional, for the one run that has nothing to be told apart from: the profile
    * panel sits directly under the identity header it belongs to. It shares this
-   * component rather than restating the card chrome and the hairline rule, so the
-   * two cannot drift into looking like different kinds of thing.
+   * component rather than restating the hairline rule, so the two cannot drift
+   * into looking like different kinds of thing - provided it also shares the
+   * surface (#2188).
    */
   label?: string;
   children: ReactNode;
   /**
-   * What the rows sit on. `card` (the default) is the settings page: a bordered,
-   * filled panel with its own inset. `hairline` (#1725) is for a run that lives
-   * inside a titled `Section`, where the section already carries the chrome - a
-   * card there would be a box inside a box, so the run draws nothing of its own
-   * and keeps only the eyebrow and the rules between rows.
+   * What the rows sit on. `card` is a bordered, filled panel with its own inset;
+   * `hairline` (#1725) draws nothing of its own and keeps only the eyebrow and
+   * the rules above and below each row.
+   *
+   * ⚠️ `card` is still the DEFAULT, and no call site takes it any more. It was
+   * the settings page until #1800 de-carded the four labelled runs there, and
+   * /support's three runs already sat inside titled `Section`s where a card
+   * would be a box inside a box. The profile panel was the last one, left on
+   * the default by omission (#2188). Every mount now passes `hairline`
+   * explicitly, so a new run that forgets the prop draws a card on a page that
+   * has none - pass it.
    */
   surface?: "card" | "hairline";
   testID?: string;

@@ -6,9 +6,9 @@ import ActExpansionDetailScreen from "@/src/features/act/act-expansion-detail-sc
 import ActExpansionNewScreen from "@/src/features/act/act-expansion-new-screen";
 import {
   useDefusionLog,
-  useDefusionLogs,
+  useDefusionLogPages,
   useExpansionLog,
-  useExpansionLogs,
+  useExpansionLogPages,
 } from "@/src/features/act/queries";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -86,19 +86,23 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 
 jest.mock("@/src/features/act/queries", () => ({
   useDefusionLog: jest.fn(),
-  useDefusionLogs: jest.fn(),
+  useDefusionLogPages: jest.fn(),
   useDeleteDefusionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useSaveDefusionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useExpansionLog: jest.fn(),
-  useExpansionLogs: jest.fn(),
+  useExpansionLogPages: jest.fn(),
   useDeleteExpansionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useSaveExpansionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
 const mockUseDefusionLog = useDefusionLog as jest.MockedFunction<typeof useDefusionLog>;
-const mockUseDefusionLogs = useDefusionLogs as jest.MockedFunction<typeof useDefusionLogs>;
+const mockUseDefusionLogPages = useDefusionLogPages as jest.MockedFunction<
+  typeof useDefusionLogPages
+>;
 const mockUseExpansionLog = useExpansionLog as jest.MockedFunction<typeof useExpansionLog>;
-const mockUseExpansionLogs = useExpansionLogs as jest.MockedFunction<typeof useExpansionLogs>;
+const mockUseExpansionLogPages = useExpansionLogPages as jest.MockedFunction<
+  typeof useExpansionLogPages
+>;
 
 const FUSION_BEFORE_LABEL = "How strongly is this thought pulling you right now?";
 const FUSION_AFTER_LABEL = "How strongly is it pulling you now?";
@@ -152,10 +156,9 @@ beforeEach(() => {
 
 describe.each(PAIRS)("a defusion record whose fusion %s", (_shape, before, after) => {
   it("renders no note under the pair on the detail screen", () => {
-    mockUseDefusionLogs.mockReturnValue({
-      data: [defusionLog(before, after)],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useDefusionLogs>);
+    mockUseDefusionLogPages.mockReturnValue({
+      data: { pages: [[defusionLog(before, after)]], pageParams: [null] },
+    } as unknown as ReturnType<typeof useDefusionLogPages>);
     mockUseDefusionLog.mockReturnValue({
       data: defusionLog(before, after),
       isLoading: false,
@@ -176,10 +179,9 @@ describe.each(PAIRS)("a defusion record whose fusion %s", (_shape, before, after
 
 describe.each(PAIRS)("an expansion record whose intensity %s", (_shape, before, after) => {
   it("renders no note under the pair on the detail screen", () => {
-    mockUseExpansionLogs.mockReturnValue({
-      data: [expansionLog(before, after)],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useExpansionLogs>);
+    mockUseExpansionLogPages.mockReturnValue({
+      data: { pages: [[expansionLog(before, after)]], pageParams: [null] },
+    } as unknown as ReturnType<typeof useExpansionLogPages>);
     mockUseExpansionLog.mockReturnValue({
       data: expansionLog(before, after),
       isLoading: false,

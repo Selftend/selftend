@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react-native";
-import { FlatList } from "react-native";
+import { ActivityIndicator, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessions-screen";
@@ -55,6 +55,7 @@ const setPages = (
   overrides: Partial<{
     pages: unknown[][];
     isPending: boolean;
+    isPaused: boolean;
     isError: boolean;
     hasNextPage: boolean;
     isFetchingNextPage: boolean;
@@ -68,6 +69,7 @@ const setPages = (
     hasNextPage: false,
     isFetchingNextPage: false,
     isPending: false,
+    isPaused: false,
     isError: false,
     ...rest,
   } as unknown as ReturnType<typeof useMeditationSessionPages>);
@@ -171,6 +173,32 @@ describe("MeditationSessionsScreen", () => {
 
       expect(screen.getByText("Couldn't load your sits")).toBeTruthy();
       expect(screen.queryByText("No sessions yet.")).toBeNull();
+    });
+
+    /**
+     * ☠️ #2237. A first page that cannot start for want of a network is
+     * `isPending` too - `status: "pending"`, `fetchStatus: "paused"` - and a
+     * paused query never errors, so a gate keyed on `isPending` alone parked
+     * an offline arrival on a spinner with the retry beside it unreachable.
+     */
+    it("says so, and offers the read again, when there is no network to read over", () => {
+      setPages({ isPending: true, isPaused: true });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.getByText("Couldn't load your sits")).toBeTruthy();
+      expect(screen.getByText("Retry")).toBeTruthy();
+      expect(screen.UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+      expect(screen.queryByText("No sessions yet.")).toBeNull();
+    });
+
+    it("keeps the spinner for a first page that is actually in flight", () => {
+      setPages({ isPending: true });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+      expect(screen.queryByText("Couldn't load your sits")).toBeNull();
     });
 
     it("claims an empty record only once a page has come back empty", () => {

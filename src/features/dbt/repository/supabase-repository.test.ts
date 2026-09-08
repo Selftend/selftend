@@ -25,8 +25,9 @@ import {
   listJudgementsPage,
   listOppositeActionPlans,
   listOppositeActionPlansPage,
+  listDoneScriptsPage,
+  listOpenScripts,
   listScripts,
-  listScriptsPage,
   listWiseMindCheckins,
   listWiseMindCheckinsPage,
   markOppositeActionPlanDone,
@@ -69,6 +70,8 @@ function chain(result: Record<string, unknown>) {
     "update",
     "delete",
     "eq",
+    "is",
+    "not",
     "or",
     "order",
     "limit",
@@ -221,7 +224,10 @@ const RECORD_TABLES = [
     table: "dbt_scripts",
     count: countScripts,
     list: listScripts,
-    page: listScriptsPage,
+    // The ladder pages only its DONE half, keyed on the day it was closed
+    // (#2196); the open half is `listOpenScripts`, pinned on its own below.
+    page: listDoneScriptsPage,
+    pageColumn: "done_at",
     get: getScript,
     remove: deleteScript,
     row: {
@@ -254,7 +260,8 @@ const RECORD_TABLES = [
 
 describe.each(RECORD_TABLES)(
   "$name repository",
-  ({ table, count, list, page, get, remove, row, mapped }) => {
+  ({ table, count, list, page, get, remove, row, mapped, ...rest }) => {
+    const pageColumn = "pageColumn" in rest ? rest.pageColumn : "created_at";
     it("counts with an exact head count and degrades to zero when DBT is not migrated", async () => {
       const { builder } = useTable(table, { count: 7, error: null });
       expect(await count("u1")).toBe(7);
@@ -292,12 +299,12 @@ describe.each(RECORD_TABLES)(
       await expect(list("u1")).rejects.toEqual(REAL_ERROR);
     });
 
-    it("pages by keyset on created_at and id, with the cursor filter only after the first page", async () => {
+    it(`pages by keyset on ${pageColumn} and id, with the cursor filter only after the first page`, async () => {
       const first = useTable(table, { data: [row], error: null });
       await page("u1", 20, null);
       expect(called(first.builder, "or")).toHaveLength(0);
       expect(called(first.builder, "order").map((call) => call.args[0])).toEqual([
-        "created_at",
+        pageColumn,
         "id",
       ]);
       expect(called(first.builder, "limit")[0].args).toEqual([20]);
@@ -306,7 +313,7 @@ describe.each(RECORD_TABLES)(
       const next = useTable(table, { data: [], error: null });
       await page("u1", 20, cursor);
       expect(called(next.builder, "or")[0].args).toEqual([
-        descendingCursorFilter("created_at", cursor),
+        descendingCursorFilter(pageColumn, cursor),
       ]);
     });
 
@@ -358,6 +365,38 @@ function insertPayload(builder: { calls: Call[] }) {
 function updatePayload(builder: { calls: Call[] }) {
   return called(builder, "update")[0].args[0] as Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// ☠️ The scripts ladder (#2196). The sort used to run over a recency page, so
+// with more than twenty scripts the top row was the easiest of the NEWEST
+// twenty. Now the database orders the open half by difficulty and hands it
+// over whole, and only the done half pages - on the day it was closed.
+// ---------------------------------------------------------------------------
+describe("the scripts ladder reads", () => {
+  it("reads every open script, ordered easiest-first by the database with unrated ones last", async () => {
+    const { builder } = useTable("dbt_scripts", { data: [], error: null });
+    await listOpenScripts("u1");
+
+    expect(called(builder, "is")[0].args).toEqual(["done_at", null]);
+    expect(called(builder, "order").map((call) => call.args)).toEqual([
+      ["difficulty", { ascending: true, nullsFirst: false }],
+      ["created_at", { ascending: false }],
+      ["id", { ascending: false }],
+    ]);
+    // A ceiling, not a page: no cursor, and the rows it would drop are the
+    // hardest because the order is the server's.
+    expect(called(builder, "or")).toHaveLength(0);
+    expect(called(builder, "limit")[0].args).toEqual([200]);
+  });
+
+  it("pages only the done scripts, newest-done first", async () => {
+    const { builder } = useTable("dbt_scripts", { data: [], error: null });
+    await listDoneScriptsPage("u1", 20, null);
+
+    expect(called(builder, "not")[0].args).toEqual(["done_at", "is", null]);
+    expect(called(builder, "order")[0].args).toEqual(["done_at", { ascending: false }]);
+  });
+});
 
 describe("saves", () => {
   it("saveWiseMindCheckin trims the question, empties absent halves and returns the mapped row", async () => {

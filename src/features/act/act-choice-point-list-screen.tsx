@@ -1,6 +1,6 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback } from "react";
-import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { useChoicePointPages } from "@/src/features/act/queries";
 import type { ChoicePoint } from "@/src/features/act/types";
@@ -67,11 +68,14 @@ export default function ActChoicePointListScreen() {
           )
         }
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+          // unrendered once rows exist, so without this the list stops at the last good
+          // page in silence (#2187).
+          <LoadMoreFooter
+            failed={isError && choicePoints.length > 0}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
         renderItem={({ item: cp }) => (
           <Pressable

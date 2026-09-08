@@ -27,12 +27,24 @@ import { useSession } from "@/src/providers/session-provider";
  * is memory-only by design (the shared-computer refusal), so a cold web visit
  * needs a connection - which is what the error state below says, once, without
  * naming a platform.
+ *
+ * ☠️ For it to say so, the gate has to see a PAUSED read (#2237, the editor's
+ * #2231 on this screen): queries keep `networkMode: "online"`, so an offline
+ * read never starts and sits at `isPending` true / `isPaused` true, and a
+ * paused query never errors. Branching on `isPending` alone parked an offline
+ * arrival on a spinner that could not reach the retry beside it. Pending AND
+ * paused is a read that did not happen, and takes the failed read's branch -
+ * clearing itself when the connection returns, because query-core resumes it.
  */
 export default function DbtCopingPlanScreen() {
   const { t } = useTranslation("dbt");
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
-  const { data: plan, isPending, isError, refetch } = useCopingPlan(user?.id ?? null);
+  const { data: plan, isPending, isPaused, isError, refetch } = useCopingPlan(user?.id ?? null);
+
+  // `isPending && isPaused`, never `isPaused` alone: a background refetch
+  // pausing over a plan already read is `isPaused` with `status: "success"`.
+  const unread = isError || (isPending && isPaused);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -40,9 +52,7 @@ export default function DbtCopingPlanScreen() {
         <View className={cn(FORM_COLUMN, "gap-6")}>
           <ScreenHeader title={t("copingPlan.title")} />
 
-          {isPending ? (
-            <LoadingState title={t("copingPlan.title")} />
-          ) : isError ? (
+          {unread ? (
             <View className="gap-4">
               <ErrorState
                 title={t("copingPlan.loadErrorTitle")}
@@ -52,6 +62,8 @@ export default function DbtCopingPlanScreen() {
                 <Text>{t("copingPlan.retry")}</Text>
               </Button>
             </View>
+          ) : isPending ? (
+            <LoadingState title={t("copingPlan.title")} />
           ) : plan ? (
             <CopingPlanCard
               plan={plan.plan}

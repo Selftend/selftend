@@ -97,7 +97,10 @@ const PAGE_READS = [
   ],
   [
     "listCommittedActionArchivePage",
-    listCommittedActionArchivePage,
+    // The status is a required argument (#2186); which one is immaterial to the keyset
+    // contract, and the status filter itself is pinned in its own describe below.
+    (userId: string, limit: number, cursor: typeof CURSOR | null) =>
+      listCommittedActionArchivePage(userId, "completed", limit, cursor),
     "act_committed_actions",
     "created_at",
   ],
@@ -160,15 +163,27 @@ describe("listCommittedActionArchivePage", () => {
    * widget, the routines engine and the programme each treat a missing row as
    * non-existent, so they must never be paged away. If this filter ever widened, an
    * active commitment could fall off the end of a page and vanish from the screen.
+   *
+   * ☠️ And it is ONE status per read, not both (#2186). This used to assert
+   * `.in("status", ["completed", "abandoned"])` — a page carrying both statuses, which the
+   * screen split client-side, so twenty newer rows of one status hid every row of the
+   * other. The assertion was replaced, not loosened: each finished status is its own read.
    */
-  it("reads only the finished statuses, never the active working set", async () => {
-    const { client, rec } = buildClient([]);
-    mockRequireSupabase.mockReturnValue(client);
+  it.each(["completed", "abandoned"] as const)(
+    "reads only the %s rows, never the active working set nor the other finished status",
+    async (status) => {
+      const { client, rec } = buildClient([]);
+      mockRequireSupabase.mockReturnValue(client);
 
-    await listCommittedActionArchivePage("u1", 20, null);
+      await listCommittedActionArchivePage("u1", status, 20, null);
 
-    expect(rec.ins).toEqual([["status", ["completed", "abandoned"]]]);
-  });
+      expect(rec.filters).toEqual([
+        ["user_id", "u1"],
+        ["status", status],
+      ]);
+      expect(rec.ins).toEqual([]);
+    },
+  );
 });
 
 describe("getUrgeSurfLog", () => {

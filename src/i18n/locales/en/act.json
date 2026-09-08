@@ -537,7 +537,6 @@
     "activeTitle": "Active",
     "completedTitle": "Completed",
     "abandonedTitle": "Abandoned",
-    "showMore": "Show more",
     "newTitle": "New committed action",
     "newSubtitle": "A small, concrete step in a values direction.",
     "domainLabel": "Which area of life?",
@@ -583,7 +582,9 @@
     "deleteConfirmBody": "All steps will also be deleted. This cannot be undone.",
     "delete": "Delete",
     "cancel": "Cancel",
-    "progressLabel": "{{done}}/{{total}} steps done"
+    "progressLabel": "{{done}}/{{total}} steps done",
+    "showMoreCompleted": "Show more completed actions",
+    "showMoreAbandoned": "Show more abandoned actions"
   },
   "dropAnchor": {
     "title": "Drop anchor",

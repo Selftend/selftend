@@ -3,7 +3,9 @@ export const u = (userId: string | null) => userId ?? "anonymous";
 /**
  * Rows per page for every DBT history read. DBT rows are captured-day (unlike
  * ACT's), but the lists are flat and newest-first in the first slice, so they
- * take the flat family's 20 (see `ACT_HISTORY_PAGE_SIZE` for the split).
+ * take the flat family's 20 (see `ACT_HISTORY_PAGE_SIZE` for the split). The
+ * one list that is not newest-first - the scripts ladder - pages only its DONE
+ * half by this size; its open half is read whole (#2196).
  */
 export const DBT_HISTORY_PAGE_SIZE = 20;
 
@@ -47,8 +49,9 @@ export const dbtKeys = {
   oppositeActionDetail: (userId: string | null, id: string | null) =>
     ["dbt", "oppositeAction", "detail", u(userId), u(id)] as const,
   scriptList: (userId: string | null) => ["dbt", "scripts", "list", u(userId)] as const,
-  scriptHistoryPages: (userId: string | null) =>
-    ["dbt", "scripts", "list", u(userId), "historyPages"] as const,
+  scriptOpen: (userId: string | null) => ["dbt", "scripts", "list", u(userId), "open"] as const,
+  scriptDonePages: (userId: string | null) =>
+    ["dbt", "scripts", "list", u(userId), "donePages"] as const,
   scriptCount: (userId: string | null) => ["dbt", "scripts", "list", u(userId), "count"] as const,
   scriptDetail: (userId: string | null, id: string | null) =>
     ["dbt", "scripts", "detail", u(userId), u(id)] as const,

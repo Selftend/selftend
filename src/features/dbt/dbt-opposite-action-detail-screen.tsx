@@ -51,7 +51,10 @@ export default function DbtOppositeActionDetailScreen({ id }: { id: string }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const [whatShifted, setWhatShifted] = useState("");
 
-  const markDone = useSingleFlight(async () => {
+  // ☠️ The note is an ARGUMENT, not the textarea state: Save sends what was
+  // typed, "Skip the note" sends nothing, and the button labelled skip can
+  // never write the words the person just decided against (#2198).
+  const markDone = useSingleFlight(async (note: string) => {
     if (!plan) return;
     try {
       const occurrence = occurrenceTimeFromDate();
@@ -60,7 +63,7 @@ export default function DbtOppositeActionDetailScreen({ id }: { id: string }) {
         input: {
           doneAt: occurrence.occurredAt,
           doneOffsetMinutes: occurrence.occurredOffsetMinutes,
-          whatShifted,
+          whatShifted: note,
         },
       });
       setNoteOpen(false);
@@ -162,7 +165,7 @@ export default function DbtOppositeActionDetailScreen({ id }: { id: string }) {
                   maxLength={1000}
                 />
               </View>
-              <Button disabled={doneMutation.isPending} onPress={() => void markDone()}>
+              <Button disabled={doneMutation.isPending} onPress={() => void markDone(whatShifted)}>
                 <SubmitButtonContent
                   pending={doneMutation.isPending}
                   idleLabel={t("oppositeAction.saveDone")}
@@ -171,11 +174,12 @@ export default function DbtOppositeActionDetailScreen({ id }: { id: string }) {
               </Button>
               {/* Skipping the note still closes the plan: the note is the
                   optional half, and refusing to close without it would make an
-                  optional field a gate. */}
+                  optional field a gate. It closes WITHOUT the note - whatever
+                  was typed is not sent. */}
               <Button
                 variant="ghost"
                 disabled={doneMutation.isPending}
-                onPress={() => void markDone()}
+                onPress={() => void markDone("")}
               >
                 <Text>{t("oppositeAction.skipNote")}</Text>
               </Button>

@@ -49,7 +49,10 @@ export default function DbtScriptDetailScreen({ id }: { id: string }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const [howItWent, setHowItWent] = useState("");
 
-  const markDone = useSingleFlight(async () => {
+  // ☠️ The note is an ARGUMENT, not the textarea state: Save sends what was
+  // typed, "Skip the note" sends nothing, and the button labelled skip can
+  // never write the words the person just decided against (#2198).
+  const markDone = useSingleFlight(async (note: string) => {
     if (!script) return;
     try {
       const occurrence = occurrenceTimeFromDate();
@@ -58,7 +61,7 @@ export default function DbtScriptDetailScreen({ id }: { id: string }) {
         input: {
           doneAt: occurrence.occurredAt,
           doneOffsetMinutes: occurrence.occurredOffsetMinutes,
-          howItWent,
+          howItWent: note,
         },
       });
       setNoteOpen(false);
@@ -208,7 +211,7 @@ export default function DbtScriptDetailScreen({ id }: { id: string }) {
                   maxLength={1000}
                 />
               </View>
-              <Button disabled={doneMutation.isPending} onPress={() => void markDone()}>
+              <Button disabled={doneMutation.isPending} onPress={() => void markDone(howItWent)}>
                 <SubmitButtonContent
                   pending={doneMutation.isPending}
                   idleLabel={t("scripts.saveDone")}
@@ -218,7 +221,7 @@ export default function DbtScriptDetailScreen({ id }: { id: string }) {
               <Button
                 variant="ghost"
                 disabled={doneMutation.isPending}
-                onPress={() => void markDone()}
+                onPress={() => void markDone("")}
               >
                 <Text>{t("scripts.skipNote")}</Text>
               </Button>

@@ -38,31 +38,42 @@ const ACTION: CommittedAction = {
   updatedAt: "2026-08-25T09:00:00.000Z",
 };
 
+/**
+ * `archive` is every finished row on the "server"; the mock hands each status's hook only
+ * the rows of that status, the way the per-status read does (#2186). `over` applies to
+ * both archives unless keyed by status.
+ */
 function setUp(
   active: CommittedAction[],
   archive: CommittedAction[] = [],
   over: Record<string, unknown> = {},
+  overByStatus: Partial<Record<"completed" | "abandoned", Record<string, unknown>>> = {},
 ) {
   mockActive.mockReturnValue({
     data: active,
     isLoading: false,
   } as unknown as ReturnType<typeof useCommittedActions>);
-  mockArchive.mockReturnValue({
-    data: { pages: [archive], pageParams: [null] },
-    fetchNextPage: jest.fn(),
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    isPending: false,
-    ...over,
-  } as unknown as ReturnType<typeof useCommittedActionArchivePages>);
+  mockArchive.mockImplementation(
+    (_userId, status) =>
+      ({
+        data: { pages: [archive.filter((a) => a.status === status)], pageParams: [null] },
+        fetchNextPage: jest.fn(),
+        hasNextPage: false,
+        isFetchingNextPage: false,
+        isPending: false,
+        ...over,
+        ...overByStatus[status],
+      }) as unknown as ReturnType<typeof useCommittedActionArchivePages>,
+  );
 }
 
 function renderList(
   active: CommittedAction[],
   archive: CommittedAction[] = [],
   over: Record<string, unknown> = {},
+  overByStatus: Partial<Record<"completed" | "abandoned", Record<string, unknown>>> = {},
 ) {
-  setUp(active, archive, over);
+  setUp(active, archive, over, overByStatus);
   renderWithProviders(<ActCommittedActionListScreen />);
 }
 
@@ -165,6 +176,8 @@ describe("the committed action list's status split", () => {
     expect(screen.getByText("A finished one")).toBeTruthy();
   });
 
+  // The control's label changed with #2186 — it names its section now — so the press
+  // below follows the copy; what it pins is unchanged.
   it("extends the archive on request, and offers that only when another page exists", () => {
     const fetchNextPage = jest.fn();
     renderList([ACTION], [{ ...ACTION, id: "a2", status: "completed" }], {
@@ -172,9 +185,64 @@ describe("the committed action list's status split", () => {
       fetchNextPage,
     });
 
-    fireEvent.press(screen.getByText("Show more"));
+    fireEvent.press(screen.getByText("Show more completed actions"));
 
     expect(fetchNextPage).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️ Completed and Abandoned are two reads, two pages, two controls (#2186). They used
+   * to be carved out of ONE twenty-row page: when the twenty newest finished rows were all
+   * completed, the Abandoned section rendered nothing — no heading, no rows — and the one
+   * "Show more" under all three sections gave no reason to press it looking for a section
+   * that had silently gone. The three abandoned rows here are older than every completed
+   * one, which is exactly the shape the shared page hid.
+   */
+  it("keeps a full page of one finished status from hiding the other", () => {
+    const fetchCompleted = jest.fn();
+    const fetchAbandoned = jest.fn();
+    const completed = Array.from({ length: 20 }, (_, i) => ({
+      ...ACTION,
+      id: `c${i}`,
+      title: `Finished ${i}`,
+      status: "completed" as const,
+      createdAt: `2026-08-${String(i + 1).padStart(2, "0")}T09:00:00.000Z`,
+    }));
+    const abandoned = Array.from({ length: 3 }, (_, i) => ({
+      ...ACTION,
+      id: `x${i}`,
+      title: `Dropped ${i}`,
+      status: "abandoned" as const,
+      createdAt: `2025-08-0${i + 1}T09:00:00.000Z`,
+    }));
+
+    renderList(
+      [],
+      [...completed, ...abandoned],
+      {},
+      {
+        completed: { hasNextPage: true, fetchNextPage: fetchCompleted },
+        abandoned: { hasNextPage: false, fetchNextPage: fetchAbandoned },
+      },
+    );
+
+    // One read per finished status, never one read for both.
+    expect(mockArchive).toHaveBeenCalledWith("user-1", "completed");
+    expect(mockArchive).toHaveBeenCalledWith("user-1", "abandoned");
+
+    // Both sections are on the screen, heading and rows, whatever the other holds. The
+    // status word is the heading plus one badge per row, so these count.
+    expect(screen.getAllByText("Completed")).toHaveLength(21);
+    expect(screen.getAllByText("Abandoned")).toHaveLength(4);
+    expect(screen.getByText("Dropped 0")).toBeTruthy();
+    expect(screen.getByText("Finished 19")).toBeTruthy();
+
+    // The control belongs to the section that has more, and names it. The exhausted
+    // section offers none.
+    expect(screen.queryByText("Show more abandoned actions")).toBeNull();
+    fireEvent.press(screen.getByText("Show more completed actions"));
+    expect(fetchCompleted).toHaveBeenCalled();
+    expect(fetchAbandoned).not.toHaveBeenCalled();
   });
 
   /**
@@ -215,6 +283,6 @@ describe("the committed action list's status split", () => {
   it("offers no Show more when the archive is complete", () => {
     renderList([ACTION], [{ ...ACTION, id: "a2", status: "completed" }], { hasNextPage: false });
 
-    expect(screen.queryByText("Show more")).toBeNull();
+    expect(screen.queryByText(/^Show more/)).toBeNull();
   });
 });

@@ -200,4 +200,32 @@ describe("ActDefusionListScreen", () => {
 
     expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
+
+  /**
+   * ☠️ A later page's failure must not read as the end of the history (#2187).
+   * `ListEmptyComponent` renders only while the list is empty, so the `ErrorState` there
+   * covers page one alone; TanStack keeps the loaded pages across a failed
+   * `fetchNextPage` and flips `isError`, and before this the footer went back to `null` —
+   * the list stopped at the last good page with no error and nothing to press. The retry
+   * goes through `fetchNextPage`, not a full `refetch`: the loaded pages are fine.
+   */
+  it("says so and offers a retry when a later page fails, instead of going quiet", () => {
+    const fetchNextPage = jest.fn();
+    pages({
+      data: { pages: [[log({ fusedThought: "page one thought" })]], pageParams: [null] },
+      hasNextPage: true,
+      isError: true,
+      fetchNextPage,
+    });
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    // The rows already loaded stay, and the page-one error card does not take over.
+    expect(screen.getByText("page one thought")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+
+    expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
 });
