@@ -98,6 +98,21 @@ the account, so they never appear as a null. Platform is not an axis and is not
 to be added: the row cannot say which platform it came from, and #1936 accepted
 that the figure answers "how many stop at the first screen" and nothing else.
 
+⚠️ **Since [#2227](https://github.com/Selftend/selftend/issues/2227) the figure
+is a lower bound, not a count of everyone who stopped at the gate.** Two of its
+three conditions are narrower than the gate's own scope. The report requires
+`policy_version_accepted` to be null as well, on the reasoning that anyone who
+stopped at the age gate never reached the consent gate behind it — true of an
+account whose first launch carries the gate, and false for the cohort #2227
+exists for: an account created on 0.17.0 has already consented, so when it meets
+the age gate on updating and stops there, it has a policy version on record and
+is not counted. And the cutoff is the release, where the gate itself is scoped on
+the migration instant (`2026-09-05T00:00:00Z`), so accounts created between the
+two are asked and still excluded. Nothing is collected to close the gap — it is
+recorded so the number is read as "at least this many", and
+[age-floor.md](age-floor.md) § _The gate that asks_ carries who is actually
+asked.
+
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
 The report covers: signups, first-run introduction conversion, finish-vs-skip
 (`user_preferences.app_onboarding_completed_via` / `_at`, written when the

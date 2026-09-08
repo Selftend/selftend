@@ -184,15 +184,65 @@ its ordering, its tests or its copy changed.
 
 **Who is asked, and who is never asked again:**
 
-- A brand-new account — one that has not been through the consent gate, so
-  `policy_version_accepted` is `null`. Guests included.
-- **Not** an account that predates the gate. `age_floor_met` is `null` for every
-  existing account and `null` means _never asked_, so null alone cannot be the
-  trigger: gating on it would ask the entire install base. §7 is explicit that
-  existing users meet the one-time consent prompt **without** being re-asked for
-  age or country, and the policy-version clause is what delivers that.
-- The verdict is read as `=== true`, never as a truthiness check. Three states,
-  and `null` is not `false`.
+- **Asked: any account that has not already answered** — `age_floor_met` is not
+  `true`. Guests included. The verdict is read as `=== true`, never as a
+  truthiness check: the column has three states, and `null` means _never asked_,
+  which is not `false`.
+- **Never asked again: an account that predates the gate _and_ has already been
+  through the consent gate.** Both halves, ANDed — created before
+  `2026-09-05T00:00:00.000Z`, **and** `policy_version_accepted` is not `null`.
+  §7 is explicit that existing users meet the one-time consent prompt **without**
+  being re-asked for age or country, and this is the clause that delivers it.
+- **An account that predates the gate but has never accepted a policy version is
+  still asked.** It has been through neither gate, so it is not who the exemption
+  was written for — and that is also what keeps the rule a superset of who was
+  asked before it changed: nobody who would have been asked stops being asked.
+- `age_floor_met` being `null` is not on its own a reason to ask, and never was.
+  It is `null` for the entire pre-gate install base, so gating on it would ask
+  everyone.
+
+☠️ **The exemption is read off the account's own creation time, never off
+`policy_version_accepted` alone** —
+[#2227](https://github.com/Selftend/selftend/issues/2227). That clause used to be
+the whole test, on the reasoning that an account with no policy version on record
+has not been through the consent gate and must therefore be brand new. A client
+already in the field can produce it: shipped 0.17.0 carries the consent wall and
+**no age gate at all**, so an account created on it fills that column in, and on
+updating to a build with the gate reads as an exempt pre-gate account. Nothing
+ever writes the column back to `null`, so the exemption could never lift — a
+one-release concession became a permanent bypass that kept recruiting members for
+as long as anyone had not updated. "Has accepted a policy" and "has answered the
+age question" are different facts, and only the second is what the gate is scoped
+on.
+
+⚠️ **The cutoff is the migration instant, not the release date, and the
+difference is deliberate.** `AGE_GATE_INTRODUCED_AT` in
+`src/components/app/protected-layout.tsx` is `2026-09-05T00:00:00.000Z`, the
+version of `supabase/migrations/20260905000000_age_attestation.sql`. The release
+that ships the gate comes later, and its date is not knowable from a client. So
+**every account created on or after 2026-09-05 is asked for a birth year and a
+country the first time it opens a build carrying the gate** — including accounts
+created on 0.17.0 in the days between the migration and the release. That cohort
+is precisely the one the old test exempted for good, so asking them is the point
+rather than a side effect, and **if the release slips the cohort grows**. Erring
+early costs a person one birth year and one country; erring late admits somebody
+below their country's floor with no attestation on file, which is the harm the
+gate exists to prevent.
+
+⚠️ **An absent or unparseable `created_at` counts as _not_ predating**, so the
+account is asked. The field is required on Supabase's `User` and is present on
+any real session, so this is a fallback rather than a path; it points towards
+asking for the same reason.
+
+⚠️ **The gate is client-side, and the column behind it is not a constraint.**
+`ProtectedLayout` decides who is asked. `age_floor_met` is a plain nullable
+boolean on `user_preferences` — no default, no check constraint, and nothing
+server-side that refuses a write from an account which never attested.
+Row-Level Security scopes the row to its owner and knows nothing about the floor.
+A build without the gate does not apply it, which is what made the 0.17.0 cohort
+possible at all. The floor is an attestation enforced by the app the person is
+running; deletion on knowledge ([operations-runbook.md](operations-runbook.md))
+is the only backstop behind it, and neither of them is age verification.
 
 **What the screen does and does not say.** Date of birth is three empty fields —
 day, month, year — rather than a calendar, because a picker has to open on some
@@ -218,22 +268,38 @@ on the destructive step, not on the field.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
-### An unknown verdict fails closed
+### An unknown verdict fails closed, in both its halves
 
-This section used to record a gap: **the gate failed open when the preferences
-fetch errored with nothing cached.** In that state the attestation is unknown,
-and the shell rendered anyway — so a person below their floor whose first fetch
-failed reached the whole app un-attested and could write thought records and
-journal entries, which are Art. 9 special-category data. It was deliberate and
-documented, which is precisely what made it worth closing rather than
-inheriting: a fail-open on a statutory gate should not survive on the strength
-of a comment.
+This section used to record a gap: **the gate fell open when the attestation
+could not be read.** The verdict lives on the `user_preferences` row, and with no
+row in hand the answer — like the policy acceptance beside it — is unknown, yet
+the shell rendered anyway. A person below their floor reached the whole app
+un-attested and could write thought records and journal entries, which are Art. 9
+special-category data. It was deliberate and documented, which is precisely what
+made it worth closing rather than inheriting: a fail-open on a statutory gate
+should not survive on the strength of a comment.
 
-[#2200](https://github.com/Selftend/selftend/issues/2200) closed it.
-`ProtectedLayout` now returns
-`src/components/app/preferences-unavailable-screen.tsx` on that state — an
-error surface with a retry — instead of falling through to the app. Nothing
-below the floor renders: not the shell, not the age gate, not the consent gate.
+**Unknown has two halves, and both are now closed.** `ProtectedLayout` computes
+`prefsUnknown` as `!preferences && (prefsError || prefsLoading)` and returns
+`src/components/app/preferences-unavailable-screen.tsx` on it instead of falling
+through to the app. Nothing below renders: not the shell, not the age gate, not
+the consent gate.
+
+- **Errored, with nothing cached** — closed by
+  [#2200](https://github.com/Selftend/selftend/issues/2200).
+- **Still in flight** — closed by
+  [#2229](https://github.com/Selftend/selftend/issues/2229). #2200's test was
+  `prefsError && !preferences`, so a request still on the wire carried no error,
+  took no early return, and switched off all three gates below through their
+  shared `!prefsLoading` conjunct. The full app shell was the fall-through on
+  every brand-new account's first launch, for as long as the fetch took — and far
+  longer on one that hangs, since the query retries once and passes no
+  `AbortSignal`. To a legal gate, "we have not been told yet" and "we were told
+  nothing" are the same state.
+
+**Keyed on `!preferences`, which is what keeps this from becoming a blocking
+spinner on every cold start.** A cached or persisted row passes straight through,
+and a background refetch failing over one never raises the screen.
 
 **Why failing closed does not re-open [#164](https://github.com/Selftend/selftend/issues/164).**
 What #164 forbade was showing a _gate_ on a transient error, because a gate
@@ -244,18 +310,42 @@ already-attested user pays a tap; an un-attested one cannot walk past. The
 consent gate is covered by the same return, so the two legal gates still make
 one call rather than two.
 
-**It is not a lockout, and that is load-bearing.** The screen always offers a
-retry, and TanStack's own retry / refocus refetch closes the state too, so the
-person is never waiting on the button alone. `protected-layout.test.tsx` pins
-both halves — the protected tree absent on an unknown verdict, and the retry
-present and wired — plus the two ways the guard could over-fire: a stale-but-
-cached row still meets the consent gate, and a signed-out person still gets the
-landing.
+**It is not a lockout, and that is load-bearing.** The errored half always offers
+the retry, and TanStack's own retry / refocus refetch closes that state too, so
+the person is never waiting on the button alone. The in-flight half offers no
+retry on purpose — the fetch it would re-run is already running — and clears when
+the row arrives or when the request fails into the other half. Which half is
+shown is decided by the error flag and never by the loading one: once a fetch has
+errored, pressing Retry turns fetching back on while the status stays errored, so
+keying off the loading flag would take the button away at the moment it was
+pressed.
+
+**And it is never a dead end** ([#2228](https://github.com/Selftend/selftend/issues/2228)).
+Both halves carry a support card of their own: the `/crisis` link and Find A
+Helpline, kept visible and separate rather than folded into the error. This
+screen replaces the entire protected tree, and on shipped 0.17.0 the same state
+fell through into the app shell, from which crisis guidance was about two taps
+away — so blocking here without it would make crisis guidance strictly harder to
+reach than the build it replaces. A guest is the case that decides it: guests
+have no sign-out, so with no link here they would have no route to crisis
+guidance at all while the block holds. Both destinations work without a
+preferences row and without an account — `/crisis` is a root route, a sibling of
+the `(app)` group rather than a screen inside it, and Find A Helpline is a plain
+external URL.
+
+`protected-layout.test.tsx` pins the block on each half — the protected tree out
+of reach when the verdict is unknown, and again while it is still on the wire —
+plus the retry present and wired, and the three ways the guard could over-fire: a
+stale-but-cached row still meets the consent gate, a cached row still passes
+through while a refetch is in flight, and a signed-out person still gets the
+landing. `preferences-unavailable-screen.test.tsx` pins the crisis card on both
+halves and pins the retry to the errored one.
 
 A person whose preferences load passes through exactly as before. An offline
 device is a different state again and is untouched: with `networkMode: "online"`
-a never-fetched query pauses rather than errors, so it never reaches this
-branch.
+a never-fetched query pauses rather than fetches, so it is neither loading nor
+errored and never reaches this branch — the consent gate owns that case exactly
+as it did before.
 
 The second gap recorded here — _"the under-floor block is React state only"_ —
 is closed by [#1765](https://github.com/Selftend/selftend/issues/1765), below.
