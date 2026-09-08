@@ -169,6 +169,21 @@ describe("under-floor erasure status", () => {
     expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
   });
 
+  it("never says the erasure failed without the control that finishes it", () => {
+    // ☠️☠️ #2232. The sentence and the control are the two halves of one
+    // honest answer: nothing retries by itself, so a failure sentence with no
+    // control beside it would be a dead end for someone who has just been told
+    // they cannot use the app. Asserted in ONE render, because two tests each
+    // rendering `failed` alone cannot see the pair come apart.
+    mockExitState = "failed";
+    renderScreen();
+
+    expect(screen.getByTestId("under-floor-erasure")).toHaveTextContent(
+      enAuth.underFloor.erasureFailed,
+    );
+    expect(screen.getByTestId("under-floor-erasure-retry")).toBeTruthy();
+  });
+
   it("offers to run the erasure again - the account, never the answers", () => {
     mockExitState = "failed";
     renderScreen();
@@ -261,6 +276,40 @@ describe("under-floor copy", () => {
   /** Wording that would invite another go at the questions. */
   const RETRY = ["try again", "check your answers", "re-enter", "опитай отново", "провери отново"];
 
+  /**
+   * ☠️☠️ Wording that would promise the app carries on by itself (#2232).
+   *
+   * Nothing in the exit retries anything: the purge runs only from a press
+   * (`use-under-floor-exit.ts`'s `eraseAccount`, whose docblock forbids calling
+   * it from an effect), the mutation is not configured to retry, and a later
+   * launch is handed no verdict so it reports `nothing-to-erase` and offers no
+   * control at all. `erasureFailed` said "Selftend will keep working to remove
+   * it" - true when it was written, because the purge then ran from a mount
+   * effect, and falsified by #2195 without the string being revisited. To a
+   * person who has just been told they cannot use the app, that reads as "no
+   * need to press anything", which is the one thing that would have finished
+   * the removal.
+   *
+   * ⚠️ Affirmative promises only, and deliberately so: the honest copy has to
+   * be free to DENY continuing effort ("will not remove it on its own"), which
+   * a bare "on its own" or "automatically" blacklist would fire on. Phrase
+   * lists cannot see a reworded promise - the behavioural half of this
+   * invariant, that nothing re-attempts the deletion by itself, is pinned in
+   * `use-under-floor-exit.test.tsx`.
+   */
+  const KEEPS_WORKING = [
+    "will keep working",
+    "will keep trying",
+    "keeps working",
+    "keeps trying",
+    "will continue",
+    "in the background",
+    "ще продължи",
+    "продължава да",
+    "автоматично",
+    "във фонов режим",
+  ];
+
   function contains(block: Record<string, string>, phrases: readonly string[]): boolean {
     const joined = Object.values(block).join(" ").toLowerCase();
     return phrases.some((phrase) => joined.includes(phrase));
@@ -274,10 +323,31 @@ describe("under-floor copy", () => {
     expect(contains(block, RETRY)).toBe(false);
   });
 
+  it.each(locales)("promises the %s reader no work the app never does", (_language, block) => {
+    expect(contains(block, KEEPS_WORKING)).toBe(false);
+  });
+
   it("would catch copy that scolded or invited a retry", () => {
     expect(contains({ body: "Unfortunately you are not allowed here." }, SHAMING)).toBe(true);
     expect(contains({ body: "Check your answers and try again." }, RETRY)).toBe(true);
     expect(contains({ body: "За съжаление нямаш право на достъп." }, SHAMING)).toBe(true);
+  });
+
+  it("would catch the promise this screen used to make, in both locales", () => {
+    // The exact sentences that shipped before #2232, so the predicate is fired
+    // on the regression it exists to refuse rather than on an invented one.
+    expect(
+      contains(
+        { erasureFailed: "It is empty, and Selftend will keep working to remove it." },
+        KEEPS_WORKING,
+      ),
+    ).toBe(true);
+    expect(
+      contains(
+        { erasureFailed: "Той е празен и Selftend ще продължи да работи по премахването му." },
+        KEEPS_WORKING,
+      ),
+    ).toBe(true);
   });
 
   it.each(locales)("keeps the %s erasure and support copy in the guarded block", (_l, block) => {

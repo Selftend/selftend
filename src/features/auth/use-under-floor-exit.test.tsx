@@ -161,6 +161,31 @@ describe("the under-floor exit", () => {
     expect(mockSignOut).toHaveBeenCalledWith("global");
   });
 
+  it("re-attempts nothing on its own after a failure - only a press does", async () => {
+    // ☠️☠️ #2232. This is the fact the exit screen's failure sentence has to
+    // match: "on demand" above is the WHOLE of the retry. The purge used to run
+    // from a mount effect, so every re-render inside the window had another go
+    // and the copy could honestly promise continuing work; #2195 removed that
+    // effect, because a flag holding no identity cannot say whose account a
+    // later mount would be finishing off. Nothing replaced it - no mutation
+    // retry, no timer, no effect - so if this ever passes at two calls again,
+    // the copy guard in `under-floor-screen.test.tsx` is guarding a promise the
+    // app has quietly started keeping, and both need revisiting together.
+    mockDeleteAccount.mockRejectedValue(new Error("offline"));
+
+    const { rerender, result } = renderExit("user-1");
+    await confirmAndSettle(result);
+    await waitFor(() => expect(result.current.state).toBe("failed"));
+
+    rerender(undefined);
+    rerender(undefined);
+    await act(async () => {});
+    await act(async () => {});
+
+    expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("failed");
+  });
+
   it("still blocks the device when there is no verdict to act on", async () => {
     // A returning blocked device carries the flag and no verdict: the flag
     // holds an expiry and nothing else, so it can name no account.
