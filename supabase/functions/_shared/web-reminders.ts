@@ -307,7 +307,12 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
   },
 };
 
-export const TARGETS: ReminderTarget[] = [
+/**
+ * Every target this module knows how to mint, in the order the cron walks them.
+ * Configured is not the same as sent: {@link TARGETS} is this list minus
+ * {@link HELD_OUT_TARGETS}.
+ */
+export const CONFIGURED_TARGETS: readonly ReminderTarget[] = [
   "cbt",
   "meditation",
   "act",
@@ -320,6 +325,45 @@ export const TARGETS: ReminderTarget[] = [
   "sleep",
   "habits",
 ];
+
+/**
+ * Targets whose deep link the SHIPPED native client cannot route yet, held out
+ * of the cron until it can (#2213).
+ *
+ * ☠️☠️ **A reminder is minted by one build and tapped on another, and those are
+ * never the same build.** This function and the web client go live the moment
+ * a promotion merges; the Android and iOS builds only enter store review. A
+ * person who enables a reminder from the web on day 0 has it pushed to a phone
+ * still on the previous release on the next cron tick - and that client's
+ * `ALLOWED_REMINDER_ROUTES` (`src/lib/notifications.ts`) gates the tap BEFORE
+ * navigation with no fallback, so a url it has never heard of opens the app and
+ * goes nowhere. Its reminders screen has no row for the target either, so the
+ * only switch that stops it is the global one. A daily dead end the person
+ * explicitly opted into, and for a phone that never updates it never heals.
+ *
+ * So a new target lands here first and leaves in a later change, the same
+ * two-step rollout `src/features/routines/step-tool-rollout.ts` uses for a
+ * routine step's tool id: the client that routes the url ships first; the
+ * target is lifted from this list only once that build is live on BOTH stores.
+ * `web-reminders.test.ts` pins that the two lists partition the configured set,
+ * so a target cannot be in neither.
+ *
+ * ⚠️ While a target is held out, the preference row can still be written - the
+ * new clients show its switch and honour it - and nothing is sent. That is the
+ * deliberate trade: a switch that is quiet for the length of a store review is
+ * a delay; a push whose tap is a dead end is a broken promise.
+ */
+export const HELD_OUT_TARGETS: readonly ReminderTarget[] = [
+  // DBT (#1980): `/modules/dbt` is allowlisted by the client that ships with
+  // this function and by no earlier one. Lift once the native build carrying
+  // `/modules/dbt` in ALLOWED_REMINDER_ROUTES is live on Google Play and the
+  // App Store.
+  "dbt",
+];
+
+export const TARGETS: ReminderTarget[] = CONFIGURED_TARGETS.filter(
+  (target) => !HELD_OUT_TARGETS.includes(target),
+);
 
 export interface ZonedParts {
   day: string;

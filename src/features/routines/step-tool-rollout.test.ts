@@ -8,7 +8,10 @@ import {
   WRITABLE_STEP_TOOL_IDS,
   isWritableStepToolId,
 } from "@/src/features/routines/step-tool-rollout";
-import { OFFERABLE_STEP_TOOL_GROUPS } from "@/src/features/routines/routine-editor-screen";
+import {
+  OFFERABLE_STEP_TOOL_GROUPS,
+  STEP_TOOL_GROUPS,
+} from "@/src/features/routines/routine-editor-screen";
 import { STARTER_CANDIDATE_TOOLS } from "@/src/features/routines/starter";
 
 /**
@@ -132,6 +135,38 @@ describe("routine_steps tool_id allowlist", () => {
 
     const allowed = [...body![0].matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]);
     expect(allowed.sort()).toEqual([...WRITABLE_STEP_TOOL_IDS].sort());
+  });
+
+  it("agrees with the client's steppable set AND the editor's picker, in one place (#2242)", () => {
+    // ☠️ Three hand-written lists must name the same ids: this constraint, the
+    // client's `STEPPABLE_TOOL_IDS`, and the editor's `STEP_TOOL_GROUPS` - and
+    // nothing derives one from another. The relations were pinned pairwise
+    // across two files (constraint == writable here; groups == steppable in
+    // routine-editor-screen.test.tsx), which holds, but the next person adding
+    // a tool reads one file. So all three are related HERE, as sets, with the
+    // withheld ids subtracted on the client side because the constraint is the
+    // write vocabulary and the other two are the read vocabulary. A tool added
+    // to the client and not the migration is a constraint violation in
+    // production - the database deploys first and unconditionally - and this
+    // is what turns that into a red build instead.
+    const body = /add constraint routine_steps_tool_id_allowlisted[\s\S]*?\)\s*\)/.exec(
+      declaration!.sql,
+    );
+    const constrained = [...body![0].matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]).sort();
+    const withheld = new Set<string>(WITHHELD_STEP_TOOL_IDS);
+    const steppable = STEPPABLE_TOOL_IDS.filter((tool) => !withheld.has(tool)).sort();
+    const offered = STEP_TOOL_GROUPS.flatMap((group) => group.tools)
+      .filter((tool) => !withheld.has(tool))
+      .sort();
+
+    expect(constrained.length).toBeGreaterThan(0);
+    expect(constrained).toEqual(steppable);
+    expect(constrained).toEqual(offered);
+    // And the two client lists agree on the withheld ids too - the read
+    // vocabulary is one set, not a constraint-shaped subset of it.
+    expect([...STEP_TOOL_GROUPS.flatMap((group) => group.tools)].sort()).toEqual(
+      [...STEPPABLE_TOOL_IDS].sort(),
+    );
   });
 
   it("binds new writes without re-validating rows already in the table", () => {

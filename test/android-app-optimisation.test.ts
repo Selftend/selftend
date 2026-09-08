@@ -1,5 +1,7 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, relative, resolve, sep } from "node:path";
+
+import { sourceFiles, stripComments } from "./source-scan";
 
 // #1707 - Play Console flagged release 0.17.0 as "App optimisation is below
 // our threshold. Obfuscation (1%). Fix by Feb 2027." Google's technical quality
@@ -111,5 +113,69 @@ describe("Android release builds run R8 (#1707)", () => {
     );
     expect(releaseWorkflow).toContain("SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}");
     expect(releaseWorkflow).toMatch(/SENTRY_DISABLE_AUTO_UPLOAD:.*secrets\.SENTRY_AUTH_TOKEN/);
+  });
+});
+
+// #2211 - `shrinkResources` is on for the first time, and the proof build
+// measured DEX only. Every image the app `require()`s becomes a drawable that
+// no Java/Kotlin code references - RN resolves it at runtime by a computed
+// name - so the shrinker's only root for it is the `res/raw/keep.xml` that
+// Expo's bundler writes for every asset when it embeds the release bundle.
+// That reliance is documented in docs/releasing.md and pinned here at the two
+// ends a test can reach: the set of images that need keeping, and the
+// generator in the installed toolchain that keeps them. The middle - the
+// produced AAB - is a build, and no test here runs one.
+describe("resource shrinking keeps the require()d images (#2211)", () => {
+  const IMAGE_REQUIRE = /require\("([^"]+\.(?:png|jpg|jpeg|gif|webp))"\)/g;
+
+  /** Every image `require()` in app/ and src/, resolved to a repo-relative path. */
+  const requiredImages = sourceFiles(ROOT, { dirs: ["app", "src"] }).flatMap((file) => {
+    const source = stripComments(readFileSync(resolve(ROOT, file), "utf8"));
+    return [...source.matchAll(IMAGE_REQUIRE)].map((match) => ({
+      file,
+      asset: relative(ROOT, resolve(ROOT, dirname(file), match[1]))
+        .split(sep)
+        .join("/"),
+    }));
+  });
+
+  it("finds the images the app requires, and every one of them exists on disk", () => {
+    // The floor is the help set alone (18) - well under the real count and
+    // well over zero, so a scan that matched nothing cannot pass.
+    expect(requiredImages.length).toBeGreaterThan(18);
+    const missing = requiredImages.filter(({ asset }) => !existsSync(resolve(ROOT, asset)));
+    expect(missing).toEqual([]);
+    // And every one is a file resource the generator classes as a drawable or
+    // raw asset - both are kept; a type it does not copy would not be.
+    expect(requiredImages.map(({ asset }) => asset)).toEqual(
+      expect.arrayContaining([
+        "assets/images/help/cbt_program.png",
+        "assets/branding/google-logo.png",
+        "assets/icon.png",
+      ]),
+    );
+  });
+
+  it("relies on the keep file Expo's bundler writes for every Android asset", () => {
+    // Resolved from `expo`'s own tree, not the root: `@expo/cli` is nested
+    // under expo/node_modules, so a root require.resolve misses it.
+    const expoRoot = dirname(require.resolve("expo/package.json"));
+    const generator = require.resolve("@expo/cli/build/src/export/persistMetroAssets.js", {
+      paths: [expoRoot],
+    });
+    const source = readFileSync(generator, "utf8");
+    // Written for the Android platform, from the full list of copied assets.
+    expect(source).toMatch(/platform === 'android'[\s\S]{0,200}createKeepFileAsync\(assetsToCopy/);
+    // Into res/raw/keep.xml, as a tools:keep list the resource shrinker roots on.
+    expect(source).toContain("'raw/keep.xml'");
+    expect(source).toMatch(/tools:keep="\$\{assetsList\.join\(','\)\}"/);
+    // One entry per asset - a filter here would be a resource silently unkept.
+    expect(source).toMatch(/for \(const asset of assets\)\{\s*const prefix = /);
+  });
+
+  it("is written down as a reliance, not left implicit", () => {
+    const releasing = readFileSync(resolve(ROOT, "docs/releasing.md"), "utf8");
+    expect(releasing).toContain("res/raw/keep.xml");
+    expect(releasing).toContain("createKeepFileAsync");
   });
 });

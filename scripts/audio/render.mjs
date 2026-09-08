@@ -544,13 +544,7 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       // The clip's own loudness target, so a peaky take is rejected here rather
       // than surviving to `postprocess` and stopping there as `ceilingBound`
       // with no re-roll left to spend (#1130).
-      const spec = outputSpecFor(clip.id);
-      const verdict = classifyTake(measured.dbtp, {
-        lufs: measured.lufs,
-        targetLufs: spec.lufs,
-        // Beds are limited before the gain, so their crest budget is wider.
-        limited: Boolean(spec.limit),
-      });
+      const verdict = takeGraderFor(outputSpecFor(clip.id))(measured);
       const { channels, ratio } = derivePcmChannels(buffer.length, clip.durationSeconds, 48000);
 
       // Appended per take, not written at the end: a crash mid-pass must not lose
@@ -698,6 +692,30 @@ const PREFLIGHT_TAKES = 2;
 // against them too (#1320) — a prompt that clears preflight faces the same bar.
 
 /**
+ * The one grader both `render` and `preflight` apply to a measured take, built
+ * from the clip's output spec (#2219).
+ *
+ * ☠️ ONE FUNCTION, NOT TWO CALL SITES. The spec carries two things the gate
+ * needs: the loudness target and whether the class is limited before the gain.
+ * `preflight` used to read `.lufs` off the spec and drop `.limit` at the same
+ * line, so a bed at -28 was graded on a 25 dB crest budget there and a 37 dB one
+ * in `render` - the two-bar split both banners promise never to have, pointing
+ * the harsher way: a healthy bed reported BROKEN before an irreversible spend,
+ * and the operator was told to rewrite a prompt that was already right. Deriving
+ * the grader from the spec in one place means a spec field the gate reads
+ * cannot be forgotten by one caller and remembered by the other.
+ *
+ * @param {{ lufs: number, limit?: boolean }} spec an `outputSpecFor()` result
+ * @returns {(measured: { dbtp: number, lufs: number }) => ReturnType<typeof classifyTake>}
+ */
+export function takeGraderFor(spec) {
+  const targetLufs = spec.lufs;
+  // Beds are limited before the gain, so their crest budget is wider.
+  const limited = Boolean(spec.limit);
+  return (measured) => classifyTake(measured.dbtp, { lufs: measured.lufs, targetLufs, limited });
+}
+
+/**
  * ☠️ One take proves nothing, and finding that out was the whole point.
  *
  * The first preflight scored `night` at -3.79 dBTP and `ocean` at -7.44 — both
@@ -741,7 +759,7 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
     // would grade on a strictly easier bar than `render` — the two-bar split
     // this function's own banner promises never to have.
     const measured = [];
-    const targetLufs = outputSpecFor(clip.id).lufs;
+    const grade = takeGraderFor(outputSpecFor(clip.id));
     for (let take = 1; take <= takes; take += 1) {
       const path = join(dir, `${clip.id}-t${take}.pcm`);
       if (!(await exists(path))) {
@@ -756,7 +774,6 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       measured.push(await measure(path));
     }
 
-    const grade = (m) => classifyTake(m.dbtp, { lufs: m.lufs, targetLufs });
     const peaks = measured.map((m) => m.dbtp);
     const usable = measured.filter((m) => grade(m).accepted).length;
     const anySilent = measured.some((m) => grade(m).rejectedFor === "silent");

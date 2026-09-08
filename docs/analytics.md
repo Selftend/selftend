@@ -73,10 +73,10 @@ only adoption signal the schema carries, so it is the only one reported;
 `test/analytics-shared-sql.test.ts` fails any report that reads the column.
 
 Section 6, **asked, never attested**, counts accounts that met the age gate and
-did not get past it — `age_floor_met` null, `policy_version_accepted` null, and
-created after the gate shipped — split guest from registered, as a count and as
-a share of accounts created in the same window. It collects nothing new: both
-columns already exist and this is a derived count over them. It is the evidence
+did not get past it — `age_floor_met` null, on an account created at or after
+the instant the gate scopes itself on — split guest from registered, as a count
+and as a share of accounts created in the same window. It collects nothing new:
+the column already exists and this is a derived count over it. It is the evidence
 [#1936](https://github.com/Selftend/selftend/issues/1936) settled the age gate's
 placement on: the gate is the first screen of a clean install on native, and
 **the placement is revisited if this share is large against guests minted in the
@@ -88,30 +88,37 @@ asks_, not here.
 every account that predates the gate, and null means _never asked_, never
 _refused_ — so without the created-after cutoff this figure is the entire
 pre-gate install base rather than a count of people who stopped. The cutoff is
-the production release carrying
-`supabase/migrations/20260905000000_age_attestation.sql`, set by the two `\set`
-lines at the top of the report and printed on every row as `cutoff_release` and
-`cutoff_at`. ⚠️ That release has not shipped, so those read `unreleased` and
-`infinity` and the figure is a legitimate zero; a zero with a real instant beside
-it is the measured one. Under-floor exits are not in this number — they delete
-the account, so they never appear as a null. Platform is not an axis and is not
-to be added: the row cannot say which platform it came from, and #1936 accepted
-that the figure answers "how many stop at the first screen" and nothing else.
+the gate's own: `AGE_GATE_INTRODUCED_AT` in
+`src/components/app/protected-layout.tsx`, `2026-09-05T00:00:00Z`, the instant
+of `supabase/migrations/20260905000000_age_attestation.sql` — deliberately the
+migration and not the release, because the gate asks by account age against that
+constant and a client cannot know a release date (see
+[age-floor.md](age-floor.md) § _The gate that asks_). It is set by the two
+`\set` lines at the top of the report and printed on every row as
+`cutoff_source` and `cutoff_at`; `test/analytics-age-gate-cutoff.test.ts` fails
+if the report's instant and the client's constant ever differ, so they move
+together. Under-floor exits are not in this number — they delete the account, so
+they never appear as a null. Platform is not an axis and is not to be added: the
+row cannot say which platform it came from, and #1936 accepted that the figure
+answers "how many stop at the first screen" and nothing else.
 
-⚠️ **Since [#2227](https://github.com/Selftend/selftend/issues/2227) the figure
-is a lower bound, not a count of everyone who stopped at the gate.** Two of its
-three conditions are narrower than the gate's own scope. The report requires
-`policy_version_accepted` to be null as well, on the reasoning that anyone who
-stopped at the age gate never reached the consent gate behind it — true of an
-account whose first launch carries the gate, and false for the cohort #2227
-exists for: an account created on 0.17.0 has already consented, so when it meets
-the age gate on updating and stops there, it has a policy version on record and
-is not counted. And the cutoff is the release, where the gate itself is scoped on
-the migration instant (`2026-09-05T00:00:00Z`), so accounts created between the
-two are asked and still excluded. Nothing is collected to close the gap — it is
-recorded so the number is read as "at least this many", and
-[age-floor.md](age-floor.md) § _The gate that asks_ carries who is actually
-asked.
+⚠️ **The report follows the gate's rule since
+[#2241](https://github.com/Selftend/selftend/issues/2241), and was narrower than
+it before.** After [#2227](https://github.com/Selftend/selftend/issues/2227) the
+gate exempts only an account that is _both_ older than the instant _and_ has
+already accepted a policy version; everyone created at or after the instant is
+asked whatever their consent column says. The report used to require
+`policy_version_accepted` to be null as well — true of an account whose first
+launch carries the gate, and false for the cohort #2227 exists for, an account
+created on 0.17.0 that consented before ever seeing the gate — and used the
+release as its cutoff, so accounts created between the migration and the release
+were asked and not counted. Both are gone: the window is keyed on the instant and
+the consent column is not a condition. What the figure still leaves out, on
+purpose, is an account created _before_ the instant that never accepted any
+policy — the gate asks it too, but it is the pre-gate install base whose null
+means _never asked_, and the row cannot tell one that stopped at 0.17.0's consent
+wall from one that met the age gate on updating. So the number answers "how many
+stop at the first screen of a new account", exactly as #1936 framed it.
 
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
 The report covers: signups, first-run introduction conversion, finish-vs-skip

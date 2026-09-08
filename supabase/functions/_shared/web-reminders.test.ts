@@ -19,6 +19,8 @@ import {
   routineUrl,
   startOfZonedDay,
   fetchAllPaged,
+  CONFIGURED_TARGETS,
+  HELD_OUT_TARGETS,
   PAGE_SIZE,
   TARGET_CONFIGS,
   TARGETS,
@@ -209,6 +211,23 @@ describe("activityWindowsForTarget", () => {
         value: "2026-06-05",
       },
     ]);
+  });
+
+  it("holds a target out of the cron until the native build that routes its url is live (#2213)", () => {
+    // ☠️ CROSS-VERSION, and every other assertion in this file is blind to it:
+    // this function deploys at merge, the phone that taps the push is on the
+    // previous store release, and that client's allowlist gates the tap with no
+    // fallback. `/modules/dbt` is allowlisted by the client shipping WITH this
+    // function and by no earlier one, so a DBT push to a 0.17.0 phone is a
+    // dead tap with no switch on that phone to stop it. Named, not derived -
+    // the list is the delta between the shipped allowlist and this one.
+    expect([...HELD_OUT_TARGETS]).toEqual(["dbt"]);
+    expect(TARGETS).not.toContain("dbt");
+    // The two lists partition the configured set: a target in neither is a
+    // reminder silently never sent, a target in both is the hold-out undone.
+    expect([...TARGETS, ...HELD_OUT_TARGETS].sort()).toEqual([...CONFIGURED_TARGETS].sort());
+    expect(TARGETS.filter((target) => HELD_OUT_TARGETS.includes(target))).toEqual([]);
+    expect([...CONFIGURED_TARGETS].sort()).toEqual(Object.keys(TARGET_CONFIGS).sort());
   });
 
   it("every tool reminder suppresses on same-day use - none is exempt (#1668)", () => {
