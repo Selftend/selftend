@@ -218,19 +218,44 @@ on the destructive step, not on the field.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
-### The one known gap in the gate as it stands
+### An unknown verdict fails closed
 
-Recorded rather than hidden, and it closes on the release sequencing rather
-than on a ticket:
+This section used to record a gap: **the gate failed open when the preferences
+fetch errored with nothing cached.** In that state the attestation is unknown,
+and the shell rendered anyway — so a person below their floor whose first fetch
+failed reached the whole app un-attested and could write thought records and
+journal entries, which are Art. 9 special-category data. It was deliberate and
+documented, which is precisely what made it worth closing rather than
+inheriting: a fail-open on a statutory gate should not survive on the strength
+of a comment.
 
-- **The gate fails open on a preferences error with nothing cached.** In that
-  state the attestation is unknown, and the person reaches the shell until a
-  fetch succeeds. Failing closed would block every user whose first fetch of a
-  cold start failed — nothing in that state tells a new guest from a
-  ten-month user. The consent gate makes the identical call for the identical
-  reason ([#164](https://github.com/Selftend/selftend/issues/164)), so the age
-  gate is no weaker than the legal gate beside it, but the window is real and
-  belongs in the legal review's view of §3.
+[#2200](https://github.com/Selftend/selftend/issues/2200) closed it.
+`ProtectedLayout` now returns
+`src/components/app/preferences-unavailable-screen.tsx` on that state — an
+error surface with a retry — instead of falling through to the app. Nothing
+below the floor renders: not the shell, not the age gate, not the consent gate.
+
+**Why failing closed does not re-open [#164](https://github.com/Selftend/selftend/issues/164).**
+What #164 forbade was showing a _gate_ on a transient error, because a gate
+re-asks somebody who already answered, and nothing in the unknown state tells a
+new guest from a ten-month user. The screen that renders now is not a gate: it
+asks nothing, records nothing, and its only control re-runs the fetch. An
+already-attested user pays a tap; an un-attested one cannot walk past. The
+consent gate is covered by the same return, so the two legal gates still make
+one call rather than two.
+
+**It is not a lockout, and that is load-bearing.** The screen always offers a
+retry, and TanStack's own retry / refocus refetch closes the state too, so the
+person is never waiting on the button alone. `protected-layout.test.tsx` pins
+both halves — the protected tree absent on an unknown verdict, and the retry
+present and wired — plus the two ways the guard could over-fire: a stale-but-
+cached row still meets the consent gate, and a signed-out person still gets the
+landing.
+
+A person whose preferences load passes through exactly as before. An offline
+device is a different state again and is untouched: with `networkMode: "online"`
+a never-fetched query pauses rather than errors, so it never reaches this
+branch.
 
 The second gap recorded here — _"the under-floor block is React state only"_ —
 is closed by [#1765](https://github.com/Selftend/selftend/issues/1765), below.

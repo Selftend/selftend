@@ -10,6 +10,10 @@
   "offline": {
     "banner": "You're offline - changes can't be saved right now"
   },
+  "preferencesUnavailable": {
+    "title": "We can't open the app just yet",
+    "description": "The app needs your account settings before it can continue, and they didn't load. Check your connection and try again."
+  },
   "saveFailed": {
     "title": "Couldn't save",
     "description": "Your changes are still on this screen. Check your connection and try again."

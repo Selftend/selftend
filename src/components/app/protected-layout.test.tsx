@@ -397,11 +397,13 @@ describe("ProtectedLayout app onboarding", () => {
       data: undefined,
       isLoading: false,
       isError: true,
+      refetch: jest.fn(),
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
-    // Acceptance state is unknown — the layout must fail open into the app
-    // shell, not re-prompt a user who may already have accepted.
+    // Acceptance state is unknown, so the gate itself must not appear — #164's
+    // rule, and it survives #2200 intact: what replaces the app shell here is
+    // an error surface, which asks the person nothing.
     await waitFor(() => expect(screen.queryByText("Consent gate")).toBeNull());
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
     expect(screen.queryByText("Signed-out landing")).toBeNull();
@@ -645,14 +647,15 @@ describe("ProtectedLayout age gate", () => {
   });
 
   it("does not flash the gate when the preferences fetch fails", async () => {
-    // Same fail-open rule as the consent gate beside it (#164): with no cached
-    // row the attestation state is UNKNOWN, and a gate that guessed would ask
-    // an already-attested person again on any transient network error. It
-    // re-evaluates on the next successful load.
+    // #164's half of the rule: with no cached row the attestation state is
+    // UNKNOWN, and a gate that guessed would ask an already-attested person
+    // again on any transient network error. What the layout does INSTEAD of
+    // showing the gate is #2200's half, pinned in the describe below.
     mockUseUserPreferences.mockReturnValue({
       data: undefined,
       isLoading: false,
       isError: true,
+      refetch: jest.fn(),
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<ProtectedLayout />);
@@ -669,6 +672,110 @@ describe("ProtectedLayout age gate", () => {
     renderWithProviders(<ProtectedLayout />);
 
     await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
+  });
+});
+
+/**
+ * What the shell does when it cannot read the row the legal gates are decided
+ * from (#2200).
+ *
+ * The age floor and the policy consent are both answered off `user_preferences`.
+ * On an errored fetch with nothing cached neither question has an answer - and
+ * the shell used to answer "unknown" by rendering the app. That is a fail-open
+ * on a statutory gate: an under-floor person reached thought records and journal
+ * entries, GDPR Art. 9 data, with no attestation on file.
+ *
+ * ☠️ The load-bearing assertion in every test below is the ABSENCE of "Stack
+ * content" - the protected tree. A test that only checked the error surface was
+ * present would pass just as happily if the shell rendered both.
+ */
+describe("ProtectedLayout when preferences cannot be read", () => {
+  function unreadablePreferences(refetch = jest.fn()) {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    return refetch;
+  }
+
+  it("keeps the protected tree out of reach when the age verdict is unknown", async () => {
+    unreadablePreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("We can't open the app just yet")).toBeTruthy());
+    // The app itself, and both gates: nothing behind the floor renders.
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Consent gate")).toBeNull();
+  });
+
+  it("offers a retry rather than a dead end", async () => {
+    // ⚠️ The whole defence of failing closed is that the person can get out of
+    // it. A retry surface with no retry would be a lockout.
+    const refetch = unreadablePreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    fireEvent.press(await screen.findByText("Retry"));
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it("lets a person whose preferences DO load through exactly as before", async () => {
+    // The other half of the guard, and the one that would catch it over-firing:
+    // a successful fetch must not touch this branch at all.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        ageFloorMet: true,
+        policyVersionAccepted: policyVersion,
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Stack content")).toBeTruthy());
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  it("still holds a stale-but-cached row at the gate instead of the error screen", async () => {
+    // A failed REFETCH over cached data is not the unknown state - the verdict
+    // is known, just old - so #164's rule still owns it and the consent gate
+    // still shows. Without this the fix would have swallowed a working gate.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        ageFloorMet: true,
+        policyVersionAccepted: "2026-05-01",
+      },
+      isLoading: false,
+      isError: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  it("sends a signed-out person to the landing, not to the retry screen", async () => {
+    // Placement, not decoration: the error branch sits BELOW `!session`. A
+    // signed-out person has no row to fail on, and a retry they cannot win is
+    // the wrong answer to "please sign in".
+    mockSessionState = { session: null, status: "ready", user: null };
+    unreadablePreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
   });
 });
 
