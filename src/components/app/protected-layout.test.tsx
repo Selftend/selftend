@@ -167,11 +167,20 @@ jest.mock("@/src/components/app/age-gate", () => {
   };
 });
 
+// The stub renders WHOSE verdict it was handed as well as the fact that it
+// rendered: #2195 is a wrong-subject bug, so "the block screen is up" is only
+// half the assertion this suite needs to be able to make.
 jest.mock("@/src/components/app/under-floor-screen", () => {
   const Text = mockText;
+  const View = mockView;
 
   return {
-    UnderFloorScreen: () => <Text>Under-floor screen</Text>,
+    UnderFloorScreen: ({ verdictUserId }: { verdictUserId: string | null }) => (
+      <View>
+        <Text>Under-floor screen</Text>
+        <Text>{`Verdict for: ${verdictUserId ?? "nobody"}`}</Text>
+      </View>
+    ),
   };
 });
 
@@ -623,6 +632,18 @@ describe("ProtectedLayout age gate", () => {
     expect(screen.queryByText("Stack content")).toBeNull();
   });
 
+  it("names the account the verdict judged, so the exit knows whose it is", async () => {
+    // ☠️☠️ #2195. The verdict carries an identity; the device flag never can.
+    // Without this the exit fell back to whoever was signed in, which inside
+    // the 24h window is a different person on a shared device.
+    newAccount();
+
+    renderWithProviders(<ProtectedLayout />);
+    fireEvent.press(await screen.findByText("Age gate"));
+
+    await waitFor(() => expect(screen.getByText("Verdict for: user-1")).toBeTruthy());
+  });
+
   it("does not flash the gate when the preferences fetch fails", async () => {
     // Same fail-open rule as the consent gate beside it (#164): with no cached
     // row the attestation state is UNKNOWN, and a gate that guessed would ask
@@ -673,6 +694,27 @@ describe("ProtectedLayout under-floor block", () => {
     expect(screen.queryByText("Stack content")).toBeNull();
     expect(screen.queryByText("Age gate")).toBeNull();
     expect(screen.queryByText("Consent gate")).toBeNull();
+  });
+
+  it("hands the exit NOBODY when the flag alone is what blocked, session or not", async () => {
+    // ☠️☠️ The #2195 scenario, at the line where it was decided. Person A's
+    // verdict wrote a flag that holds an expiry and no identity; person B then
+    // signs into their own established account on the same device and lands
+    // here. The block must still hold - it does, one assertion up - but the
+    // account it is holding is one this device never judged, and the exit is
+    // told exactly that rather than being handed B.
+    await writeUnderFloorBlock(new Date());
+    mockSessionState = {
+      session: { user: { email_confirmed_at: "2026-05-06T10:00:00.000Z", id: "user-b" } },
+      status: "ready",
+      user: { email_confirmed_at: "2026-05-06T10:00:00.000Z", id: "user-b" },
+    };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(screen.getByText("Verdict for: nobody")).toBeTruthy();
+    expect(screen.queryByText("Verdict for: user-b")).toBeNull();
   });
 
   it("still blocks once the exit has deleted the account and signed the person out", async () => {

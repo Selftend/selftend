@@ -42,7 +42,20 @@ export default function ProtectedLayout() {
   } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
-  const [underFloor, setUnderFloor] = useState(false);
+  // ☠️☠️ The verdict, and WHOSE it is (#2195). A bare boolean was enough while
+  // the exit read the current session for its target - and that is exactly what
+  // made the block delete the next account signed in on the device inside the
+  // 24h window, because the device flag holds an expiry and no identity. The id
+  // is captured at the moment the gate returns its verdict, from the session
+  // that answered it, and travels to the exit as the only account it may erase.
+  // `null` in the object is a verdict for a session that had no user (which the
+  // gate cannot produce, since it renders below the `!session` branch); `null`
+  // for the whole object is "no verdict on this mount", which is every device
+  // block that judged nobody.
+  const [underFloorVerdict, setUnderFloorVerdict] = useState<{ userId: string | null } | null>(
+    null,
+  );
+  const underFloor = underFloorVerdict !== null;
   const [ageAttested, setAgeAttested] = useState(false);
   // The device's own under-floor block (#1765). React state alone was #1764's
   // recorded gap: it lasted exactly as long as the screen stayed mounted, and
@@ -142,7 +155,10 @@ export default function ProtectedLayout() {
   // it is what makes the verdict take effect in the same frame the person
   // answers, without waiting on a storage write.
   if (underFloor || deviceBlock.blocked) {
-    return <UnderFloorScreen />;
+    // ☠️ `underFloorVerdict?.userId ?? null`, never `user?.id`. On the device
+    // flag alone there is no verdict, so the screen is handed `null` and the
+    // exit erases nothing - it still blocks (#2195).
+    return <UnderFloorScreen verdictUserId={underFloorVerdict?.userId ?? null} />;
   }
 
   if (!session) {
@@ -266,7 +282,10 @@ export default function ProtectedLayout() {
       // because the mutation's invalidate is the other half of the same
       // dismissal, and one of the two arriving late should not leave the person
       // staring at a form they already completed.
-      <AgeGate onAttested={() => setAgeAttested(true)} onUnderFloor={() => setUnderFloor(true)} />
+      <AgeGate
+        onAttested={() => setAgeAttested(true)}
+        onUnderFloor={() => setUnderFloorVerdict({ userId: user?.id ?? null })}
+      />
     );
   }
 
