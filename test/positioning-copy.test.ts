@@ -4,6 +4,12 @@ import path from "path";
 
 import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 import { APP_STORE_CAPS } from "@/test/store-caps";
+import {
+  APPLE_INFO_SURFACE,
+  PLAY_VERBATIM_SURFACE,
+  STORE_LISTING_TEXT as STORE_LISTING_ENTRIES,
+  storeListingText,
+} from "@/test/store-listing-text";
 
 /**
  * The merge-gate half of `docs/positioning.md` (#1611, spec'd by #1606).
@@ -380,68 +386,14 @@ const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
     all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
 );
 
-const APPLE_INFO_SURFACE = "store/apple-info.json";
-const PLAY_VERBATIM_SURFACE = "store/play-listing.md";
-
-/** Where `store/play-listing.md` starts quoting the listing rather than describing it. */
-const PLAY_VERBATIM_HEADING = "## Verbatim, as saved";
-
 /**
- * The text that is actually ON a store listing, pulled out of the two files
- * that mirror them. See the `#1760` describe near the bottom for why this
- * corpus exists at all, and why it is the listing text rather than the files.
- *
- * ☠️ **THROWS rather than returning an empty list.** Both halves are extracted
- * by structure — JSON fields, and the blockquote under a heading — and both can
- * silently yield nothing when the file is reorganised. A corpus that quietly
- * empties leaves every rule vacuously green while looking covered, which is the
- * #1908 / #2019 failure mode this file has already paid for twice.
- *
- * ⚠️ Takes the file contents rather than reading them, so the extraction can be
- * exercised on synthetic input. Nothing else here is testable without it.
+ * The text that is actually ON a store listing — `store/apple-info.json`'s
+ * fields and the Play verbatim block. The extractor moved to
+ * `test/store-listing-text.ts` on #2216 so that `restraint-copy.test.ts` reads
+ * the same corpus; see that module for why it THROWS on an empty half, and the
+ * `#1760` describe near the bottom for why this corpus exists at all.
  */
-function storeListingText(appleInfoJson: string, playListingMd: string): Scanned[] {
-  const entries: Scanned[] = [];
-
-  const apple = JSON.parse(appleInfoJson) as Record<string, unknown>;
-  for (const [field, value] of Object.entries(apple)) {
-    if (typeof value === "string") {
-      entries.push({ surface: APPLE_INFO_SURFACE, id: field, text: value });
-    } else if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
-      entries.push({
-        surface: APPLE_INFO_SURFACE,
-        id: field,
-        text: (value as string[]).join(", "),
-      });
-    }
-  }
-  if (entries.length === 0) {
-    throw new Error(`${APPLE_INFO_SURFACE} yielded no listing fields`);
-  }
-
-  const at = playListingMd.indexOf(PLAY_VERBATIM_HEADING);
-  if (at === -1) {
-    throw new Error(`${PLAY_VERBATIM_SURFACE} has no "${PLAY_VERBATIM_HEADING}" section`);
-  }
-  const verbatim = playListingMd
-    .slice(at)
-    .split("\n")
-    .filter((line) => line.startsWith(">"))
-    .map((line) => line.replace(/^>\s?/, ""))
-    .join("\n")
-    .trim();
-  if (verbatim === "") {
-    throw new Error(`${PLAY_VERBATIM_SURFACE}'s "${PLAY_VERBATIM_HEADING}" block quotes nothing`);
-  }
-  entries.push({ surface: PLAY_VERBATIM_SURFACE, id: "verbatim", text: verbatim });
-
-  return entries;
-}
-
-const STORE_LISTING_TEXT: Scanned[] = storeListingText(
-  fs.readFileSync(path.join(ROOT, APPLE_INFO_SURFACE), "utf8"),
-  fs.readFileSync(path.join(ROOT, PLAY_VERBATIM_SURFACE), "utf8"),
-);
+const STORE_LISTING_TEXT: Scanned[] = STORE_LISTING_ENTRIES;
 
 interface Rule {
   name: string;

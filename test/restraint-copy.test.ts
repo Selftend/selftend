@@ -1,4 +1,10 @@
 import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-strings";
+import {
+  PLAY_VERBATIM_SURFACE,
+  STORE_LISTING_TEXT,
+  storeListingText,
+  type StoreListingEntry,
+} from "@/test/store-listing-text";
 
 /**
  * `show the record, don't read it` (#711), and its companion: **the framework may
@@ -16,6 +22,16 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  *
  * So this guard reads **every namespace in both locales**. A namespace-scoped
  * version of this test has now been wrong twice.
+ *
+ * ☠️ AND THE TWO STORE LISTINGS (#2216). The Google Play full description closed
+ * its "What's inside" block with "Missing a day is never punished." — the exact
+ * sentence shape this file was written against, on the highest-traffic copy
+ * surface the project owns, and the one surface no restraint rule reached: the
+ * corpus was i18n values only, and `positioning-copy` (which does read the Play
+ * mirror) carries no restraint rule. So the App Store fields and the Play
+ * verbatim block join the `en` corpus here, through the same extractor
+ * `positioning-copy` uses (`test/store-listing-text.ts`). The store text is
+ * English: bg patterns do not run over it.
  *
  * ☠️ CONFIG SURFACES ARE DISCLOSURE; PRACTICE SURFACES ARE ADVERTISING
  * (#1662). On a configuration screen, stating the default and what a control
@@ -49,7 +65,7 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    * the obvious `натиск`-only pattern walks straight past — the same string in en said
    * "no pressure", so a locale-blind reading would have called bg clean.
    */
-  { locale: "en", pattern: /no pressure/i },
+  { locale: "en", pattern: /\bno pressure\b/i },
   { locale: "en", pattern: /create pressure/i },
   /**
    * ☠️ The mirror of the warning above, and it stayed open two rules longer. bg
@@ -192,14 +208,58 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
  */
 const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [];
 
-function isAllowed(locale: Locale, namespace: string, key: string) {
-  return ALLOWED.some(
-    (allowed) =>
-      allowed.locale === locale && allowed.namespace === namespace && allowed.keyPattern.test(key),
+/**
+ * The store-surface analogue of `ALLOWED`, and ☠️ **it is scoped to ONE RULE,
+ * never to a surface.** A store entry is a whole listing in one string, so a
+ * surface-wide exemption would have waved the Play block past `/never punish/i`
+ * — the very sentence #2216 was filed on — in order to let one licensed phrase
+ * through. Each entry names the rule it exempts and the ruling that licenses
+ * the phrase; the stale-exemption test below makes the entry die with the phrase.
+ *
+ * The one entry is the collision `positioning-copy` and this file have always
+ * had and could not see while their corpora were disjoint: `docs/positioning.md`
+ * § _Words never to use_ ends with "Allowed adjacent phrasing: 'no pressure',
+ * 'no shame', 'no ads, no subscriptions'", and #1619 put "no pressure" into the
+ * Play listing by owner decision as the replacement for "no streak pressure"
+ * (`store/play-listing.md` § _Known contradictions_). That is an owner ruling on
+ * the listing's own words, and a guard does not reverse it. ⚠️ The same
+ * document's allowance is NOT extended to i18n strings here: the i18n corpus has
+ * been clean of "no pressure" since #963, and widening the exemption to it would
+ * re-open the very hole that rule closed.
+ */
+const STORE_ALLOWED: { surface: string; pattern: RegExp; reason: string }[] = [
+  {
+    surface: PLAY_VERBATIM_SURFACE,
+    pattern: /\bno pressure\b/i,
+    reason:
+      "docs/positioning.md § Words never to use lists 'no pressure' as allowed adjacent phrasing; " +
+      "#1619 put it in the Play listing by owner decision (store/play-listing.md § Known contradictions)",
+  },
+];
+
+function isAllowed(locale: Locale, namespace: string, key: string, pattern: RegExp) {
+  return (
+    ALLOWED.some(
+      (allowed) =>
+        allowed.locale === locale &&
+        allowed.namespace === namespace &&
+        allowed.keyPattern.test(key),
+    ) ||
+    STORE_ALLOWED.some(
+      (allowed) => allowed.surface === namespace && allowed.pattern.source === pattern.source,
+    )
   );
 }
 
-const STRINGS = LOCALE_STRINGS;
+/** A store listing as this guard reads it: the surface path is the namespace, the field the key. */
+function asLocaleStrings(entries: StoreListingEntry[]): LocaleString[] {
+  return entries.map(({ surface, id, text }) => ({ namespace: surface, key: id, text }));
+}
+
+const STRINGS: Record<Locale, LocaleString[]> = {
+  en: [...LOCALE_STRINGS.en, ...asLocaleStrings(STORE_LISTING_TEXT)],
+  bg: LOCALE_STRINGS.bg,
+};
 
 /** Every string in `locale` whose text `pattern` matches. */
 function matching(locale: Locale, pattern: RegExp) {
@@ -227,10 +287,67 @@ describe("product copy states the record instead of advertising restraint", () =
     // restraint phrasing can be a copy call still awaiting an owner, but a
     // sentence that misreports the user's own number is never exemptable.
     const offenders = matching(locale, pattern).filter(
-      ({ namespace, key }) => !isAllowed(locale, namespace, key),
+      ({ namespace, key }) => !isAllowed(locale, namespace, key, pattern),
     );
 
     expect(describeEntries(offenders)).toEqual([]);
+  });
+
+  /**
+   * The store listings are in the corpus (#2216), proven on the wiring rather
+   * than on the live files: if the Play text ever carries the #711 shape again,
+   * a rule has to see it. Planting the sentence in a synthetic listing and
+   * running it through the same filter the live scan uses is the only assertion
+   * here that fails if the store text stops being appended to `STRINGS.en`.
+   */
+  describe("the store listings are in scope (#2216)", () => {
+    it("reads both store surfaces as en copy", () => {
+      const namespaces = new Set(STRINGS.en.map((entry) => entry.namespace));
+
+      expect(namespaces).toContain("store/apple-info.json");
+      expect(namespaces).toContain(PLAY_VERBATIM_SURFACE);
+      // And the Play half is the listing, not the file's prose about it.
+      const verbatim = STRINGS.en.find(({ namespace }) => namespace === PLAY_VERBATIM_SURFACE);
+      expect(verbatim?.text).toContain("What's inside:");
+    });
+
+    it("catches the #711 sentence shape planted in either store surface", () => {
+      const planted = asLocaleStrings(
+        storeListingText(
+          JSON.stringify({ promoText: "Missing a day is never punished." }),
+          "## Verbatim, as saved on 2026-01-01\n\n> No penalty for a missed day.\n",
+        ),
+      );
+      const rules = RESTRAINT_CLAIMS.filter(({ locale }) => locale === "en");
+
+      const caught = planted
+        .filter(({ namespace, key, text }) =>
+          rules.some(
+            ({ pattern }) => pattern.test(text) && !isAllowed("en", namespace, key, pattern),
+          ),
+        )
+        .map(({ namespace }) => namespace);
+
+      expect(caught).toEqual(["store/apple-info.json", PLAY_VERBATIM_SURFACE]);
+    });
+
+    it("every store exemption still matches a live listing phrase, so it dies with the phrase", () => {
+      // Same discipline as the `ALLOWED` test below: the day the owner's Console
+      // edit drops "no pressure", this entry stops matching and must go — an
+      // exemption that outlives its phrase is a permission for whatever lands next.
+      const enRules = RESTRAINT_CLAIMS.filter((claim) => claim.locale === "en").map(
+        (claim) => claim.pattern.source,
+      );
+
+      for (const { surface, pattern } of STORE_ALLOWED) {
+        const entries = STRINGS.en.filter((entry) => entry.namespace === surface);
+        expect(entries.length).toBeGreaterThan(0);
+        expect(entries.some(({ text }) => pattern.test(text))).toBe(true);
+        // And the exempted pattern is a rule this file actually carries, so the
+        // entry cannot quietly name a regex nothing scans for.
+        expect(enRules).toContain(pattern.source);
+      }
+    });
   });
 
   it("every allowlisted entry still breaks a rule, so a stale exemption cannot hide a new offence", () => {
