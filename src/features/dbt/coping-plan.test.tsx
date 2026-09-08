@@ -70,6 +70,24 @@ function setPlanPending() {
   mockUseCopingPlan.mockReturnValue({
     data: undefined,
     isPending: true,
+    isPaused: false,
+    isError: false,
+    refetch: jest.fn(),
+  });
+}
+
+/**
+ * The query as it is on an OFFLINE arrival (#2231). `networkMode: "online"` is
+ * the default for queries here, so the fetch never starts: `status` stays
+ * `"pending"` while `fetchStatus` is `"paused"`, which query-core 5 surfaces as
+ * `isPending` true, `isPaused` true, and `isFetching`/`isLoading`/`isError` all
+ * false. Nothing read, and nothing coming until the connection does.
+ */
+function setPlanPaused() {
+  mockUseCopingPlan.mockReturnValue({
+    data: undefined,
+    isPending: true,
+    isPaused: true,
     isError: false,
     refetch: jest.fn(),
   });
@@ -353,6 +371,58 @@ describe("the coping plan builder", () => {
       expect(screen.getByText("That did not load")).toBeTruthy();
       expect(screen.getByText("Try again")).toBeTruthy();
       expect(screen.queryByText("Save plan")).toBeNull();
+    });
+
+    /**
+     * ☠️ #2231. A query paused for want of a network is `isPending` too, so a
+     * gate keyed on `isPending` alone left an offline arrival on a spinner it
+     * could never leave: a paused query never errors, so the retry branch
+     * beside it was unreachable. The waiting state has to be reserved for a
+     * read that is actually happening.
+     */
+    it("says so, and offers the read again, when there is no network to read over", () => {
+      setPlanPaused();
+      renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.getByText("That did not load")).toBeTruthy();
+      expect(screen.getByText("Try again")).toBeTruthy();
+      // The loading body carries the edit title; the honest state must have
+      // replaced it rather than sat alongside it.
+      expect(screen.queryByText("Your coping plan")).toBeNull();
+    });
+
+    it("builds nothing, and saves nothing, over a plan it could not read for want of a network", () => {
+      setPlanPaused();
+      renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.queryByText("Save plan")).toBeNull();
+      expect(screen.queryByText("Go for a walk")).toBeNull();
+      expect(saveAsync).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ☠️ The other half of #2231, and the reason the gate is `isPending &&
+     * isPaused` rather than `isPaused`: a BACKGROUND refetch that pauses when
+     * the connection drops mid-edit is `isPaused` with `status: "success"`.
+     * Treating that as an unread plan would tear the builder down and take
+     * everything the person had typed with it.
+     */
+    it("keeps the builder, and the person's edits, when a background refetch pauses mid-edit", async () => {
+      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Have a shower"));
+
+      // The connection drops: the refetch pauses over data already read.
+      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] }, { isPaused: true });
+      rerender(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.queryByText("That did not load")).toBeNull();
+      fireEvent.press(screen.getByText("Save plan"));
+
+      await screen.findByText("Save plan");
+      const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "shower"]);
     });
 
     /**

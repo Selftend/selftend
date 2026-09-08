@@ -61,6 +61,14 @@ import { openExternalUrl } from "@/src/lib/linking";
  * and the retry control all branch on `state`, and several cascades over the
  * same union drift. `null` means "say nothing", which is the honest answer when
  * there is no account this block may remove.
+ *
+ * ☠️☠️ Each sentence describes what HAS happened, never what the app will go
+ * on doing (#2232). `failed` said Selftend "will keep working to remove it" -
+ * true while the purge ran from a mount effect, and left behind when #2195
+ * removed it, so the app's last words to a person under the floor were an
+ * assurance nothing backed. Nothing retries by itself; the retry control below
+ * is the whole of it, and the sentence has to point at it rather than excuse
+ * the person from pressing it.
  */
 const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
   "awaiting-confirmation": "auth:underFloor.erasureConfirm",
