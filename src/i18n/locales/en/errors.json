@@ -12,7 +12,11 @@
   },
   "preferencesUnavailable": {
     "title": "We can't open the app just yet",
-    "description": "The app needs your account settings before it can continue, and they didn't load. Check your connection and try again."
+    "description": "The app needs your account settings before it can continue, and they didn't load. Check your connection and try again.",
+    "loadingTitle": "Getting your account ready",
+    "loadingDescription": "The app is reading your account settings. This usually takes a moment.",
+    "supportTitle": "If you need support right now",
+    "supportBody": "Crisis guidance opens without an account, whether or not the rest of the app does."
   },
   "saveFailed": {
     "title": "Couldn't save",

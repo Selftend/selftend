@@ -65,6 +65,31 @@ Rules that keep the rest of the suite quiet:
   does this without the stub + grant hangs on `waitForURL`
   (`routine-editor-screen.tsx`).
 
+## Who answers the age gate
+
+The age gate stops any account created at or after `AGE_GATE_INTRODUCED_AT`
+(`src/components/app/protected-layout.tsx`) that has no age verdict on file.
+Every e2e account is minted seconds before its spec runs, so the whole suite is
+that cohort — and a real person in it answers the question. The fixtures say
+the same:
+
+- **Pooled and injected sessions** carry an attestation. `NORMALIZED_GATE_PREFS`
+  (`session-injection.ts`) writes the three columns the app itself writes on a
+  pass — `age_floor_met`, `age_attested_country`, `age_attested_at` — and
+  `supabase/seed.sql` seeds them for alice, bob, demo and the whole worker pool
+  so a `db:reset` account is not a person who never got asked.
+- **Accounts a spec creates through the UI** answer the form. `clearAgeGate`
+  (`helpers.ts`) fills it in as a 1990 birth date in GB; `dismissPostSignInModals`
+  calls it first, because while the gate stands the consent gate has not
+  rendered.
+- **`landing-guest-entry` and `sign-up-onboarding` must keep seeing the gate.**
+  They are what proves it covers the guest and the sign-up entry paths. Neither
+  goes through the normalization, and neither should be made to.
+
+None of this is a bypass: the app reads `age_floor_met` for these accounts
+exactly as it does for everyone. A fixture that reached the authenticated shell
+without an attestation would be modelling the account the gate exists to stop.
+
 ## Outbound email never leaves the machine
 
 The `send-feedback` function emails the support mailbox, so no spec may let a
