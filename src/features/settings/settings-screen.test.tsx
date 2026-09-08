@@ -180,6 +180,32 @@ describe("SettingsScreen structure", () => {
   });
 
   /**
+   * ☠️ #2188. There are FIVE `SettingsRun`s on this page, not four: the profile
+   * disclosure panel is the fifth, and #1800's card-removal sweep never opened
+   * its file, so it kept the primitive's `card` default and drew the one box on a
+   * page that has none. Asserted as a RELATION to the four labelled runs rather
+   * than as a class list of its own, so the next surface change moves all five
+   * or fails here - `settings-run.test.tsx` pins what each surface draws.
+   */
+  it("draws the profile panel on the same surface as the four labelled runs", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+    const classesOf = (testID: string) =>
+      String(screen.getByTestId(testID).props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort();
+
+    const panel = classesOf("settings-profile-panel");
+    expect(panel).not.toContain("bg-card");
+    expect(panel).not.toContain("rounded-xl");
+    for (const run of ["app", "data", "help", "account"]) {
+      expect(panel).toEqual(classesOf(`settings-run-${run}`));
+    }
+  });
+
+  /**
    * The row descriptions (#1831). Copy only — and the half that matters most is
    * what STAYS BARE, because this page has rejected drawn descriptions five
    * times for promising behaviour that does not exist.

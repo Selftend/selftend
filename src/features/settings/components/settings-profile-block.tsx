@@ -96,11 +96,15 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
         ) : null}
 
         {/*
-          The same `SettingsRun` the four labelled runs use, without a label:
-          restating its card chrome and hairline rule here is how the profile
-          panel and the runs drift into looking like different kinds of thing.
+          The same `SettingsRun` the four labelled runs use, without a label, and
+          on the same `hairline` surface (#2188). The card-removal sweep (#1800)
+          de-carded the four runs in `settings-screen.tsx` and never opened this
+          file, so the fifth run kept the primitive's `card` default and drew the
+          one box on a page design 14a draws none on. Sharing the component only
+          stops the drift if the surface is shared too - the prop is not optional
+          here in any sense that matters.
         */}
-        <SettingsRun testID="settings-profile-panel">
+        <SettingsRun surface="hairline" testID="settings-profile-panel">
           <View className="py-3.5">
             <Disclosure
               label={t("profile.editName")}

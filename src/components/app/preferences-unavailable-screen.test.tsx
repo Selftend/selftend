@@ -49,6 +49,11 @@ describe("PreferencesUnavailableScreen", () => {
     // ⚠️ A retry for a fetch that has not finished is a control that does
     // nothing. The state clears itself when the row lands or when the query
     // finally errors into the half above.
+    //
+    // ☠️ Which is only safe because the layout hands this half to a fetch that
+    // has NEVER failed (#2238): a retry in flight after a failure keeps the
+    // errored half above, Retry included. `protected-layout.test.tsx` pins the
+    // choice of half; this file pins only what each half offers.
     renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="loading" />);
 
     expect(screen.getByText("Getting your account ready")).toBeTruthy();

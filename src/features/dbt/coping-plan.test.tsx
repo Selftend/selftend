@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
+import { ActivityIndicator } from "react-native";
 
 import { CopingPlanCard } from "./coping-plan-card";
 import DbtCopingPlanScreen from "./dbt-coping-plan-screen";
@@ -59,9 +60,26 @@ function setPlan(plan: CopingPlanDocument | null, overrides: Record<string, unkn
   mockUseCopingPlan.mockReturnValue({
     data: plan === null ? null : { id: "plan-1", userId: "user-1", plan },
     isPending: false,
+    isPaused: false,
     isError: false,
     refetch: jest.fn(),
     ...overrides,
+  });
+}
+
+/**
+ * The query after a read that FAILED before anything landed. `data` is
+ * `undefined`, not `null`: query-core never clears data on an error, so
+ * `undefined` is the only shape a cold failure has - and `null` is a read that
+ * found no plan yet, which the builder can and must mount over (#2236).
+ */
+function setPlanFailed() {
+  mockUseCopingPlan.mockReturnValue({
+    data: undefined,
+    isPending: false,
+    isPaused: false,
+    isError: true,
+    refetch: jest.fn(),
   });
 }
 
@@ -100,6 +118,23 @@ const item = (
   position: number,
   homeOnly = false,
 ) => ({ id, section, kind: "pick" as const, pickKey, homeOnly, position });
+
+/**
+ * A stored plan as the database lets one be stored: the fallback list is three
+ * to six ids, never empty (#2194), so a Save over this document is legal.
+ */
+const readPlan = (): CopingPlanDocument => ({
+  items: [
+    item("a", "distract", "walk", 0),
+    item("b", "soothe", "aBlanket", 1),
+    item("c", "remind", "thisWillPass", 2),
+  ],
+  fallback: ["a", "b", "c"],
+});
+
+/** Press a candidate chip under the fallback heading, by the name it announces. */
+const addToList = (label: string) =>
+  fireEvent.press(screen.getByLabelText(`Add ${label} to the list`));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -241,11 +276,34 @@ describe("the coping plan screen", () => {
   });
 
   it("offers a retry, and says why, when the plan could not be read", () => {
-    setPlan(null, { isPending: false, isError: true });
+    setPlanFailed();
     renderWithProviders(<DbtCopingPlanScreen />);
 
     expect(screen.getByText("That did not load")).toBeTruthy();
     expect(screen.getByText("Try again")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ #2237, the editor's #2231 on the read screen: a query paused for want
+   * of a network is `isPending` too, and a paused query never errors, so a
+   * gate keyed on `isPending` alone left an offline arrival on a spinner with
+   * the retry beside it unreachable.
+   */
+  it("says so, and offers the read again, when there is no network to read over", () => {
+    setPlanPaused();
+    renderWithProviders(<DbtCopingPlanScreen />);
+
+    expect(screen.getByText("That did not load")).toBeTruthy();
+    expect(screen.getByText("Try again")).toBeTruthy();
+    expect(screen.UNSAFE_queryByType(ActivityIndicator)).toBeNull();
+  });
+
+  it("keeps the spinner for a read that is actually happening", () => {
+    setPlanPending();
+    renderWithProviders(<DbtCopingPlanScreen />);
+
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.queryByText("That did not load")).toBeNull();
   });
 });
 
@@ -266,20 +324,28 @@ describe("the coping plan builder", () => {
   it("puts a chosen pick on the plan, by key", async () => {
     renderWithProviders(<DbtCopingPlanEditorScreen />);
 
+    // Three picks and all three on the list: the shortest plan the database
+    // accepts (#2194), so what this pins is the SHAPE of a saved pick.
     fireEvent.press(screen.getByText("Go for a walk"));
+    fireEvent.press(screen.getByText("Stretch"));
+    fireEvent.press(screen.getByText("Have a shower"));
+    addToList("Go for a walk");
+    addToList("Stretch");
+    addToList("Have a shower");
     fireEvent.press(screen.getByText("Save plan"));
 
     await screen.findByText("Save plan");
     expect(saveAsync).toHaveBeenCalledTimes(1);
     const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
-    expect(plan.items).toHaveLength(1);
+    expect(plan.items).toHaveLength(3);
     expect(plan.items[0]).toMatchObject({ section: "distract", kind: "pick", pickKey: "walk" });
+    expect(plan.fallback).toEqual(plan.items.map((entry) => entry.id));
     // ☠️ Never the label: a plan that stored "Go for a walk" would freeze this
     // day's copy into the person's document.
     expect(JSON.stringify(plan)).not.toContain("Go for a walk");
   });
 
-  it("refuses a fallback list that is neither empty nor three to six long", async () => {
+  it("refuses a fallback list that is shorter than three", async () => {
     setPlan({
       items: [item("a", "distract", "walk", 0), item("b", "soothe", "aBlanket", 1)],
       fallback: ["a"],
@@ -290,6 +356,50 @@ describe("the coping plan builder", () => {
 
     expect(await screen.findByText("Choose three to six for the list")).toBeTruthy();
     expect(saveAsync).not.toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️ #2194. The validator used to exempt an EMPTY list, and the database
+   * guard (`dbt_coping_plans_guard`) never did: it rejects fewer than three on
+   * insert and update alike. A first-time builder who left the list at
+   * "Nothing on the list yet" submitted a plan that was always refused, and
+   * heard only a title-only "That did not save" with no field named. The
+   * client rule is the guard's rule, and the list is named before the write.
+   */
+  it("refuses an empty fallback list, which the database refuses too", async () => {
+    setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+    renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+    fireEvent.press(screen.getByText("Save plan"));
+
+    expect(await screen.findByText("Choose three to six for the list")).toBeTruthy();
+    expect(saveAsync).not.toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️ #2201. The chip's label REPLACES its visible text for a screen reader,
+   * so a bare "Add to the list" made every candidate announce the same thing
+   * and the list could only be built by tapping blind. Both branches of the
+   * label name the item.
+   */
+  it("names the item on every candidate chip, on and off the list", () => {
+    setPlan({
+      items: [item("a", "distract", "walk", 0), item("b", "soothe", "aBlanket", 1)],
+      fallback: [],
+    });
+    renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+    expect(screen.getByLabelText("Add Go for a walk to the list")).toBeTruthy();
+    expect(screen.getByLabelText("Add A blanket to the list")).toBeTruthy();
+    expect(screen.queryAllByLabelText("Add to the list")).toHaveLength(0);
+
+    addToList("Go for a walk");
+
+    // The chip flips to the named remove - the list's own row carries the same
+    // label, so there are two of it now and none of the add.
+    expect(screen.queryByLabelText("Add Go for a walk to the list")).toBeNull();
+    expect(screen.getAllByLabelText("Take Go for a walk off the list")).toHaveLength(2);
+    expect(screen.getByLabelText("Add A blanket to the list")).toBeTruthy();
   });
 
   it("saves a plan whose list is exactly the length the card can read", async () => {
@@ -350,10 +460,7 @@ describe("the coping plan builder", () => {
       const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
 
       // The read lands a beat later, exactly as it does on a cold web load.
-      setPlan({
-        items: [item("a", "distract", "walk", 0), item("b", "soothe", "aBlanket", 1)],
-        fallback: [],
-      });
+      setPlan(readPlan());
       rerender(<DbtCopingPlanEditorScreen />);
 
       fireEvent.press(screen.getByText("Save plan"));
@@ -361,11 +468,15 @@ describe("the coping plan builder", () => {
       await screen.findByText("Save plan");
       expect(saveAsync).toHaveBeenCalledTimes(1);
       const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
-      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "aBlanket"]);
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual([
+        "walk",
+        "aBlanket",
+        "thisWillPass",
+      ]);
     });
 
     it("says the read failed, and refuses to build, rather than offering a blank plan", () => {
-      setPlan(null, { isPending: false, isError: true });
+      setPlanFailed();
       renderWithProviders(<DbtCopingPlanEditorScreen />);
 
       expect(screen.getByText("That did not load")).toBeTruthy();
@@ -408,13 +519,13 @@ describe("the coping plan builder", () => {
      * everything the person had typed with it.
      */
     it("keeps the builder, and the person's edits, when a background refetch pauses mid-edit", async () => {
-      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      setPlan(readPlan());
       const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
 
       fireEvent.press(screen.getByText("Have a shower"));
 
       // The connection drops: the refetch pauses over data already read.
-      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] }, { isPaused: true });
+      setPlan(readPlan(), { isPaused: true });
       rerender(<DbtCopingPlanEditorScreen />);
 
       expect(screen.queryByText("That did not load")).toBeNull();
@@ -422,7 +533,73 @@ describe("the coping plan builder", () => {
 
       await screen.findByText("Save plan");
       const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
-      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "shower"]);
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual([
+        "walk",
+        "aBlanket",
+        "thisWillPass",
+        "shower",
+      ]);
+    });
+
+    /**
+     * ☠️ #2236, the error half of the same gate. A background refetch that
+     * FAILS over a plan already read is `isError` with `data` still there -
+     * query-core's `isRefetchError` - and a focus refetch failing a minute
+     * into an edit is ordinary. Bare `isError` in the gate swapped the builder
+     * for the shut door and destroyed everything typed; Try again re-seeded
+     * from the stored document, so the session's work was unrecoverable.
+     */
+    it("keeps the builder, and the person's edits, when a background refetch fails mid-edit", async () => {
+      setPlan(readPlan());
+      const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Have a shower"));
+
+      // The refetch fails over data already read: status "error", data kept.
+      setPlan(readPlan(), { isError: true });
+      rerender(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.queryByText("That did not load")).toBeNull();
+      fireEvent.press(screen.getByText("Save plan"));
+
+      await screen.findByText("Save plan");
+      const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual([
+        "walk",
+        "aBlanket",
+        "thisWillPass",
+        "shower",
+      ]);
+    });
+
+    /**
+     * ☠️ The trap inside #2236: a first-time builder edits over `null` - a
+     * read that found no plan - and `null` is not `undefined`. A gate that
+     * treated "no document" as "nothing read" would tear down exactly the
+     * plan most worth keeping, the one being built from scratch.
+     */
+    it("keeps a first plan mid-build when the refetch behind it fails", async () => {
+      setPlan(null);
+      const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Go for a walk"));
+      fireEvent.press(screen.getByText("Stretch"));
+      fireEvent.press(screen.getByText("Have a shower"));
+      addToList("Go for a walk");
+      addToList("Stretch");
+      addToList("Have a shower");
+
+      setPlan(null, { isError: true });
+      rerender(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.queryByText("That did not load")).toBeNull();
+      fireEvent.press(screen.getByText("Save plan"));
+
+      await screen.findByText("Save plan");
+      expect(saveAsync).toHaveBeenCalledTimes(1);
+      const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "stretch", "shower"]);
+      expect(plan.fallback).toHaveLength(3);
     });
 
     /**
@@ -432,20 +609,25 @@ describe("the coping plan builder", () => {
      * - it is here to stop a future re-seed from being introduced.
      */
     it("keeps what the person has just added when the query resolves again underneath it", async () => {
-      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      setPlan(readPlan());
       const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
 
       fireEvent.press(screen.getByText("Have a shower"));
 
       // A refetch delivers the stored document again, as a fresh object.
-      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      setPlan(readPlan());
       rerender(<DbtCopingPlanEditorScreen />);
 
       fireEvent.press(screen.getByText("Save plan"));
 
       await screen.findByText("Save plan");
       const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
-      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "shower"]);
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual([
+        "walk",
+        "aBlanket",
+        "thisWillPass",
+        "shower",
+      ]);
     });
   });
 });
