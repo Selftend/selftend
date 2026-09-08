@@ -123,19 +123,18 @@ describe("ModuleHomeHeader action buttons", () => {
    * on its own. `Got it` is the half that still bites: it is live copy, rendered by
    * the meditation and mood onboarding modals, so this stays a real assertion that
    * the module header does not grow a modal of its own on first render.
+   *
+   * A sibling that asserted `queryByText(/Tap here/i)` is null was removed for the
+   * same reason (#2215): that wording was the tour's too, nothing in `src`, `app` or
+   * either locale can render it, and a guard that cannot fail only inflates the
+   * pass count. The e2e half in `test/e2e/button-tours.e2e.test.ts` keeps the
+   * negative assertion on the full removed sentence, where it runs against a real
+   * page rather than this component's tree.
    */
   it("renders no first-run coach-mark overlay for any action", () => {
     renderHeader({ includeProgram: true });
 
     expect(screen.queryByText("Got it")).toBeNull();
-  });
-
-  it("renders no tour even when actions were never dismissed", () => {
-    // No shownButtonTours mechanism remains - the module header never shows tips,
-    // regardless of any "dismissed" state (there's no dismissal to track).
-    renderHeader();
-
-    expect(screen.queryByText(/Tap here/i)).toBeNull();
   });
 });
 

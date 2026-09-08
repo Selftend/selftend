@@ -541,22 +541,26 @@ describe("aggregate analytics reports (integration)", () => {
 
   describe("engagement report: asked, never attested", () => {
     // #1978, the evidence #1936 reopens the age gate's placement on. Counted:
-    // an account created after the gate shipped, with no age verdict written
-    // and no consent version accepted - someone who met the first screen and
-    // stopped there.
+    // an account created at or after the instant the gate scopes itself on,
+    // with no age verdict written - someone who met the first screen and
+    // stopped there, whatever the consent column says (#2241, after #2227: an
+    // account that consented on 0.17.0 is asked on updating, and is counted).
     //
     // ☠️ THE CUTOFF IS THE WHOLE FIGURE. `age_floor_met` is null for every
     // account that predates the gate, and null means *never asked*, so without
     // the created-after cutoff this number is the entire pre-gate install base.
-    // Fixture 44 sits an hour BELOW the cutoff and 40..43 above it, because a
-    // window assertion whose fixtures do not straddle both edges survives a
-    // mutation that moves the edge.
+    // Fixture 44 sits an hour BELOW the cutoff, 46 exactly ON it, and 40..43
+    // above it, because a window assertion whose fixtures do not straddle both
+    // edges survives a mutation that moves the edge - and the gate's own edge is
+    // `created_at < instant` exempt, so ON the instant is asked.
     //
     // The shipped section cannot be filtered to this suite's cohort, so it is
     // read before and after seeding and the assertions are on the deltas.
     const CUTOFF = "2026-09-06T00:00:00Z";
+    const LATER = "2026-09-06T00:00:01Z";
     const WIDE = "2026-01-01T00:00:00Z";
     const AFTER = `timestamptz '2026-09-06T01:00:00Z'`;
+    const ON = `timestamptz '${CUTOFF}'`;
     const BELOW = `timestamptz '2026-09-05T23:00:00Z'`;
 
     interface Row {
@@ -595,6 +599,7 @@ describe("aggregate analytics reports (integration)", () => {
     beforeAll(() => {
       deleteSuiteUsers();
       before.set(CUTOFF, askedNeverAttested(CUTOFF));
+      before.set(LATER, askedNeverAttested(LATER));
       before.set(WIDE, askedNeverAttested(WIDE));
 
       // 40: above the cutoff with NO preferences row at all. This is the person
@@ -610,7 +615,9 @@ describe("aggregate analytics reports (integration)", () => {
       insertAuthUser({ id: userId(42), createdAtSql: AFTER });
       insertAgeAttestation(userId(42), { ageFloorMetSql: "true", policyVersionSql: "null" });
 
-      // 43: got past the consent gate behind it, so they were never stuck here.
+      // 43: consented, never attested - the #2227 cohort. An account created
+      // on 0.17.0 has a policy version on record and meets the age gate on
+      // updating; the gate asks it, so the report counts it (#2241).
       insertAuthUser({ id: userId(43), createdAtSql: AFTER });
       insertAgeAttestation(userId(43), {
         ageFloorMetSql: "null",
@@ -625,19 +632,25 @@ describe("aggregate analytics reports (integration)", () => {
       // 45: a guest above the cutoff. Guests pass through the same gate and
       // abandon for different reasons, so they are counted on their own row.
       insertAuthUser({ id: userId(45), createdAtSql: AFTER, isAnonymous: true });
+
+      // 46: created exactly ON the instant. The gate exempts strictly-before,
+      // so this account is asked; a `>` window would drop it.
+      insertAuthUser({ id: userId(46), createdAtSql: ON });
+      insertAgeAttestation(userId(46), { ageFloorMetSql: "null", policyVersionSql: "null" });
     });
 
     afterAll(deleteSuiteUsers);
 
     it("counts the account that never answered, whether or not it has a preferences row", () => {
-      expect(delta("registered").askedNeverAttested).toBe(2);
+      // 40 (no row), 41 (null/null), 43 (consented, never attested), 46 (on the instant).
+      expect(delta("registered").askedNeverAttested).toBe(4);
     });
 
-    it("excludes an account that answered, and one that reached the consent gate", () => {
-      // Four registered fixtures are in the window; only two of them stopped.
-      // Both halves are asserted: dropping the consent-gate leg of the
-      // predicate would let 43 in while leaving the window size untouched.
-      expect(delta("registered")).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 2 });
+    it("excludes an account that answered, and counts one that consented before the gate", () => {
+      // Five registered fixtures are in the window; four of them stopped. The
+      // window size is asserted beside the count, so a predicate that lets 42
+      // in or drops 43 cannot hide behind a matching total.
+      expect(delta("registered")).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 4 });
     });
 
     it("excludes the pre-gate install base, which has the identical null/null shape", () => {
@@ -645,8 +658,14 @@ describe("aggregate analytics reports (integration)", () => {
       // sitting an hour below the cutoff. So it is invisible at the shipped
       // cutoff and appears the moment the cutoff is moved below it - which is
       // the only thing separating "asked and stopped" from "never asked".
-      expect(delta("registered")).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 2 });
-      expect(delta("registered", WIDE)).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 3 });
+      expect(delta("registered")).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 4 });
+      expect(delta("registered", WIDE)).toEqual({ accountsSinceCutoff: 6, askedNeverAttested: 5 });
+    });
+
+    it("asks on the instant itself - the gate exempts strictly-before (#2241)", () => {
+      // Fixture 46 sits exactly on the cutoff. Moving the cutoff one second
+      // later drops it from both the window and the count.
+      expect(delta("registered", LATER)).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 3 });
     });
 
     it("splits guests from registered accounts", () => {
@@ -667,17 +686,19 @@ describe("aggregate analytics reports (integration)", () => {
       }
     });
 
-    it("ships with a cutoff that yields zero, because the gate has not been released", () => {
-      // ☠️ Not a style assertion. `infinity` is what stops the shipped default
-      // reading as a measured zero; the day the gate ships, these two lines and
-      // this test move together.
+    it("ships keyed on the gate's own instant, and says so on every row (#2241)", () => {
+      // The shipped cutoff is AGE_GATE_INTRODUCED_AT - the migration instant,
+      // not a release date - and test/analytics-age-gate-cutoff.test.ts holds
+      // it equal to the client constant. Here: the shipped section runs as-is,
+      // and the row names the constant beside the instant, so a reader knows
+      // which edge the window is keyed on.
       const source = reportSql("engagement");
-      expect(source).toContain(`\\set age_gate_cutoff 'infinity'`);
-      expect(source).toContain(`\\set age_gate_release 'unreleased'`);
+      expect(source).toContain(`\\set age_gate_cutoff '2026-09-05T00:00:00Z'`);
+      expect(source).toContain(`\\set age_gate_cutoff_source 'AGE_GATE_INTRODUCED_AT'`);
       const rows = queryWithin("engagement", section("engagement", 6));
-      expect(rows).toEqual([
-        ["guest", "unreleased", "infinity", "0", "0", ""],
-        ["registered", "unreleased", "infinity", "0", "0", ""],
+      expect(rows.map((row) => row.slice(0, 3))).toEqual([
+        ["guest", "AGE_GATE_INTRODUCED_AT", "2026-09-05T00:00:00Z"],
+        ["registered", "AGE_GATE_INTRODUCED_AT", "2026-09-05T00:00:00Z"],
       ]);
     });
   });
