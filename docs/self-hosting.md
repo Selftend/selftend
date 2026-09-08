@@ -138,6 +138,8 @@ EXPO_PUBLIC_SPONSORS_URL=<your-sponsors-url>
 EXPO_PUBLIC_YOUTUBE_URL=<your-youtube-channel-url>
 ```
 
+⚠️ In `.env.example` the store and community URL lines are **commented out on purpose**: a bare `KEY=` in a dotenv file is an empty string, not unset, and for those keys empty is the opt-out — so a copied template would hide the Donate row and every community link ([#2209](https://github.com/Selftend/selftend/issues/2209)). Uncomment a line only to set a value; `test/env-example-opt-outs.test.ts` keeps the template that way.
+
 Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
 
 Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. Both **default in code to Selftend’s own live listings**, the same way the Discord, Reddit, YouTube and Sponsors links do — a build handed no store config still points somewhere real. **Set each to your own listing URL, or to an empty string, on a self-hosted fork: your build is not on our listings, and shipping a link to someone else’s is exactly what the empty string is for.** An empty store URL drops that store’s button entirely — it is _not_ a "coming soon" state, because a fork’s app is not coming to our listing. Empty also means no download bar and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).

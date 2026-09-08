@@ -105,16 +105,16 @@ node scripts/audio/render.mjs preflight --round A
 # The real thing. Measures each take and re-rolls the ones below the gate.
 node scripts/audio/render.mjs render --round A --go
 
-# The sixteen voice slots — 4 cues x 2 voices, in English and Bulgarian — which
-# `render` does NOT cover. Renders every slot from the catalog's four voices:
+# The eight voice slots — 4 cues x 2 voices, English only — which `render` does
+# NOT cover. Renders every slot from the catalog's two voices:
 node scripts/audio/render.mjs render-voices --go
 
 # `--voice-id` renders a SHORTLISTED voice without writing it into catalog.mjs.
 # ⚠️ Name only the voices you are trialling; the others keep their catalog id, and
-# ALL sixteen slots still render. The ids are guided | guided-male (en) and
-# guided-bg | guided-male-bg (bg) — run with no --go to see the quote first.
+# ALL eight slots still render. The ids are guided | guided-male — run with no
+# --go to see the quote first. (The `-bg` ids are gone: see "One language" below.)
 node scripts/audio/render.mjs render-voices \
-  --voice-id guided-bg=<voiceId> --go
+  --voice-id guided-male=<voiceId> --go
 ```
 
 ☠️ **`--voice-id` exists because #1136's own criterion had a chicken-and-egg in
@@ -141,13 +141,15 @@ The pass splits once, at the known risk (#1134 §5).
 |                                                                         | What                                              | Cost                     |
 | ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------ |
 | **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **495 credits**    |
-| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 16 voice slots           | 570s ≈ **6,270 credits** |
+| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice slots            | 570s ≈ **6,270 credits** |
 
 ⚠️ **The voice half is not in those credit figures.** Sound Effects are priced per
 second (11 credits/sec, #1347); Text to Speech is priced per **character**, so all
-sixteen voice slots at two candidates each come to a few hundred characters —
-cents, not credits. Adding Bulgarian roughly doubled the slot count and did not
-move the number below.
+eight voice slots at two candidates each come to a few hundred characters —
+cents, not credits. The Bulgarian expansion (#1573) briefly doubled the slot count
+to sixteen and did not move the number below either; the owner rejected those
+voices by ear on 2026-08-31, so the lane is English-only again and the row above
+reads eight.
 
 ≈**6,765 credits** if every slot passes on its first draw. ⚠️ The number that
 matters before `--go` is the **worst** case — every slot re-rolling to the bound
@@ -360,23 +362,33 @@ Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
 
-### Two languages, and why pairing lives in one function
+### One language, and why pairing still lives in one function
 
-The voice half is **cues ⋈ voices joined ON `lang`** — 8 cues (4 English, 4
-Bulgarian) against 4 voices (2 per language) giving **16 slots**, not the 32 a
-cartesian product gives. `voiceSlotSpec` performs that join and returns the paired
-slots; `render`, `ship-plan`, `manifest` and the audition all map what it hands
-them (#1581).
+The voice half is **cues ⋈ voices joined ON `lang`** — today 4 English cues
+against 2 English voices giving **8 slots**. `voiceSlotSpec` performs that join and
+returns the paired slots; `render`, `ship-plan`, `manifest` and the audition all
+map what it hands them (#1581).
 
-☠️ **The reason it is one function is that the wrong version fails silently and
-expensively.** Each of those consumers used to build `cues × voices` itself — one
-line, three copies, correct by luck while there was one language, because every
-voice really did say every cue. With two, the product is **right in count and wrong
-in content**: half of the 32 pair a Bulgarian voice with English words. Every one of
-them renders, bills, and lands under a unique `shipFileName`, so the budget gate
-passes a set that is half nonsense. A correct measurement of an incorrect render is
-the failure mode this pipeline has hit most often (#1317, #1393) and is worst at
-seeing.
+☠️☠️ **Bulgarian was rendered, auditioned and REJECTED BY EAR (owner,
+2026-08-31).** #1573 added four bg cues and two bg voices (`guided-bg`,
+`guided-male-bg`), took the join to 8 cues x 4 voices = 16 slots, rendered all 32
+takes — and the owner's verdict on the listen was that neither voice was good
+enough to ship. #1585 took the cues, the voices and the `-bg` ids back out of
+`catalog.mjs`, `audition.mjs`, `render.mjs` and `ship-plan.mjs`; no `_bg` file
+exists under `assets/sounds/`. **The lane is English-only again**, and
+`catalog.mjs`'s `VOICES` docblock says why the pipeline supporting a second
+language is not an argument for re-opening it: the pipeline is not what said no.
+
+☠️ **The join stays, because the wrong version fails silently and expensively.**
+Each of those consumers used to build `cues × voices` itself — one line, three
+copies, correct by luck while there was one language, because every voice really
+did say every cue. With two, the product is **right in count and wrong in
+content**: half of a 32-row cartesian product pairs a Bulgarian voice with English
+words. Every one of them renders, bills, and lands under a unique `shipFileName`,
+so the budget gate passes a set that is half nonsense. A correct measurement of an
+incorrect render is the failure mode this pipeline has hit most often (#1317,
+#1393) and is worst at seeing. That is why the `lang` field stays on every cue and
+voice while there is only one value of it.
 
 ☠️ **A join fails silently by returning fewer rows, so both empty sides throw.**
 Misspell a cue's `lang` and it simply matches no voice; the slot list quietly loses
@@ -385,25 +397,27 @@ they all read the same list. `pairByLanguage` therefore refuses a cue no voice c
 say and a voice with nothing to say.
 
 ☠️ **`resolveVoices`' duplicate check is PER-LANGUAGE, deliberately.** Language is a
-property of the **request**, not of the voice, so if a Bulgarian voice fails its ear
-test the documented fallback is to hand Bulgarian text to the English pair — which
-makes `guided` and `guided-bg` share a `voiceId` legitimately. A global uniqueness
-check would kill that fallback with a message about a matched pair. What must stay
-unique is the female/male pair **within** one language.
+property of the **request**, not of the voice, so a second language's fallback —
+handing its text to the English pair — would make two ids share a `voiceId`
+legitimately. A global uniqueness check would kill that fallback with a message
+about a matched pair. What must stay unique is the female/male pair **within** one
+language.
 
 ⚠️ The app-side ids never move. A stored `user_preferences.breath_sound_id` is only
-ever `guided` or `guided-male`; language swaps the assets underneath those two
-picker rows. The `-bg` voice ids exist so the render can name files apart
-(`guide_inhale_bg.guided-bg.m4a`).
+ever `guided` or `guided-male`; a language would swap the assets underneath those
+two picker rows, which is what the `-bg` render ids were for (a file named apart,
+`guide_inhale_bg.guided-bg.m4a`) while they existed.
 
 ### The size budget, and why a voice cue's filename carries its voice
 
-☠️ **Three file counts appear on this page and only one is the target.** `21` is
-#1210's original acceptance check, quoted below as history. `19` is what ships
-**today**, measured. `27` is the target — `SHIP_FILE_COUNT`, the set once #1573's
-eight Bulgarian cues are rendered. The set is not complete until the survey says
-27; if a number here disagrees with `SHIP_FILE_COUNT`, `SHIP_FILE_COUNT` is right
-and this prose is stale.
+☠️ **Two file counts appear on this page and only one is the target.** `21` is
+#1210's original acceptance check, quoted below as history. `19` is what ships —
+`SHIP_FILE_COUNT`, measured. ⚠️ It was briefly `27`, the set #1573's eight
+Bulgarian cues would have made; the owner rejected those voices by ear on
+2026-08-31, the eight files never shipped, and the count went back to 19 (#1585).
+If a number here disagrees with `SHIP_FILE_COUNT`, `SHIP_FILE_COUNT` is right and
+this prose is stale — `test/audio-readme-ship-count.test.ts` holds this paragraph
+to that.
 
 #1210's fifth acceptance check is "**Budget**: 21 files, ~3.21 MB, under the 4.0 MB
 ceiling", and it was the last item on that list with no instrument behind it —
@@ -429,7 +443,9 @@ repo and `audio-masters/` is gitignored. So every voice unit probes to nothing, 
 counted _unknown_ rather than zero, and the command labels its total a **FLOOR**.
 Measured on 2026-08-31, the ACTUAL set is **19 files / 3,578,571 B / 3.413 MiB**,
 leaving **601 KiB** under the 4.000 MiB ceiling. The eight English cues are 117,126
-B of that, so #1573's Bulgarian eight cost about **19% of the headroom**.
+B of that — the measure of what a second language's eight cues would cost, about
+**19% of the headroom**. #1573's Bulgarian eight were budgeted at that and never
+shipped (rejected by ear, 2026-08-31), so the 19 files above are the whole set.
 
 ☠️ **A set that fits because four of its files were never written is not a set that
 fits.** By byte count, twenty of twenty-one is the healthiest set the pass could
@@ -728,9 +744,11 @@ settled and half the voice set would ship unheard. The two voices sit in one sec
 of the page on purpose: #1136 asks for a **matched pair auditioned on the shipping
 words**, and the two halves of that comparison have to be adjacent to be one.
 
-`--voice` is validated against the **slot list**, not against `VOICES`, so
-`choose guide_inhale 1 --voice guided-bg` is refused: a Bulgarian voice does not say
-an English cue. That check was the **fourth** pairing site and #1581 missed it — the
+`--voice` is validated against the **slot list**, not against `VOICES`, so a voice
+that does not say that cue is refused. With one language the two checks coincide;
+while the Bulgarian lane existed, `choose guide_inhale 1 --voice guided-bg` was the
+case that told them apart — a Bulgarian voice does not say an English cue, and a
+`VOICES` lookup accepted it. That check was the **fourth** pairing site and #1581 missed it — the
 other three (render, ship, manifest) were centralised while this one still asked "is
 that a real voice?" instead of "is that a real pairing?".
 
