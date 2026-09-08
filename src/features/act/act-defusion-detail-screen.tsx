@@ -17,7 +17,11 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
-import { useDefusionLog, useDefusionLogs, useDeleteDefusionLog } from "@/src/features/act/queries";
+import {
+  useDefusionLog,
+  useDefusionLogPages,
+  useDeleteDefusionLog,
+} from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -31,7 +35,7 @@ export default function ActDefusionDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: log, isLoading } = useCachedItem(
-    useDefusionLogs,
+    useDefusionLogPages,
     useDefusionLog,
     user?.id ?? null,
     logId,

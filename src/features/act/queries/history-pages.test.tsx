@@ -42,56 +42,85 @@ function row(i: number, field: string) {
   return { id: `id-${i}`, [field]: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00Z` };
 }
 
+/**
+ * `[label, hook, repository read, timestamp field, cache key, leading read arguments]`.
+ *
+ * The last column is what the read takes BETWEEN the user id and the page arguments:
+ * empty for the seven flat archives, the status for the committed-action archive, which
+ * pages each finished status on its own (#2186).
+ */
 const ARCHIVES = [
-  ["defusion", useDefusionLogPages, repo.listDefusionLogsPage, "createdAt", "defusionHistoryPages"],
+  [
+    "defusion",
+    useDefusionLogPages,
+    repo.listDefusionLogsPage,
+    "createdAt",
+    actKeys.defusionHistoryPages("u1"),
+    [],
+  ],
   [
     "expansion",
     useExpansionLogPages,
     repo.listExpansionLogsPage,
     "createdAt",
-    "expansionHistoryPages",
+    actKeys.expansionHistoryPages("u1"),
+    [],
   ],
   [
     "connection",
     useConnectionLogPages,
     repo.listConnectionLogsPage,
     "createdAt",
-    "connectionHistoryPages",
+    actKeys.connectionHistoryPages("u1"),
+    [],
   ],
   [
     "observing self",
     useObservingSelfSessionPages,
     repo.listObservingSelfSessionsPage,
     "createdAt",
-    "observingHistoryPages",
+    actKeys.observingHistoryPages("u1"),
+    [],
   ],
   [
     "choice point",
     useChoicePointPages,
     repo.listChoicePointsPage,
     "createdAt",
-    "choicePointHistoryPages",
+    actKeys.choicePointHistoryPages("u1"),
+    [],
   ],
   [
     "urge surf",
     useUrgeSurfLogPages,
     repo.listUrgeSurfLogsPage,
     "createdAt",
-    "urgeSurfHistoryPages",
+    actKeys.urgeSurfHistoryPages("u1"),
+    [],
   ],
   [
     "bull's-eye",
     useBullsEyeSnapshotPages,
     repo.listBullsEyeSnapshotsPage,
     "reviewedAt",
-    "bullsEyeHistoryPages",
+    actKeys.bullsEyeHistoryPages("u1"),
+    [],
   ],
   [
-    "committed action archive",
-    useCommittedActionArchivePages,
+    "completed committed action archive",
+    (userId: string | null) => useCommittedActionArchivePages(userId, "completed"),
     repo.listCommittedActionArchivePage,
     "createdAt",
-    "committedActionArchivePages",
+    actKeys.committedActionArchivePages("u1", "completed"),
+    ["completed"],
+  ],
+  [
+    "abandoned committed action archive",
+    (userId: string | null) => useCommittedActionArchivePages(userId, "abandoned"),
+    repo.listCommittedActionArchivePage,
+    "createdAt",
+    actKeys.committedActionArchivePages("u1", "abandoned"),
+    ["abandoned"],
   ],
 ] as const;
 
@@ -99,7 +128,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyName) => {
+describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, key, leading) => {
   const repoFn = () => read as jest.Mock;
 
   it("does not read anything for a signed-out user", () => {
@@ -116,7 +145,7 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(repoFn()).toHaveBeenCalledWith("u1", ACT_HISTORY_PAGE_SIZE, null);
+    expect(repoFn()).toHaveBeenCalledWith("u1", ...leading, ACT_HISTORY_PAGE_SIZE, null);
   });
 
   /**
@@ -155,7 +184,7 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
 
     const last = page[page.length - 1];
     await waitFor(() =>
-      expect(repoFn()).toHaveBeenLastCalledWith("u1", ACT_HISTORY_PAGE_SIZE, {
+      expect(repoFn()).toHaveBeenLastCalledWith("u1", ...leading, ACT_HISTORY_PAGE_SIZE, {
         timestamp: last[field as keyof typeof last],
         id: last.id,
       }),
@@ -175,7 +204,6 @@ describe.each(ARCHIVES)("%s archive paging", (_label, useHook, read, field, keyN
     const { result } = renderHook(() => useHook("u1"), { wrapper: wrap(client) });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const key = actKeys[keyName]("u1");
     expect(client.getQueryData(key)).toMatchObject({ pages: [[]] });
   });
 });

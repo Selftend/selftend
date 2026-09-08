@@ -537,7 +537,6 @@
     "activeTitle": "Активни",
     "completedTitle": "Завършени",
     "abandonedTitle": "Изоставени",
-    "showMore": "Покажи още",
     "newTitle": "Ново ангажирано действие",
     "newSubtitle": "Малка, конкретна стъпка в посоката на ценностите.",
     "domainLabel": "Коя област на живота?",
@@ -583,7 +582,9 @@
     "deleteConfirmBody": "Всички стъпки ще бъдат изтрити. Това не може да бъде отменено.",
     "delete": "Изтрий",
     "cancel": "Отказ",
-    "progressLabel": "{{done}}/{{total}} стъпки завършени"
+    "progressLabel": "{{done}}/{{total}} стъпки завършени",
+    "showMoreCompleted": "Покажи още завършени действия",
+    "showMoreAbandoned": "Покажи още изоставени действия"
   },
   "dropAnchor": {
     "title": "Пусни котва",

@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react-native";
 
 import ActCommittedActionDetailScreen from "@/src/features/act/act-committed-action-detail-screen";
-import { useCommittedActions } from "@/src/features/act/queries";
+import { useListedCommittedActions } from "@/src/features/act/queries";
 import type { CommittedAction } from "@/src/features/act/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -27,7 +27,9 @@ jest.mock("@/src/stores/toast-store", () => ({
 jest.mock("@/src/features/act/queries", () => {
   const idle = () => ({ mutateAsync: jest.fn(), isPending: false });
   return {
-    useCommittedActions: jest.fn(),
+    // The detail probes the list screen's own cache entries (#2190), never the plain
+    // status-less list read — that one is absent here on purpose, so a probe of it throws.
+    useListedCommittedActions: jest.fn(),
     useCommittedAction: jest.fn(() => ({ data: null, isLoading: false })),
     useActionSteps: jest.fn(() => ({ data: [] })),
     useSaveActionStep: idle,
@@ -38,8 +40,8 @@ jest.mock("@/src/features/act/queries", () => {
   };
 });
 
-const mockUseCommittedActions = useCommittedActions as jest.MockedFunction<
-  typeof useCommittedActions
+const mockUseListedCommittedActions = useListedCommittedActions as jest.MockedFunction<
+  typeof useListedCommittedActions
 >;
 
 const ACTION: CommittedAction = {
@@ -56,9 +58,7 @@ const ACTION: CommittedAction = {
 };
 
 function renderDetail(action: CommittedAction) {
-  mockUseCommittedActions.mockReturnValue({ data: [action] } as unknown as ReturnType<
-    typeof useCommittedActions
-  >);
+  mockUseListedCommittedActions.mockReturnValue({ data: [action] });
   renderWithProviders(<ActCommittedActionDetailScreen />);
 }
 
