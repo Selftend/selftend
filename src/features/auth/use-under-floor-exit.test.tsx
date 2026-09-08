@@ -24,6 +24,15 @@ jest.mock("@/src/lib/sentry", () => ({
   isReportableError: jest.fn(() => true),
 }));
 
+// Whoever is signed in RIGHT NOW, which is not the same question as whose
+// verdict this screen is rendering - and #2195 is what happens when the two are
+// conflated.
+let mockSessionUserId: string | null = "user-1";
+
+jest.mock("@/src/providers/session-provider", () => ({
+  useSession: () => ({ user: mockSessionUserId === null ? null : { id: mockSessionUserId } }),
+}));
+
 const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
 const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>;
 
@@ -31,19 +40,63 @@ function wrapper({ children }: PropsWithChildren) {
   return <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>;
 }
 
-const renderExit = (userId: string | null) =>
-  renderHook(() => useUnderFloorExit(userId), { wrapper });
+/**
+ * `verdictUserId` is the account the age gate judged; `sessionUserId` is the
+ * account signed in on the device. They are the same person on the ordinary
+ * path and different people on the one this hook now has to refuse.
+ */
+const renderExit = (verdictUserId: string | null, sessionUserId = verdictUserId) => {
+  mockSessionUserId = sessionUserId;
+  return renderHook(() => useUnderFloorExit(verdictUserId), { wrapper });
+};
+
+/** The whole ordinary path: the verdict lands, then the person confirms. */
+const confirmAndSettle = async (result: { current: { eraseAccount: () => void } }) => {
+  await act(async () => result.current.eraseAccount());
+};
 
 beforeEach(async () => {
   jest.clearAllMocks();
   await AsyncStorage.clear();
+  mockSessionUserId = "user-1";
   mockDeleteAccount.mockResolvedValue(undefined);
   mockSignOut.mockResolvedValue(undefined);
 });
 
 describe("the under-floor exit", () => {
-  it("deletes the account and ends the session", async () => {
+  it("blocks the device on mount, before anyone has confirmed anything", async () => {
+    // ☠️ The floor is not the part that waits for a press. The device is
+    // blocked whether or not the erasure is ever asked for, so closing the app
+    // is not a way past the verdict.
     const { result } = renderExit("user-1");
+
+    await waitFor(async () =>
+      expect(await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).not.toBeNull(),
+    );
+    expect(result.current.state).toBe("awaiting-confirmation");
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("deletes nothing on mount, however often the screen re-renders", async () => {
+    // ☠️☠️ #2193. This used to be a mount effect: one press of the age gate's
+    // submit button - which names no age and warns of nothing - both produced
+    // the verdict and executed an irreversible server-side purge.
+    const { rerender, result } = renderExit("user-1");
+
+    await waitFor(() => expect(result.current.state).toBe("awaiting-confirmation"));
+    rerender(undefined);
+    rerender(undefined);
+    await act(async () => {});
+
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("deletes the account and ends the session once the person confirms", async () => {
+    const { result } = renderExit("user-1");
+    await waitFor(() => expect(result.current.state).toBe("awaiting-confirmation"));
+
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("erased"));
     expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
@@ -63,6 +116,7 @@ describe("the under-floor exit", () => {
     });
 
     const { result } = renderExit("user-1");
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("erased"));
     expect(blockAtDeleteTime).toHaveBeenCalledTimes(1);
@@ -73,6 +127,7 @@ describe("the under-floor exit", () => {
     mockDeleteAccount.mockRejectedValue(new Error("offline"));
 
     const { result } = renderExit("user-1");
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("failed"));
     await expect(AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).resolves.not.toBeNull();
@@ -85,6 +140,7 @@ describe("the under-floor exit", () => {
     mockDeleteAccount.mockRejectedValue(new Error("offline"));
 
     const { result } = renderExit("user-1");
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("failed"));
     expect(mockSignOut).not.toHaveBeenCalled();
@@ -95,29 +151,20 @@ describe("the under-floor exit", () => {
     mockDeleteAccount.mockRejectedValueOnce(new Error("offline"));
 
     const { result } = renderExit("user-1");
+    await confirmAndSettle(result);
     await waitFor(() => expect(result.current.state).toBe("failed"));
 
-    await act(async () => result.current.retry());
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("erased"));
     expect(mockDeleteAccount).toHaveBeenCalledTimes(2);
     expect(mockSignOut).toHaveBeenCalledWith("global");
   });
 
-  it("runs the erasure once, however often the screen re-renders", async () => {
-    const { rerender, result } = renderExit("user-1");
-
-    await waitFor(() => expect(result.current.state).toBe("erased"));
-    rerender(undefined);
-    rerender(undefined);
-
-    expect(mockDeleteAccount).toHaveBeenCalledTimes(1);
-  });
-
-  it("still blocks the device when there is no session to delete", async () => {
-    // The web sign-up path has no session at the moment of the verdict, and a
-    // returning blocked device has none either.
-    const { result } = renderExit(null);
+  it("still blocks the device when there is no verdict to act on", async () => {
+    // A returning blocked device carries the flag and no verdict: the flag
+    // holds an expiry and nothing else, so it can name no account.
+    const { result } = renderExit(null, null);
 
     // ☠️ NOT "erased": nothing was removed, and the screen must not claim a
     // removal it never observed.
@@ -141,7 +188,7 @@ describe("the under-floor exit", () => {
 
     // A launch twelve hours later, still inside the window.
     jest.setSystemTime(new Date(verdict.getTime() + 12 * 60 * 60 * 1000));
-    const { result } = renderExit(null);
+    const { result } = renderExit(null, null);
     await waitFor(() => expect(result.current.state).toBe("nothing-to-erase"));
 
     expect(await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).toBe(setAtVerdict);
@@ -155,8 +202,77 @@ describe("the under-floor exit", () => {
     mockSignOut.mockRejectedValue(new Error("network"));
 
     const { result } = renderExit("user-1");
+    await confirmAndSettle(result);
 
     await waitFor(() => expect(result.current.state).toBe("erased"));
     expect(mockCaptureError).toHaveBeenCalled();
+  });
+});
+
+/**
+ * ☠️☠️ #2195: the block is device-scoped and the erasure is account-scoped, and
+ * for 24 hours after one person's verdict the two were not the same account.
+ *
+ * The scenario every test here is about: person A answers below their floor on
+ * a shared phone; inside the window person B signs into their own established
+ * account and reaches `(app)`, which renders this screen for B's session.
+ */
+describe("the account the under-floor exit may act on", () => {
+  it("never erases an account the verdict did not judge", async () => {
+    const { result } = renderExit("user-a", "user-b");
+
+    await waitFor(() => expect(result.current.state).toBe("nothing-to-erase"));
+    // Even if the control were somehow pressed: the guard is next to the call,
+    // not only in the render.
+    await confirmAndSettle(result);
+
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("nothing-to-erase");
+  });
+
+  it("still blocks the device it cannot vouch for, so the floor is untouched", async () => {
+    // The fix removes the DESTRUCTION from a session the flag cannot vouch for.
+    // It must not remove the block - that would turn a wrong-subject bug into a
+    // way past the age floor.
+    const { result } = renderExit(null, "user-b");
+
+    await waitFor(async () =>
+      expect(await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).not.toBeNull(),
+    );
+    expect(result.current.state).toBe("nothing-to-erase");
+  });
+
+  it("stops offering the erasure the moment another account is the signed-in one", async () => {
+    // The verdict's own account, then a different one on the same mount: the
+    // offer has to withdraw, because the RPC deletes auth.uid() and would take
+    // the newcomer instead.
+    const { rerender, result } = renderExit("user-a", "user-a");
+    await waitFor(() => expect(result.current.state).toBe("awaiting-confirmation"));
+
+    mockSessionUserId = "user-b";
+    rerender(undefined);
+
+    await waitFor(() => expect(result.current.state).toBe("nothing-to-erase"));
+    await confirmAndSettle(result);
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("does not re-label an erasure that already landed when the sign-out clears the session", async () => {
+    // ☠️ The successful path ENDS with no session at all, so a naive "no
+    // session, nothing to erase" would overwrite the one state that tells the
+    // person their account is gone.
+    mockSignOut.mockImplementation(async () => {
+      mockSessionUserId = null;
+    });
+
+    const { rerender, result } = renderExit("user-1");
+    await confirmAndSettle(result);
+    await waitFor(() => expect(result.current.state).toBe("erased"));
+
+    rerender(undefined);
+    await act(async () => {});
+
+    expect(result.current.state).toBe("erased");
   });
 });

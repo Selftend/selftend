@@ -18,7 +18,6 @@ import {
 } from "@/src/features/auth/use-under-floor-exit";
 import { crisisActionUrls } from "@/src/features/policies/policy-content";
 import { openExternalUrl } from "@/src/lib/linking";
-import { useSession } from "@/src/providers/session-provider";
 
 /**
  * Where an under-floor verdict lands (#1765, spec #227 §3).
@@ -33,11 +32,18 @@ import { useSession } from "@/src/providers/session-provider";
  * implied, because none occurred: someone answered two questions honestly.
  *
  * **No retry, and no hint about what a passing answer would have been.** The
- * one control that is not a link out is the erasure retry, and that acts on the
- * account rather than on the answers - a screen offering "try again" would be a
- * screen teaching the floor, which is the same reason #1764's gate names no age
- * anywhere. `under-floor-screen.test.ts`'s copy guard fires its own predicate on
- * deliberately bad copy so those absence assertions cannot go quiet.
+ * only controls that are not links out act on the ACCOUNT - confirm the
+ * erasure, or run it again after it failed - never on the answers. A screen
+ * offering "try again" would be a screen teaching the floor, which is the same
+ * reason #1764's gate names no age anywhere. `under-floor-screen.test.ts`'s
+ * copy guard fires its own predicate on deliberately bad copy so those absence
+ * assertions cannot go quiet.
+ *
+ * ☠️☠️ **The screen offers the erasure; it never performs it** (#2193), and it
+ * is handed the id of the account the verdict judged rather than reading the
+ * current session (#2195). Both properties live in `useUnderFloorExit`; what
+ * this file owes them is a control the person has to press, and a prop it does
+ * not second-guess.
  *
  * **The support links are the point of the screen, not a footer.** This person
  * is about to not have an account, so both destinations have to work without
@@ -57,22 +63,36 @@ import { useSession } from "@/src/providers/session-provider";
  * account to remove.
  */
 const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
+  "awaiting-confirmation": "auth:underFloor.erasureConfirm",
   working: "auth:underFloor.erasing",
   erased: "auth:underFloor.erased",
   failed: "auth:underFloor.erasureFailed",
   "nothing-to-erase": null,
 };
 
-export function UnderFloorScreen() {
+interface UnderFloorScreenProps {
+  /**
+   * The account the under-floor verdict was rendered for, or `null` when this
+   * mount is the device block alone and judged nobody.
+   *
+   * ☠️ Not `useSession().user.id` (#2195). The device flag holds an expiry and
+   * no identity, and `ProtectedLayout` renders this screen for ANY session
+   * while the window holds - so reading the current user here made the next
+   * account signed in on a shared phone the one that got deleted. The verdict
+   * carries whose it is; the hook refuses everything else.
+   */
+  verdictUserId: string | null;
+}
+
+export function UnderFloorScreen({ verdictUserId }: UnderFloorScreenProps) {
   const { t } = useTranslation(["auth", "common", "policies"]);
-  const { user } = useSession();
-  // Blocks the device, then erases the account that exists on ALL FOUR entry
-  // paths - the gate sits below `ProtectedLayout`'s session check, so it is
-  // never reached without one (#1919 corrected "three of the four" here).
-  // Mounted here rather than in `ProtectedLayout` so that the status it reports
-  // has somewhere to be read: a silent erasure that failed is the thing the
-  // ticket rules out.
-  const { retry, state } = useUnderFloorExit(user?.id ?? null);
+  // Blocks the device on mount, and offers - never performs - the erasure of
+  // the account that exists on ALL FOUR entry paths, since the gate sits below
+  // `ProtectedLayout`'s session check and is never reached without one (#1919
+  // corrected "three of the four" here). Mounted here rather than in
+  // `ProtectedLayout` so that the status it reports has somewhere to be read: a
+  // silent erasure that failed is the thing the ticket rules out.
+  const { eraseAccount, state } = useUnderFloorExit(verdictUserId);
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -84,9 +104,17 @@ export function UnderFloorScreen() {
           <CardContent>
             <View className="gap-3">
               <Text>{t("auth:underFloor.body")}</Text>
-              <Text className="text-muted-foreground text-sm">
-                {t("auth:underFloor.retention")}
-              </Text>
+              {/* ☠️ Only once the erasure has actually landed. "Nothing you
+                  entered has been kept" is a claim about a removal, and before
+                  #2193 it was printed unconditionally - including on the mount
+                  where nothing had been removed yet, and on a device block that
+                  will never remove anything. Same rule as the sentences below:
+                  the screen states what it observed. */}
+              {state === "erased" ? (
+                <Text className="text-muted-foreground text-sm" testID="under-floor-retention">
+                  {t("auth:underFloor.retention")}
+                </Text>
+              ) : null}
               {/* The erasure, said out loud. A deletion that quietly failed
                   would leave a live account behind a screen promising there
                   is none, so each state gets its own sentence rather than one
@@ -98,8 +126,30 @@ export function UnderFloorScreen() {
                   {t(ERASURE_COPY_KEY[state])}
                 </Text>
               ) : null}
+              {/* ☠️☠️ The confirmation, and the only thing that ever starts the
+                  purge (#2193). The age gate's submit press produced the
+                  verdict; it did not ask for an account to be destroyed, and it
+                  could not have - the gate names no age and no qualifying
+                  answer, so nobody pressing it knows it is destructive. This is
+                  a separate press, on a separate screen, under a sentence that
+                  says the removal is permanent. It is NOT the default action of
+                  the screen: a person who mistyped a birth year can leave it
+                  alone, and stays blocked either way. */}
+              {state === "awaiting-confirmation" ? (
+                <Button
+                  onPress={eraseAccount}
+                  testID="under-floor-erasure-confirm"
+                  variant="secondary"
+                >
+                  <Text>{t("auth:underFloor.erasureConfirmLabel")}</Text>
+                </Button>
+              ) : null}
               {state === "failed" ? (
-                <Button onPress={retry} testID="under-floor-erasure-retry" variant="secondary">
+                <Button
+                  onPress={eraseAccount}
+                  testID="under-floor-erasure-retry"
+                  variant="secondary"
+                >
                   <Text>{t("auth:underFloor.erasureRetryLabel")}</Text>
                 </Button>
               ) : null}
