@@ -29,7 +29,7 @@ Before sending, Sign-In Information was switched to **`demo@selftend.org`** (own
 
 ## ⚠️ This document describes build 6, not `dev`
 
-Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.13.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the "Insights" screen was relabelled "Looking back" (#1903; both tables below still say "Insights", and stay that way until the release carrying the rename — #1907) and rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
+Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.18.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the Looking back screen was rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
 
 Two corrections this produced, recorded so no later session re-inherits them:
 
@@ -67,7 +67,7 @@ Selftend is a free, non-profit, open-source **wellness and guided self-help** ap
 | Tools hub     | Eight tools — mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking. Each records entries and shows history                                                                                               |
 | Modules       | **CBT** (Beta) and **ACT** (Beta), both fully usable — thought records, worry, beliefs, activities, exposure, goals; defusion, values, committed action, urge surfing. **DBT** is an overview screen marked "On the roadmap" (see the note below) |
 | Routines      | User-built routines, with their own navigation entry                                                                                                                                                                                              |
-| Insights      | Progress across the tools                                                                                                                                                                                                                         |
+| Looking back  | Progress across the tools                                                                                                                                                                                                                         |
 | Home          | A dashboard the user assembles from 28 widgets; nothing is seeded without the user choosing it                                                                                                                                                    |
 | Notifications | Ten reminder targets, **every one off by default**                                                                                                                                                                                                |
 
@@ -97,7 +97,7 @@ Sign-in also offers **Sign in with Apple** and **Google Sign-In**; either create
 | CBT / ACT modules | **Modules** in the navigation                                                                                                                                                                           |
 | Home dashboard    | Landing screen after sign-in; widgets are added and reordered by the user                                                                                                                               |
 | Routines          | **Routines** in the navigation                                                                                                                                                                          |
-| Insights          | **Insights** in the navigation                                                                                                                                                                          |
+| Looking back      | **Looking back** in the navigation                                                                                                                                                                      |
 | Reminders         | Settings → Reminders, or the **Notifications** screen. Enabling one raises the iOS permission prompt                                                                                                    |
 | Profile picture   | Settings → profile picture, which raises the photo-library permission prompt                                                                                                                            |
 | Crisis guidance   | Linked from the signed-out sign-in screen's footer — reachable **before** sign-in — and, once signed in, from **Support**, from **Legal**, and from a crisis bar carried on the module exercise screens |
