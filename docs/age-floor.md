@@ -315,10 +315,16 @@ the retry, and TanStack's own retry / refocus refetch closes that state too, so
 the person is never waiting on the button alone. The in-flight half offers no
 retry on purpose — the fetch it would re-run is already running — and clears when
 the row arrives or when the request fails into the other half. Which half is
-shown is decided by the error flag and never by the loading one: once a fetch has
-errored, pressing Retry turns fetching back on while the status stays errored, so
-keying off the loading flag would take the button away at the moment it was
-pressed.
+shown is decided by a **sticky** failure signal (the query's `errorUpdateCount`),
+never by the live error flag alone
+([#2238](https://github.com/Selftend/selftend/issues/2238)): on a query with no
+data, TanStack clears the error and resets the status to pending the instant a
+refetch starts, so keying off the live flag rendered the in-flight half — and
+took the only control away — at the moment Retry was pressed, and a retried
+request that hung left a spinner with nothing to press. Once one read has
+failed, the errored half and its Retry stay through every later attempt; a
+second press cancels a running request and starts another. Only a fetch that
+has never failed gets the in-flight half.
 
 **And it is never a dead end** ([#2228](https://github.com/Selftend/selftend/issues/2228)).
 Both halves carry a support card of their own: the `/crisis` link and Find A

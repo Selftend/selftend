@@ -326,11 +326,13 @@ have consented, used the app, and may hold entries by the time they first meet
 the question. This is the intended scope, not a defect: the alternative was
 exempting them permanently. But it means the confirmation, not the emptiness of
 the account, is what carries the proportionality argument for that cohort. One
-string is behind this: the failed-erasure message still calls the account
-"empty", which was written when only brand-new accounts could reach the screen.
-It is a copy gap rather than a behavioural one — the confirmation the person
-actually acts on already states the loss — and it is recorded here rather than
-fixed in this document.
+string was behind this: the failed-erasure message called the account "empty",
+which was written when only brand-new accounts could reach the screen.
+[#2240](https://github.com/Selftend/selftend/issues/2240) reworded it in both
+locales to say that whatever the account holds is still there, and
+`under-floor-screen.test.tsx` now refuses an emptiness claim anywhere in the
+under-floor copy; only the `erased` state says nothing was kept, after observing
+the removal.
 
 The other exception used to be an account that reached the shell through the
 fail-open window in R7 below — the one way a typo could cost someone content.
