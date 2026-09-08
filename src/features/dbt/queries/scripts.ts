@@ -4,8 +4,9 @@ import {
   countScripts,
   deleteScript,
   getScript,
+  listDoneScriptsPage,
+  listOpenScripts,
   listScripts,
-  listScriptsPage,
   markScriptDone,
   saveScript,
 } from "@/src/features/dbt/repository";
@@ -24,15 +25,30 @@ export function useScripts(userId: string | null, limit = 50) {
   });
 }
 
-export function useScriptPages(userId: string | null) {
+/**
+ * The open rungs, whole and in ladder order from the server (#2196). Not
+ * paged: a page keyed on recency chose the window and difficulty only ordered
+ * it, so the top row was the easiest of the newest twenty.
+ */
+export function useOpenScripts(userId: string | null) {
+  return useQuery({
+    queryKey: dbtKeys.scriptOpen(userId),
+    queryFn: () => listOpenScripts(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/** The done scripts under the ladder, newest-done first, keyset on `done_at`. */
+export function useDoneScriptPages(userId: string | null) {
   return useInfiniteQuery({
-    queryKey: dbtKeys.scriptHistoryPages(userId),
-    queryFn: ({ pageParam }) => listScriptsPage(userId!, DBT_HISTORY_PAGE_SIZE, pageParam),
+    queryKey: dbtKeys.scriptDonePages(userId),
+    queryFn: ({ pageParam }) => listDoneScriptsPage(userId!, DBT_HISTORY_PAGE_SIZE, pageParam),
     initialPageParam: null as RecordCursor | null,
     getNextPageParam: (lastPage) =>
       lastPage.length < DBT_HISTORY_PAGE_SIZE
         ? undefined
-        : nextDescendingCursor(lastPage, (row) => row.createdAt),
+        : // Every row on a done page has a done_at: the read filters on it.
+          nextDescendingCursor(lastPage, (row) => row.doneAt!),
     enabled: Boolean(userId),
   });
 }

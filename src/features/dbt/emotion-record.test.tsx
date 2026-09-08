@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import DbtEmotionRecordDetailScreen from "./dbt-emotion-record-detail-screen";
@@ -16,6 +16,8 @@ import {
   useSaveEmotionRecord,
 } from "@/src/features/dbt/queries";
 import enDbt from "@/src/i18n/locales/en/dbt.json";
+import { DRAFT_CAPTURE_DEBOUNCE_MS } from "@/src/lib/use-wizard-draft";
+import { useDbtEmotionRecordDraftStore } from "@/src/stores/dbt-emotion-record-draft-store";
 import { consumeThoughtRecordSeed } from "@/src/stores/thought-record-seed-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -62,6 +64,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockPathname = "/modules/dbt/emotions/new";
   consumeThoughtRecordSeed();
+  // The draft store is module-level and persisted: a test that typed leaves a
+  // draft behind, and the next form would open on it.
+  useDbtEmotionRecordDraftStore.getState().reset();
   (useSaveEmotionRecord as unknown as jest.Mock).mockReturnValue({
     mutateAsync: saveAsync,
     isPending: false,
@@ -193,6 +198,76 @@ describe("the emotion record form", () => {
       }),
     );
     expect(router.replace).toHaveBeenCalledWith("/modules/dbt/emotions");
+  });
+
+  /**
+   * ☠️ The persisted draft is captured at the wizard rate - one write ~800ms
+   * after the last keystroke - never once per keystroke (#2202). Six 4000-char
+   * parts serialised to AsyncStorage on every character was the app's longest
+   * form doing the most storage work per key; `useWizardDraft` debounces every
+   * other persisted draft the same way.
+   */
+  it("captures the draft debounced, not on every keystroke", () => {
+    jest.useFakeTimers();
+    try {
+      renderWithProviders(<DbtEmotionRecordNewScreen />);
+      const field = screen.getByLabelText("What happened");
+
+      fireEvent.changeText(field, "M");
+      fireEvent.changeText(field, "Mi");
+      fireEvent.changeText(field, "Mis");
+      expect(useDbtEmotionRecordDraftStore.getState().values).toBeNull();
+
+      act(() => {
+        jest.advanceTimersByTime(DRAFT_CAPTURE_DEBOUNCE_MS - 1);
+      });
+      expect(useDbtEmotionRecordDraftStore.getState().values).toBeNull();
+
+      act(() => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(useDbtEmotionRecordDraftStore.getState().values?.whatHappened).toBe("Mis");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  /** Finish later mid-debounce keeps the last words rather than dropping them. */
+  it("flushes a pending draft when the form is left before the debounce lands", () => {
+    jest.useFakeTimers();
+    try {
+      const view = renderWithProviders(<DbtEmotionRecordNewScreen />);
+      fireEvent.changeText(screen.getByLabelText("What happened"), "Missed the bus");
+      expect(useDbtEmotionRecordDraftStore.getState().values).toBeNull();
+
+      view.unmount();
+
+      expect(useDbtEmotionRecordDraftStore.getState().values?.whatHappened).toBe("Missed the bus");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("does not write the record back into the draft after it is saved", async () => {
+    jest.useFakeTimers();
+    try {
+      const view = renderWithProviders(<DbtEmotionRecordNewScreen />);
+      fireEvent.changeText(screen.getByLabelText("What happened"), "Missed the bus");
+      fireEvent.press(screen.getByLabelText("First feeling: Anxious"));
+      await act(async () => {
+        fireEvent.press(screen.getByText("Save record"));
+      });
+      await waitFor(() => expect(saveAsync).toHaveBeenCalledTimes(1));
+
+      act(() => {
+        jest.advanceTimersByTime(DRAFT_CAPTURE_DEBOUNCE_MS);
+      });
+      view.unmount();
+
+      expect(useDbtEmotionRecordDraftStore.getState().values).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("counts the parts the person has filled in", () => {

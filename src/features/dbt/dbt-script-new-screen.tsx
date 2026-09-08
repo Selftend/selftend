@@ -3,7 +3,6 @@ import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
-import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -13,11 +12,11 @@ import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
-import { EMOTION_GROUPS } from "@/src/constants/emotions";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSaveScript } from "@/src/features/dbt/queries";
+import { SingleEmotionPicker } from "@/src/features/dbt/single-emotion-picker";
 import type { ScriptWantChanged } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -45,14 +44,17 @@ const STEP_COUNT = 3;
 export default function DbtScriptNewScreen() {
   const { t } = useTranslation("dbt");
   const { t: tc } = useTranslation("common");
-  const { t: tCbt } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const saveMutation = useSaveScript(user?.id ?? null);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [situation, setSituation] = useState("");
-  const [wantChanged, setWantChanged] = useState<ScriptWantChanged | null>(null);
+  // ☠️ The default lives IN the state, never as a `?? "moreOf"` at the control:
+  // the segment the screen paints as chosen is the answer that gets saved, so
+  // a person who agrees with it and never taps it is not recorded as "not
+  // answered" (#2192). The judgement screen holds its valence the same way.
+  const [wantChanged, setWantChanged] = useState<ScriptWantChanged>("moreOf");
   const [iThink, setIThink] = useState("");
   const [emotion, setEmotion] = useState<string | null>(null);
   const [iFeel, setIFeel] = useState("");
@@ -162,7 +164,7 @@ export default function DbtScriptNewScreen() {
                 <Label>{t("scripts.wantChangedLabel")}</Label>
                 <SegmentedControl
                   accessibilityLabel={t("scripts.wantChangedLabel")}
-                  value={wantChanged ?? "moreOf"}
+                  value={wantChanged}
                   onChange={setWantChanged}
                   options={(["moreOf", "lessOf", "stop", "start"] as const).map((value) => ({
                     value,
@@ -196,34 +198,13 @@ export default function DbtScriptNewScreen() {
                 <Text variant="muted" className="text-[12.5px]">
                   {t("scripts.iFeelHint")}
                 </Text>
-                <View className="gap-1.5">
-                  {EMOTION_GROUPS.map((group) => (
-                    <View key={group.valence} className="gap-1.5">
-                      <Text
-                        variant="muted"
-                        className="text-[11px] font-semibold uppercase tracking-[0.1em]"
-                      >
-                        {group.valence === "difficult"
-                          ? tCbt("emotions.groupDifficult")
-                          : tCbt("emotions.groupPleasant")}
-                      </Text>
-                      {group.ids.map((id) => {
-                        const label = tCbt(`emotions.${id.toLowerCase()}`);
-                        const pick = () => setEmotion(emotion === id ? null : id);
-                        return (
-                          <View key={id} className="flex-row items-center gap-3">
-                            <Checkbox
-                              accessibilityLabel={label}
-                              checked={emotion === id}
-                              onCheckedChange={pick}
-                            />
-                            <Label onPress={pick}>{label}</Label>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  ))}
-                </View>
+                {/* One feeling, as a radio group: the exclusivity is announced
+                    rather than implied by a checkbox that unchecks its sibling. */}
+                <SingleEmotionPicker
+                  accessibilityLabel={t("scripts.iFeelLabel")}
+                  value={emotion}
+                  onChange={setEmotion}
+                />
                 <Textarea
                   value={iFeel}
                   onChangeText={setIFeel}

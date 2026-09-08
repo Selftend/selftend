@@ -212,7 +212,7 @@ export default function DbtHomeScreen() {
                 <PillarCard
                   letter={t(`groups.${group.key}.ordinal`)}
                   title={t(`groups.${group.key}.name`)}
-                  kicker={t(`groups.${group.key}.desc`)}
+                  kicker={t(`groups.${group.key}.sub`)}
                   description={t(`groups.${group.key}.desc`)}
                   onToolPress={(toolKey) => {
                     if (toolKey === "learn") {
