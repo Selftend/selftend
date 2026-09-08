@@ -10,6 +10,7 @@ import {
   useConnectionLogPages,
   useDefusionLogPages,
   useExpansionLogPages,
+  useListedCommittedActions,
   useObservingSelfSessionPages,
   useUrgeSurfLog,
   useUrgeSurfLogPages,
@@ -24,6 +25,7 @@ jest.mock("@/src/features/act/repository", () => ({
   listBullsEyeSnapshotsPage: jest.fn(),
   listChoicePointsPage: jest.fn(),
   listCommittedActionArchivePage: jest.fn(),
+  listCommittedActions: jest.fn(),
   listConnectionLogsPage: jest.fn(),
   listDefusionLogsPage: jest.fn(),
   listExpansionLogsPage: jest.fn(),
@@ -245,5 +247,106 @@ describe("useUrgeSurfLog", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockGet()).toHaveBeenCalledWith("u1", "log-1");
     expect(result.current.data).toMatchObject({ urgeDescription: "an urge" });
+  });
+});
+
+/**
+ * The committed-action detail's cache probe (#2190): the whole active set plus every
+ * loaded page of both finished archives, so a tapped row paints from whatever the list
+ * screen already holds.
+ */
+describe("useListedCommittedActions", () => {
+  const mockActive = () => repo.listCommittedActions as jest.Mock;
+  const mockArchive = () => repo.listCommittedActionArchivePage as jest.Mock;
+  const action = (id: string, status: string) => ({
+    id,
+    status,
+    createdAt: "2026-05-01T09:00:00Z",
+  });
+  /** A read that never lands — one entry still in flight while another is warm. */
+  const pending = () => new Promise<never>(() => {});
+
+  it("reads nothing for a signed-out user and holds no rows", () => {
+    const { result } = renderHook(() => useListedCommittedActions(null), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    expect(mockActive()).not.toHaveBeenCalled();
+    expect(mockArchive()).not.toHaveBeenCalled();
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it("reads the whole active set and the first page of each finished archive, in that order", async () => {
+    mockActive().mockResolvedValue([action("a1", "active")]);
+    mockArchive().mockImplementation((_u: string, status: string) =>
+      Promise.resolve([action(`${status}-1`, status)]),
+    );
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    // Nothing has landed yet: no entry, rather than an empty union that a detail screen
+    // would read as "not found".
+    expect(result.current.data).toBeUndefined();
+
+    await waitFor(() => expect(result.current.data).toHaveLength(3));
+    expect(mockActive()).toHaveBeenCalledWith("u1", "active");
+    expect(mockArchive()).toHaveBeenCalledWith("u1", "completed", ACT_HISTORY_PAGE_SIZE, null);
+    expect(mockArchive()).toHaveBeenCalledWith("u1", "abandoned", ACT_HISTORY_PAGE_SIZE, null);
+    expect(result.current.data?.map((a) => a.id)).toEqual(["a1", "completed-1", "abandoned-1"]);
+  });
+
+  /**
+   * ☠️ Any ONE warm entry is enough to paint from. The detail screen probes this on the
+   * list-to-detail hop, and waiting for all three reads before offering any rows would
+   * put the spinner back on exactly the hop the probe exists to make instant.
+   */
+  it("offers the active set while both archives are still in flight", async () => {
+    mockActive().mockResolvedValue([action("a1", "active")]);
+    mockArchive().mockImplementation(pending);
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    expect(result.current.data?.[0].id).toBe("a1");
+  });
+
+  it("offers a landed archive while the active read is still in flight", async () => {
+    mockActive().mockImplementation(pending);
+    mockArchive().mockImplementation((_u: string, status: string) =>
+      status === "completed" ? Promise.resolve([action("c1", "completed")]) : pending(),
+    );
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(createTestQueryClient()),
+    });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    expect(result.current.data?.[0].id).toBe("c1");
+  });
+
+  /**
+   * A row on page two of an archive is a row the list screen showed, so the detail must
+   * find it: the probe flattens EVERY loaded page, not the first.
+   */
+  it("carries every loaded page of an archive, not only the first", async () => {
+    const client = createTestQueryClient();
+    mockActive().mockResolvedValue([]);
+    mockArchive().mockResolvedValue([]);
+    client.setQueryData(actKeys.committedActionArchivePages("u1", "abandoned"), {
+      pages: [[action("x1", "abandoned")], [action("x2", "abandoned")]],
+      pageParams: [null, { timestamp: "2026-05-01T09:00:00Z", id: "x1" }],
+    });
+
+    const { result } = renderHook(() => useListedCommittedActions("u1"), {
+      wrapper: wrap(client),
+    });
+
+    await waitFor(() =>
+      expect(result.current.data?.map((a) => a.id)).toEqual(expect.arrayContaining(["x1", "x2"])),
+    );
   });
 });
