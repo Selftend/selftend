@@ -34,6 +34,36 @@ import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync"
 import { AppLockGate } from "@/src/features/security/app-lock-gate";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 
+/**
+ * When meeting the age floor became a fact this product records, as an epoch
+ * instant (#2227).
+ *
+ * ☠️☠️ The age gate's exemption for the existing install base USED to be read
+ * off `policy_version_accepted === null` - "has not been through the consent
+ * gate yet, so it must be brand new". That proxy is producible by a stale
+ * client: shipped 0.17.0 carries the consent wall and no age gate at all, so an
+ * account created on it writes a policy version and, once it updates, reads as
+ * an exempt legacy account. Nothing ever writes that column back to NULL, so
+ * the exemption could never lift - a one-release concession turned into a
+ * permanent bypass that kept recruiting new members for as long as anyone had
+ * not updated. "Has accepted a policy" and "has answered the age question" are
+ * different facts, and only the second one is what the gate is scoped on.
+ *
+ * The account's own birthday is what separates the two, and this instant is
+ * where the line goes: the migration that added `age_floor_met`
+ * (`20260905000000_age_attestation.sql`). Nobody created before it can have
+ * been asked, and everybody created at or after it belongs to the release this
+ * gate ships in.
+ *
+ * ⚠️ Deliberately EARLY rather than pinned to the release date, which is not
+ * knowable from here and can slip. Early over-includes: it asks a handful of
+ * accounts created in the days before the release. That costs one person a
+ * birth year and a country. The other direction admits somebody under their
+ * country's floor with no attestation on file, which is the harm the gate
+ * exists to prevent - so when the two are in tension, this errs towards asking.
+ */
+const AGE_GATE_INTRODUCED_AT = Date.parse("2026-09-05T00:00:00.000Z");
+
 export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
   const { session, status, user } = useSession();
@@ -177,11 +207,28 @@ export default function ProtectedLayout() {
   // environments can't mint an unconfirmed session at all (GoTrue rejects
   // the sign-in), so nothing slips through while configs differ.
 
-  // A failed preferences fetch WITH nothing cached leaves BOTH legal verdicts -
+  // A preferences read that has produced NO ROW leaves BOTH legal verdicts -
   // the age attestation and the policy acceptance - UNKNOWN. When cached data
   // exists the state is known even if the latest refetch errored, so a stale
   // acceptance still gates; this is only the nothing-at-all case.
-  const prefsUnknown = prefsError && !preferences;
+  //
+  // ☠️☠️ IN FLIGHT is the same unknown as ERRORED (#2229). #2200 closed only the
+  // errored half: `prefsUnknown` was `prefsError && !preferences`, so a query
+  // still on the wire carried no error, took no early return, and killed all
+  // three gates below through their shared `!prefsLoading` conjunct - leaving
+  // the full app shell as the fall-through on every brand-new account's first
+  // launch. The age gate was open for as long as the request took, and far
+  // longer on one that hangs (`retry: 1`, and `getUserPreferences` passes no
+  // AbortSignal). To a legal gate "we have not been told yet" and "we were told
+  // nothing" are the same state, and it is not the state to render the app in.
+  //
+  // ⚠️ Keyed on `!preferences`, which is what keeps this from becoming a
+  // blocking spinner on every cold start: a cached or persisted row passes
+  // straight through, and a failing background refetch over one never raises it.
+  // The offline case is untouched too - `networkMode: "online"` PAUSES a
+  // never-fetched query rather than fetching it, so `isLoading` is false there
+  // and the consent gate owns that state exactly as it did before.
+  const prefsUnknown = !preferences && (prefsError || prefsLoading);
 
   // ☠️☠️ Unknown fails CLOSED (#2200). This used to fall through: `prefsUnknown`
   // was a conjunct of both `needsAgeAttestation` and `needsConsent`, so on an
@@ -205,7 +252,16 @@ export default function ProtectedLayout() {
   // landing, and a blocked device must see the block rather than a retry that
   // could never help it.
   if (prefsUnknown) {
-    return <PreferencesUnavailableScreen onRetry={() => void refetchPreferences()} />;
+    // ☠️ `prefsError` picks the half, never `prefsLoading`. Once a fetch has
+    // errored, pressing Retry flips `isFetching` back on while `status` stays
+    // `"error"`, so keying the retry off the loading flag would take the button
+    // away at the exact moment it was pressed.
+    return (
+      <PreferencesUnavailableScreen
+        state={prefsError ? "error" : "loading"}
+        onRetry={() => void refetchPreferences()}
+      />
+    );
   }
   // The age gate (#1764, spec #227 §3) sits ABOVE the consent gate in this same
   // slot, which is what gives it all four entry paths - email/password, Google,
@@ -217,20 +273,42 @@ export default function ProtectedLayout() {
   //
   // ☠️ And never-asked is NOT on its own a reason to ask. §7 is explicit that
   // existing users meet the one-time consent prompt WITHOUT being re-asked for
-  // age or country, so the gate is scoped to accounts that have never accepted
-  // a policy version - i.e. accounts that have not been through the consent
-  // gate yet, which for a brand-new account (guest included) is true at exactly
-  // the moment this runs, and for every existing account is false forever.
-  // Without this clause the gate would fire for the entire install base on the
+  // age or country, so the gate is scoped away from accounts that predate it.
+  // Without that scoping the gate would fire for the entire install base on the
   // release that ships it.
   //
-  // ⚠️ That makes the age gate depend on running ABOVE the consent gate: if the
-  // two ever swapped, a new account would accept a policy version first and
-  // then never be asked its age. The order is not left to comments -
-  // `protected-layout.test.tsx` asserts a brand-new account sees the age gate
-  // while the consent gate is absent, which fails the moment the order flips.
+  // ☠️☠️ But "predates the gate" is read off the account's OWN AGE, never off
+  // `policy_version_accepted === null` alone (#2227). That clause used to be the
+  // whole test, on the reasoning that a brand-new account has not been through
+  // the consent gate "at exactly the moment this runs". It is false: shipped
+  // 0.17.0 has the consent wall and no age gate, so an account created there
+  // fills the column in, and on updating it presents as an exempt legacy
+  // account - permanently, because nothing writes that column back to NULL. The
+  // exemption is meant for people who were already here; `AGE_GATE_INTRODUCED_AT`
+  // above is where that line actually falls.
+  //
+  // ⚠️ Both halves are required, and the AND is what keeps this a superset of
+  // who was asked before: an account that predates the instant but has still
+  // never accepted a policy version is a person who has been through neither
+  // gate, and they are asked, exactly as they were. Only "old AND already
+  // consented" is exempt.
+  //
+  // ⚠️ An unreadable or absent `created_at` is treated as NOT predating - i.e.
+  // asked. The field is required on Supabase's `User` and always present on a
+  // real session, so this is a fallback rather than a path; it points the way it
+  // does because being asked costs a birth year, and not being asked is the
+  // thing the gate exists to prevent.
+  //
+  // ⚠️ The gate still depends on running ABOVE the consent gate: if the two ever
+  // swapped, a new account would accept a policy version first. That is no
+  // longer load-bearing for the exemption, but the ordering assertion in
+  // `protected-layout.test.tsx` stays, because the gate a person meets first is
+  // still the one they answer first.
   const neverAskedAge = preferences?.ageFloorMet !== true;
-  const isNewAccount = preferences?.policyVersionAccepted === null;
+  const accountCreatedAt = Date.parse(user?.created_at ?? "");
+  const predatesTheAgeGate =
+    Number.isFinite(accountCreatedAt) && accountCreatedAt < AGE_GATE_INTRODUCED_AT;
+  const isExistingAccount = predatesTheAgeGate && preferences?.policyVersionAccepted !== null;
   const needsAgeAttestation =
     !ageAttested &&
     !prefsLoading &&
@@ -246,7 +324,7 @@ export default function ProtectedLayout() {
     // just has no data. Without this, that state reads as "never attested".
     Boolean(preferences) &&
     neverAskedAge &&
-    isNewAccount;
+    !isExistingAccount;
   // ☠️ NOT `!== policyVersion`. A stored version can legitimately be NEWER than
   // the one this build carries - web deploys within the release run while
   // Android sits behind Play review and iOS behind a manual promotion (#2217) -

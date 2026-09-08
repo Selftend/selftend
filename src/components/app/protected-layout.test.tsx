@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, configure, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Platform, StyleSheet, Text as mockText, View as mockView } from "react-native";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import ProtectedLayout from "./protected-layout";
 import { writeUnderFloorBlock } from "@/src/features/auth/under-floor-block";
@@ -16,35 +16,49 @@ import {
 import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
+/**
+ * ☠️ `created_at` is part of the fixture, not decoration (#2227). The age gate's
+ * exemption for the existing install base is read off how old the ACCOUNT is -
+ * `policy_version_accepted` was the old proxy and a stale 0.17.0 client can
+ * forge it - so a session with no `created_at` is a session the gate cannot
+ * place, and it fails safe by asking. Supabase's `User` declares the field
+ * required, so a real session always carries it; a mock that omitted it would
+ * quietly test the fallback instead of the path.
+ */
+type MockSessionUser = {
+  created_at: string;
+  email_confirmed_at: string | null;
+  id: string;
+};
+
 type MockSessionState = {
-  session: {
-    user: {
-      email_confirmed_at: string | null;
-      id: string;
-    };
-  } | null;
+  session: { user: MockSessionUser } | null;
   status: "loading" | "ready";
-  user: {
-    email_confirmed_at: string | null;
-    id: string;
-  } | null;
+  user: MockSessionUser | null;
+};
+
+/** Predates `AGE_GATE_INTRODUCED_AT` - i.e. the install base the gate exempts. */
+const ESTABLISHED_ACCOUNT_CREATED_AT = "2026-05-06T10:00:00.000Z";
+/**
+ * After it. Any account minted from the age-gate release onwards, INCLUDING one
+ * minted on a device still running 0.17.0 - which is the whole of #2227.
+ */
+const NEW_ACCOUNT_CREATED_AT = "2026-09-06T10:00:00.000Z";
+
+const establishedSessionUser: MockSessionUser = {
+  created_at: ESTABLISHED_ACCOUNT_CREATED_AT,
+  email_confirmed_at: "2026-05-06T10:00:00.000Z",
+  id: "user-1",
 };
 
 let mockSessionState: MockSessionState = {
-  session: {
-    user: {
-      email_confirmed_at: "2026-05-06T10:00:00.000Z",
-      id: "user-1",
-    },
-  },
+  session: { user: establishedSessionUser },
   status: "ready",
-  user: {
-    email_confirmed_at: "2026-05-06T10:00:00.000Z",
-    id: "user-1",
-  },
+  user: establishedSessionUser,
 };
 
 jest.mock("expo-router", () => {
+  const React = require("react");
   const Text = mockText;
   const View = mockView;
 
@@ -66,6 +80,21 @@ jest.mock("expo-router", () => {
   Stack.Screen = StackScreen;
 
   return {
+    // Mirrors Link asChild: forward the href onto the wrapped pressable so the
+    // real link target can be asserted (the shape under-floor-screen.test uses).
+    // The preferences block screen carries a `LinkButton` to /crisis since
+    // #2228, so this suite renders one.
+    Link: ({
+      href,
+      asChild: _asChild,
+      dangerouslySingular: _dangerouslySingular,
+      children,
+    }: {
+      href: string;
+      asChild?: boolean;
+      dangerouslySingular?: boolean;
+      children: ReactElement;
+    }) => React.cloneElement(React.Children.only(children), { href }),
     Redirect: ({ href }: { href: string }) => <Text>Redirect: {href}</Text>,
     Stack,
     usePathname: () => "/",
@@ -258,17 +287,9 @@ beforeEach(() => {
   // hydrated, disabled steady state for synchronous assertions on the content.
   useAppLockStore.setState({ hydrated: true, enabled: false });
   mockSessionState = {
-    session: {
-      user: {
-        email_confirmed_at: "2026-05-06T10:00:00.000Z",
-        id: "user-1",
-      },
-    },
+    session: { user: establishedSessionUser },
     status: "ready",
-    user: {
-      email_confirmed_at: "2026-05-06T10:00:00.000Z",
-      id: "user-1",
-    },
+    user: establishedSessionUser,
   };
   mutateAsync.mockResolvedValue(defaultUserPreferences);
   mockUseUpdateUserPreferences.mockReturnValue({
@@ -631,12 +652,17 @@ describe("ProtectedLayout age gate", () => {
     expect(screen.queryByText("Age gate")).toBeNull();
   });
 
-  it("never re-asks an account that has already been through the consent gate", async () => {
-    // ☠️ §7: existing users meet the one-time consent prompt WITHOUT being
-    // re-asked for age or country. `ageFloorMet` is null for every account that
-    // predates the gate, so null alone cannot be the trigger - without the
-    // policy-version clause this fires for the entire install base on the
-    // release that ships it.
+  /**
+   * An account that has consented, with no attestation on file - the shape both
+   * halves of the exemption question take. `over` moves the only thing that
+   * separates them: when the account was created.
+   */
+  function consentedAccountCreatedAt(createdAt: string) {
+    mockSessionState = {
+      session: { user: { ...establishedSessionUser, created_at: createdAt } },
+      status: "ready",
+      user: { ...establishedSessionUser, created_at: createdAt },
+    };
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
@@ -646,11 +672,79 @@ describe("ProtectedLayout age gate", () => {
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
+  }
+
+  it("never re-asks an account that predates the gate and has already consented", async () => {
+    // ☠️ §7: existing users meet the one-time consent prompt WITHOUT being
+    // re-asked for age or country. `ageFloorMet` is null for every account that
+    // predates the gate, so null alone cannot be the trigger - without the
+    // exemption this fires for the entire install base on the release that
+    // ships it.
+    consentedAccountCreatedAt(ESTABLISHED_ACCOUNT_CREATED_AT);
 
     renderWithProviders(<ProtectedLayout />);
 
     await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
     expect(screen.queryByText("Age gate")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **This assertion was inverted, and the suite was green because of it**
+   * (#2227).
+   *
+   * The case above and this one construct the SAME preference row -
+   * `policyVersionAccepted: "2026-05-01"`, `ageFloorMet: null` - and the version
+   * of this file that shipped with the gate had only one of them, asserting the
+   * gate was ABSENT. It labelled the state "a legacy account", but a legacy
+   * account is not the only thing that produces it: shipped 0.17.0 carries the
+   * consent wall and NO age gate, so anybody whose first ever launch happened on
+   * a 0.17.0 device wrote a policy version there and arrives at the new build
+   * wearing the exemption. `policy_version_accepted` never returns to NULL, so
+   * that exemption could never lift - a permanent age-floor bypass, on a control
+   * the child-safety posture rests on, that kept recruiting members for as long
+   * as anyone had not updated.
+   *
+   * The assertion is changed here because it was WRONG, not to quiet a failure:
+   * what separates the two cases is when the ACCOUNT was created, which is the
+   * fact §7's exemption was always about, and the preference row cannot tell
+   * them apart.
+   */
+  it("asks an account created after the gate existed, even if it has consented (#2227)", async () => {
+    consentedAccountCreatedAt(NEW_ACCOUNT_CREATED_AT);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
+    // And still above the consent gate and the app, exactly as for a row with
+    // no policy version at all.
+    expect(screen.queryByText("Consent gate")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+  });
+
+  it("still asks an account that predates the gate but has never consented", async () => {
+    // ⚠️ The exemption needs BOTH halves, and this is the one that would be
+    // lost by reading it off the account's age alone: somebody who registered
+    // months ago and never opened the app has been through neither gate. They
+    // were asked before #2227's fix and they are asked after it - the new scope
+    // is a superset of the old one, never a swap.
+    newAccount({ appOnboardingCompleted: true });
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
+  });
+
+  it("asks when the session cannot say how old the account is", async () => {
+    // The fallback, pinned so its direction cannot be flipped quietly.
+    // `created_at` is required on Supabase's `User` and always present on a real
+    // session, so this is a shape nothing should produce - and if something
+    // does, "we cannot tell whether the exemption applies" has to resolve the
+    // way every other unknown in this layout resolves: ask, do not admit.
+    consentedAccountCreatedAt("");
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
   });
 
   it("does not ask again once the floor has been met", async () => {
@@ -714,7 +808,19 @@ describe("ProtectedLayout age gate", () => {
     await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
   });
 
-  it("waits for preferences rather than gating on a loading row", async () => {
+  /**
+   * ☠️☠️ **This used to assert only `queryByText("Age gate")` is null, which is
+   * the vacuous shape this file warns about at the `#2217` case above** - and it
+   * hid #2229. Nothing in this layout renders on the first tick, so a bare
+   * `toBeNull()` passes against the empty tree, against a correct fix, and
+   * against the bug: while the row was in flight the age gate really was absent,
+   * because the WHOLE APP had rendered in its place.
+   *
+   * The load-bearing half is the one added here - the protected tree is absent
+   * too. In-flight is the same unknown verdict as errored, and #2200 closed only
+   * the errored half.
+   */
+  it("keeps the app out of reach while the preferences row is still in flight", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -722,7 +828,10 @@ describe("ProtectedLayout age gate", () => {
 
     renderWithProviders(<ProtectedLayout />);
 
-    await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
+    await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Consent gate")).toBeNull();
   });
 });
 
@@ -828,6 +937,96 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
     expect(screen.queryByText("We can't open the app just yet")).toBeNull();
   });
+
+  /**
+   * ☠️☠️ The in-flight half of the same unknown (#2229).
+   *
+   * `prefsUnknown` used to be `prefsError && !preferences`, so a row still on
+   * the wire took no early return - and `!prefsLoading`, a conjunct of all three
+   * gates below, then evaluated every one of them false. The fall-through was
+   * the full app shell, on every brand-new account's first launch, for as long
+   * as the request took.
+   */
+  function loadingPreferences(refetch = jest.fn()) {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+      refetch,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    return refetch;
+  }
+
+  it("keeps the protected tree out of reach while the verdict is still on the wire", async () => {
+    loadingPreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Consent gate")).toBeNull();
+  });
+
+  it("does not offer a retry for a fetch that is already running", async () => {
+    // ⚠️ The other direction of the same rule: the errored half must always
+    // offer the retry, and the in-flight half must not - the fetch it would
+    // re-run has not finished. Pressing it would be a control that does nothing.
+    loadingPreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
+  it("lets a CACHED row through while a refetch is in flight", async () => {
+    // ⚠️ The over-fire this guard could cause, pinned rather than assumed:
+    // #2229's fix must not turn every cold start into a blocking spinner. The
+    // state is keyed on having NO row, so a persisted or already-fetched one
+    // renders the app while the background refetch runs.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        ageFloorMet: true,
+        policyVersionAccepted: policyVersion,
+      },
+      isLoading: true,
+      isError: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Stack content")).toBeTruthy());
+    expect(screen.queryByText("Getting your account ready")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ Crisis guidance survives the block (#2228, gate test A2).
+   *
+   * Shipped 0.17.0 did not block on an unreadable preferences row: it fell
+   * through into the app shell, from which Support -> Crisis was about two taps
+   * away. Blocking here without a route to crisis guidance makes it strictly
+   * harder to reach than the build this one replaces, and for a guest - who has
+   * no sign-out at all - it makes it unreachable. Both halves of the block carry
+   * the link, because both halves replace the same tree.
+   */
+  it.each([
+    ["errored", unreadablePreferences],
+    ["in flight", loadingPreferences],
+  ])("keeps crisis guidance reachable when the verdict is %s", async (_label, setUp) => {
+    setUp();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    expect(await screen.findByText("Open crisis guidance")).toBeTruthy();
+    // The href, not merely the label: a button that goes nowhere is the dead end
+    // this closes. `/crisis` is a ROOT route, so it renders outside this layout.
+    expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+    expect(screen.getByText("Open Find A Helpline")).toBeTruthy();
+    expect(screen.queryByText("Stack content")).toBeNull();
+  });
 });
 
 /**
@@ -863,9 +1062,9 @@ describe("ProtectedLayout under-floor block", () => {
     // told exactly that rather than being handed B.
     await writeUnderFloorBlock(new Date());
     mockSessionState = {
-      session: { user: { email_confirmed_at: "2026-05-06T10:00:00.000Z", id: "user-b" } },
+      session: { user: { ...establishedSessionUser, id: "user-b" } },
       status: "ready",
-      user: { email_confirmed_at: "2026-05-06T10:00:00.000Z", id: "user-b" },
+      user: { ...establishedSessionUser, id: "user-b" },
     };
 
     renderWithProviders(<ProtectedLayout />);
