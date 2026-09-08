@@ -208,6 +208,12 @@ the gate checks the calendar first and shows a correctable field error, because
 the under-floor path deletes an account and a mistyped birthday must never reach
 it.
 
+⚠️ That check catches only the _calendrical_ typo. A plausible-but-wrong year is
+a real past date and passes it, which is why the deletion below is confirmed
+rather than automatic
+([#2193](https://github.com/Selftend/selftend/issues/2193)): the second net is
+on the destructive step, not on the field.
+
 **A failure writes nothing at all** — not even `age_floor_met = false`. Only a
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
@@ -254,22 +260,65 @@ service-role key and cannot name a target: the RPC derives one from
 function was **not** added — it would be a second definition of what deletion
 removes, which that migration warns against in its own words.
 
+**The deletion is confirmed, never automatic**
+([#2193](https://github.com/Selftend/selftend/issues/2193)). It used to run from
+a mount effect: one press of the age gate's submit button both produced the
+verdict and executed the purge. That press cannot carry consent to a deletion,
+because the gate is deliberately COPPA-neutral — it names no age, no range and
+no qualifying answer, so nobody pressing it can know it is destructive — and a
+mistyped birth year is a real civil date, so it falls straight through the
+calendar check into that path. The exit screen now states that the removal is
+permanent and offers it as a separate, named control; nothing is deleted until
+that control is pressed.
+
+**The block does not wait for that press.** The device is blocked on mount,
+whether or not the erasure is ever asked for, so closing the app is not a way
+past the verdict and the floor is exactly as hard as it was. Only the
+irreversible half waits. A person who never confirms is therefore blocked with
+an empty account still alive — which is the deliberate trade: an unerased empty
+account is recoverable, and an account erased on a typo is not.
+
+**The erasure acts on the account the verdict judged, never on whoever is signed
+in** ([#2195](https://github.com/Selftend/selftend/issues/2195)). The flag is
+device-scoped and the deletion is account-scoped, and for 24 hours those were
+not the same account: `ProtectedLayout` renders the exit screen for **any**
+session inside the window — deliberately, so the block survives the sign-out it
+causes — and the screen used to hand the exit whoever `useSession` reported. On
+a shared phone that made the next person to sign in the one deleted. The verdict
+now carries the id of the account it judged, in React state, and
+`useUnderFloorExit` erases only when that id is also the signed-in one. The
+second half is not belt-and-braces: `delete_user_account()` derives its target
+from `auth.uid()` and cannot be told whom to delete, so the id is not a
+parameter to the purge — it is the permission to make the call at all. A mount
+the block cannot vouch for reports `nothing-to-erase`: it still blocks, it just
+no longer destroys.
+
+☠️ **The id lives in memory, not in the flag.** Putting it in storage would have
+been the obvious binding and it was rejected: the flag's one stated property is
+that it holds an expiry timestamp and nothing a person could be identified by,
+and a device-local id naming a deleted account is exactly the field that
+property exists to refuse.
+
 **The device flag is written before the deletion is asked for**, and the order
 is the guarantee. A crash, a kill or a dead network between the two leaves a
-blocked device with a live empty account, which is recoverable: the next launch
-lands back on the exit screen and retries. The reverse order would leave a
+blocked device with a live empty account. The reverse order would leave a
 deleted account with no flag — a person walking straight back into the gate.
 
-That recovery has one edge, and it is worth naming rather than implying it away.
-The retry needs the token, so if the session is lost before a failed deletion
-ever succeeds, the account is stranded — empty, but stranded. There is no
-server-side sweep that closes this in general: the guest dormancy job
-(`20260826010000_guest_dormancy_cleanup.sql`) only touches
-`auth.users.is_anonymous` rows and only after twelve months, so it eventually
-collects a stranded **guest** and never collects a stranded Google, Apple or
-email account. Nothing personal is in either — the gate writes nothing on a
-failing verdict — so this is an orphaned empty row rather than retained data,
-and it is recorded here rather than presented as impossible.
+⚠️ **That crash leaves an empty account behind, and no later launch finishes it
+off.** Retrying across launches was what flag-first used to buy, and it is gone
+with #2195 for the reason directly above: the flag stores no identity, so a
+later launch cannot tell whose account it would be completing the removal of,
+and the only safe answer to "I do not know whose this is" is to block and not
+destroy. Retry now lives inside the mount that failed, where the verdict is
+still in hand — and it needs the token, so a session lost before a failed
+deletion succeeds strands the account too. Both cases end the same way: an
+empty, stranded row. There is no server-side sweep that closes this in general:
+the guest dormancy job (`20260826010000_guest_dormancy_cleanup.sql`) only
+touches `auth.users.is_anonymous` rows and only after twelve months, so it
+eventually collects a stranded **guest** and never collects a stranded Google,
+Apple or email account. Nothing personal is in either — the gate writes nothing
+on a failing verdict — so this is an orphaned empty row rather than retained
+data, and it is recorded here rather than presented as impossible.
 
 **A failed deletion does not sign out.** `delete_user_account()` reads
 `auth.uid()`, so the token is the only thing that can finish the job. The exit
@@ -318,6 +367,11 @@ property cannot be quietly re-exported.
 - `SessionProvider`, which does not mint a guest for a blocked device. The
   block holds without this, but every launch inside the window would otherwise
   create an anonymous user purely so the exit screen could delete it again.
+
+  ☠️ Neither consumer treats the flag as authority to delete anything. It
+  answers one question — may this device open the app — and the account the
+  erasure may act on comes from the verdict, not from the flag (#2195).
+
 - Nothing else. In particular the **public marketing landing is not blocked**:
   the flag prevents entry, not reading, and blocking a public page would be
   over-reach. A web visitor inside the window can therefore sign up again — and
@@ -333,8 +387,8 @@ Helpline is a plain external URL read from `crisisActionUrls` — the same table
 **The copy is calm and non-shaming, and that is tested as a property of the
 strings**, in both locales, with the predicate fired on deliberately bad copy so
 the absence assertions cannot go quiet. It covers the whole `underFloor` block,
-which is why the erasure retry is worded about the account ("Remove it now") and
-never about having another go at the questions.
+which is why both account controls are worded about the account ("Remove the
+account", "Remove it now") and never about having another go at the questions.
 
 ## The explicit consent that sits beside it
 

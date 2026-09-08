@@ -30,19 +30,26 @@ jest.mock("@/src/lib/linking", () => ({
   openExternalUrl: jest.fn(),
 }));
 
-jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ user: { id: "user-1" } }),
-}));
-
-const mockRetry = jest.fn();
+const mockEraseAccount = jest.fn();
+const mockUseUnderFloorExit = jest.fn();
 let mockExitState = "erased";
 
-// The erasure sequence itself - the order of the block and the deletion, what
-// a failure does to the session - is use-under-floor-exit.test.tsx's. Here the
-// hook is a dial, so each state it can report can be rendered.
+// The erasure sequence itself - the order of the block and the deletion, whose
+// account it may act on, what a failure does to the session - is
+// use-under-floor-exit.test.tsx's. Here the hook is a dial, so each state it
+// can report can be rendered; the spy on its ARGUMENT is what pins the one
+// thing this file owns about the erasure, which is what the screen tells it to
+// act on (#2195).
 jest.mock("@/src/features/auth/use-under-floor-exit", () => ({
-  useUnderFloorExit: () => ({ retry: mockRetry, state: mockExitState }),
+  useUnderFloorExit: (verdictUserId: string | null) => {
+    mockUseUnderFloorExit(verdictUserId);
+    return { eraseAccount: mockEraseAccount, state: mockExitState };
+  },
 }));
+
+/** The ordinary mount: a verdict, rendered for the account it judged. */
+const renderScreen = (verdictUserId: string | null = "user-1") =>
+  renderWithProviders(<UnderFloorScreen verdictUserId={verdictUserId} />);
 
 const mockOpenExternalUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
@@ -53,10 +60,26 @@ beforeEach(() => {
 
 describe("UnderFloorScreen", () => {
   it("says what happened and that nothing was kept", () => {
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.getByText(enAuth.underFloor.title)).toBeTruthy();
     expect(screen.getByText(enAuth.underFloor.retention)).toBeTruthy();
+  });
+
+  it("acts on the account the VERDICT judged, never on whoever is signed in", () => {
+    // ☠️☠️ #2195. The screen renders for ANY session inside the 24h device
+    // window, so reading the current user here is what made the block delete
+    // the next account signed in on a shared phone. The id comes down as a
+    // prop from the verdict, and the screen passes it through untouched.
+    renderScreen("user-a");
+
+    expect(mockUseUnderFloorExit).toHaveBeenCalledWith("user-a");
+  });
+
+  it("tells the exit there is nobody to erase when the block judged nobody", () => {
+    renderScreen(null);
+
+    expect(mockUseUnderFloorExit).toHaveBeenCalledWith(null);
   });
 
   it("offers no way onward and no way to answer again", () => {
@@ -64,11 +87,12 @@ describe("UnderFloorScreen", () => {
     // control on the screen is enumerated here rather than counted, so a
     // future button has to be justified in this list before it can pass: the
     // two links out, and nothing that leads into the app or back to the gate.
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
     expect(screen.queryAllByRole("button")).toHaveLength(crisisActionUrls.length);
     expect(screen.queryByTestId("under-floor-erasure-retry")).toBeNull();
+    expect(screen.queryByTestId("under-floor-erasure-confirm")).toBeNull();
   });
 });
 
@@ -78,7 +102,7 @@ describe("UnderFloorScreen", () => {
  */
 describe("under-floor support links", () => {
   it("links to crisis guidance at the root route, which renders with no session", () => {
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     // `/crisis` is a sibling of the `(app)` group, not a screen inside it -
     // which is what makes it reachable after the account is gone. A target
@@ -89,7 +113,7 @@ describe("under-floor support links", () => {
   });
 
   it("opens Find A Helpline, at the URL the crisis page itself uses", () => {
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     fireEvent.press(screen.getByText("Open Find A Helpline"));
 
@@ -106,20 +130,20 @@ describe("under-floor support links", () => {
 describe("under-floor erasure status", () => {
   it("says the erasure is under way while it runs", () => {
     mockExitState = "working";
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.getByTestId("under-floor-erasure")).toHaveTextContent(enAuth.underFloor.erasing);
   });
 
   it("says the account is gone once it is", () => {
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.getByTestId("under-floor-erasure")).toHaveTextContent(enAuth.underFloor.erased);
   });
 
   it("says so when the erasure did not land, rather than claiming it did", () => {
     mockExitState = "failed";
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.getByTestId("under-floor-erasure")).toHaveTextContent(
       enAuth.underFloor.erasureFailed,
@@ -132,10 +156,14 @@ describe("under-floor erasure status", () => {
     // been removed" there would be the screen asserting something it never
     // observed, so it says nothing about the erasure at all.
     mockExitState = "nothing-to-erase";
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     expect(screen.queryByTestId("under-floor-erasure")).toBeNull();
     expect(screen.queryByText(enAuth.underFloor.erased)).toBeNull();
+    // ☠️ And no "nothing you entered has been kept" either: on this path
+    // nothing was removed, so that sentence is a claim the screen never
+    // observed - the same rule, applied to the line above it.
+    expect(screen.queryByTestId("under-floor-retention")).toBeNull();
     // The block itself, and the way out, are still exactly as they were.
     expect(screen.getByText(enAuth.underFloor.title)).toBeTruthy();
     expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
@@ -143,14 +171,57 @@ describe("under-floor erasure status", () => {
 
   it("offers to run the erasure again - the account, never the answers", () => {
     mockExitState = "failed";
-    renderWithProviders(<UnderFloorScreen />);
+    renderScreen();
 
     fireEvent.press(screen.getByTestId("under-floor-erasure-retry"));
 
-    expect(mockRetry).toHaveBeenCalledTimes(1);
+    expect(mockEraseAccount).toHaveBeenCalledTimes(1);
     // Still no route anywhere but out: a failed erasure must not become a way
     // back into the app.
     expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+  });
+});
+
+/**
+ * ☠️☠️ #2193: the purge is the person's to ask for, not the screen's to
+ * perform. The press that produced the verdict was the age gate's submit -
+ * which names no age and warns of nothing - so the deletion needs a press of
+ * its own, on a screen that says what that press does.
+ */
+describe("the under-floor erasure confirmation", () => {
+  it("says the removal is permanent before offering it", () => {
+    mockExitState = "awaiting-confirmation";
+    renderScreen();
+
+    expect(screen.getByTestId("under-floor-erasure")).toHaveTextContent(
+      enAuth.underFloor.erasureConfirm,
+    );
+    // Not yet: the screen must not claim a removal that has not been asked for.
+    expect(screen.queryByTestId("under-floor-retention")).toBeNull();
+    expect(screen.queryByText(enAuth.underFloor.erased)).toBeNull();
+  });
+
+  it("starts the erasure only when the confirm control is pressed", () => {
+    mockExitState = "awaiting-confirmation";
+    renderScreen();
+
+    expect(mockEraseAccount).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByTestId("under-floor-erasure-confirm"));
+
+    expect(mockEraseAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the block itself intact while the confirmation waits", () => {
+    // The floor does not wait for a press. Whatever the person does with the
+    // offer, this screen is still the block - no route into the app, and the
+    // support links still the only way out.
+    mockExitState = "awaiting-confirmation";
+    renderScreen();
+
+    expect(screen.getByText(enAuth.underFloor.title)).toBeTruthy();
+    expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+    expect(screen.queryByTestId("under-floor-erasure-retry")).toBeNull();
   });
 });
 
@@ -214,6 +285,8 @@ describe("under-floor copy", () => {
     // assertion above would still pass while saying nothing about them.
     expect(Object.keys(block)).toEqual(
       expect.arrayContaining([
+        "erasureConfirm",
+        "erasureConfirmLabel",
         "erasing",
         "erased",
         "erasureFailed",
