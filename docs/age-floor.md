@@ -208,6 +208,12 @@ the gate checks the calendar first and shows a correctable field error, because
 the under-floor path deletes an account and a mistyped birthday must never reach
 it.
 
+⚠️ That check catches only the _calendrical_ typo. A plausible-but-wrong year is
+a real past date and passes it, which is why the deletion below is confirmed
+rather than automatic
+([#2193](https://github.com/Selftend/selftend/issues/2193)): the second net is
+on the destructive step, not on the field.
+
 **A failure writes nothing at all** — not even `age_floor_met = false`. Only a
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.

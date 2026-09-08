@@ -57,10 +57,10 @@ import { openExternalUrl } from "@/src/lib/linking";
  * homes is worse.
  */
 /**
- * One sentence per erasure state, in one place - the render and the retry
- * control both branch on `state`, and two cascades over the same union drift.
- * `null` means "say nothing", which is the honest answer when there was no
- * account to remove.
+ * One sentence per erasure state, in one place - the render, the confirmation
+ * and the retry control all branch on `state`, and several cascades over the
+ * same union drift. `null` means "say nothing", which is the honest answer when
+ * there is no account this block may remove.
  */
 const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
   "awaiting-confirmation": "auth:underFloor.erasureConfirm",
