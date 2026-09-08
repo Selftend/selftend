@@ -502,7 +502,7 @@
       "error": "Choose three to six for the list",
       "homeOnly": "at home only",
       "homeOnlyToggle": "Only at home",
-      "add": "Add to the list",
+      "add": "Add {{item}} to the list",
       "remove": "Take {{item}} off the list",
       "moveUp": "Move {{item}} up",
       "moveDown": "Move {{item}} down",

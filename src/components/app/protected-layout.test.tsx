@@ -855,6 +855,25 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       data: undefined,
       isLoading: false,
       isError: true,
+      errorUpdateCount: 1,
+      refetch,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    return refetch;
+  }
+
+  /**
+   * The state a data-less query is in the instant Retry is pressed (#2238):
+   * TanStack's fetch reducer resets `status` to `"pending"` and `error` to
+   * `null` when `data === undefined`, so `isError` is FALSE and `isLoading` is
+   * TRUE while the retried request runs. Only `errorUpdateCount` remembers
+   * that a read has failed.
+   */
+  function retryingPreferences(refetch = jest.fn()) {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+      errorUpdateCount: 1,
       refetch,
     } as unknown as ReturnType<typeof useUserPreferences>);
     return refetch;
@@ -881,6 +900,48 @@ describe("ProtectedLayout when preferences cannot be read", () => {
 
     fireEvent.press(await screen.findByText("Retry"));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️☠️ #2238. Pressing Retry used to take Retry away. The half was picked off
+   * the live `isError` flag, and on a data-less query a refetch clears that flag
+   * the instant it starts - so the press flipped the screen to the loading half,
+   * which carries no control. A retried request that then HUNG (captive portal,
+   * dead air) left a full-screen spinner with nothing to press until a
+   * force-quit. Asserted through the press itself, so the test sees the same
+   * transition the person does rather than a hand-built state.
+   */
+  it("keeps the retry on screen while the fetch it started is still running", async () => {
+    const refetch = unreadablePreferences();
+
+    const view = renderWithProviders(<ProtectedLayout />);
+    fireEvent.press(await screen.findByText("Retry"));
+    expect(refetch).toHaveBeenCalledTimes(1);
+
+    // The library's answer to that press, as the hook now reports it.
+    retryingPreferences(refetch);
+    view.rerender(<ProtectedLayout />);
+
+    // Still the errored half, still its control - and still not the app.
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("Getting your account ready")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+    // A second press restarts a hung request (`refetch()` cancels the running
+    // one first), which is the whole reason the control has to survive.
+    fireEvent.press(screen.getByText("Retry"));
+    expect(refetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the retry for a refetch it did not start, once one read has failed", async () => {
+    // The same sticky rule from the other side: a focus- or reconnect-driven
+    // refetch after a failure must not take the control away either.
+    retryingPreferences();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("We can't open the app just yet")).toBeTruthy());
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("Stack content")).toBeNull();
   });
 
   it("lets a person whose preferences DO load through exactly as before", async () => {
@@ -952,6 +1013,9 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       data: undefined,
       isLoading: true,
       isError: false,
+      // A FIRST fetch: nothing has failed yet. This is what tells the loading
+      // half apart from a retry in flight, which #2238 keys off this count.
+      errorUpdateCount: 0,
       refetch,
     } as unknown as ReturnType<typeof useUserPreferences>);
     return refetch;
@@ -972,6 +1036,8 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     // ⚠️ The other direction of the same rule: the errored half must always
     // offer the retry, and the in-flight half must not - the fetch it would
     // re-run has not finished. Pressing it would be a control that does nothing.
+    // Scoped to a fetch that has NEVER failed: once one has, #2238 keeps the
+    // errored half and its Retry through every later attempt.
     loadingPreferences();
 
     renderWithProviders(<ProtectedLayout />);

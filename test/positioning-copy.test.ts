@@ -2061,6 +2061,95 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
   });
 
   /**
+   * The everyday tools as a draft would name them, per locale (#1901).
+   *
+   * Clause 1's own sentence forbids a second thing besides the bare inventory:
+   * _the tools are still never enumerated in prose: the sentence says what
+   * they are for; the page shows which ones exist_. Five of the seven drafts
+   * named the category, named the method, and then listed the tools flat —
+   * the one form `docs/positioning.md` § _The hard rule_ recorded as checked
+   * by nothing, and the drift #1817 named on the r/bulgaria draft in the
+   * ticket's own body. So this is the narrow, checkable form of that sentence:
+   * **a count is not an enumeration**, and within one draft naming a tool or
+   * two in passing is not either, but four distinct tool nouns is a list.
+   *
+   * ☠️ Plain substrings, no `\b` and no `\w`, for the Cyrillic reason `METHOD`
+   * gives; the cost is that a substring can over-match (`сън` inside another
+   * word), and that only ever raises the count, never hides a list. The
+   * threshold is one per NOUN, not per mention — a draft saying "journal"
+   * three times has named one tool.
+   */
+  const TOOL_NOUNS: Record<Locale, RegExp[]> = {
+    en: [
+      /mood/i,
+      /journal/i,
+      /gratitude/i,
+      /breathing/i,
+      /grounding/i,
+      /sitting|meditation/i,
+      /sleep/i,
+      /habits?/i,
+      /routines?/i,
+    ],
+    bg: [
+      /настроение/i,
+      /дневник/i,
+      /благодарност/i,
+      /дишане/i,
+      /заземяване/i,
+      /седене|медитация/i,
+      /сън/i,
+      /навици/i,
+      /рутини/i,
+    ],
+  };
+
+  /** How many distinct everyday tools one flattened draft names, across both locales. */
+  function toolNounsNamed(text: string): number {
+    return (["en", "bg"] as const)
+      .map((locale) => TOOL_NOUNS[locale].filter((noun) => noun.test(text)).length)
+      .reduce((a, b) => Math.max(a, b), 0);
+  }
+
+  /** Four is a list; three or fewer is a tool mentioned in passing. */
+  const FLAT_LIST = 4;
+
+  it("does not enumerate the tools flat in any Reddit draft (#1901)", () => {
+    const sections = draftSections(readFile(DRAFTS_DOC).text);
+
+    // Positive control, for the same reason as the method rule above: an
+    // empty section list would pass by never running.
+    expect(sections.length).toBeGreaterThanOrEqual(8);
+
+    for (const { id, text } of sections) {
+      expect({ id, toolNounsNamed: Math.min(toolNounsNamed(text), FLAT_LIST) }).not.toEqual({
+        id,
+        toolNounsNamed: FLAT_LIST,
+      });
+    }
+  });
+
+  /**
+   * The rule on synthetic input, both locales, so the threshold is pinned
+   * rather than inferred from whatever the drafts happen to say today.
+   */
+  it("counts a flat list of the tools as one, and a tool named in passing as none (#1901)", () => {
+    const flat =
+      "9. r/example\n\n> Everyday side: mood check-in, journal, gratitude, breathing and\n> grounding, sleep log, habits and routines.\n";
+    const flatBg =
+      "9. r/example\n\n> Ежедневните инструменти: настроение, дневник, благодарности, дишане и\n> заземяване, сън, навици и рутини.\n";
+    const passing =
+      "9. r/example\n\n> Eight small tools that ask nothing of you. The journal is the one I\n> use most, and the breathing tool the one I built first.\n";
+
+    for (const listed of [flat, flatBg]) {
+      const [section] = draftSections(`\n### ${listed}`);
+      expect(toolNounsNamed(section.text)).toBeGreaterThanOrEqual(FLAT_LIST);
+    }
+    const [section] = draftSections(`\n### ${passing}`);
+    expect(toolNounsNamed(section.text)).toBe(2);
+  });
+
+  /**
    * ☠️ Non-vacuous in the two ways this repo has already been bitten.
    *
    * The corpus has to be non-empty — `i18nValue` throwing would be loud, but a

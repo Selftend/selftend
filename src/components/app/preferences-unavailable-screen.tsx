@@ -61,6 +61,14 @@ interface PreferencesUnavailableScreenProps {
  * the person can get out of it the moment one fetch succeeds. The loading half
  * offers no retry on purpose - the fetch it would re-run is already running.
  *
+ * ☠️ That premise only holds for a fetch that has NEVER failed, which is why
+ * `ProtectedLayout` picks the half off a sticky failure count rather than the
+ * live error flag (#2238): on a data-less query TanStack clears the error the
+ * instant a refetch starts, so keying on `isError` alone rendered THIS half
+ * the moment Retry was pressed and took the only control away with it. Once
+ * one read has failed, the layout keeps the errored half for every later
+ * attempt, so a retried request that hangs still has a Retry above it.
+ *
  * ☠️☠️ **The support card is not a footer, and it is on BOTH halves** (#2228).
  * This screen replaces the entire protected tree, and on shipped 0.17.0 the
  * same state fell through into the app shell, from which crisis guidance was

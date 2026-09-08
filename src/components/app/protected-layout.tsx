@@ -71,6 +71,7 @@ export default function ProtectedLayout() {
     data: preferences,
     isLoading: prefsLoading,
     isError: prefsError,
+    errorUpdateCount: prefsErrorCount,
     refetch: refetchPreferences,
   } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
@@ -252,13 +253,30 @@ export default function ProtectedLayout() {
   // landing, and a blocked device must see the block rather than a retry that
   // could never help it.
   if (prefsUnknown) {
-    // ☠️ `prefsError` picks the half, never `prefsLoading`. Once a fetch has
-    // errored, pressing Retry flips `isFetching` back on while `status` stays
-    // `"error"`, so keying the retry off the loading flag would take the button
-    // away at the exact moment it was pressed.
+    // ☠️☠️ A STICKY failure signal picks the half, never the live `isError`
+    // flag alone (#2238). This branch only runs with `data === undefined`, and
+    // for a query with no data TanStack's fetch reducer resets `status` to
+    // `"pending"` and `error` to `null` the moment a refetch starts
+    // (`query-core`'s `fetchState`: `...data === undefined && { error: null,
+    // status: "pending" }`). So pressing Retry flipped `isError` OFF, this
+    // switched to the loading half, and the loading half carries no control -
+    // the button vanished at the exact moment it was pressed. If the retried
+    // request then hung rather than erroring (a captive portal, dead air), the
+    // person sat on a full-screen spinner with nothing to press until they
+    // force-quit. The earlier comment here claimed the opposite; it described a
+    // query that HAS data, which is exactly the population this branch excludes.
+    //
+    // `errorUpdateCount` only ever increments and is untouched by a fetch
+    // dispatch, so once one read has failed the errored half - and its Retry -
+    // stays for every later in-flight attempt. `refetch()` cancels a running
+    // request before starting another (`cancelRefetch` defaults to true), so a
+    // second press restarts a hung one rather than de-duplicating into it. A
+    // fetch that has never failed still gets the loading half, whose no-retry
+    // reasoning ("the fetch it would re-run is already running") holds there.
+    const prefsHasFailed = prefsError || prefsErrorCount > 0;
     return (
       <PreferencesUnavailableScreen
-        state={prefsError ? "error" : "loading"}
+        state={prefsHasFailed ? "error" : "loading"}
         onRetry={() => void refetchPreferences()}
       />
     );
