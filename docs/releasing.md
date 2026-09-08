@@ -99,6 +99,20 @@ Stated once, load-bearing twice (release latency and rollback both depend on it)
 
 Why: the database migrates **first** and unconditionally, Android trails by Google's review latency, and users trail further by auto-update lag — a halted rollout leaves people on the old client _indefinitely_. The old client talking to the new schema is therefore the normal state of the world after every release, not an edge case. (Precedent: `program_widget_task_status` kept its three-argument path callable, with an integration test per leg, while the four-argument replacement shipped.)
 
+### The same rule between two clients (shared-column skew)
+
+The rule above is about the schema. The identical asymmetry exists one layer up, between the **clients**, and it is easier to miss because no migration is involved:
+
+> **When two client versions write the same column, the newer one is not the only writer. Design for both.**
+
+Web is live within the release run (Cloudflare Workers, no review queue), Android waits on Play review, iOS on a manual TestFlight promotion. So for the length of that skew a person who uses more than one channel has **one row written by two builds that disagree**, and the older build wins every time it writes last. A remedy that only changes the new client is inert by construction: the misbehaving client is the one already installed.
+
+Precedent, [#2217](https://github.com/Selftend/selftend/issues/2217): `policyVersion` moved from `2026-08-27-feedback-processors` to `2026-09-04-teen-floor`. Each build's consent gate compared the stored `policy_version_accepted` against its own constant and wrote that constant back, so accepting on web and then opening a phone still on 0.17.0 pushed the row **backwards** — re-raising the full-screen consent wall on every switch, and leaving the consent record asserting a policy version the person had already moved past.
+
+The fix belongs in the layer that deploys ahead of every client. `supabase/migrations/20260911000000_policy_version_monotonic.sql` holds `policy_version_accepted` at its high-water mark (ordering is the leading `YYYY-MM-DD`; a first acceptance, a clear to `NULL` and an unrankable value all pass through, and nothing raises), and `src/features/policies/policy-consent.ts` is its client half — a build treats a stored version newer than its own as accepted, so a rolled-back release cannot leave rows above the running constant with a wall no write can clear. `test/integration/policy-version-monotonic.integration.test.ts` pins the database side.
+
+**What it still costs.** A guard cannot make the shipped client stop asking. Someone who accepts on web and then opens a phone still on the old build meets that build's consent gate on **every cold start** until the phone updates — where before they met it once per channel alternation and corrupted the record doing so. That trade is deliberate: the re-prompt is an annoyance that heals with the update, a consent record that says the wrong thing does not heal at all. Weigh it before bumping `policyVersion` in a release that also ships a native build.
+
 ### Android app optimisation (R8)
 
 Release builds run R8 with code minification and resource shrinking since [#1707](https://github.com/Selftend/selftend/issues/1707). Before that, Expo's default applied and every release shipped unminified — Play Console flagged 0.17.0 as "App optimisation is below our threshold. Obfuscation (1%). Fix by Feb 2027." What was checked, all on 2026-09-03, against primary sources:

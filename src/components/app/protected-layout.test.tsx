@@ -392,6 +392,57 @@ describe("ProtectedLayout app onboarding", () => {
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
+  // ☠️ The rollout-skew half of #2217. Web is live within the release run while
+  // Android waits on Play review and iOS on a manual promotion, so a person who
+  // accepts on web is then read by a build whose own constant is OLDER. Under
+  // the strict inequality this replaced, that read as "has accepted nothing"
+  // and raised the full-screen wall - and since the database now declines the
+  // accept that would lower the row (20260911000000_policy_version_monotonic),
+  // the wall it raised could never be cleared.
+  //
+  // The stored value here is dated a year past every constant the app has ever
+  // shipped, so it stays newer than `policyVersion` however many times the
+  // constant is bumped - a fixed literal would silently become "older" on some
+  // future release and quietly stop testing this.
+  it("accepts a stored policy version NEWER than this build's (#2217)", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        policyVersionAccepted: "2027-01-01-a-later-policy",
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    // ☠️ Waited on POSITIVELY, and that is not a style choice. Nothing in this
+    // layout renders on the first tick (see the `asyncUtilTimeout` note above),
+    // so `waitFor(() => expect(queryByText("Consent gate")).toBeNull())` is
+    // satisfied by the empty tree and passes just as happily against the bug it
+    // is meant to catch - it did, before this was rewritten. The shell and the
+    // gate are mutually exclusive returns, so waiting for the shell is what
+    // proves the gate is absent rather than merely late.
+    await waitFor(() => expect(screen.getByText("Stack content")).toBeTruthy());
+    expect(screen.queryByText("Consent gate")).toBeNull();
+  });
+
+  // The other direction, stated as its own case so the one above can never be
+  // "fixed" by making the gate lenient: an OLDER stored version is exactly what
+  // the gate is for, and #2217 must not touch it.
+  it("still gates a stored policy version older than this build's", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        policyVersionAccepted: "2026-05-06-web-push",
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+  });
+
   it("does not flash the consent gate when the preferences fetch fails (#164)", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: undefined,
