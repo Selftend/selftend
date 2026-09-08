@@ -17,6 +17,7 @@ import { PreferencesUnavailableScreen } from "@/src/components/app/preferences-u
 import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
 import type { UserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
+import { hasAcceptedPolicy } from "@/src/features/policies/policy-consent";
 import { useUnderFloorBlock } from "@/src/features/auth/use-under-floor-block";
 import {
   useUpdateOnboardingPreferences,
@@ -246,11 +247,20 @@ export default function ProtectedLayout() {
     Boolean(preferences) &&
     neverAskedAge &&
     isNewAccount;
+  // ☠️ NOT `!== policyVersion`. A stored version can legitimately be NEWER than
+  // the one this build carries - web deploys within the release run while
+  // Android sits behind Play review and iOS behind a manual promotion (#2217) -
+  // and a strict inequality reads "accepted a later policy" as "accepted
+  // nothing". Paired with the database's high-water guard
+  // (20260911000000_policy_version_monotonic.sql), which declines the accept
+  // that would lower the row, a strict inequality would raise this wall on
+  // every cold start with no write able to clear it. Older, null and
+  // unrankable still gate; only "already accepted more" does not.
   const needsConsent =
     !consentDismissed &&
     !prefsLoading &&
     !prefsUnknown &&
-    preferences?.policyVersionAccepted !== policyVersion;
+    !hasAcceptedPolicy(preferences?.policyVersionAccepted, policyVersion);
   const needsAppOnboarding =
     !needsAgeAttestation &&
     !needsConsent &&
