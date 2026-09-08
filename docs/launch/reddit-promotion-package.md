@@ -152,9 +152,9 @@ Body:
 > CBT programme - cognitive behavioural therapy - to work through when you want one. Same
 > codebase on web, Android and iOS.
 >
-> The everyday tools are what most people actually use: mood check-in, journal, gratitude,
-> breathing and grounding, unguided sitting with ambient sound and bells, sleep log, habits and
-> routines. Open one, use it, and you are done - none of them asks you to come back tomorrow.
+> The everyday tools are what most people actually use: eight of them, each built for the next
+> few minutes rather than for a plan, and they ask nothing of you - not even an account. Open
+> one, use it, and you are done - none of them asks you to come back tomorrow.
 > The programme is there for when you want to work through something rather than just track how
 > you feel, and you never have to touch it.
 >
@@ -187,9 +187,9 @@ Body:
 > now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.
 > Non-profit and open source.
 >
-> The everyday side is mood check-in, journal, gratitude, breathing and grounding, unguided
-> sitting, sleep log, habits and routines. Open one, use it, and you are done. The programme is
-> optional and always was. No ads, no subscriptions, no selling data.
+> The everyday side is eight small tools that take a few minutes and ask nothing of you - not
+> even an account. Open one, use it, and you are done. The programme is optional and always
+> was. No ads, no subscriptions, no selling data.
 >
 > It is not therapy and not a diagnosis tool - it is structured self-help, with crisis
 > resources linked separately in the app.
@@ -215,11 +215,11 @@ Body:
 > https://github.com/Selftend/selftend
 >
 > Selftend is a set of free, private mental health tools: everyday tools for right now, and a
-> CBT programme - cognitive behavioural therapy - to work through when you want one. Mood
-> check-in, journal, gratitude, breathing, grounding, unguided sitting, sleep, habits and
-> routines on the everyday side. No ads, no subscriptions, no tracking-based business model -
-> the license and the non-profit setup are the point, because this is exactly the kind of
-> software whose incentives you want inspectable.
+> CBT programme - cognitive behavioural therapy - to work through when you want one. The
+> everyday side is eight small tools that ask nothing of you, not even an account. No ads, no
+> subscriptions, no tracking-based business model - the license and the non-profit setup are
+> the point, because this is exactly the kind of software whose incentives you want
+> inspectable.
 >
 > Stack: Expo + React Native + TypeScript, one codebase shipping to web (Cloudflare Workers),
 > Google Play and the App Store. Supabase backend with row-level security. i18n in English and
@@ -296,9 +296,9 @@ Body:
 >
 > Selftend is a set of free, private mental health tools: everyday tools for right now, and a
 > CBT programme - cognitive behavioural therapy - to work through when you want one. Everyday
-> side: mood check-in, journal, gratitude, breathing and grounding, unguided sitting, sleep
-> log, habits and routines. Not therapy, not diagnosis - structured self-help with crisis
-> resources kept visibly separate.
+> side: eight small tools that take a few minutes and ask nothing of you, not even an account.
+> Not therapy, not diagnosis - structured self-help with crisis resources kept visibly
+> separate.
 >
 > Repo: https://github.com/Selftend/selftend
 > Play Store: https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend
@@ -317,10 +317,10 @@ Body:
 > лични инструменти за психично здраве: ежедневни инструменти за момента и КПТ програма -
 > когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
 >
-> Ежедневните инструменти са това, което повечето хора ползват: настроение, дневник,
-> благодарности, дишане и заземяване, седене в тишина с фонов звук и камбанки, сън, навици и
-> рутини. Отваряш един, ползваш го и си готов. Програмата е за когато искаш да поработиш върху
-> нещо, а не просто да отчиташ как се чувстваш - и никога не си длъжен да я пипаш.
+> Ежедневните инструменти са това, което повечето хора ползват: осем са, всеки отнема няколко
+> минути и не иска нищо от теб - дори акаунт. Отваряш един, ползваш го и си готов. Програмата
+> е за когато искаш да поработиш върху нещо, а не просто да отчиташ как се чувстваш - и никога
+> не си длъжен да я пипаш.
 >
 > Изцяло преведено на български, с отворен код, без реклами, без абонаменти и без продаване на
 > данни - проектът е с нестопанска цел и ще си остане безплатен.
@@ -360,4 +360,4 @@ All subreddit rules, subscriber counts, account stats, and store URLs in this fi
 verified 2026-08-19. Sources: reddit.com per-sub rules API, iTunes lookup API
 (app id 6796318929, version 0.14.1), github.com/Selftend/selftend (license).
 
-⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. ☠☠ **Two drafts were missed by that rewrite and fixed later the same day:** **4** (r/webdev) and **5** (r/reactnative) named the category and stopped, carrying the method nowhere in the post - which is [positioning.md](../positioning.md) § _The hard rule_ **clause 1**, and since [#2004](https://github.com/Selftend/selftend/issues/2004) clause 1 is the only thing keeping the method on a surface at all. They read as compliant because they are technical posts that never look like frame-carriers, and the five drafts carrying the full frame were fine throughout. ⚠️ **Draft 8 was checked and does NOT breach clause 1** - it presents no tools and names no category, so there is no bare inventory for the rule to bind; a keyword sweep flags it anyway, so this line exists to stop it being "fixed". Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
+⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. ☠☠ **Two drafts were missed by that rewrite and fixed later the same day:** **4** (r/webdev) and **5** (r/reactnative) named the category and stopped, carrying the method nowhere in the post - which is [positioning.md](../positioning.md) § _The hard rule_ **clause 1**, and since [#2004](https://github.com/Selftend/selftend/issues/2004) clause 1 is the only thing keeping the method on a surface at all. They read as compliant because they are technical posts that never look like frame-carriers, and the five drafts carrying the full frame were fine throughout. ⚠️ **Draft 8 was checked and does NOT breach clause 1** - it presents no tools and names no category, so there is no bare inventory for the rule to bind; a keyword sweep flags it anyway, so this line exists to stop it being "fixed". ☠️ **A third miss, fixed 2026-09-08:** drafts **1**, **2**, **3**, **6** and **7** named the category, named the method, and then listed the everyday tools flat in prose - the enumeration clause 1 forbids in its own sentence, which [positioning.md](../positioning.md) recorded as the form nothing checked. Each now carries a count instead (_eight small tools that ask nothing of you_; the shape of supporting line 1, and in Bulgarian the shape of `settings:onboarding.appBody1`), because a count says how many and the page shows which. `test/positioning-copy.test.ts` now counts the tool nouns per draft and fails at four, so a draft may still mention a tool or two in passing and may never list them again. Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
