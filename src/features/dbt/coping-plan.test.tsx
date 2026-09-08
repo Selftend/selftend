@@ -65,6 +65,16 @@ function setPlan(plan: CopingPlanDocument | null, overrides: Record<string, unkn
   });
 }
 
+/** The query as it is on a cold arrival: nothing read yet, nothing to seed from. */
+function setPlanPending() {
+  mockUseCopingPlan.mockReturnValue({
+    data: undefined,
+    isPending: true,
+    isError: false,
+    refetch: jest.fn(),
+  });
+}
+
 const item = (
   id: string,
   section: "distract" | "soothe" | "remind",
@@ -296,5 +306,76 @@ describe("the coping plan builder", () => {
   it("holds the list to the readable maximum", () => {
     expect(FALLBACK_MAX).toBe(6);
     expect(FALLBACK_MIN).toBe(3);
+  });
+
+  /**
+   * ☠️ #2204. The builder holds the whole document in local state, seeded once,
+   * and Save is a whole-document replace with no versions and no undo. Rendered
+   * against an unresolved query it would seed EMPTY, and the Save a moment
+   * later - `existing` having landed by then, so the id is there to update -
+   * would write that emptiness over the person's stored plan. A cold arrival is
+   * ordinary: the web query cache is memory-only, so a reload or a deep link
+   * onto this route mounts against `undefined` every time.
+   */
+  describe("before the stored plan has been read", () => {
+    it("offers nothing to build or save while the plan is still being read", () => {
+      setPlanPending();
+      renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.queryByText("Save plan")).toBeNull();
+      expect(screen.queryByText("Go for a walk")).toBeNull();
+      expect(screen.getByText("Your coping plan")).toBeTruthy();
+    });
+
+    it("does not write an empty plan over the stored one when the read lands after mount", async () => {
+      setPlanPending();
+      const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      // The read lands a beat later, exactly as it does on a cold web load.
+      setPlan({
+        items: [item("a", "distract", "walk", 0), item("b", "soothe", "aBlanket", 1)],
+        fallback: [],
+      });
+      rerender(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Save plan"));
+
+      await screen.findByText("Save plan");
+      expect(saveAsync).toHaveBeenCalledTimes(1);
+      const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "aBlanket"]);
+    });
+
+    it("says the read failed, and refuses to build, rather than offering a blank plan", () => {
+      setPlan(null, { isPending: false, isError: true });
+      renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      expect(screen.getByText("That did not load")).toBeTruthy();
+      expect(screen.getByText("Try again")).toBeTruthy();
+      expect(screen.queryByText("Save plan")).toBeNull();
+    });
+
+    /**
+     * ☠️ The opposite bug, and the reason the fix is a gate rather than a
+     * re-seeding effect: once the builder is up, a later read must not touch
+     * what the person has put on the plan. This one passed before the gate too
+     * - it is here to stop a future re-seed from being introduced.
+     */
+    it("keeps what the person has just added when the query resolves again underneath it", async () => {
+      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      const { rerender } = renderWithProviders(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Have a shower"));
+
+      // A refetch delivers the stored document again, as a fresh object.
+      setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] });
+      rerender(<DbtCopingPlanEditorScreen />);
+
+      fireEvent.press(screen.getByText("Save plan"));
+
+      await screen.findByText("Save plan");
+      const [{ plan }] = saveAsync.mock.calls[0] as [{ plan: CopingPlanDocument }];
+      expect(plan.items.map((entry) => entry.pickKey)).toEqual(["walk", "shower"]);
+    });
   });
 });

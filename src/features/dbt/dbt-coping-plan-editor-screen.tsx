@@ -11,6 +11,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
+import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import {
   DEFAULT_INTERACTIVE_HIT_SLOP,
@@ -33,6 +34,7 @@ import {
 import { useItemLabel } from "@/src/features/dbt/coping-plan-card";
 import { useCopingPlan, useDeleteCopingPlan, useSaveCopingPlan } from "@/src/features/dbt/queries";
 import type {
+  CopingPlan,
   CopingPlanDocument,
   CopingPlanItem,
   CopingPlanSection,
@@ -58,22 +60,76 @@ import { useToastStore } from "@/src/stores/toast-store";
  * editor's shape: a drag handle is a pointer affordance, and the order here is
  * the whole content of the list, so it has to be reachable from a keyboard and
  * a screen reader too.
+ *
+ * ☠️ **The builder does not mount until the stored plan has been read** (#2204).
+ * It holds the whole document in local state seeded once, and Save is a
+ * whole-document replace with no versions and no undo - so a builder rendered
+ * against an unresolved query shows an EMPTY plan and then writes that
+ * emptiness over what the person already had. A cold arrival is ordinary, not
+ * exotic: the web query cache is memory-only, so any reload or deep link
+ * straight onto this route mounts against `undefined`. The gate below is the
+ * same one the read screen and every DBT detail screen carries.
+ *
+ * ☠️ A re-seeding effect would have been the other shape, and it is the wrong
+ * one: a refetch landing mid-edit would throw away what the person had just
+ * typed. Gating instead means the seed happens exactly once, from a document
+ * `CopingPlanBuilder` cannot mount without.
  */
 export default function DbtCopingPlanEditorScreen() {
   const { t } = useTranslation("dbt");
   const { user } = useSession();
   const userId = user?.id ?? null;
+
+  const { data: existing, isPending, isError, refetch } = useCopingPlan(userId);
+
+  return (
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      {/* The chrome is mounted here rather than on each branch (#1328): the
+          waiting and failed bodies drop INTO a screen that already has its
+          Escape, so the bar is never absent and never mounted twice. */}
+      <ScreenTopBar leading="close" />
+      {isPending ? (
+        <View className={cn(FORM_COLUMN, "grow justify-center p-6")}>
+          <LoadingState title={t("copingPlan.editTitle")} />
+        </View>
+      ) : isError ? (
+        /* Nothing was read, so nothing may be replaced: the builder stays shut
+           and the person is offered the read again rather than a blank plan. */
+        <View className={cn(FORM_COLUMN, "grow justify-center gap-4 p-6")}>
+          <ErrorState
+            title={t("copingPlan.loadErrorTitle")}
+            description={t("copingPlan.loadErrorBody")}
+          />
+          <Button variant="outline" onPress={() => void refetch()}>
+            <Text>{t("copingPlan.retry")}</Text>
+          </Button>
+        </View>
+      ) : (
+        <CopingPlanBuilder existing={existing ?? null} userId={userId} />
+      )}
+    </SafeAreaView>
+  );
+}
+
+interface CopingPlanBuilderProps {
+  /** The stored plan, already read - `null` when the person has none yet. */
+  existing: CopingPlan | null;
+  userId: string | null;
+}
+
+/** The builder proper: mounted once, against a document that has landed. */
+function CopingPlanBuilder({ existing, userId }: CopingPlanBuilderProps) {
+  const { t } = useTranslation("dbt");
   const showToast = useToastStore((state) => state.showToast);
 
-  const { data: existing } = useCopingPlan(userId);
   const saveMutation = useSaveCopingPlan(userId);
   const deleteMutation = useDeleteCopingPlan(userId);
   const label = useItemLabel();
 
-  // The plan is seeded ONCE from whatever the query had when this screen
-  // mounted. The route is declared plain rather than singular for exactly this
-  // reason: it holds the person's unsaved work, so a reused instance would hand
-  // them back a half-edited plan instead of the one they just saved.
+  // The plan is seeded ONCE, from the resolved document this component cannot
+  // mount without. The route is declared plain rather than singular for a
+  // related reason: it holds the person's unsaved work, so a reused instance
+  // would hand them back a half-edited plan instead of the one they just saved.
   const [items, setItems] = useState<CopingPlanItem[]>(() => existing?.plan.items ?? []);
   const [fallback, setFallback] = useState<string[]>(() => existing?.plan.fallback ?? []);
   const [ownDrafts, setOwnDrafts] = useState<Record<string, string>>({});
@@ -211,7 +267,7 @@ export default function DbtCopingPlanEditorScreen() {
   const saving = saveMutation.isPending || deleteMutation.isPending;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+    <>
       <ConfirmDialog
         visible={confirmDelete}
         isPending={deleteMutation.isPending}
@@ -225,7 +281,6 @@ export default function DbtCopingPlanEditorScreen() {
           void removePlan();
         }}
       />
-      <ScreenTopBar leading="close" />
       <ScrollView contentContainerClassName="grow p-6">
         <View className={cn(FORM_COLUMN, "gap-7")}>
           <View className="gap-2">
@@ -358,7 +413,7 @@ export default function DbtCopingPlanEditorScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </>
   );
 }
 
