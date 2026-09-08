@@ -140,6 +140,22 @@ values
   ('00000000-0000-0000-0000-000000000003', 'demo@test.local',  timezone('utc', now()) - interval '60 days', timezone('utc', now()));
 
 -- public.user_preferences
+--
+-- ☠️ Every seeded account carries an age attestation (`age_floor_met` and its
+-- two companions, #1764). It is not decoration: the age gate exempts only
+-- accounts created before `AGE_GATE_INTRODUCED_AT`
+-- (src/components/app/protected-layout.tsx), and these rows are minted at
+-- `db:reset` time, so without an attestation every seeded user is a brand-new
+-- account that reached the app having never been asked - the exact cohort the
+-- gate stops (#2227). A real person in that cohort answers the question; these
+-- fixtures now say so too, which is what makes them truthful rather than
+-- exempt. bob's and demo's relative `created_at` would ALSO drift across the
+-- cutoff as the calendar moves, so pinning the attestation here is what keeps
+-- their character stable whenever the seed happens to run.
+--
+-- The pre-gate install base still has fixtures - `protected-layout.test.tsx`
+-- and test/integration/analytics-reports.integration.test.ts both build that
+-- cohort with pinned timestamps, which a `now()`-relative seed cannot do.
 -- alice: bare post-signup defaults, app onboarding done, CBT onboarding NOT done
 insert into public.user_preferences (
   user_id,
@@ -154,6 +170,9 @@ insert into public.user_preferences (
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
+  age_floor_met,
+  age_attested_country,
+  age_attested_at,
   created_at,
   updated_at
 )
@@ -169,6 +188,7 @@ values (
   timezone('utc', now()),
   timezone('utc', now()),
   '2026-05-20-local-preferences',
+  true, 'GB', timezone('utc', now()),
   timezone('utc', now()),
   timezone('utc', now())
 );
@@ -204,6 +224,9 @@ insert into public.user_preferences (
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
+  age_floor_met,
+  age_attested_country,
+  age_attested_at,
   created_at,
   updated_at
 )
@@ -223,6 +246,7 @@ values (
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now()) - interval '30 days',
   '2026-05-20-local-preferences',
+  true, 'GB', timezone('utc', now()),
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now())
 );
@@ -243,6 +267,9 @@ insert into public.user_preferences (
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
+  age_floor_met,
+  age_attested_country,
+  age_attested_at,
   created_at,
   updated_at
 )
@@ -260,6 +287,7 @@ values (
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now()) - interval '60 days',
   '2026-05-20-local-preferences',
+  true, 'GB', timezone('utc', now()),
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now())
 );
@@ -374,12 +402,14 @@ insert into public.user_preferences (
   cbt_reminder_hour, cbt_reminder_minute, language,
   app_onboarding_completed, cbt_onboarding_completed,
   privacy_policy_accepted_at, terms_accepted_at, policy_version_accepted,
+  age_floor_met, age_attested_country, age_attested_at,
   created_at, updated_at
 )
 select
   u.id, array['cbt']::text[], false, false, 19, 0, 'en',
   true, true,
   timezone('utc', now()), timezone('utc', now()), '2026-05-20-local-preferences',
+  true, 'GB', timezone('utc', now()),
   timezone('utc', now()), timezone('utc', now())
 from (values
   ('00000000-0000-0000-0000-000000000010'::uuid),

@@ -50,8 +50,11 @@ test.describe("landing guest entry", () => {
     // ☠️ This is the only place in the suite that proves the gate covers the
     // GUEST path - spec #227 §3 was written against two entry paths and the app
     // has four, and the silent `signInAnonymously` guest is the one per-flow
-    // plumbing would have missed. Every other spec plants a session whose
-    // `policy_version_accepted` is already set, so the gate never fires there.
+    // plumbing would have missed. Every other spec plants a session for an
+    // account that already ANSWERED the gate (`NORMALIZED_GATE_PREFS` records
+    // the attestation, as a real person in this cohort has one), so the gate
+    // does not fire there. This journey mints its guest through the app, which
+    // is why it still meets the form - and it must keep meeting it.
     const ageGateDay = page.getByTestId("age-gate-day");
     await expect(ageGateDay).toBeVisible({ timeout: 15_000 });
 

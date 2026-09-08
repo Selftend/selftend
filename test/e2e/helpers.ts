@@ -157,11 +157,17 @@ export async function dismissCookieBanner(page: Page) {
 /**
  * Clear the age gate (#1764) if it is standing.
  *
- * ☠️ It only appears for an account that has never accepted a policy version -
- * a fresh sign-up, or one minted through the admin API with no preferences row.
- * Every pooled and injected user skips it, because `NORMALIZED_GATE_PREFS` sets
- * `policy_version_accepted`; that is why this is a no-op in most specs and why
- * it must exist anyway for the two that use a genuinely new account.
+ * ☠️ It appears for an account created at or after `AGE_GATE_INTRODUCED_AT`
+ * with no age verdict on file (#2227) - a fresh sign-up, a guest minted by the
+ * landing CTA, or one made through the admin API with no preferences row. It
+ * used to be scoped on `policy_version_accepted === null` instead, which a
+ * shipped client could forge into a permanent bypass; every e2e account is
+ * seconds old, so under the corrected scope the whole suite is that cohort.
+ * Pooled and injected users skip the gate because `NORMALIZED_GATE_PREFS`
+ * records an attestation for them, the way a real person in that cohort has
+ * one - NOT because anything exempts them. That is why this is a no-op in most
+ * specs and why it must exist anyway for the ones that use a genuinely new
+ * account.
  *
  * It answers rather than bypasses: the gate is the app's, and a spec that
  * poked its state instead would stop covering the one screen every new user
@@ -224,8 +230,9 @@ export async function answerConsentGate(page: Page) {
 }
 
 // After signing in, gates and modals can appear depending on user state:
-//   1. AgeGate - when the account has never accepted a policy version, i.e. it
-//      is brand new (#1764). Sits ABOVE the consent gate, so it goes first.
+//   1. AgeGate - when the account was created after the gate shipped and has no
+//      age verdict on file (#1764, #2227). Sits ABOVE the consent gate, so it
+//      goes first.
 //   2. ConsentGate - when seeded policy_version_accepted differs from the
 //      current app policyVersion ("Quick policy check"). Affects all seed users.
 //   3. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
