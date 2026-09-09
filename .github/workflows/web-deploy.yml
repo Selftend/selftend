@@ -49,6 +49,16 @@ jobs:
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
       EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+      # ☠️ Omitted from this block from the workflow's first commit until #2263,
+      # while the `production` and `staging` environments both HELD the key and
+      # #89 recorded web push as live. Expo inlines EXPO_PUBLIC_* at export
+      # time, so every deployed bundle carried `webPushVapidPublicKey:""`: on
+      # web the reminder offer ended in "Reminders aren't configured for this
+      # app build" for every target, and the reminders screen wrote its columns
+      # with nothing able to deliver them. Setting the variable did nothing
+      # while this line was missing. test/web-deploy-public-env.test.ts now
+      # pins this block against the keys src/lib/env.ts reads.
+      EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY: ${{ vars.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY }}
 
     steps:
       - name: Check out repository

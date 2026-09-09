@@ -96,6 +96,8 @@ The three contact addresses are read by `/support`, `/security`, and — as of #
 
 `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
 
+☠️ **Setting the variable is only half of it - the deploy has to forward it, and for months it did not** ([#2263](https://github.com/Selftend/selftend/issues/2263)). Expo inlines `EXPO_PUBLIC_*` at export time, so a name missing from the `env:` block in `.github/workflows/web-deploy.yml` reads as the empty string in the deployed app whatever the environment holds. Both environments carried the key from 2026-07-16 and both live bundles still carried `webPushVapidPublicKey:""`, with the reminder offer ending in "Reminders aren't configured for this app build" on every target. The workflow forwards it now, and `test/web-deploy-public-env.test.ts` fails if any `?? ""` reader in `src/lib/env.ts` stops being forwarded. It is deliberately **not** in the workflow's "Check deploy environment" list: a fork with no web push should still be able to deploy.
+
 ### Web Push Reminders
 
 Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds go through the same Edge Function, delivering to an Expo push token in `device_push_tokens` - nothing is scheduled locally on any platform.
@@ -105,7 +107,7 @@ Because the app uses `web.output = "single"`, PWA head tags are added through `p
 Before production web push testing:
 
 1. Generate VAPID keys, for example with `npx web-push generate-vapid-keys`.
-2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in the GitHub repository variables.
+2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` on the `production` and `staging` GitHub Environments (the web deploy reads `vars.*` under the environment it is called with, and forwards this one into the export env since [#2263](https://github.com/Selftend/selftend/issues/2263)).
 3. Apply the database migration so `web_push_subscriptions`, `pg_cron`, `pg_net`, and Vault are available:
 
 ```bash

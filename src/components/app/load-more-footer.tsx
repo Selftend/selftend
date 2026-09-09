@@ -6,13 +6,26 @@ import { Text } from "@/src/components/react-native-reusables/text";
 
 interface LoadMoreFooterProps {
   /**
-   * The read is in error while rows are already on screen — a later page failed. The
-   * caller derives this (`isError && rows.length > 0`) because the first page's failure
-   * belongs to `ListEmptyComponent`, and this footer must not repeat it under an empty list.
+   * A later page failed — the query's `isFetchNextPageError`, passed straight through.
+   *
+   * ☠️ NOT `isError && rows.length > 0` (#2253). That is TanStack's `isRefetchError`: it
+   * is also true after a failed REFETCH of the loaded pages — a focus, reconnect, mount or
+   * post-save invalidation re-read that fails while online — where nothing "more" was
+   * being loaded. It put this footer's error under a complete list, and its Retry then
+   * called `fetchNextPage` with no next page, which resolves the OLD data without a
+   * request and stamps the list fresh. `isFetchNextPageError` is true only when a forward
+   * page fetch failed, which is exactly when Retry's `fetchNextPage` asks for a real page.
+   * The first page's failure still belongs to `ListEmptyComponent`.
    */
   failed: boolean;
   isFetchingNextPage: boolean;
   onRetry: () => void;
+  /**
+   * What the error row says; the paged-list line by default. A list assembled from
+   * MORE THAN ONE read (the DBT scripts ladder, #2259) passes its own, because what
+   * failed there is a whole half of the list, not a later page of it.
+   */
+  message?: string;
 }
 
 /**
@@ -31,7 +44,12 @@ interface LoadMoreFooterProps {
  * recover the one that failed. TanStack derives the next cursor from the last GOOD page,
  * so a second `fetchNextPage` asks for exactly the page that failed.
  */
-export function LoadMoreFooter({ failed, isFetchingNextPage, onRetry }: LoadMoreFooterProps) {
+export function LoadMoreFooter({
+  failed,
+  isFetchingNextPage,
+  onRetry,
+  message,
+}: LoadMoreFooterProps) {
   const { t } = useTranslation("errors");
 
   if (isFetchingNextPage) {
@@ -47,7 +65,7 @@ export function LoadMoreFooter({ failed, isFetchingNextPage, onRetry }: LoadMore
   return (
     <View className="items-center gap-3 py-6">
       <Text variant="muted" className="text-center">
-        {t("loadMore.failed")}
+        {message ?? t("loadMore.failed")}
       </Text>
       <Button variant="secondary" onPress={onRetry}>
         <Text>{t("fallback.retry")}</Text>

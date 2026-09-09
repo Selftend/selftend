@@ -1,5 +1,7 @@
+import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 import {
   consumeThoughtRecordSeed,
+  hasThoughtRecordSeed,
   seedThoughtRecord,
   useThoughtRecordSeedStore,
 } from "@/src/stores/thought-record-seed-store";
@@ -59,5 +61,21 @@ describe("thought-record seed store", () => {
     seedThoughtRecord(["grateful"]);
 
     expect(consumeThoughtRecordSeed()).toEqual({ emotions: ["grateful"], situation: "" });
+  });
+
+  /**
+   * ☠️ A seed can now outlive its navigation: the form keeps a live draft and
+   * leaves the hand-off waiting for the next fresh open (#2206). What waits is a
+   * paragraph about an episode, so the store is registered with the draft
+   * registry and sign-out drops it - otherwise the next person on the device
+   * would open a thought record on the last one's words.
+   */
+  it("is dropped by the sign-out wipe", () => {
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    resetAllDraftStores();
+
+    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
   });
 });

@@ -11,7 +11,8 @@
   },
   "channel": {
     "requesting": "Waiting for permission",
-    "blockedTitle": "Notifications are turned off"
+    "blockedTitle": "Notifications are turned off",
+    "unsupportedTitle": "Reminders can't arrive here"
   },
   "copy": {
     "cbt": {
@@ -118,5 +119,8 @@
       "web": "This browser doesn't support reminders.",
       "native": "This device can't deliver reminders."
     }
+  },
+  "heldOut": {
+    "note": "Coming soon on phones. This reminder switches on with the next app update."
   }
 }

@@ -17,8 +17,12 @@ import {
   useWiseMindCheckin,
   useWiseMindCheckinPages,
 } from "@/src/features/dbt/queries";
+import ActDefusionNewScreen from "@/src/features/act/act-defusion-new-screen";
+import { useSaveDefusionLog } from "@/src/features/act/queries";
 import enDbt from "@/src/i18n/locales/en/dbt.json";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
+import { useActDefusionSeedStore } from "@/src/stores/act-defusion-seed-store";
+import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/modules/dbt/wise-mind/new";
@@ -31,6 +35,10 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
+}));
+
+jest.mock("@/src/features/act/queries", () => ({
+  useSaveDefusionLog: jest.fn(),
 }));
 
 jest.mock("@/src/features/dbt/queries", () => ({
@@ -86,6 +94,12 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockPathname = "/modules/dbt/wise-mind/new";
   useActDefusionLogDraftStore.getState().reset();
+  useActDefusionSeedStore.setState({ seed: null });
+  useToastStore.getState().clearToasts();
+  (useSaveDefusionLog as unknown as jest.Mock).mockReturnValue({
+    mutateAsync: jest.fn().mockResolvedValue({}),
+    isPending: false,
+  });
   (useSaveWiseMindCheckin as unknown as jest.Mock).mockReturnValue({
     mutateAsync: saveCheckin,
     isPending: false,
@@ -289,9 +303,9 @@ describe("the judgement record", () => {
   });
 
   /**
-   * ☠️ The seed goes through ACT's own draft store, in memory - never a route
-   * parameter, which would put the person's judgement in the web address bar
-   * (#739). Neither the ACT form nor the journal takes one.
+   * ☠️ The seed goes through an in-memory seed store, never a route parameter,
+   * which would put the person's judgement in the web address bar (#739).
+   * Neither the ACT form nor the journal takes one.
    */
   it("unhooks into ACT defusion, seeded in memory as a self-judgment", () => {
     mockPathname = "/modules/dbt/judgements/j-1";
@@ -299,21 +313,26 @@ describe("the judgement record", () => {
 
     fireEvent.press(screen.getByText("Unhook from it"));
 
-    expect(useActDefusionLogDraftStore.getState().values).toMatchObject({
+    expect(useActDefusionSeedStore.getState().seed).toEqual({
       fusedThought: "She is ignoring me",
       thoughtCategory: "selfJudgment",
-      techniqueUsed: null,
     });
+    expect(router.push).toHaveBeenCalledWith("/modules/act/defusion/new");
   });
 
   /**
-   * ☠️ A live defusion draft outranks the seed (#2197). That store IS the ACT form's
-   * state, held for "Finish later" with no undo; the sibling door (emotion record → CBT
-   * thought record) already gives a live draft precedence over its prefill, and this
-   * door used to invert that — one whole-object replace, no read of what was there.
-   * The test above runs on an empty store, so it could never tell the two apart.
+   * ☠️ The door does not touch the ACT form's draft store (#2254). It used to
+   * write the seed straight into it, guarded by "is anything held?" - and a seed
+   * the person never touched then passed that guard itself, so the NEXT
+   * judgement's hand-off was skipped and the form opened on the previous
+   * judgement. The seed store is consume-once and separate; whether a held entry
+   * or the hand-off wins is the FORM's decision (#2206), pinned in
+   * act-defusion-new-screen.test.tsx.
+   *
+   * (This test replaces one that asserted the door itself skipped the seed over
+   * a held draft - the correct precedence, decided in the wrong place.)
    */
-  it("leaves a defusion entry held for Finish later alone, and still opens the form", () => {
+  it("queues the hand-off without disturbing an entry held for Finish later", () => {
     mockPathname = "/modules/dbt/judgements/j-1";
     const held = {
       fusedThought: "I never get anything right",
@@ -330,32 +349,44 @@ describe("the judgement record", () => {
     fireEvent.press(screen.getByText("Unhook from it"));
 
     expect(useActDefusionLogDraftStore.getState().values).toEqual(held);
+    expect(useActDefusionSeedStore.getState().seed).toMatchObject({
+      fusedThought: "She is ignoring me",
+    });
     expect(router.push).toHaveBeenCalledWith("/modules/act/defusion/new");
   });
 
   /**
-   * Content, not presence: the ACT form writes the store on every keystroke, so a draft
-   * object with every field back at empty is not unsaved work, and the seed takes it.
+   * ☠️ The whole path, twice, because that is where #2254 was visible: nothing
+   * below the door could see it, and the form's own suite reaches the seed store
+   * directly rather than through the button.
    */
-  it("still seeds over a draft that holds nothing", () => {
+  it("opens the defusion form on the SECOND judgement when the door is walked twice", () => {
     mockPathname = "/modules/dbt/judgements/j-1";
-    useActDefusionLogDraftStore.getState().setValues({
-      fusedThought: "   ",
-      thoughtCategory: null,
-      fusionLevelBefore: null,
-      techniqueUsed: null,
-      defusedVersion: "",
-      fusionLevelAfter: null,
-      notes: "",
-    });
-    renderWithProviders(<DbtJudgementDetailScreen id="j-1" />);
-
+    const first = renderWithProviders(<DbtJudgementDetailScreen id="j-1" />);
     fireEvent.press(screen.getByText("Unhook from it"));
+    first.unmount();
 
-    expect(useActDefusionLogDraftStore.getState().values).toMatchObject({
-      fusedThought: "She is ignoring me",
-      thoughtCategory: "selfJudgment",
+    mockPathname = "/modules/act/defusion/new";
+    const form = renderWithProviders(<ActDefusionNewScreen />);
+    expect(screen.getByLabelText("What is the thought?").props.value).toBe("She is ignoring me");
+    // Left through "Finish later", without typing a word.
+    fireEvent.press(screen.getByText("Finish later"));
+    form.unmount();
+
+    mockPathname = "/modules/dbt/judgements/j-2";
+    (useJudgement as unknown as jest.Mock).mockReturnValue({
+      data: { ...JUDGEMENT, id: "j-2", judgement: "I am hopeless at this" },
+      isPending: false,
     });
+    const second = renderWithProviders(<DbtJudgementDetailScreen id="j-2" />);
+    fireEvent.press(screen.getByText("Unhook from it"));
+    second.unmount();
+
+    mockPathname = "/modules/act/defusion/new";
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText("What is the thought?").props.value).toBe("I am hopeless at this");
+    expect(useToastStore.getState().visible).toBeNull();
   });
 
   it("says so plainly when the judgement is gone", () => {

@@ -1,0 +1,79 @@
+name: Codex quota alarm
+
+# Complains when the Codex PR reviewer stops reviewing without going red.
+#
+# WHY THIS EXISTS (#2221): from 2026-08-14 the reviewer posted exactly one
+# comment on every PR - "You have reached your Codex usage limits for code
+# reviews" - and recorded zero reviews. From the timeline it looked reviewed.
+# The merge proceeded. It went unnoticed for 27 days and four releases, because
+# nothing depended on the reviewer visibly and its failure mode is a friendly
+# comment rather than a red check. This job is the thing that would have
+# complained on day one.
+#
+# SCOPE, ruled by the owner on #2178: Codex is NOT restored here and is NOT
+# made a blocking check. This is the alarm only - it opens or updates one
+# issue and closes nothing. Restoring the quota is a billing action on the
+# Codex account that no workflow can take.
+#
+# NOT A REQUIRED CHECK, and never gates a merge. Same posture as
+# store-metadata-drift.yml: a daily alarm about a remote system, whose red is a
+# question rather than a verdict. It cannot fail a deploy and a failed deploy
+# cannot silence it.
+#
+# NO NEW CREDENTIALS. The workflow's own token with issues-write is the only
+# one, exactly as the r/Selftend thread drafter does it - no secret, nothing
+# for control-tower to inventory.
+#
+# ⚠️ Do not name that drafter's workflow FILE here, in any line including this
+# one. Its own guard test asserts that NO other workflow file mentions it -
+# proving it is a separate workflow with nothing gating it - and that guard
+# scans the raw text, so the file name inside a comment fails `verify` exactly
+# as it would inside a `uses:`. Refer to it by description.
+#
+# The decision logic is scripts/codex-quota-alarm.mjs, unit-tested in `verify`
+# by test/codex-quota-alarm.test.ts. An untestable comparison inside a
+# scheduled guard is how a guard starts lying without anyone noticing (the
+# lesson store-metadata-drift.yml learned on #1798).
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # 07:17 UTC daily
+  workflow_dispatch: # allow manual runs from the Actions tab
+    inputs:
+      window-hours:
+        description: How many hours of merged PRs to inspect
+        type: string
+        default: "24"
+
+permissions:
+  contents: read
+  issues: write
+
+# Never cancelled: two runs racing the issue lookup is the one way to file two
+# alarms for one outage.
+concurrency:
+  group: codex-quota-alarm
+  cancel-in-progress: false
+
+jobs:
+  alarm:
+    name: Check the Codex reviewer is still reviewing
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # The alarm is code, not data: always the default checkout, never a ref.
+      - name: Check out the alarm
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No `npm ci`: the script is plain Node plus the `gh` on the runner, so
+      # this job installs nothing and cannot fail on a dependency.
+      - name: Look for PRs merged with a quota notice and no review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WINDOW_HOURS: ${{ inputs.window-hours || '24' }}
+        run: node scripts/codex-quota-alarm.mjs --window-hours "$WINDOW_HOURS"

@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -12,17 +11,29 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { formatCompactAtOffset } from "@/src/utils/date";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 export default function GroundingHistoryScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useGroundingSessionPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useGroundingSessionPages(user?.id ?? null);
   const sessions = data?.pages.flat() ?? [];
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

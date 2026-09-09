@@ -84,7 +84,11 @@ describe("useUserPreferences enabled gate", () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockGetUserPreferences).toHaveBeenCalledWith("u1");
+    // The query's own signal travels with the id (#2251): it is how a cancelled
+    // read is stopped on the wire rather than only forgotten in the cache.
+    expect(mockGetUserPreferences).toHaveBeenCalledWith("u1", {
+      signal: expect.any(AbortSignal),
+    });
     expect(result.current.data).toEqual(defaultUserPreferences);
     expect(client.getQueryState(preferenceKeys.detail("u1"))).toBeDefined();
   });

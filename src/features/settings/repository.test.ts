@@ -5,6 +5,7 @@ import {
   deleteUserAccount,
   deleteWebPushSubscription,
   getUserPreferences,
+  PREFERENCES_READ_TIMEOUT_MS,
   recordAgeAttestation,
   recordPolicyConsent,
   updateOnboardingPreferences,
@@ -28,13 +29,14 @@ const mockRemoveAvatar = jest.mocked(removeCurrentUserUploadedAvatar);
 
 function mockPreferenceSelect(data: unknown) {
   const maybeSingle = jest.fn().mockResolvedValue({ data, error: null });
-  const eq = jest.fn(() => ({ maybeSingle }));
+  const abortSignal = jest.fn(() => ({ maybeSingle }));
+  const eq = jest.fn(() => ({ abortSignal }));
   const select = jest.fn(() => ({ eq }));
   const from = jest.fn(() => ({ select }));
 
   mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-  return { eq, from, maybeSingle, select };
+  return { abortSignal, eq, from, maybeSingle, select };
 }
 
 function mockPreferenceUpdate(data: unknown) {
@@ -88,6 +90,98 @@ describe("deleteUserAccount", () => {
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(deleteUserAccount()).rejects.toThrow("rpc failed");
+  });
+});
+
+/**
+ * ☠️☠️ #2251. The read decides both legal gates, and the whole app sits behind
+ * `PreferencesUnavailableScreen` while it is unknown - so a request that
+ * black-holes has to END. Android's OkHttp ships with zero timeouts and a
+ * browser `fetch` has none, and TanStack's `retry: 1` retries a rejection, not
+ * a hang. Two things close it: the caller's signal reaches PostgREST (so a
+ * cancelled query stops on the wire rather than only in the cache), and the
+ * read gives up on its own after `PREFERENCES_READ_TIMEOUT_MS`.
+ */
+describe("getUserPreferences on the wire", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  /** A PostgREST read that only ever returns the way an aborted fetch does. */
+  function mockHungPreferenceSelect() {
+    let handed: AbortSignal | undefined;
+    const maybeSingle = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          handed?.addEventListener("abort", () =>
+            resolve({
+              data: null,
+              error: { message: "AbortError: The user aborted a request.", code: "" },
+            }),
+          );
+        }),
+    );
+    const abortSignal = jest.fn((signal: AbortSignal) => {
+      handed = signal;
+      return { maybeSingle };
+    });
+    const eq = jest.fn(() => ({ abortSignal }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    return { abortSignal, signal: () => handed };
+  }
+
+  it("hands PostgREST a signal, and aborts it when the caller's signal aborts", async () => {
+    const wire = mockHungPreferenceSelect();
+    const caller = new AbortController();
+
+    const read = getUserPreferences("user-1", { signal: caller.signal });
+    expect(wire.abortSignal).toHaveBeenCalledTimes(1);
+    expect(wire.signal()?.aborted).toBe(false);
+
+    caller.abort();
+
+    expect(wire.signal()?.aborted).toBe(true);
+    await expect(read).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("gives up on a read that has hung for PREFERENCES_READ_TIMEOUT_MS", async () => {
+    const wire = mockHungPreferenceSelect();
+
+    const read = getUserPreferences("user-1");
+    jest.advanceTimersByTime(PREFERENCES_READ_TIMEOUT_MS - 1);
+    expect(wire.signal()?.aborted).toBe(false);
+
+    jest.advanceTimersByTime(1);
+
+    expect(wire.signal()?.aborted).toBe(true);
+    // Named so the Sentry filter reads it as the aborted fetch it is, not a defect.
+    await expect(read).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("does not fire the timeout on a read that has already answered", async () => {
+    mockPreferenceSelect({ user_id: "user-1" });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({ ageFloorMet: null });
+
+    // Nothing left on the clock: a resolved read has cleared its own timer.
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it("throws the PostgREST error unchanged when the read failed on its own", async () => {
+    const { maybeSingle } = mockPreferenceSelect(null);
+    maybeSingle.mockResolvedValue({ data: null, error: { message: "boom", code: "PGRST000" } });
+
+    await expect(getUserPreferences("user-1")).rejects.toEqual({
+      message: "boom",
+      code: "PGRST000",
+    });
   });
 });
 

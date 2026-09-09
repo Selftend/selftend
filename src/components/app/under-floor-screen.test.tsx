@@ -333,6 +333,44 @@ describe("under-floor copy", () => {
     "няма нищо в него",
   ];
 
+  /**
+   * ☠️☠️ Wording that would credit the account to THIS DEVICE (#2252).
+   *
+   * All four erasure sentences opened "The account this device created" /
+   * "Профилът, създаден от това устройство" - written when only a brand-new,
+   * device-local guest could reach the screen, and false since #2227 widened
+   * the gate to any account created at or after `AGE_GATE_INTRODUCED_AT` or
+   * never asked. `age_floor_met` is a server-side column, so the verdict
+   * travels with the account: a registered person (email, Google, Apple) meets
+   * this screen on a second phone or on the web, where the device created
+   * nothing. A third cohort answers under-floor on device A without confirming
+   * and meets the same sentence on device B.
+   *
+   * The sentence the person acts on sits directly above an irreversible
+   * "Remove the account", and the erasure is account-scoped -
+   * `delete_user_account()` purges `auth.uid()`, the real registered account
+   * and every row in it. Read literally, "the account this device created"
+   * suggests a throwaway: the mistyped-birth-year reader may confirm believing
+   * a device-local account is going, or leave a removal they wanted unmade
+   * believing their real account is untouched. By the product's own posture
+   * that reader may be a child. The subject is now the account itself, which is
+   * true for every reader of the screen.
+   *
+   * ⚠️ Attribution phrases only. The copy must stay free to talk about the
+   * device elsewhere - the block IS device-scoped, and `docs/age-floor.md` says
+   * so - so what is banned is a device standing as the account's ORIGIN, never
+   * the word "device".
+   */
+  const DEVICE_ATTRIBUTION = [
+    "this device created",
+    "created by this device",
+    "created on this device",
+    "this device made",
+    "от това устройство",
+    "създаден на това устройство",
+    "това устройство създаде",
+  ];
+
   function contains(block: Record<string, string>, phrases: readonly string[]): boolean {
     const joined = Object.values(block).join(" ").toLowerCase();
     return phrases.some((phrase) => joined.includes(phrase));
@@ -352,6 +390,10 @@ describe("under-floor copy", () => {
 
   it.each(locales)("never tells the %s reader the account is empty", (_language, block) => {
     expect(contains(block, EMPTY_CLAIM)).toBe(false);
+  });
+
+  it.each(locales)("never credits the %s reader's account to this device", (_language, block) => {
+    expect(contains(block, DEVICE_ATTRIBUTION)).toBe(false);
   });
 
   it("would catch copy that scolded or invited a retry", () => {
@@ -388,6 +430,29 @@ describe("under-floor copy", () => {
     expect(
       contains({ erasureFailed: "Той е празен и Selftend няма да го премахне сам." }, EMPTY_CLAIM),
     ).toBe(true);
+  });
+
+  it("would catch the device attribution these sentences used to carry, in both locales", () => {
+    // The exact subjects that shipped before #2252, one per state, so the
+    // predicate is fired on the wording it exists to refuse.
+    expect(
+      contains(
+        { erasureConfirm: "The account this device created is still here." },
+        DEVICE_ATTRIBUTION,
+      ),
+    ).toBe(true);
+    expect(
+      contains({ erasing: "Removing the account this device created…" }, DEVICE_ATTRIBUTION),
+    ).toBe(true);
+    expect(
+      contains(
+        { erased: "Профилът, създаден от това устройство, е премахнат." },
+        DEVICE_ATTRIBUTION,
+      ),
+    ).toBe(true);
+    // And the copy is still free to name the device where the DEVICE is the
+    // subject - the block really is device-scoped.
+    expect(contains({ body: "This device cannot open Selftend." }, DEVICE_ATTRIBUTION)).toBe(false);
   });
 
   it.each(locales)("keeps the %s erasure and support copy in the guarded block", (_l, block) => {

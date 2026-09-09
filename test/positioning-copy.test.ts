@@ -2082,6 +2082,77 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
   });
 
   /**
+   * The paragraph of a Markdown file that carries the frame sentence — the one
+   * that says what Selftend is — flattened the way `draftSections` flattens a
+   * draft, so a hard wrap cannot fall between two words of a phrase.
+   *
+   * ☠️ Located by the category noun rather than by line number: `README.md:9`
+   * moves every time something is added above it, and a guard pinned to a line
+   * silently scores the wrong paragraph rather than failing.
+   */
+  function frameParagraph(markdown: string): string | null {
+    const paragraph = markdown
+      .split(/\n\s*\n/)
+      .map((block) =>
+        block
+          .replace(/^[ \t]*>[ ]?/gm, "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      )
+      // Not the bold one-line tagline above it: the frame paragraph is the one
+      // that goes on to say what ships.
+      .find((block) => CATEGORY.en.test(block) && block.length > 200);
+    return paragraph ?? null;
+  }
+
+  /**
+   * ☠️☠️ #2262. The drafts took a count and `README.md` kept the list, fifty-two
+   * minutes apart on the same day — `positioning.md:111` says the tools are
+   * "never **enumerated in prose**", `:125` says "eight items is still a flat
+   * list", and `:435` puts README under the frame gate, but the guard above
+   * builds its corpus from the drafts file alone, so it could not see the
+   * repository's own front page. Run through `TOOL_NOUNS`, README's frame
+   * paragraph scored 8.
+   *
+   * ⚠️ Scoped to the frame paragraph, not the whole file. README is also a
+   * contributor document, and a setup note or a directory listing naming a tool
+   * is inventory rather than the frame's prose — which `positioning.md`'s
+   * §1610 warning says explicitly is not what clause 1 binds.
+   */
+  it("does not enumerate the tools flat in README's frame paragraph (#2262)", () => {
+    const paragraph = frameParagraph(readFile("README.md").text);
+
+    // Positive control: a rename or a reflow that hides the paragraph would
+    // otherwise pass this by never scoring anything.
+    expect(paragraph).not.toBeNull();
+
+    expect(Math.min(toolNounsNamed(paragraph!), FLAT_LIST)).toBeLessThan(FLAT_LIST);
+  });
+
+  /**
+   * The extractor on synthetic input, so it is the frame paragraph being scored
+   * and not whichever block happened to come first.
+   */
+  it("finds the frame paragraph by the category noun, not by position", () => {
+    const doc =
+      "# Selftend\n\n**Free, open-source mental health tools for web, iOS, and Android.**\n\n" +
+      "Selftend is a set of free, private mental health tools: everyday tools for right now,\nand a CBT programme - cognitive behavioural therapy - to work through when you want one.\nEight small tools that ask nothing of you, not even an account. It has no ads, subscriptions,\nor paywalls.\n\n## Quick Start\n\nRun `npm install`.\n";
+
+    const paragraph = frameParagraph(doc);
+
+    expect(paragraph).toContain("everyday tools for right now");
+    // The bold tagline carries the noun too, and is not the paragraph scored.
+    expect(paragraph).not.toContain("**Free, open-source");
+    expect(toolNounsNamed(paragraph!)).toBeLessThan(FLAT_LIST);
+    // And it scores the enumeration this rule exists for.
+    const listed = doc.replace(
+      "Eight small tools that ask nothing of you, not even an account.",
+      "With a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation\nand breathing, sleep, and habits.",
+    );
+    expect(toolNounsNamed(frameParagraph(listed)!)).toBeGreaterThanOrEqual(FLAT_LIST);
+  });
+
+  /**
    * The rule on synthetic input, both locales, so the threshold is pinned
    * rather than inferred from whatever the drafts happen to say today.
    */

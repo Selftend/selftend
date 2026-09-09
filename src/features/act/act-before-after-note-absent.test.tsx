@@ -6,9 +6,9 @@ import ActExpansionDetailScreen from "@/src/features/act/act-expansion-detail-sc
 import ActExpansionNewScreen from "@/src/features/act/act-expansion-new-screen";
 import {
   useDefusionLog,
-  useDefusionLogPages,
   useExpansionLog,
   useExpansionLogPages,
+  useListedDefusionLogs,
 } from "@/src/features/act/queries";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -86,7 +86,8 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 
 jest.mock("@/src/features/act/queries", () => ({
   useDefusionLog: jest.fn(),
-  useDefusionLogPages: jest.fn(),
+  // The defusion detail probes the union of the two entries its doors fill (#2256).
+  useListedDefusionLogs: jest.fn(),
   useDeleteDefusionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useSaveDefusionLog: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useExpansionLog: jest.fn(),
@@ -96,8 +97,8 @@ jest.mock("@/src/features/act/queries", () => ({
 }));
 
 const mockUseDefusionLog = useDefusionLog as jest.MockedFunction<typeof useDefusionLog>;
-const mockUseDefusionLogPages = useDefusionLogPages as jest.MockedFunction<
-  typeof useDefusionLogPages
+const mockUseListedDefusionLogs = useListedDefusionLogs as jest.MockedFunction<
+  typeof useListedDefusionLogs
 >;
 const mockUseExpansionLog = useExpansionLog as jest.MockedFunction<typeof useExpansionLog>;
 const mockUseExpansionLogPages = useExpansionLogPages as jest.MockedFunction<
@@ -156,9 +157,9 @@ beforeEach(() => {
 
 describe.each(PAIRS)("a defusion record whose fusion %s", (_shape, before, after) => {
   it("renders no note under the pair on the detail screen", () => {
-    mockUseDefusionLogPages.mockReturnValue({
-      data: { pages: [[defusionLog(before, after)]], pageParams: [null] },
-    } as unknown as ReturnType<typeof useDefusionLogPages>);
+    mockUseListedDefusionLogs.mockReturnValue({
+      data: [defusionLog(before, after)],
+    } as unknown as ReturnType<typeof useListedDefusionLogs>);
     mockUseDefusionLog.mockReturnValue({
       data: defusionLog(before, after),
       isLoading: false,

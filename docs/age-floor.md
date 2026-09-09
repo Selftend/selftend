@@ -322,9 +322,23 @@ data, TanStack clears the error and resets the status to pending the instant a
 refetch starts, so keying off the live flag rendered the in-flight half — and
 took the only control away — at the moment Retry was pressed, and a retried
 request that hung left a spinner with nothing to press. Once one read has
-failed, the errored half and its Retry stay through every later attempt; a
-second press cancels a running request and starts another. Only a fetch that
-has never failed gets the in-flight half.
+failed, the errored half and its Retry stay through every later attempt. Only a
+fetch that has never failed gets the in-flight half.
+
+☠️ **A second press cancels the running read explicitly, and `refetch()` alone
+never did it** ([#2251](https://github.com/Selftend/selftend/issues/2251)). This
+paragraph used to say `refetch()` cancels a running request before starting
+another because `cancelRefetch` defaults to true. That is true only for a query
+that HAS data: `Query#fetch` gates the cancel arm on
+`state.data !== undefined`, and this screen's whole population is the
+data-less one, so a second press returned the same pending promise and did
+nothing — `onFocus` / `onOnline` dedupe the same way, so a recovered connection
+did not restart it either. Retry now runs `queryClient.cancelQueries` before the
+refetch, and the cancellation reaches the socket because `getUserPreferences`
+passes the query's `AbortSignal` through to PostgREST. It also **times out on
+its own** after `PREFERENCES_READ_TIMEOUT_MS` (15 s): Android's OkHttp is built
+with no timeouts at all and a browser `fetch` has none, so a black-holed request
+never errors, and `retry: 1` retries a rejection rather than a hang.
 
 **And it is never a dead end** ([#2228](https://github.com/Selftend/selftend/issues/2228)).
 Both halves carry a support card of their own: the `/crisis` link and Find A
@@ -391,6 +405,28 @@ mistyped birth year is a real civil date, so it falls straight through the
 calendar check into that path. The exit screen now states that the removal is
 permanent and offers it as a separate, named control; nothing is deleted until
 that control is pressed.
+
+☠️ **And the sentence above that control names the account, never the device**
+([#2252](https://github.com/Selftend/selftend/issues/2252)). All four erasure
+states — the confirmation, the in-progress line, the confirmation of removal and
+the failure — opened _"The account this device created"_ / _"Профилът, създаден
+от това устройство"_, written when only a brand-new device-local guest could
+reach the screen. Since #2227 the gate reaches any account created at or after
+`AGE_GATE_INTRODUCED_AT`, and `age_floor_met` is a server-side column, so the
+verdict travels with the account: a registered person meets this screen on a
+second phone or on the web, where the device created nothing, and someone who
+answers under-floor on one device without confirming meets it again on another.
+The erasure is account-scoped — `delete_user_account()` purges `auth.uid()` — so
+the wrong subject sat directly above an irreversible action: read literally,
+_"the account this device created"_ suggests a throwaway, and the
+mistyped-birth-year reader could confirm believing a device-local account was
+going, or leave a removal they wanted unmade believing their real account was
+untouched. The subject is now the account itself (_"This account is still
+here…"_ / _"Този профил все още е тук…"_), which is true for every reader; the
+permanence sentence is unchanged. `under-floor-screen.test.tsx` refuses a device
+attribution anywhere in the under-floor copy in both locales, beside the
+emptiness guard — what it bans is a device standing as the account's **origin**,
+never the word _device_, because the block itself really is device-scoped.
 
 **The block does not wait for that press.** The device is blocked on mount,
 whether or not the erasure is ever asked for, so closing the app is not a way

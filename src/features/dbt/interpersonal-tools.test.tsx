@@ -510,6 +510,80 @@ describe("the script", () => {
     expect(screen.getByText("Retry")).toBeTruthy();
   });
 
+  /**
+   * ☠️ Two reads, ONE error slot, and the slot is `ListEmptyComponent` - which
+   * `FlatList` renders only while the list is empty (#2259). So when one half
+   * failed and the other returned rows, the failure had nowhere to appear: the
+   * ladder rendered as if it were whole, missing either every open rung or every
+   * closed script, with no error, no Retry and no sign anything was gone. The
+   * test above cannot see it - both halves are empty in that fixture.
+   */
+  it("says so in the footer when the DONE half failed and the open rungs rendered", () => {
+    mockPathname = "/modules/dbt/scripts";
+    (useDoneScriptPages as unknown as jest.Mock).mockReturnValue({
+      ...pages([]),
+      data: undefined,
+      isError: true,
+    });
+    renderWithProviders(<DbtScriptListScreen />);
+
+    // The half that resolved is still on screen...
+    expect(screen.getByText("text me if you'll be late")).toBeTruthy();
+    // ...and the half that failed says so, with a way to ask again.
+    expect(screen.getByText("Some of your scripts could not be loaded.")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+  });
+
+  it("says so in the footer when the OPEN half failed and the done ones rendered", () => {
+    mockPathname = "/modules/dbt/scripts";
+    const refetchOpen = jest.fn();
+    (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+      data: undefined,
+      isError: true,
+      isPending: false,
+      refetch: refetchOpen,
+    });
+    (useDoneScriptPages as unknown as jest.Mock).mockReturnValue(
+      pages([{ ...SCRIPT, id: "done", iWant: "ask-done", doneAt: "2026-06-11T09:00:00.000Z" }]),
+    );
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.getByText("ask-done")).toBeTruthy();
+    expect(screen.getByText("Some of your scripts could not be loaded.")).toBeTruthy();
+
+    // Retry re-reads only the half that failed - the good pages are not re-decrypted.
+    fireEvent.press(screen.getByText("Retry"));
+    expect(refetchOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the footer quiet when both halves resolved", () => {
+    mockPathname = "/modules/dbt/scripts";
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.queryByText("Some of your scripts could not be loaded.")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
+  /**
+   * ☠️ Missing, not merely errored (#2253's rule, inherited here): a read holding
+   * data AND an error is a failed refetch - its rows are on screen - so telling
+   * the person they could not be loaded would be a lie about a complete list.
+   */
+  it("says nothing when a half errored on a REFETCH and its rows are still shown", () => {
+    mockPathname = "/modules/dbt/scripts";
+    (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+      data: [SCRIPT],
+      isError: true,
+      isPending: false,
+      refetch: jest.fn(),
+    });
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.getByText("text me if you'll be late")).toBeTruthy();
+    expect(screen.queryByText("Some of your scripts could not be loaded.")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
   it("reads the four lines back on the card, with no crisis bar", () => {
     mockPathname = "/modules/dbt/scripts/s-1";
     renderWithProviders(<DbtScriptDetailScreen id="s-1" />);

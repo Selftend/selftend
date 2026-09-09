@@ -13,6 +13,7 @@ import {
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { getUserPreferences } from "@/src/features/settings/repository";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
@@ -217,10 +218,22 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => mockSessionState,
 }));
 
+// The hooks are dials; the rest of the module (the query key, and the real
+// `useUserPreferences` one test below puts back) stays real so the layout can
+// be driven against an actual QueryClient where the library's own behaviour is
+// the thing under test (#2251).
 jest.mock("@/src/features/settings/queries", () => ({
+  ...jest.requireActual("@/src/features/settings/queries"),
   useUpdateOnboardingPreferences: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
+}));
+
+// Behind the real hook sits the repository read; mocked so the #2251 test can
+// hand it a rejection, then a request that never returns.
+jest.mock("@/src/features/settings/repository", () => ({
+  ...jest.requireActual("@/src/features/settings/repository"),
+  getUserPreferences: jest.fn(),
 }));
 
 // Notification deep-linking touches the native expo-notifications module; it has its own
@@ -251,6 +264,7 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
   typeof useUpdateOnboardingPreferences
 >;
+const mockGetUserPreferences = getUserPreferences as jest.MockedFunction<typeof getUserPreferences>;
 
 const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
 
@@ -282,6 +296,9 @@ configure({ asyncUtilTimeout: 10_000 });
 // Shared across every describe: a signed-in, hydrated, consent-current state.
 beforeEach(() => {
   jest.clearAllMocks();
+  // `clearAllMocks` keeps implementations; the #2251 test installs a
+  // never-resolving one on the repository read, which must not outlive it.
+  mockGetUserPreferences.mockReset();
   // AppLockGate (native) waits for the app-lock store to hydrate before rendering
   // protected children. These tests aren't about app-lock, so put the store in its
   // hydrated, disabled steady state for synchronous assertions on the content.
@@ -899,7 +916,9 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     renderWithProviders(<ProtectedLayout />);
 
     fireEvent.press(await screen.findByText("Retry"));
-    expect(refetch).toHaveBeenCalled();
+    // Awaited: since #2251 the press cancels through the query client first,
+    // and the refetch follows that promise.
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
   });
 
   /**
@@ -916,7 +935,7 @@ describe("ProtectedLayout when preferences cannot be read", () => {
 
     const view = renderWithProviders(<ProtectedLayout />);
     fireEvent.press(await screen.findByText("Retry"));
-    expect(refetch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(refetch).toHaveBeenCalledTimes(1));
 
     // The library's answer to that press, as the hook now reports it.
     retryingPreferences(refetch);
@@ -926,10 +945,58 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     expect(screen.getByText("Retry")).toBeTruthy();
     expect(screen.queryByText("Getting your account ready")).toBeNull();
     expect(screen.queryByText("Stack content")).toBeNull();
-    // A second press restarts a hung request (`refetch()` cancels the running
-    // one first), which is the whole reason the control has to survive.
+    // The control survives so that a second press can reach the layout at all.
+    // ⚠️ This only shows the press is not swallowed by the screen: the hook is
+    // a `jest.fn()` here, so nothing about what the second call does to a
+    // hung request is visible. That is the next test's job (#2251).
     fireEvent.press(screen.getByText("Retry"));
-    expect(refetch).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(refetch).toHaveBeenCalledTimes(2));
+  });
+
+  /**
+   * ☠️☠️ #2251. The second half of #2238, which the comment above used to say
+   * was closed: a second press had to RESTART a hung request, and it did not.
+   * `refetch()` only cancels a running fetch when the query HAS data
+   * (`Query#fetch` gates `cancelRefetch` on `state.data !== undefined`); for
+   * this screen's population it returns the same pending promise, so the press
+   * was absorbed - and `onFocus`/`onOnline` dedupe the same way, so a recovered
+   * connection did not restart it either.
+   *
+   * Driven through the REAL hook and a real QueryClient, because the mocked
+   * hook cannot see the library: the count that matters is how many times the
+   * repository was asked, and whether the hung request was told to stop.
+   */
+  it("issues a NEW request on a second press while the first one hangs (#2251)", async () => {
+    const { useUserPreferences: realUseUserPreferences } = jest.requireActual<
+      typeof import("@/src/features/settings/queries")
+    >("@/src/features/settings/queries");
+    mockUseUserPreferences.mockImplementation(realUseUserPreferences);
+    mockGetUserPreferences
+      .mockRejectedValueOnce(new Error("Network request failed"))
+      // Every later read hangs: a black-holed socket, never resolving.
+      .mockImplementation(() => new Promise(() => {}));
+
+    renderWithProviders(<ProtectedLayout />);
+
+    // First read fails; the errored half and its Retry come up.
+    fireEvent.press(await screen.findByText("Retry"));
+    await waitFor(() => expect(mockGetUserPreferences).toHaveBeenCalledTimes(2));
+    const hungRead = mockGetUserPreferences.mock.calls[1][1];
+    expect(hungRead?.signal?.aborted).toBe(false);
+
+    // Sticky half: the request is running and the control is still there.
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("Getting your account ready")).toBeNull();
+
+    // The press that used to do nothing: a third read is issued, and the hung
+    // one was told to stop on the wire.
+    fireEvent.press(screen.getByText("Retry"));
+    await waitFor(() => expect(mockGetUserPreferences).toHaveBeenCalledTimes(3));
+    expect(hungRead?.signal?.aborted).toBe(true);
+    expect(mockGetUserPreferences.mock.calls[2][1]?.signal?.aborted).toBe(false);
+    // And still the errored half, not a spinner: the sticky signal survived the cancel.
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("Stack content")).toBeNull();
   });
 
   it("keeps the retry for a refetch it did not start, once one read has failed", async () => {

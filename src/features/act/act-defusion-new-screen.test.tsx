@@ -5,7 +5,9 @@ import { Platform } from "react-native";
 import ActDefusionNewScreen from "@/src/features/act/act-defusion-new-screen";
 import { useSaveDefusionLog } from "@/src/features/act/queries";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
+import { seedDefusionLog, useActDefusionSeedStore } from "@/src/stores/act-defusion-seed-store";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
+import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -66,6 +68,8 @@ function setPlatform(os: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   useActDefusionLogDraftStore.getState().reset();
+  useActDefusionSeedStore.setState({ seed: null });
+  useToastStore.getState().clearToasts();
   mockMutateAsync = jest.fn(() => Promise.resolve({} as never));
   mockUseSave.mockReturnValue({
     mutateAsync: mockMutateAsync,
@@ -348,5 +352,111 @@ describe("the category chips and technique cards", () => {
       preventDefault: jest.fn(),
     });
     expect(screen.getAllByRole("radio")[0]).toBeChecked();
+  });
+});
+
+/**
+ * The DBT judgement's "Unhook from it" door hands off through the seed store
+ * (#2254), and THIS form decides what happens to it (#2206).
+ *
+ * ☠️ The seed is not a draft until the person edits it. The door used to write
+ * straight into the draft store, so an untouched seed left behind by "Finish
+ * later" counted as held work and blocked the next judgement's hand-off - the
+ * form opened on the wrong judgement, silently. The two tests at the end pin
+ * both halves of that: an untouched seed leaves no draft, and a second door
+ * opens on the second judgement.
+ */
+describe("a door's hand-off", () => {
+  const SEED = { fusedThought: "She is ignoring me", thoughtCategory: "selfJudgment" as const };
+
+  it("opens the form on the hand-off when nothing is held", () => {
+    seedDefusionLog(SEED);
+
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("She is ignoring me");
+    // The thought and its category, and nothing else pre-answered.
+    expect(screen.getByText("2 of 5 parts filled in")).toBeTruthy();
+    // Taken, so it can never be applied twice.
+    expect(useActDefusionSeedStore.getState().seed).toBeNull();
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  it("keeps a held entry, says so, and leaves the hand-off for the next fresh open", () => {
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
+    first.unmount();
+
+    seedDefusionLog(SEED);
+    const second = renderWithProviders(<ActDefusionNewScreen />);
+
+    // The entry the person typed, not the hand-off.
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("I never get anything right");
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    // ☠️ Un-consumed: still there for the next fresh open of this form.
+    expect(useActDefusionSeedStore.getState().seed).toEqual(SEED);
+
+    second.unmount();
+    useActDefusionLogDraftStore.getState().reset();
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("She is ignoring me");
+  });
+
+  /**
+   * ☠️ A hand-off waiting for the next fresh open is a judgement the person read,
+   * held in memory - so the sign-out wipe has to reach it too, or the next
+   * session on the device (a fresh guest, on native, in the same process) would
+   * open the defusion form on the last person's words.
+   */
+  it("is dropped by the sign-out wipe while it waits", () => {
+    seedDefusionLog(SEED);
+
+    resetAllDraftStores();
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(useActDefusionSeedStore.getState().seed).toBeNull();
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("");
+  });
+
+  it("leaves no draft behind when the hand-off is never touched", () => {
+    seedDefusionLog(SEED);
+
+    const view = renderWithProviders(<ActDefusionNewScreen />);
+    // "Finish later" without typing a word.
+    fireEvent.press(screen.getByText("Finish later"));
+    view.unmount();
+
+    expect(useActDefusionLogDraftStore.getState().values).toBeNull();
+  });
+
+  it("opens on the SECOND judgement when the door is walked twice", () => {
+    seedDefusionLog(SEED);
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("She is ignoring me");
+    fireEvent.press(screen.getByText("Finish later"));
+    first.unmount();
+
+    seedDefusionLog({ fusedThought: "I am hopeless at this", thoughtCategory: "selfJudgment" });
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("I am hopeless at this");
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  it("moves the hand-off into the held draft the moment it is edited", () => {
+    seedDefusionLog(SEED);
+    const view = renderWithProviders(<ActDefusionNewScreen />);
+
+    fireEvent.changeText(screen.getByLabelText(NOTES_LABEL), "worth saying out loud");
+    view.unmount();
+
+    // Both the seeded thought and the typed note - the edit merges onto the seed
+    // rather than starting from the empty draft.
+    expect(useActDefusionLogDraftStore.getState().values).toMatchObject({
+      fusedThought: "She is ignoring me",
+      thoughtCategory: "selfJudgment",
+      notes: "worth saying out loud",
+    });
   });
 });

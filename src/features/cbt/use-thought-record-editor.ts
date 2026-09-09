@@ -12,34 +12,87 @@ import {
   defaultValues,
   hasAnyThought,
 } from "@/src/features/cbt/thought-record-form";
+import { filledThoughtRecordParts } from "@/src/features/cbt/thought-record-steps";
 import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
-import { consumeThoughtRecordSeed } from "@/src/stores/thought-record-seed-store";
+import {
+  consumeThoughtRecordSeed,
+  hasThoughtRecordSeed,
+  type ThoughtRecordSeed,
+} from "@/src/stores/thought-record-seed-store";
 import { useFormDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { announceMessage } from "@/src/lib/accessibility";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
+import { useToastStore } from "@/src/stores/toast-store";
 
+/** Whether a held draft has anything the person put in it - any part lit on the rail. */
+function hasThoughtRecordDraftContent(values: ThoughtRecordFormSchema): boolean {
+  return Object.values(filledThoughtRecordParts(values)).some(Boolean);
+}
+
+/**
+ * What a door's hand-off found on arrival - decided ONCE, at first render.
+ *
+ * A live draft outranks the hand-off (#2206, the owner's rule for every
+ * cross-module door): unsaved work the person typed here is kept, the seed is
+ * left in its store UN-consumed so the next fresh open of this form still
+ * receives it, and a notice says so. Content, not presence: a draft the person
+ * typed into and then emptied again is not held work, and the seed takes it.
+ *
+ * ☠️ Only sound because the screen mounts this hook AFTER the persisted draft
+ * has been read back (`hydrated`): decided before that, a draft persisted in a
+ * previous page load or app process would arrive a beat later, win the form
+ * through the late-hydration restore, and the seed - already consumed here -
+ * would be gone with no word said.
+ */
+function decideArrival(
+  recordId: string | null,
+  storedDraftValues: ThoughtRecordFormSchema | null,
+): { seed: ThoughtRecordSeed | null; keptDraft: boolean } {
+  // Edit never takes a seed and never consumes one: the seed is for the next
+  // fresh create, which is the only screen a door ever opens.
+  if (recordId !== null || !hasThoughtRecordSeed()) return { seed: null, keptDraft: false };
+  if (storedDraftValues && hasThoughtRecordDraftContent(storedDraftValues)) {
+    return { seed: null, keptDraft: true };
+  }
+  return { seed: consumeThoughtRecordSeed(), keptDraft: false };
+}
+
+/**
+ * ☠️ Call only once `useCbtDraftStore` reports `hydrated` - the screen gates on
+ * it before mounting this hook. See `decideArrival`.
+ */
 export function useThoughtRecordEditor() {
   const { t } = useTranslation("cbt");
   const { recordId: rawRecordId } = useLocalSearchParams<{ recordId?: string }>();
   const recordId = typeof rawRecordId === "string" && rawRecordId.length > 0 ? rawRecordId : null;
-  // Seeded by the check-in "Go deeper" handoff (#739) and, since #1980, by the
-  // DBT emotion record's "Look at the whole picture" door. Emotions are the one
-  // field all three forms share an id space for; the DBT hand-off adds the
-  // situation, which the check-in has no equivalent of and leaves empty. Read
-  // once per mount and cleared on read, so leaving the form and coming back
-  // starts empty rather than re-applying a stale prefill.
-  const [seed] = useState(consumeThoughtRecordSeed);
   const draftMode = recordId ? "edit" : "create";
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
+  const showToast = useToastStore((state) => state.showToast);
   const [submitError, setSubmitError] = useState("");
 
   const storedDraftValues = useCbtDraftStore(
     selectWizardDraftValues<ThoughtRecordFormSchema>(draftMode, recordId),
   );
+
+  // Seeded by the check-in "Go deeper" handoff (#739) and, since #1980, by the
+  // DBT emotion record's "Look at the whole picture" door. Emotions are the one
+  // field all three forms share an id space for; the DBT hand-off adds the
+  // situation, which the check-in has no equivalent of and leaves empty. Read
+  // once per mount and cleared on read when it is taken, so leaving the form
+  // and coming back starts empty rather than re-applying a stale prefill.
+  const [arrival] = useState(() => decideArrival(recordId, storedDraftValues));
+  const seed = arrival.seed;
+
+  const keptDraftNoticeRef = useRef(false);
+  useEffect(() => {
+    if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
+    keptDraftNoticeRef.current = true;
+    showToast({ title: t("common:handoff.keptDraft"), tone: "success" });
+  }, [arrival.keptDraft, showToast, t]);
 
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const saveMutation = useSaveThoughtRecord(user?.id ?? null);
@@ -50,17 +103,17 @@ export function useThoughtRecordEditor() {
   } = useThoughtRecordIntroDismissed();
 
   const form = useForm<ThoughtRecordFormSchema>({
-    // A live draft outranks the handoff: unsaved work the user typed here beats a
-    // prefill they can re-pick in one step. Only a fresh create takes the seed.
-    defaultValues:
-      storedDraftValues ??
-      (recordId === null && (seed.emotions.length > 0 || seed.situation.length > 0)
-        ? {
-            ...defaultValues,
-            ...(seed.emotions.length > 0 ? { emotions: seed.emotions } : {}),
-            ...(seed.situation.length > 0 ? { situation: seed.situation } : {}),
-          }
-        : defaultValues),
+    // A taken seed is one that found no held work (`decideArrival`), so it
+    // outranks whatever empty draft object the store still holds. It rides
+    // `defaultValues` rather than a later `reset`, on purpose: a reset fires the
+    // draft capture, and an untouched seed must never become a draft (#2254).
+    defaultValues: seed
+      ? {
+          ...defaultValues,
+          ...(seed.emotions.length > 0 ? { emotions: seed.emotions } : {}),
+          ...(seed.situation.length > 0 ? { situation: seed.situation } : {}),
+        }
+      : (storedDraftValues ?? defaultValues),
     resolver: zodResolver(thoughtRecordFormSchema),
   });
   const {

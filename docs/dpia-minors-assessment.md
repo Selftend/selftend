@@ -334,6 +334,21 @@ locales to say that whatever the account holds is still there, and
 under-floor copy; only the `erased` state says nothing was kept, after observing
 the removal.
 
+☠️ **The same stale premise sat in the SUBJECT of all four erasure sentences,
+and #2240 only reached one clause of one of them**
+([#2252](https://github.com/Selftend/selftend/issues/2252)). Each opened _"The
+account this device created"_ / _"Профилът, създаден от това устройство"_ —
+false for the cohort above the moment it is met anywhere but the device that
+registered: `age_floor_met` is a server-side column, so a registered account
+carries the verdict onto a second phone or the web, and an under-floor answer
+that is never confirmed leaves the account askable elsewhere. The erasure acts
+on the signed-in account and `delete_user_account()` purges `auth.uid()`, so
+naming a device-created account above an irreversible control could lead the
+mistyped-birth-year reader — who may be a child — to confirm the deletion of a
+real account they thought was a throwaway, or to abandon a removal they wanted.
+All four now name the account itself in both locales, and the guard beside the
+emptiness one refuses a device attribution anywhere in this copy.
+
 The other exception used to be an account that reached the shell through the
 fail-open window in R7 below — the one way a typo could cost someone content.
 [#2200](https://github.com/Selftend/selftend/issues/2200) and

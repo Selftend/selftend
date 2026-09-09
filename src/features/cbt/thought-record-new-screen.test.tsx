@@ -2,7 +2,14 @@ import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-
 
 import ThoughtRecordEditorScreen from "@/app/(app)/modules/cbt/new";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
+import { defaultValues } from "@/src/features/cbt/thought-record-form";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+import {
+  hasThoughtRecordSeed,
+  seedThoughtRecord,
+  useThoughtRecordSeedStore,
+} from "@/src/stores/thought-record-seed-store";
+import { useToastStore } from "@/src/stores/toast-store";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -314,5 +321,77 @@ describe("finishing later", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+/**
+ * The doors into this form - the check-in's "Go deeper" (#739) and the DBT
+ * emotion record's "Look at the whole picture" (#1980) - hand off through the
+ * seed store rather than the address bar.
+ *
+ * ☠️ The owner's rule for every cross-module door (#2206): a live draft WINS,
+ * the hand-off is left in its store un-consumed for the next fresh open, and a
+ * notice says so. Before it, the seed was read and cleared unconditionally at
+ * mount and then dropped by the `??` under the draft - so a person holding an
+ * unfinished record lost the paragraph they had just written, silently, with
+ * nothing left to re-press.
+ */
+describe("a door's hand-off", () => {
+  beforeEach(() => {
+    useThoughtRecordSeedStore.setState({ emotions: [], situation: "" });
+    useToastStore.getState().clearToasts();
+  });
+
+  it("opens the form on the hand-off when no draft is held", async () => {
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
+      "She did not reply for three days",
+    );
+    // Taken, so it can never be applied twice.
+    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  it("keeps a held draft, says so, and leaves the hand-off for the next fresh open", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    const view = await renderColumn();
+
+    // The draft the person was holding, not the hand-off.
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    // ☠️ Un-consumed: the paragraph is still in the store, so the door works the
+    // moment the draft is finished with - read back by opening the form again.
+    expect(hasThoughtRecordSeed()).toBe(true);
+
+    view.unmount();
+    useCbtDraftStore.getState().reset();
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
+      "She did not reply for three days",
+    );
+  });
+
+  /**
+   * Content, not presence: the form captures into the draft store while the
+   * person types, so a draft object whose every part is back at empty is not
+   * held work, and the hand-off takes it.
+   */
+  it("still lands over a draft that holds nothing", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "   " });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
+      "She did not reply for three days",
+    );
+    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(useToastStore.getState().visible).toBeNull();
   });
 });
