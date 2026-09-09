@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import {
   countDefusionLogs,
@@ -9,19 +10,34 @@ import {
   listDefusionLogsPage,
   saveDefusionLog,
 } from "@/src/features/act/repository";
-import type { DefusionLogInput } from "@/src/features/act/types";
+import type { DefusionLog, DefusionLogInput } from "@/src/features/act/types";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { ACT_HISTORY_PAGE_SIZE, actKeys } from "./keys";
 
-export function useDefusionLogs(userId: string | null, limit = 30) {
+/**
+ * The limit `useDefusionLogs` reads at when a caller names none — the entry the programme
+ * (`useActProgram`) and the widget sync fill, and the one `useListedDefusionLogs` probes.
+ */
+export const DEFUSION_LIST_DEFAULT_LIMIT = 30;
+
+/** `enabled: false` subscribes to the cache entry without ever reading for it — a probe. */
+interface ProbeOptions {
+  enabled?: boolean;
+}
+
+export function useDefusionLogs(
+  userId: string | null,
+  limit = DEFUSION_LIST_DEFAULT_LIMIT,
+  { enabled = true }: ProbeOptions = {},
+) {
   return useQuery({
     // Include limit so 30/N callers don't collide on one cache entry; the limit-less
     // prefix in actKeys.defusionList still matches every variant on invalidation.
     queryKey: [...actKeys.defusionList(userId), limit],
     queryFn: () => listDefusionLogs(userId!, limit),
-    enabled: Boolean(userId),
+    enabled: enabled && Boolean(userId),
   });
 }
 
@@ -31,7 +47,7 @@ export function useDefusionLogs(userId: string | null, limit = 30) {
  * family, so no day heading, date control or `formatRelativeDayKey` label belongs on
  * what this feeds.
  */
-export function useDefusionLogPages(userId: string | null) {
+export function useDefusionLogPages(userId: string | null, { enabled = true }: ProbeOptions = {}) {
   return useInfiniteQuery({
     queryKey: actKeys.defusionHistoryPages(userId),
     queryFn: ({ pageParam }) => listDefusionLogsPage(userId!, ACT_HISTORY_PAGE_SIZE, pageParam),
@@ -42,8 +58,39 @@ export function useDefusionLogPages(userId: string | null) {
       lastPage.length < ACT_HISTORY_PAGE_SIZE
         ? undefined
         : nextDescendingCursor(lastPage, (log) => log.createdAt),
-    enabled: Boolean(userId),
+    enabled: enabled && Boolean(userId),
   });
+}
+
+/**
+ * Every defusion log some surface has already cached — the archive's loaded pages and the
+ * plain recent list — so the detail screen can paint a tapped row from whichever entry
+ * the hop came through (#2256).
+ *
+ * ☠️ A defusion detail has TWO doors, and they fill different entries. The list screen
+ * fills `defusionHistoryPages`; ACT home's "Recent" rows push the same detail, and home
+ * fills the plain default-limit list instead (through `useActProgram`, which is also the
+ * entry the widget sync writes). #2190 moved the probe from the plain list to the pages
+ * and closed the list-to-detail miss by opening the home-to-detail one: a full-screen
+ * spinner, a 20-row page read and a single-row read on the module's most-trodden path.
+ * Both entries are probed now, and a hit on either paints the row.
+ *
+ * ☠️ Both probes are PASSIVE (`enabled: false`). An active probe of an entry the hop did
+ * not fill is a read for a surface that renders none of it — with two doors, every hop
+ * would pay one. A disabled observer still sees the entry the list or home screen keeps
+ * fresh underneath, and on a cold deep link both miss and `useCachedItem` falls through
+ * to the single-row read, which is the one read that screen needs.
+ */
+export function useListedDefusionLogs(userId: string | null) {
+  const { data: pages } = useDefusionLogPages(userId, { enabled: false });
+  const { data: recent } = useDefusionLogs(userId, DEFUSION_LIST_DEFAULT_LIMIT, {
+    enabled: false,
+  });
+  const data = useMemo<DefusionLog[] | undefined>(
+    () => (pages || recent ? [...(pages?.pages.flat() ?? []), ...(recent ?? [])] : undefined),
+    [pages, recent],
+  );
+  return { data };
 }
 
 /**

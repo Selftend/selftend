@@ -19,8 +19,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
 import {
   useDefusionLog,
-  useDefusionLogPages,
   useDeleteDefusionLog,
+  useListedDefusionLogs,
 } from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
@@ -34,8 +34,10 @@ export default function ActDefusionDetailScreen() {
   const logId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
+  // Both entries a hop into this screen can have filled — the archive's pages from the
+  // list, the plain recent list from ACT home (#2256).
   const { item: log, isLoading } = useCachedItem(
-    useDefusionLogPages,
+    useListedDefusionLogs,
     useDefusionLog,
     user?.id ?? null,
     logId,

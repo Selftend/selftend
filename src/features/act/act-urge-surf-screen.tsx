@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -31,6 +31,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 type Step = "urge" | "trigger" | "observe" | "complete";
 const STEP_ORDER: Step[] = ["urge", "trigger", "observe", "complete"];
@@ -94,15 +95,19 @@ export default function ActUrgeSurfScreen() {
     hasNextPage,
     isError,
     isFetchingNextPage,
+    isFetchNextPageError,
     isPending,
     refetch,
   } = useUrgeSurfLogPages(user?.id ?? null);
   const logs = pageData?.pages.flat() ?? [];
   const showToast = useToastStore((state) => state.showToast);
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   const [mode, setMode] = useState<"list" | "form">("list");
   const [step, setStep] = useState<Step>("urge");
