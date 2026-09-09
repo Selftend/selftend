@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Stack, usePathname } from "expo-router";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,6 +21,7 @@ import { policyVersion } from "@/src/features/policies/policy-content";
 import { hasAcceptedPolicy } from "@/src/features/policies/policy-consent";
 import { useUnderFloorBlock } from "@/src/features/auth/use-under-floor-block";
 import {
+  preferencesQueryKey,
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
@@ -67,6 +69,7 @@ const AGE_GATE_INTRODUCED_AT = Date.parse("2026-09-05T00:00:00.000Z");
 export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
   const { session, status, user } = useSession();
+  const queryClient = useQueryClient();
   const {
     data: preferences,
     isLoading: prefsLoading,
@@ -219,9 +222,10 @@ export default function ProtectedLayout() {
   // three gates below through their shared `!prefsLoading` conjunct - leaving
   // the full app shell as the fall-through on every brand-new account's first
   // launch. The age gate was open for as long as the request took, and far
-  // longer on one that hangs (`retry: 1`, and `getUserPreferences` passes no
-  // AbortSignal). To a legal gate "we have not been told yet" and "we were told
-  // nothing" are the same state, and it is not the state to render the app in.
+  // longer on one that hangs (`retry: 1`, and until #2251 `getUserPreferences`
+  // had no timeout and dropped the AbortSignal). To a legal gate "we have not
+  // been told yet" and "we were told nothing" are the same state, and it is not
+  // the state to render the app in.
   //
   // ⚠️ Keyed on `!preferences`, which is what keeps this from becoming a
   // blocking spinner on every cold start: a cached or persisted row passes
@@ -268,16 +272,29 @@ export default function ProtectedLayout() {
     //
     // `errorUpdateCount` only ever increments and is untouched by a fetch
     // dispatch, so once one read has failed the errored half - and its Retry -
-    // stays for every later in-flight attempt. `refetch()` cancels a running
-    // request before starting another (`cancelRefetch` defaults to true), so a
-    // second press restarts a hung one rather than de-duplicating into it. A
-    // fetch that has never failed still gets the loading half, whose no-retry
-    // reasoning ("the fetch it would re-run is already running") holds there.
+    // stays for every later in-flight attempt. A fetch that has never failed
+    // still gets the loading half, whose no-retry reasoning ("the fetch it
+    // would re-run is already running") holds there.
+    //
+    // ☠️☠️ A second press has to CANCEL before it refetches (#2251). The comment
+    // that stood here said `refetch()` does that on its own because
+    // `cancelRefetch` defaults to true - and it does, for a query that HAS
+    // data. For this branch's population (`data === undefined`) `Query#fetch`
+    // never reaches the cancel arm: it returns the same pending promise, so a
+    // second press on a hung request was absorbed with nothing to show for it,
+    // and the person was back to a force-quit. `cancelQueries` rejects the
+    // running fetch and reverts the query to its errored state (so the sticky
+    // half above is untouched), the signal reaches the socket through
+    // `getUserPreferences`, and only then does the refetch start a new one.
     const prefsHasFailed = prefsError || prefsErrorCount > 0;
+    const restartPreferencesRead = async () => {
+      await queryClient.cancelQueries({ queryKey: preferencesQueryKey(user?.id ?? null) });
+      await refetchPreferences();
+    };
     return (
       <PreferencesUnavailableScreen
         state={prefsHasFailed ? "error" : "loading"}
-        onRetry={() => void refetchPreferences()}
+        onRetry={() => void restartPreferencesRead()}
       />
     );
   }
