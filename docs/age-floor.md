@@ -268,7 +268,7 @@ on the destructive step, not on the field.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
-### An unknown verdict fails closed, in all three of its states
+### An unknown verdict fails closed, whatever the read is doing
 
 This section used to record a gap: **the gate fell open when the attestation
 could not be read.** The verdict lives on the `user_preferences` row, and with no
@@ -279,12 +279,25 @@ special-category data. It was deliberate and documented, which is precisely what
 made it worth closing rather than inheriting: a fail-open on a statutory gate
 should not survive on the strength of a comment.
 
-**Unknown turned out to have three states, and all three are now closed.**
-`ProtectedLayout` computes `prefsUnknown` as
-`!preferences && (prefsError || prefsLoading || prefsReadAbandoned)` and returns
+☠️ **Unknown is not a list of statuses, and trying to keep it as one is how
+this reopened twice.** `ProtectedLayout` now computes `prefsUnknown` as
+`!preferences` — nothing else — and returns
 `src/components/app/preferences-unavailable-screen.tsx` on it instead of falling
 through to the app. Nothing below renders: not the shell, not the age gate, not
 the consent gate.
+
+The enumeration it replaced was
+`!preferences && (prefsError || prefsLoading || prefsReadAbandoned)`, and it was
+short a term each time somebody looked. Every status a data-less query can
+report — errored, loading, paused, idle, at any failure count — is one fact to a
+statutory gate: **nobody has told us whether this person meets their age floor.**
+The status flags are still read, but only to decide what the screen SAYS; they
+decide nothing about who gets past it. `protected-layout.test.tsx` pins the whole
+state space as a table rather than as a disjunction, precisely so a missing row
+is visible.
+
+The three states the enumeration did name, kept here because each records a real
+escape:
 
 - **Errored, with nothing cached** — closed by
   [#2200](https://github.com/Selftend/selftend/issues/2200).
@@ -309,7 +322,25 @@ the consent gate.
   simply hung and the in-flight half held the screen; now it rejects into the
   retryer, which sleeps a second and then parks the query if focus or the
   network went away in that window (a backgrounded app, a connection that
-  dropped). The guard is `isPaused && failureCount > 0`.
+  dropped).
+- ☠️☠️ **Paused again, with the counter reset — which is why the guard above
+  is gone.** The fence on the state before this one was
+  `isPaused && failureCount > 0`, so that an offline cold start (paused before
+  it ever ran, zero failures) still fell through. TanStack erases that fence
+  itself: the `"fetch"` action applies `fetchState`, which writes
+  `fetchFailureCount: 0` and, for a query with `data === undefined`, also
+  `error: null, status: "pending"`, while `fetchStatus` becomes `"paused"` when
+  the device is offline. **Any** re-dispatch of a data-less read while offline
+  therefore reports paused / no error / not loading / zero failures — the exact
+  shape the exemption was cut for — and three things dispatch it with no tap at
+  all: `onFocus` on return to the foreground (a data-less query is
+  unconditionally stale), a fresh mount of the layout, and the block screen's
+  own Retry. The consent gate rendered over an unestablished age floor again,
+  and for an account created before `AGE_GATE_INTRODUCED_AT` that had never
+  accepted a policy, accepting it wrote `policy_version_accepted`,
+  `isExistingAccount` flipped true, and — since nothing writes that column back
+  to NULL — the floor could never be asked again. One accept, permanent
+  exemption.
 
 **Keyed on `!preferences`, which is what keeps this from becoming a blocking
 spinner on every cold start.** A cached or persisted row passes straight through,
@@ -336,12 +367,16 @@ data, TanStack clears the error and resets the status to pending the instant a
 refetch starts, so keying off the live flag rendered the in-flight half — and
 took the only control away — at the moment Retry was pressed, and a retried
 request that hung left a spinner with nothing to press. Once one read has
-failed, the errored half and its Retry stay through every later attempt. Only a
-fetch that has never failed gets the in-flight half — including the paused state
-above, where nothing is on the wire at all. That one carries no retry either,
-because a retry cannot win it: the query resumes on its own the moment focus or
-the network comes back, which is the same event a button press would be waiting
-on.
+failed, the errored face and its Retry stay through every later attempt. Only a
+fetch that has never failed gets the in-flight face. **A paused read outranks
+both**, because neither of them is true for it: nothing is on the wire, so the
+in-flight promise is false, and a refetch with no connection pauses again where
+it stands, so a Retry is a control that cannot win. The offline face says so and
+carries no button — the query resumes on its own the moment focus or the network
+comes back, which is the same event a button press would be waiting on. ⚠️ It
+cannot re-open #2238's hole: a Retry pressed while ONLINE moves `fetchStatus` to
+`"fetching"`, never `"paused"`, so the sticky errored face still owns that
+transition.
 
 ☠️ **A second press cancels the running read explicitly, and `refetch()` alone
 never did it** ([#2251](https://github.com/Selftend/selftend/issues/2251)). This
@@ -383,25 +418,46 @@ preferences row and without an account — `/crisis` is a root route, a sibling 
 the `(app)` group rather than a screen inside it, and Find A Helpline is a plain
 external URL.
 
-`protected-layout.test.tsx` pins the block on each half — the protected tree out
-of reach when the verdict is unknown, and again while it is still on the wire —
-plus the retry present and wired, and the three ways the guard could over-fire: a
-stale-but-cached row still meets the consent gate, a cached row still passes
-through while a refetch is in flight, and a signed-out person still gets the
-landing. `preferences-unavailable-screen.test.tsx` pins the crisis card on both
-halves and pins the retry to the errored one.
+`protected-layout.test.tsx` pins the block on each face — the protected tree out
+of reach when the verdict is unknown, while it is still on the wire, when a
+failed read has paused, when a failed read is **re-dispatched while offline**
+(the state the old counter could not see), and on an offline cold start — plus
+the retry present and wired, a table over the whole flag space, and the ways the
+guard could over-fire: a stale-but-cached row still meets the consent gate, a
+cached row still passes through while a refetch is in flight, the same flags with
+a row behind them still reach the age gate, and a signed-out person still gets
+the landing. `preferences-unavailable-screen.test.tsx` pins the crisis card on
+all three faces and pins the retry to the errored one alone.
 
-A person whose preferences load passes through exactly as before. An offline
-_cold start_ is a different state again and is still untouched: with
-`networkMode: "online"` a never-fetched query pauses rather than fetches, and
-because it pauses **before it ever runs** its failure count is zero, so the
-third state above does not claim it — the consent gate owns that case exactly as
-it did before. That zero is the whole reason the guard asks for a failure count
-rather than for `isPaused` alone: raising the block screen on an offline cold
-start would put a spinner with no control in front of it, which is the blocking
-spinner the `!preferences` key exists to avoid. Only a read that started, failed
-and then stopped retrying counts as unknown, and it clears itself the moment
-focus or connectivity returns.
+A person whose preferences load passes through exactly as before.
+
+☠️ **The offline cold start now meets the block screen, and this reverses what
+this document used to promise.** It said the consent gate owned that case,
+because a never-fetched query pauses with a failure count of zero and the guard
+asked for a failure. Once that counter turned out to be reset on every dispatch
+the two cases stopped being distinguishable at all, and the requirements
+genuinely conflict: **the age floor is a statutory gate and the pass-through was
+a convenience, so the gate wins.** The price is small and worth naming honestly
+— an offline person with no cached row sees the block screen rather than the
+consent gate. They could not have spent that consent anyway: with no network the
+acceptance could not be written either. And it is not a lockout — the paused
+query resumes on its own the moment the connection returns.
+
+⚠️ **And the population is smaller than "every offline start" sounds.** On
+native the query cache is persisted to AsyncStorage for 24 h
+(`src/lib/query-client.ts`), so a returning offline user restores their
+preferences row and passes straight through on the `!preferences` key. What
+actually reaches the offline face is a first launch, a launch more than a day
+after the last one, a launch after sign-out — and web, which persists nothing by
+design because that would put decrypted entries in `localStorage`.
+
+**That face says what is happening rather than pretending to load.** A paused
+read is not running, so the in-flight copy would be a spinner's promise about a
+request that does not exist, and a Retry would be a control that cannot win — a
+refetch with no connection pauses again on the spot. The block screen has a
+third face for it (`errors:preferencesUnavailable.offline*`): it names the
+missing connection, says the app carries on when it returns, offers no button,
+and carries the same crisis card as the other two.
 
 The second gap recorded here — _"the under-floor block is React state only"_ —
 is closed by [#1765](https://github.com/Selftend/selftend/issues/1765), below.

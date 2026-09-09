@@ -161,6 +161,18 @@ export default function NotificationsScreen() {
    * ⚠️ WEB ONLY. On native `prompt-needed` is also the conservative value
    * `peekReminderChannelStatus` returns before the async read lands, so this
    * card would flash on every visit for someone whose permission is granted.
+   *
+   * ☠️ ITS TITLE NAMES THIS BROWSER, and that is a correctness constraint on
+   * the copy rather than a preference. Every input here except `channel.status`
+   * is ACCOUNT-WIDE - `notifications_enabled_global` and the per-target
+   * `*_reminders_enabled` columns all live on `user_preferences` and are shared
+   * across devices - while `channel.status` is per-browser. So this card also
+   * renders for somebody whose reminders arrive perfectly well on their phone
+   * and who has just opened a laptop that was never asked. The title used to
+   * read "Your reminders aren't arriving", which is false for that person in
+   * the one line a scanner reads, and pushed them at a browser permission they
+   * may deliberately not want. The body already said "this browser"; the title
+   * says it too.
    */
   const needsChannelRepair =
     Platform.OS === "web" &&
