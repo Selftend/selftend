@@ -100,6 +100,21 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     };
   }, [form, setValues]);
 
+  // A reset from OUTSIDE the form - the sign-out wipe (`resetAllDraftStores`) -
+  // drops any capture still pending, so the debounce cannot land the record back
+  // in the store (and on disk) after the wipe removed it (#2258). The hook's own
+  // save and discard clear the timer before they reset, so this is a no-op for them.
+  useEffect(
+    () =>
+      useDraftStore.subscribe((state, previous) => {
+        if (state.generation !== previous.generation && captureTimerRef.current) {
+          clearTimeout(captureTimerRef.current);
+          captureTimerRef.current = null;
+        }
+      }),
+    [useDraftStore],
+  );
+
   // If rehydration finishes AFTER the form mounted (web refresh straight onto a
   // wizard URL: AsyncStorage resolves a beat after first render), the form was
   // initialized with empty defaults even though a draft exists. Restore it once,

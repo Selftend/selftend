@@ -74,5 +74,8 @@
     "message": "Selftend е в Google Play.",
     "action": "Изтегли приложението",
     "dismiss": "Затвори"
+  },
+  "handoff": {
+    "keptDraft": "Запазихме отворената ти чернова"
   }
 }

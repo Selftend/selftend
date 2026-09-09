@@ -17,6 +17,11 @@
 //   UTF-8, so they corrupt JSON payloads and Postgres text round-trips. Drop
 //   them; a paired surrogate (a real emoji) is untouched.
 const ZERO_WIDTH_REGEX = /[\u200B\uFEFF]/g;
+// The one sanctioned control-character class in the tree: this regex exists to
+// STRIP them, so `no-control-regex` - on since #2261, where a test file typed
+// `\b` as a raw U+0008 and made its own assertion vacuous - has nothing to
+// catch here.
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHAR_REGEX = /[\u0000-\u0008\u000B-\u001F\u007F]/g;
 const UNPAIRED_SURROGATE_REGEX =
   /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;

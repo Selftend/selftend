@@ -224,7 +224,7 @@ describe("DbtHomeScreen", () => {
     renderWithProviders(<DbtHomeScreen />);
 
     expect(screen.getByText("— records")).toBeTruthy();
-    expect(screen.queryByText(/16 records/)).toBeNull();
+    expect(screen.queryByText(/\b16 records\b/)).toBeNull();
     // The session count resolved, so only the sum is unknown.
     expect(screen.getByText("7 sessions")).toBeTruthy();
   });

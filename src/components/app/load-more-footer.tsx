@@ -20,6 +20,12 @@ interface LoadMoreFooterProps {
   failed: boolean;
   isFetchingNextPage: boolean;
   onRetry: () => void;
+  /**
+   * What the error row says; the paged-list line by default. A list assembled from
+   * MORE THAN ONE read (the DBT scripts ladder, #2259) passes its own, because what
+   * failed there is a whole half of the list, not a later page of it.
+   */
+  message?: string;
 }
 
 /**
@@ -38,7 +44,12 @@ interface LoadMoreFooterProps {
  * recover the one that failed. TanStack derives the next cursor from the last GOOD page,
  * so a second `fetchNextPage` asks for exactly the page that failed.
  */
-export function LoadMoreFooter({ failed, isFetchingNextPage, onRetry }: LoadMoreFooterProps) {
+export function LoadMoreFooter({
+  failed,
+  isFetchingNextPage,
+  onRetry,
+  message,
+}: LoadMoreFooterProps) {
   const { t } = useTranslation("errors");
 
   if (isFetchingNextPage) {
@@ -54,7 +65,7 @@ export function LoadMoreFooter({ failed, isFetchingNextPage, onRetry }: LoadMore
   return (
     <View className="items-center gap-3 py-6">
       <Text variant="muted" className="text-center">
-        {t("loadMore.failed")}
+        {message ?? t("loadMore.failed")}
       </Text>
       <Button variant="secondary" onPress={onRetry}>
         <Text>{t("fallback.retry")}</Text>

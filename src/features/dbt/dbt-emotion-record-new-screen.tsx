@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, type TextInput } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
@@ -108,19 +108,35 @@ function EmotionRecordForm({ initialValues }: { initialValues: EmotionRecordPart
   // carries the same rule by hand.
   const pendingDraftRef = useRef<EmotionRecordPartValues | null>(null);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Set once the draft is finished with (saved or discarded), so neither the
-  // pending timer nor the unmount flush can write the record back afterwards.
+  // Set once the draft is finished with (saved, discarded, or wiped by a
+  // sign-out), so neither the pending timer nor the unmount flush can write the
+  // record back afterwards.
   const draftClosedRef = useRef(false);
   const firstCaptureRef = useRef(true);
 
-  function closeDraft() {
+  const closeDraft = useCallback(() => {
     draftClosedRef.current = true;
     pendingDraftRef.current = null;
     if (draftTimerRef.current) {
       clearTimeout(draftTimerRef.current);
       draftTimerRef.current = null;
     }
-  }
+  }, []);
+
+  // ☠️ The sign-out wipe closes the draft too (#2258). `resetAllDraftStores`
+  // resets the store and removes its key, and only THEN does the session change
+  // unmount this form - whose flush below would write the pending record straight
+  // back under the key the wipe just removed, for the next person on the device
+  // to open the form on. The store bumps `generation` on every reset; closing on
+  // it here is what makes the wipe final. Save and discard bump it too, after
+  // closing themselves, so this is a no-op for them.
+  useEffect(
+    () =>
+      useDbtEmotionRecordDraftStore.subscribe((state, previous) => {
+        if (state.generation !== previous.generation) closeDraft();
+      }),
+    [closeDraft],
+  );
 
   useEffect(() => {
     // The mount value is the draft (or empty) - writing it back would be a
