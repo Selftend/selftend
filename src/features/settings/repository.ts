@@ -266,19 +266,74 @@ function missingPreferenceColumn(error: unknown): string | null {
   return match ? match[1] : null;
 }
 
-export async function getUserPreferences(userId: string) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+/**
+ * How long a preferences read may sit on the wire before it is abandoned
+ * (#2251). The row decides both legal gates, so while it is unknown the whole
+ * app is behind `PreferencesUnavailableScreen` - and a request that black-holes
+ * (a captive portal, dead air) never errors on its own: Android's OkHttp is
+ * built with zero connect/read/write timeouts and a browser `fetch` has none.
+ * Without this, TanStack's `retry: 1` never fires (it retries a rejection, not
+ * a hang) and the errored half with its Retry never appears.
+ */
+export const PREFERENCES_READ_TIMEOUT_MS = 15_000;
 
-  if (error) {
-    throw error;
+/**
+ * Thrown when a preferences read was cut short - by the caller's signal or by
+ * the timeout above. Named `AbortError` so `isReportableError` treats it like
+ * any other aborted fetch: a hung socket is a network condition, not a defect.
+ */
+export class PreferencesReadAbortedError extends Error {
+  constructor(cause: unknown) {
+    super("Preferences read aborted");
+    this.name = "AbortError";
+    this.cause = cause;
+  }
+}
+
+/**
+ * Read the signed-in person's `user_preferences` row.
+ *
+ * ☠️ The read honours `options.signal` AND gives up on its own after
+ * `PREFERENCES_READ_TIMEOUT_MS` (#2251). The signal is what lets a query
+ * cancellation reach the wire: `queryClient.cancelQueries` rejects the query's
+ * promise, but the request underneath keeps its socket open until something
+ * aborts it. TanStack hands its own signal to every `queryFn`, and it is only
+ * honoured when passed on here.
+ */
+export async function getUserPreferences(
+  userId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<UserPreferences> {
+  const client = requireSupabase();
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  const timer = setTimeout(abort, PREFERENCES_READ_TIMEOUT_MS);
+  if (options.signal?.aborted) {
+    abort();
+  } else {
+    options.signal?.addEventListener("abort", abort);
   }
 
-  return mapPreferences(data as UserPreferenceRow | null);
+  try {
+    const { data, error } = await client
+      .from("user_preferences")
+      .select("*")
+      .eq("user_id", userId)
+      .abortSignal(controller.signal)
+      .maybeSingle();
+
+    if (error) {
+      // PostgREST reports an aborted fetch as a plain error object whose
+      // message merely starts with "AbortError:"; give it the name, so the
+      // Sentry filter recognises it.
+      throw controller.signal.aborted ? new PreferencesReadAbortedError(error) : error;
+    }
+
+    return mapPreferences(data as UserPreferenceRow | null);
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", abort);
+  }
 }
 
 // Camel-case preference fields -> user_preferences columns, for building partial

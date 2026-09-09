@@ -20,7 +20,7 @@ describe("audio preferences plumbing", () => {
       haptic_cues: true,
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
-    const eq = jest.fn(() => ({ maybeSingle }));
+    const eq = jest.fn(() => ({ abortSignal: () => ({ maybeSingle }) }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -44,7 +44,7 @@ describe("audio preferences plumbing", () => {
       ambient_sound_id: "not-a-bed",
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
-    const eq = jest.fn(() => ({ maybeSingle }));
+    const eq = jest.fn(() => ({ abortSignal: () => ({ maybeSingle }) }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -64,7 +64,7 @@ describe("audio preferences plumbing", () => {
       meditation_ambient_volume: 0.2,
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
-    const eq = jest.fn(() => ({ maybeSingle }));
+    const eq = jest.fn(() => ({ abortSignal: () => ({ maybeSingle }) }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
@@ -86,7 +86,7 @@ describe("audio preferences plumbing", () => {
 
   it("falls back to defaults when the columns are null", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: { user_id: "u" }, error: null });
-    const eq = jest.fn(() => ({ maybeSingle }));
+    const eq = jest.fn(() => ({ abortSignal: () => ({ maybeSingle }) }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
