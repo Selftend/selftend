@@ -35,6 +35,20 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 **Never squash the promotion PR.** Squashing collapses the per-PR Conventional Commits into one commit and loses the version/CHANGELOG signal. release-please traverses `main`'s full commit graph, so the squash commits carried in by the merge commit are parsed individually; the merge commit's own subject does not need to be conventional. To keep the wrong button unavailable, the repo allows only the two merge methods that are actually used: squash (dev PRs, release PR) and merge commit (promotion and hotfix PRs) — rebase merge is disabled.
 
+## Post-release: lift held-out reminder targets
+
+**A reminder target can be held out of the cron, and only a person lifts it.** `src/features/notifications/reminder-rollout.ts` holds `HELD_OUT_REMINDER_TARGETS` — targets whose deep link the SHIPPED native client cannot route yet ([#2213](https://github.com/Selftend/selftend/issues/2213)). While a target is on that list the edge function mints nothing for it, the post-save reminder offer never appears for it, and its row on the reminders screen is switched off under a "coming soon on phones" note ([#2260](https://github.com/Selftend/selftend/issues/2260)). Nothing lifts it automatically, and nothing goes red while it stays held out — which is exactly how a hold-out outlives its reason.
+
+**Check this list after every release that carried a new reminder target, once the build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the store listings, not the merge, are what says the client is out there.
+
+The lift is one edit plus its tests, in one change:
+
+1. drop the target from `HELD_OUT_REMINDER_TARGETS` in `src/features/notifications/reminder-rollout.ts`;
+2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition);
+3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
+
+Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store.
+
 ## Posting the r/Selftend thread (by hand)
 
 Every published release also gets a **draft r/Selftend thread**, filed as a GitHub issue by the [Release thread](../.github/workflows/release-thread.yml) workflow (`reddit-draft` + `ready-for-human`, titled `r/Selftend thread for <tag>`). CI drafts; a person posts. Nothing in the pipeline touches the Reddit API, and the thread's text is the release's own changelog, filtered and cleaned - the rules are in [scripts/release-thread/README.md](../scripts/release-thread/README.md), decided on [#1873](https://github.com/Selftend/selftend/issues/1873).

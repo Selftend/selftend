@@ -18,7 +18,13 @@ jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: () => ({
     from: () => ({
       select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: mockStoredRow, error: null }) }),
+        // `.abortSignal()` since #2251: the preferences read carries the
+        // query's signal so a cancelled read stops on the wire.
+        eq: () => ({
+          abortSignal: () => ({
+            maybeSingle: async () => ({ data: mockStoredRow, error: null }),
+          }),
+        }),
       }),
     }),
   }),

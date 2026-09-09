@@ -364,6 +364,19 @@ export function peekReminderChannelStatus(): ReminderChannelStatus {
   return "prompt-needed";
 }
 
+/**
+ * WHY the channel reads `unsupported`, for the reminders screen's page-level notice
+ * (#2263). `readWebChannelStatus` folds two different facts into one status: a web
+ * build shipped with no VAPID public key, and a browser or device that cannot deliver.
+ * The status is the same because the rows treat both the same (a pure column write);
+ * the sentence is not, because "this browser doesn't support reminders" is a lie on a
+ * browser that does, when it is the build that is missing its key.
+ */
+export function reminderChannelUnsupportedReason(): "missing-vapid-key" | "unsupported" {
+  if (Platform.OS === "web" && !appEnv.webPushVapidPublicKey) return "missing-vapid-key";
+  return "unsupported";
+}
+
 function readWebChannelStatus(): ReminderChannelStatus {
   if (!appEnv.webPushVapidPublicKey) return "unsupported";
 

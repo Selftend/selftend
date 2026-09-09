@@ -4,6 +4,7 @@ import {
   readEnabled,
   type NotificationTargetKey,
 } from "@/src/features/notifications/registry";
+import { isReminderTargetHeldOut } from "@/src/features/notifications/reminder-rollout";
 import type { TimeOfDay } from "@/src/utils/time";
 
 // The one-time contextual reminder prompt shows after a tool completion only
@@ -11,10 +12,16 @@ import type { TimeOfDay } from "@/src/utils/time";
 // no reminder enabled, never prompted before, consent not explicitly declined
 // (declined = consent false with a recorded decision timestamp), and global
 // notifications not switched off.
+//
+// And never for a target the cron holds out (#2260): the offer ends in "Saved"
+// and a row nothing reads, an explicit yes the product would not honour. Held
+// out is checked FIRST and marks nothing prompted, so the one ask is still
+// owed once the target is lifted.
 export function isReminderPromptEligible(
   preferences: UserPreferences,
   targetKey: NotificationTargetKey,
 ): boolean {
+  if (isReminderTargetHeldOut(targetKey)) return false;
   const target = getNotificationTarget(targetKey);
   if (!preferences.notificationsEnabledGlobal) return false;
   if (readEnabled(preferences, target)) return false;
