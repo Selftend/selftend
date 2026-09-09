@@ -1253,16 +1253,29 @@ describe("ProtectedLayout when preferences cannot be read", () => {
    * because `focusManager` is not what the layout reads - `isPaused` plus
    * `onlineManager` is - and the three tests above already drive the genuinely
    * offline pauses through a real client.
+   *
+   * ☠️☠️ THE FLAG VALUES ARE THE POINT, and this test used to pin the one
+   * combination the scenario cannot produce. It set `errorUpdateCount: 1`,
+   * which only the `"error"` action writes - i.e. only after the retryer has
+   * REJECTED and the query has stopped. The focus-pause happens BEFORE that:
+   * an attempt fails (`"failed"`, which touches `fetchFailureCount` alone), the
+   * retry delay expires while the app is not `active`, and `onPause` fires. At
+   * `retry: 1` the pause therefore always reports `errorUpdateCount === 0` and
+   * `failureCount === 1`. Pinned at 1 the mapping looked correct while the real
+   * population fell through to the control-less LOADING face, and the suite
+   * could never say so. The numbers below are the ones the library actually
+   * produces for the state the docblock above describes.
    */
   it("keeps the errored face and its retry for a read paused while ONLINE", async () => {
-    // Paused, one failure behind it, and the network perfectly healthy.
+    // Paused, one FAILED ATTEMPT behind it (not a rejection), network healthy.
     const refetch = jest.fn();
     mockUseUserPreferences.mockReturnValue({
       data: undefined,
       isLoading: true,
       isError: false,
       isPaused: true,
-      errorUpdateCount: 1,
+      failureCount: 1,
+      errorUpdateCount: 0,
       refetch,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -1275,6 +1288,32 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     // And the gates stay shut regardless: the verdict is still unknown.
     expect(screen.queryByText("Consent gate")).toBeNull();
     expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+  });
+
+  /**
+   * ⚠️ The over-fire the disjunct above could cause, so that the `failureCount`
+   * fence is not free to delete. A pause with the count still at zero is a
+   * connectivity DISPATCH pause (the `"fetch"` action resets the count), and
+   * while `onlineManager` has already flipped back but the query has not been
+   * continued yet, nothing has failed - so the loading half, whose "the fetch
+   * it would re-run is already running" reasoning holds, is the right face.
+   */
+  it("stays on the loading face for a read paused with NOTHING behind it", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+      isPaused: true,
+      failureCount: 0,
+      errorUpdateCount: 0,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+    expect(screen.queryByText("Retry")).toBeNull();
     expect(screen.queryByText("Stack content")).toBeNull();
   });
 

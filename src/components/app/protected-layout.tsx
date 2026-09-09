@@ -80,6 +80,7 @@ export default function ProtectedLayout() {
     isError: prefsError,
     isPaused: prefsPaused,
     errorUpdateCount: prefsErrorCount,
+    failureCount: prefsFailureCount,
     refetch: refetchPreferences,
   } = useUserPreferences(user?.id ?? null);
   const completeOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
@@ -350,15 +351,39 @@ export default function ProtectedLayout() {
     // system banner, the pulled-down shade, the app switcher, iPad Slide Over,
     // Android split-screen; on web, a hidden tab. Keyed on the flag alone, that
     // person read "You're offline" about a connection that was fine AND LOST THE
-    // RETRY with it - #2238's shape, on the legal gate. Online, a focus-pause
-    // now falls through to the errored face, which is sticky and keeps its
-    // control; it can only get there having failed at least once, since the
-    // dispatch pause is connectivity-only.
+    // RETRY with it - #2238's shape, on the legal gate.
+    //
+    // ☠️☠️ AND `errorUpdateCount` DOES NOT COVER THAT FALL-THROUGH. An earlier
+    // version of this comment claimed an online focus-pause lands on the sticky
+    // errored face because it "can only get there having failed at least once".
+    // It conflates two counters. `errorUpdateCount` is incremented by the
+    // `"error"` action ALONE - i.e. only once the retryer has REJECTED and the
+    // query has given up. A single failed attempt dispatches `"failed"`, which
+    // writes `fetchFailureCount`/`fetchFailureReason` and nothing else, and the
+    // focus-pause happens strictly BETWEEN those two events: attempt fails ->
+    // `onFail` -> sleep(retryDelay) -> `canContinue()` false -> `onPause`. With
+    // `retry: 1` (`query-client.ts`) the one reachable focus-pause therefore
+    // always sits at `errorUpdateCount === 0` with `error` still null, so the
+    // predicate sent it to the LOADING face - a spinner and no control at all,
+    // over a request that is not running, for as long as the app stays
+    // non-`active`. The loading half's justification ("the fetch it would
+    // re-run is already running") is the one thing that is not true there.
+    //
+    // ☠️ So the third disjunct, and it is fenced by `prefsPaused` on purpose.
+    // `fetchFailureCount` alone would also fire during an ordinary online retry
+    // backoff, where `fetchStatus` is `"fetching"` and the loading half's
+    // reasoning does hold. Paused AND a non-zero failure count is exactly the
+    // retry pause: TanStack's `"fetch"` action resets `fetchFailureCount` to 0,
+    // so a connectivity dispatch-pause always reports zero, and the count can
+    // only be non-zero here because an attempt already ran and failed. It also
+    // keeps the sub-millisecond reconnect window honest - paused with the flag
+    // already flipped online, zero failures - which stays on the loading face.
     //
     // ⚠️ It cannot re-open #2238's hole either: a Retry press while ONLINE
     // moves `fetchStatus` to `"fetching"`, not `"paused"`, so the sticky
     // errored face still owns that transition.
-    const prefsHasFailed = prefsError || prefsErrorCount > 0;
+    const prefsHasFailed =
+      prefsError || prefsErrorCount > 0 || (prefsPaused && prefsFailureCount > 0);
     const restartPreferencesRead = async () => {
       await queryClient.cancelQueries({ queryKey: preferencesQueryKey(user?.id ?? null) });
       await refetchPreferences();
