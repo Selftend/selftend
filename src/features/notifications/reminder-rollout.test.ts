@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { NOTIFICATION_TARGETS } from "@/src/features/notifications/registry";
 import {
   HELD_OUT_REMINDER_TARGETS,
   isReminderTargetHeldOut,
 } from "@/src/features/notifications/reminder-rollout";
+import { stripCommentsAndStrings } from "@/test/source-scan";
 
 /**
  * The reminder hold-out list (#2213, #2260) - the ONE source the cron and the
@@ -34,5 +38,41 @@ describe("HELD_OUT_REMINDER_TARGETS (#2260)", () => {
       expect(isReminderTargetHeldOut(target.key)).toBe(false);
     }
     expect(isReminderTargetHeldOut("not-a-target")).toBe(false);
+  });
+});
+
+/**
+ * ☠️☠️ **The module has to load under DENO, and nothing else in this repo checks
+ * that.** `supabase/functions/_shared/web-reminders.ts` imports this file by
+ * relative path so the cron and the clients read ONE list (#2260) - and the
+ * constraint that keeps that possible was written only in prose in its docblock.
+ * Four things made prose the whole enforcement: the file sits in
+ * `src/features/notifications/`, where most modules DO import React Native (the
+ * control below reads one of them); `eslint.config.js` ignores
+ * `supabase/functions/**`, so no lint rule spans the boundary; CI starts Supabase
+ * with `edge-runtime` excluded and runs no `deno check`; and `tsc` and jest both
+ * resolve a React Native import happily. The first `import` added here would pass
+ * every gate in the repo and break `supabase functions deploy` - after the
+ * promotion merged, with the nightly reminder cron left on an older function.
+ *
+ * Text, not module introspection: a transpiled module's imports are gone by the
+ * time jest can look at them, and it is the SOURCE Deno reads.
+ */
+describe("the edge function can load it (#2260)", () => {
+  const DIR = __dirname;
+  const read = (file: string) => readFileSync(join(DIR, file), "utf8");
+  const IMPORTS = /^\s*import\b|\brequire\s*\(|^\s*export\s+(?:\*|\{[^}]*\})\s+from\b/m;
+
+  it("imports nothing at all - no module, no `@/` alias, no React Native", () => {
+    expect(stripCommentsAndStrings(read("reminder-rollout.ts"))).not.toMatch(IMPORTS);
+  });
+
+  it("would see an import if there were one", () => {
+    // The positive control, and the reason this guard is worth having: its own
+    // neighbour in this directory imports React Native, so an import here is the
+    // local norm rather than an unusual act.
+    const neighbour = read("channel-errors.ts");
+    expect(stripCommentsAndStrings(neighbour)).toMatch(IMPORTS);
+    expect(neighbour).toContain('from "react-native"');
   });
 });
