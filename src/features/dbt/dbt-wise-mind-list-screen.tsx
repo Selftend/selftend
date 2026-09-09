@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +15,7 @@ import { DBT_SHARED_TOOLS } from "@/src/features/dbt/dbt-shared-tools";
 import { useWiseMindCheckinPages } from "@/src/features/dbt/queries";
 import type { WiseMindCheckin } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * `/modules/dbt/wise-mind` - the check-ins, newest first (spec §3.2.1).
@@ -29,13 +29,24 @@ export default function DbtWiseMindListScreen() {
   const { t } = useTranslation(["dbt", "errors"]);
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useWiseMindCheckinPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useWiseMindCheckinPages(user?.id ?? null);
   const checkins = data?.pages.flat() ?? [];
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

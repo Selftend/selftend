@@ -13,6 +13,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { formatCompactAtOffset } from "@/src/utils/date";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
@@ -78,6 +79,7 @@ export default function MeditationSessionsScreen() {
     hasNextPage,
     isError,
     isFetchingNextPage,
+    isFetchNextPageError,
     isPaused,
     isPending,
     refetch,
@@ -95,11 +97,12 @@ export default function MeditationSessionsScreen() {
   // pausing over pages already read is `isPaused` with `status: "success"`.
   const unread = isError || (isPending && isPaused);
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
-    // user keeps dragging, and each call would queue another page fetch.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
