@@ -18,6 +18,7 @@ import { useJournalEntryPages } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /** Every journal entry, paged to exhaustion and grouped without partial totals. */
 export default function JournalHistoryScreen() {
@@ -25,14 +26,25 @@ export default function JournalHistoryScreen() {
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useJournalEntryPages(userId);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useJournalEntryPages(userId);
 
   const sections = useMemo(() => groupJournalHistoryEntries(data?.pages.flat()), [data]);
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
   const openEntry = useCallback(
     (id: string) => pushWithOrigin(`/tools/journal/${id}`),
     [pushWithOrigin],

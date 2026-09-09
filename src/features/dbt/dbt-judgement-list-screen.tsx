@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,7 @@ import { DBT_SHARED_TOOLS } from "@/src/features/dbt/dbt-shared-tools";
 import { useJudgementPages } from "@/src/features/dbt/queries";
 import type { Judgement } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * `/modules/dbt/judgements` - the judgement record's history, grouped by day
@@ -38,14 +39,25 @@ export default function DbtJudgementListScreen() {
   const { t, i18n } = useTranslation(["dbt", "errors"]);
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useJudgementPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useJudgementPages(user?.id ?? null);
   const judgements = useMemo(() => data?.pages.flat() ?? [], [data]);
   const sections = useMemo(() => groupHistorySections(judgements), [judgements]);
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
