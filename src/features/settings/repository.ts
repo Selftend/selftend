@@ -278,14 +278,45 @@ function missingPreferenceColumn(error: unknown): string | null {
 export const PREFERENCES_READ_TIMEOUT_MS = 15_000;
 
 /**
- * Thrown when a preferences read was cut short - by the caller's signal or by
- * the timeout above. Named `AbortError` so `isReportableError` treats it like
- * any other aborted fetch: a hung socket is a network condition, not a defect.
+ * Thrown when a preferences read was cut short by the CALLER's signal - the
+ * block screen's Retry cancelling a hung read, or an unmount. Named
+ * `AbortError` so `isReportableError` treats it like any other aborted fetch:
+ * a cancellation this app asked for is not a defect.
  */
 export class PreferencesReadAbortedError extends Error {
   constructor(cause: unknown) {
     super("Preferences read aborted");
     this.name = "AbortError";
+    this.cause = cause;
+  }
+}
+
+/**
+ * Thrown when the read gave up on its OWN clock, after
+ * `PREFERENCES_READ_TIMEOUT_MS`.
+ *
+ * ☠️☠️ Deliberately NOT named `AbortError`, and the split from the class above
+ * is the whole point. Both causes used to share that name, which meant
+ * `isReportableError` (src/lib/sentry.ts) dropped them both - so the ceiling
+ * this release chose, on the read that gates the entire app, would have failed
+ * in production with no signal of any kind: no Sentry event, no Play vital, no
+ * crash. A cancellation the app requested really is unreportable noise; a
+ * self-inflicted deadline expiring on the launch path is the one number nobody
+ * could tune afterwards without hearing about it.
+ *
+ * ⚠️ This does NOT re-open the noise #1548 narrowed away. That narrowing is by
+ * `name`/`message`/`status`, and this error matches none of its rules: it is
+ * not an abort the app asked for, it does not carry "Network request failed" or
+ * "Failed to fetch", and it has no auth status. Every genuinely-offline read
+ * still rejects with a network message or the abort name above and stays
+ * filtered. Nothing in the filter changed for this - the type is distinct
+ * enough that the existing rules simply do not match it, which is pinned by
+ * `repository.test.ts`.
+ */
+export class PreferencesReadTimeoutError extends Error {
+  constructor(cause: unknown) {
+    super(`Preferences read timed out after ${PREFERENCES_READ_TIMEOUT_MS}ms`);
+    this.name = "PreferencesReadTimeoutError";
     this.cause = cause;
   }
 }
@@ -307,7 +338,13 @@ export async function getUserPreferences(
   const client = requireSupabase();
   const controller = new AbortController();
   const abort = () => controller.abort();
-  const timer = setTimeout(abort, PREFERENCES_READ_TIMEOUT_MS);
+  // Which of the two abort causes fired, because they report differently: the
+  // caller's cancellation is expected noise, the deadline is a signal.
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    abort();
+  }, PREFERENCES_READ_TIMEOUT_MS);
   if (options.signal?.aborted) {
     abort();
   } else {
@@ -324,9 +361,19 @@ export async function getUserPreferences(
 
     if (error) {
       // PostgREST reports an aborted fetch as a plain error object whose
-      // message merely starts with "AbortError:"; give it the name, so the
-      // Sentry filter recognises it.
-      throw controller.signal.aborted ? new PreferencesReadAbortedError(error) : error;
+      // message merely starts with "AbortError:", so the cause has to be
+      // recovered here rather than read off the error.
+      if (!controller.signal.aborted) {
+        throw error;
+      }
+      // ⚠️ The caller's own signal WINS when both fired. A cancellation the app
+      // asked for stays unreportable even if the deadline landed in the same
+      // tick; only a read that nothing cancelled and that ran out of clock is
+      // the self-inflicted failure worth paging about.
+      if (timedOut && !options.signal?.aborted) {
+        throw new PreferencesReadTimeoutError(error);
+      }
+      throw new PreferencesReadAbortedError(error);
     }
 
     return mapPreferences(data as UserPreferenceRow | null);

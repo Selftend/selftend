@@ -74,6 +74,8 @@ export default function ProtectedLayout() {
     data: preferences,
     isLoading: prefsLoading,
     isError: prefsError,
+    isPaused: prefsPaused,
+    failureCount: prefsFailureCount,
     errorUpdateCount: prefsErrorCount,
     refetch: refetchPreferences,
   } = useUserPreferences(user?.id ?? null);
@@ -230,10 +232,35 @@ export default function ProtectedLayout() {
   // ⚠️ Keyed on `!preferences`, which is what keeps this from becoming a
   // blocking spinner on every cold start: a cached or persisted row passes
   // straight through, and a failing background refetch over one never raises it.
-  // The offline case is untouched too - `networkMode: "online"` PAUSES a
-  // never-fetched query rather than fetching it, so `isLoading` is false there
-  // and the consent gate owns that state exactly as it did before.
-  const prefsUnknown = !preferences && (prefsError || prefsLoading);
+  //
+  // ☠️☠️ UNKNOWN HAS A THIRD STATE, and it is the one the 15s read timeout made
+  // reachable from an online cold start. TanStack's `fetchStatus: "paused"` is
+  // neither loading nor errored - `isLoading` is `isPending && fetching`, and
+  // for a data-less query the fetch reducer resets `status` to `"pending"` and
+  // `error` to `null` - so a paused read reported `prefsUnknown === false` with
+  // the row genuinely unread. `needsAgeAttestation` then died on its
+  // `Boolean(preferences)` conjunct while `needsConsent` survived, which
+  // INVERTS the ordering the comment below calls load-bearing: Art. 9 consent
+  // was put to somebody whose age floor had never been established, and if
+  // consent had already been dismissed in the same mount the whole shell was
+  // the fall-through. Before the timeout a black-holed read simply hung and
+  // `prefsLoading` held the screen; now it REJECTS, enters the retryer, and
+  // `retry: 1` sleeps a second before checking `focusManager.isFocused() &&
+  // onlineManager.isOnline()` - both really wired here (app-providers,
+  // lib/online-manager) - so a backgrounded app or a connection that dropped in
+  // that window parks the query in the paused state until focus or the network
+  // returns.
+  //
+  // ⚠️ `prefsFailureCount > 0` is what keeps this off the ORDINARY OFFLINE
+  // CASE, which #2200/#2229 and `docs/age-floor.md` route to the consent gate
+  // on purpose. A query that was offline when it was asked to run pauses before
+  // it ever fetches, with a failure count of zero; raising the block screen
+  // there would put a spinner with no control in front of every offline cold
+  // start - the "blocking spinner" the paragraph above exists to avoid. Only a
+  // read that STARTED, FAILED and then stopped retrying counts as unknown here,
+  // and that state clears itself the moment focus or connectivity comes back.
+  const prefsReadAbandoned = Boolean(prefsPaused) && prefsFailureCount > 0;
+  const prefsUnknown = !preferences && (prefsError || prefsLoading || prefsReadAbandoned);
 
   // ☠️☠️ Unknown fails CLOSED (#2200). This used to fall through: `prefsUnknown`
   // was a conjunct of both `needsAgeAttestation` and `needsConsent`, so on an

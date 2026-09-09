@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { QueryClient, onlineManager } from "@tanstack/react-query";
 import { act, configure, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Platform, StyleSheet, Text as mockText, View as mockView } from "react-native";
 import type { ReactElement, ReactNode } from "react";
@@ -9,6 +10,7 @@ import { useAppLockStore } from "@/src/features/security/app-lock-store";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import {
+  preferencesQueryKey,
   useUpdateOnboardingPreferences,
   useUpdateUserPreferences,
   useUserPreferences,
@@ -997,6 +999,109 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     // And still the errored half, not a spinner: the sticky signal survived the cancel.
     expect(screen.getByText("Retry")).toBeTruthy();
     expect(screen.queryByText("Stack content")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ THE THIRD UNKNOWN. `prefsUnknown` enumerated two ways a data-less read
+   * can be unknown - errored and loading - and TanStack has a third:
+   * `fetchStatus: "paused"`. `isLoading` is `isPending && fetching`, so a
+   * paused read is not loading; and for a data-less query the fetch reducer
+   * resets `status` to `"pending"` and `error` to `null`, so it is not errored
+   * either. The verdict read as KNOWN with the row unread: the age gate died on
+   * its `Boolean(preferences)` conjunct while the consent gate survived, so
+   * Art. 9 consent was put to somebody whose age floor had never been
+   * established - the exact inversion of the ordering this layout calls
+   * load-bearing.
+   *
+   * The 15s read timeout (#2251) is what made this reachable from an ONLINE
+   * cold start: a black-holed read used to hang forever with `prefsLoading`
+   * holding the screen, and now it REJECTS into the retryer, which sleeps
+   * before re-running and parks the query if focus or the network went away in
+   * the meantime.
+   *
+   * Driven through the REAL hook and a real `QueryClient` with production's
+   * `retry: 1`, because the state is the library's, not the layout's - the
+   * shared test client sets `retry: false`, so the failure path where the pause
+   * lives is executed by nothing else in this suite.
+   */
+  it("keeps the app out of reach when a failed read has PAUSED rather than errored", async () => {
+    const { useUserPreferences: realUseUserPreferences } = jest.requireActual<
+      typeof import("@/src/features/settings/queries")
+    >("@/src/features/settings/queries");
+    mockUseUserPreferences.mockImplementation(realUseUserPreferences);
+    // Online at mount, so the read really starts - then the connection drops
+    // while it is on the wire, which is what parks the retry.
+    mockGetUserPreferences.mockImplementation(() => {
+      onlineManager.setOnline(false);
+      return Promise.reject(new Error("Network request failed"));
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: Infinity, retry: 1, retryDelay: 0 } },
+    });
+
+    try {
+      renderWithProviders(<ProtectedLayout />, { queryClient });
+
+      // The state itself, asserted rather than assumed: paused, one failure
+      // behind it, and reporting neither an error nor data.
+      await waitFor(() => {
+        expect(queryClient.getQueryState(preferencesQueryKey("user-1"))?.fetchStatus).toBe(
+          "paused",
+        );
+      });
+      const state = queryClient.getQueryState(preferencesQueryKey("user-1"));
+      expect(state?.fetchFailureCount).toBe(1);
+      expect(state?.status).toBe("pending");
+      expect(state?.error).toBeNull();
+      expect(state?.data).toBeUndefined();
+
+      // The load-bearing half: the legal gates are unknown, so nothing behind
+      // them renders - and the gate that DID render before this fix was the
+      // wrong one.
+      await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+      expect(screen.queryByText("Consent gate")).toBeNull();
+      expect(screen.queryByText("Age gate")).toBeNull();
+      expect(screen.queryByText("Stack content")).toBeNull();
+    } finally {
+      queryClient.clear();
+      onlineManager.setOnline(true);
+    }
+  });
+
+  /**
+   * ⚠️ The no-over-fire direction for the case above, and the reason the guard
+   * asks for a failure count rather than for `isPaused` alone. A device that is
+   * offline when the query is asked to run pauses BEFORE it ever fetches, with
+   * a failure count of zero. `docs/age-floor.md` records that state as
+   * deliberately untouched - the consent gate owns it - and raising the block
+   * screen there would put a spinner with no control in front of every offline
+   * cold start, which is the blocking spinner the `!preferences` key exists to
+   * avoid.
+   */
+  it("still leaves an offline cold start to the consent gate, not the block screen", async () => {
+    const { useUserPreferences: realUseUserPreferences } = jest.requireActual<
+      typeof import("@/src/features/settings/queries")
+    >("@/src/features/settings/queries");
+    mockUseUserPreferences.mockImplementation(realUseUserPreferences);
+    onlineManager.setOnline(false);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: Infinity, retry: 1, retryDelay: 0 } },
+    });
+
+    try {
+      renderWithProviders(<ProtectedLayout />, { queryClient });
+
+      await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+      const state = queryClient.getQueryState(preferencesQueryKey("user-1"));
+      expect(state?.fetchStatus).toBe("paused");
+      // Paused, but nothing was ever attempted - the read has not failed.
+      expect(state?.fetchFailureCount).toBe(0);
+      expect(mockGetUserPreferences).not.toHaveBeenCalled();
+      expect(screen.queryByText("Getting your account ready")).toBeNull();
+    } finally {
+      queryClient.clear();
+      onlineManager.setOnline(true);
+    }
   });
 
   it("keeps the retry for a refetch it did not start, once one read has failed", async () => {
