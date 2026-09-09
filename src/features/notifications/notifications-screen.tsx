@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -27,7 +28,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 /** Which control owns the open permission prompt, if any. */
-type PendingControl = "master" | NotificationTargetKey | null;
+type PendingControl = "master" | "channel" | NotificationTargetKey | null;
 
 /**
  * The three nested offsets that add up to the arrived-at row's position in the scroll
@@ -145,6 +146,46 @@ export default function NotificationsScreen() {
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
   const masterPending = pendingControl === "master";
 
+  /**
+   * Reminders switched on, and a browser that was never asked (#2263).
+   *
+   * ☠️ The cohort the missing VAPID key created. With an empty key the channel
+   * read `unsupported`, so `NotificationTargetRow` took its "pure column write"
+   * branch: the switch went on, `ensure()` was never called, the browser was
+   * never prompted, and no `web_push_subscriptions` row was ever made. Shipping
+   * the key moves exactly those people to `prompt-needed` - out of the one
+   * status the page speaks on - with every switch still on and nothing arriving,
+   * indefinitely. `reconcileWebReminderChannel` cannot reach them either: it is
+   * gated on `granted`, by design, so it repairs rather than asks.
+   *
+   * ⚠️ WEB ONLY. On native `prompt-needed` is also the conservative value
+   * `peekReminderChannelStatus` returns before the async read lands, so this
+   * card would flash on every visit for someone whose permission is granted.
+   */
+  const needsChannelRepair =
+    Platform.OS === "web" &&
+    globalEnabled &&
+    channel.status === "prompt-needed" &&
+    Boolean(preferences) &&
+    NOTIFICATION_TARGETS.some((target) => readEnabled(preferences!, target));
+  const channelPending = pendingControl === "channel";
+
+  async function handleArmChannel() {
+    if (!userId || pendingControl) return;
+    setPendingControl("channel");
+    try {
+      // A repair, not a save: the columns already say what the person asked for,
+      // so nothing here writes a preference.
+      const result = await channel.ensure();
+      if (!result.enabled) {
+        const message = t(reminderChannelErrorKey(result.reason));
+        showToast({ title: t("common:feedback.wentWrong"), description: message, tone: "error" });
+      }
+    } finally {
+      setPendingControl(null);
+    }
+  }
+
   async function writeMaster(next: boolean) {
     try {
       await updatePreferences.mutateAsync({ notificationsEnabledGlobal: next });
@@ -234,6 +275,35 @@ export default function NotificationsScreen() {
               <Text variant="muted" className="text-[13px]">
                 {t(reminderChannelErrorKey(reminderChannelUnsupportedReason()))}
               </Text>
+            </View>
+          ) : null}
+
+          {needsChannelRepair ? (
+            <View
+              testID="notification-channel-needs-permission"
+              className="gap-2 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">{t("channel.needsPermissionTitle")}</Text>
+              <Text variant="muted" className="max-w-[64ch] text-[13px]">
+                {t("channel.needsPermissionBody")}
+              </Text>
+              {channelPending ? (
+                <ActivityIndicator
+                  testID="notification-channel-pending"
+                  accessibilityLabel={t("channel.requesting")}
+                />
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  accessibilityLabel={t("channel.needsPermissionAction")}
+                  disabled={Boolean(pendingControl)}
+                  onPress={() => void handleArmChannel()}
+                >
+                  <Text>{t("channel.needsPermissionAction")}</Text>
+                </Button>
+              )}
             </View>
           ) : null}
 

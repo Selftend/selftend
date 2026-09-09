@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Dimensions } from "react-native";
+import { Dimensions, Platform } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
@@ -252,6 +252,87 @@ describe("NotificationsScreen", () => {
       expect(screen.queryByText("Notifications are turned off")).toBeNull();
       view.unmount();
     }
+  });
+
+  /**
+   * ☠️☠️ **The cohort #2263 created, which fixing #2263 did not reach.** A web
+   * user who switched a reminder on while the bundle carried no VAPID key took
+   * the `channel.status !== "prompt-needed"` branch: the column was written
+   * directly, `ensure()` was never called, the browser was never asked, and no
+   * `web_push_subscriptions` row was ever made. With the key now shipped that
+   * same person reads `prompt-needed` - out of `unsupported`, so the notice
+   * added for them no longer speaks - with every switch ON, no subscription,
+   * and nothing arriving. `reconcileWebReminderChannel` cannot help: it is
+   * gated on `granted` by design, so it repairs rather than asks.
+   *
+   * The escape is the one the master toggle already has (`handleGlobalToggle`
+   * re-arms when the master goes on with targets enabled), offered on arrival
+   * instead of only on a toggle the person has no reason to touch. Web only:
+   * on native `prompt-needed` is also the conservative value `peekReminderChannelStatus`
+   * returns before the async read lands, so the card would flash on every visit.
+   */
+  describe("reminders on with a channel that was never asked (#2263)", () => {
+    const ORIGINAL_OS = Platform.OS;
+    beforeEach(() => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+      setChannel("prompt-needed");
+      setPreferences({ sleepRemindersEnabled: true });
+    });
+    afterEach(() => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: ORIGINAL_OS });
+    });
+
+    it("says so plainly, and offers the ask that was never made", async () => {
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.getByTestId("notification-channel-needs-permission")).toBeTruthy();
+      expect(screen.getByText("Your reminders aren't arriving")).toBeTruthy();
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText("Allow notifications"));
+      });
+
+      expect(mockEnsure).toHaveBeenCalledTimes(1);
+      // A repair, not a save: no preference is rewritten - the columns are
+      // already what the person asked for, and the server reads them.
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+    });
+
+    it("reports a refused prompt rather than leaving the card looking done", async () => {
+      mockEnsure.mockResolvedValue({ enabled: false, reason: "permission-denied" });
+      renderWithProviders(<NotificationsScreen />);
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText("Allow notifications"));
+      });
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tone: "error",
+          description: "Notifications are blocked for this site in your browser settings.",
+        }),
+      );
+    });
+
+    it("stays quiet when no reminder is on, and when the master is off", () => {
+      // Nothing is switched on, so nothing is silently not arriving.
+      setPreferences();
+      const first = renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+      first.unmount();
+
+      // The master's own sentence already explains why nothing arrives.
+      setPreferences({ sleepRemindersEnabled: true, notificationsEnabledGlobal: false });
+      renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+    });
+
+    it("is web-only: native reads prompt-needed before its real status lands", () => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+    });
   });
 
   it("master off writes the column and then tears the channel down", async () => {

@@ -12,7 +12,10 @@
   "channel": {
     "requesting": "Waiting for permission",
     "blockedTitle": "Notifications are turned off",
-    "unsupportedTitle": "Reminders can't arrive here"
+    "unsupportedTitle": "Reminders can't arrive here",
+    "needsPermissionTitle": "Your reminders aren't arriving",
+    "needsPermissionBody": "These reminders are switched on, but this browser has never been asked for permission to show them, so nothing is being delivered.",
+    "needsPermissionAction": "Allow notifications"
   },
   "copy": {
     "cbt": {
