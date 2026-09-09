@@ -46,6 +46,29 @@ describe("isReminderPromptEligible", () => {
     const preferences = { ...defaultUserPreferences, notificationsEnabledGlobal: false };
     expect(isReminderPromptEligible(preferences, "mood")).toBe(false);
   });
+
+  it("is never eligible for a target the cron holds out (#2260), whatever the preferences say", () => {
+    // Held out = the edge function skips the target until the native build that
+    // routes its url is live on both stores. Offering the reminder anyway ended
+    // in "Saved" and a row nothing reads. The list is read through the shared
+    // module, so this holds out a NON-DBT target to prove the guard follows the
+    // list rather than a name - and to keep proving it after DBT is lifted.
+    jest.isolateModules(() => {
+      jest.doMock("@/src/features/notifications/reminder-rollout", () => ({
+        HELD_OUT_REMINDER_TARGETS: ["mood"],
+        isReminderTargetHeldOut: (target: string) => target === "mood",
+      }));
+      const { isReminderPromptEligible: eligible } =
+        require("@/src/features/notifications/reminder-prompt") as typeof import("@/src/features/notifications/reminder-prompt");
+      expect(eligible(defaultUserPreferences, "mood")).toBe(false);
+      // A sibling target is untouched: the hold-out is per target, not a global off switch.
+      expect(eligible(defaultUserPreferences, "journal")).toBe(true);
+    });
+  });
+
+  it("holds DBT out today, straight off the real list", () => {
+    expect(isReminderPromptEligible(defaultUserPreferences, "dbt")).toBe(false);
+  });
 });
 
 describe("roundToNearestHalfHour", () => {

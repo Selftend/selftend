@@ -1,6 +1,18 @@
 // Runtime-agnostic scheduling logic for the send-web-reminders edge function.
 // Imported by both the Deno function (index.ts) and jest unit tests. Contains NO
 // Deno globals and NO i18n JSON imports so Node/jest can load it directly.
+//
+// The one app-side import is the reminder hold-out list, by relative path with
+// its extension (Deno needs both), the same route index.ts takes to the locale
+// JSON: the cron and the clients must read ONE list (#2260).
+//
+// ⚠️ The `.ts` in that specifier is why `tsconfig.json` sets
+// `allowImportingTsExtensions`. This module is Deno's (extension required) AND
+// tsc's (test/check-in-route-compat.test.tsx imports it through the `@/` alias,
+// which pulls it into the typecheck program), and TS5097 rejects the extension
+// without that option. `noEmit` is already true from expo's base config, which
+// is the one thing the option requires.
+import { HELD_OUT_REMINDER_TARGETS } from "../../../src/features/notifications/reminder-rollout.ts";
 
 export type ReminderTarget =
   | "cbt"
@@ -348,18 +360,15 @@ export const CONFIGURED_TARGETS: readonly ReminderTarget[] = [
  * `web-reminders.test.ts` pins that the two lists partition the configured set,
  * so a target cannot be in neither.
  *
- * ⚠️ While a target is held out, the preference row can still be written - the
- * new clients show its switch and honour it - and nothing is sent. That is the
- * deliberate trade: a switch that is quiet for the length of a store review is
- * a delay; a push whose tap is a dead end is a broken promise.
+ * ⚠️ While a target is held out nothing is sent, and since #2260 the clients
+ * read the same list: no post-save offer, and the reminders screen shows the
+ * row switched off with a note rather than taking an opt-in the cron will not
+ * honour. The list itself lives app-side in
+ * `src/features/notifications/reminder-rollout.ts`, so that one edit lifts a
+ * target for the cron and both clients at once; the lift is a release step in
+ * `docs/releasing.md` ("Post-release: lift held-out reminder targets").
  */
-export const HELD_OUT_TARGETS: readonly ReminderTarget[] = [
-  // DBT (#1980): `/modules/dbt` is allowlisted by the client that ships with
-  // this function and by no earlier one. Lift once the native build carrying
-  // `/modules/dbt` in ALLOWED_REMINDER_ROUTES is live on Google Play and the
-  // App Store.
-  "dbt",
-];
+export const HELD_OUT_TARGETS: readonly ReminderTarget[] = HELD_OUT_REMINDER_TARGETS;
 
 export const TARGETS: ReminderTarget[] = CONFIGURED_TARGETS.filter(
   (target) => !HELD_OUT_TARGETS.includes(target),
