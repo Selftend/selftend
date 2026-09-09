@@ -305,6 +305,25 @@ describe("the coping plan screen", () => {
     expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
     expect(screen.queryByText("That did not load")).toBeNull();
   });
+
+  /**
+   * ☠️☠️ **#2236's rule, on the read screen the editor's fix was never
+   * carried across to.** A background refetch that FAILS over a plan already
+   * read is `isError` with `data` still there - query-core's `isRefetchError` -
+   * and this key is invalidated every time the editor saves, so a failed
+   * post-save re-read or an ordinary focus refetch swapped the person's plan for
+   * "That did not load". The plan is in the cache and on the server; only the
+   * screen said otherwise, on the surface someone opens when they are not
+   * coping. The editor next door has carried `existing === undefined` in its
+   * gate since #2236 with the reasoning written out; this is the same conjunct.
+   */
+  it("keeps the plan on screen when a refetch over it fails", () => {
+    setPlan({ items: [item("a", "distract", "walk", 0)], fallback: [] }, { isError: true });
+    renderWithProviders(<DbtCopingPlanScreen />);
+
+    expect(screen.getByText("Go for a walk")).toBeTruthy();
+    expect(screen.queryByText("That did not load")).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------

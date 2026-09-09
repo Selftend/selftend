@@ -36,11 +36,7 @@ import {
   hasDefusionDraftContent,
   useActDefusionLogDraftStore,
 } from "@/src/stores/act-defusion-log-draft-store";
-import {
-  consumeDefusionLogSeed,
-  deferDefusionLogSeed,
-  hasDefusionLogSeed,
-} from "@/src/stores/act-defusion-seed-store";
+import { consumeDefusionLogSeed } from "@/src/stores/act-defusion-seed-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -79,11 +75,18 @@ const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
  * What a door's hand-off found on arrival - decided ONCE, at first render.
  *
  * A live draft outranks the hand-off (#2206, owner's rule for every cross-module
- * door): unsaved work the person typed here is kept, the seed is left in its
- * store UN-consumed so the next fresh open of this form still receives it, and a
- * notice says so. Content, not presence: the form writes the store on every
- * keystroke, so a draft object with every field back at empty is not held work,
- * and the seed takes it.
+ * door): unsaved work the person typed here is kept and a notice says so.
+ * Content, not presence: the form writes the store on every keystroke, so a draft
+ * object with every field back at empty is not held work, and the seed takes it.
+ *
+ * ☠️☠️ **The seed is CONSUMED either way, and the notice says the hand-off was
+ * dropped.** A hand-off lives exactly as long as the navigation that carried it;
+ * keeping the beaten one "for the next fresh open" is a stored state that has to
+ * answer "is this later arrival still the same intention?", and nothing in the
+ * store knows - a freshness window bounds the wait by TIME, and an open of this
+ * form from the ACT hub five minutes later is a fresh intention that a clock will
+ * happily serve the previous module's judgement to, with its category answered
+ * and two of five rail segments already lit. See `thought-record-seed-store.ts`.
  *
  * ☠️ The seed that IS taken lives in `seed`, never in the draft store, until the
  * person's first edit moves it there (#2254). Written at arrival it would be a
@@ -91,14 +94,12 @@ const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
  * seed would show the next judgement's door the previous judgement.
  */
 function decideArrival(): { seed: ActDefusionLogDraft | null; keptDraft: boolean } {
-  if (!hasDefusionLogSeed()) return { seed: null, keptDraft: false };
-  if (hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
-    // `keptDraft` drives the notice, and only the arrival that CAUSED the
-    // deferral gets one: every later mount recomputes the same true here.
-    return { seed: null, keptDraft: deferDefusionLogSeed() };
-  }
   const seed = consumeDefusionLogSeed();
-  return { seed: seed ? { ...EMPTY_DRAFT, ...seed } : null, keptDraft: false };
+  if (seed === null) return { seed: null, keptDraft: false };
+  if (hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
+    return { seed: null, keptDraft: true };
+  }
+  return { seed: { ...EMPTY_DRAFT, ...seed }, keptDraft: false };
 }
 
 /**
@@ -163,7 +164,11 @@ export default function ActDefusionNewScreen() {
   useEffect(() => {
     if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
     keptDraftNoticeRef.current = true;
-    showToast({ title: t("common:handoff.keptDraft"), tone: "success" });
+    showToast({
+      title: t("common:handoff.keptDraft"),
+      description: t("common:handoff.notCarriedOver"),
+      tone: "success",
+    });
   }, [arrival.keptDraft, showToast, t]);
 
   const [submitError, setSubmitError] = useState("");

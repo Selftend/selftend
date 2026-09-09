@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import type { ReactElement } from "react";
 import { Pressable, Text } from "react-native";
@@ -158,6 +158,69 @@ describe("ActValuesScreen - the bull's-eye history is no longer capped at twelve
     renderWithProviders(<ActValuesScreen />);
     fireEvent.press(screen.getByText("Show more"));
 
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️☠️ **The predicate #2253 removed from `LoadMoreFooter`, one surface over.**
+   * `isError` is the QUERY's status, and query-core sets it on ANY failed fetch whether or
+   * not `data` is already there - which is why TanStack derives `isRefetchError` from
+   * `isError && hasData` at all. Keyed on the bare flag, a failed background refetch of an
+   * already-loaded history (the return visit past the 60s `staleTime`, or the invalidation
+   * after a check-in saves) replaced every recorded rating with an error card. The rows are
+   * safe in the cache and on the server; only the screen said they were gone, to the weekly
+   * reviewer this section exists for.
+   */
+  it("keeps the loaded ratings when a read over them fails", () => {
+    snapshotPages([snapshot(0), snapshot(1)], { isError: true, refetch: jest.fn() });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    const history = within(screen.getByTestId("bulls-eye-history"));
+    expect(history.getByText("1/10")).toBeTruthy();
+    expect(history.getByText("2/10")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+    // And not the load-more line either: nothing "more" was being fetched. Keyed on the
+    // bare status, the footer below would announce a failure that took nothing away.
+    expect(screen.queryByText("Couldn't load more entries.")).toBeNull();
+  });
+
+  /**
+   * The other direction, so the assertion above can only pass by holding the rows: with
+   * nothing loaded there is nothing to keep, and the error card is the honest answer.
+   * Pinned already by "tells a failed history read apart from an empty one"; this adds the
+   * paged shape - a first page that failed leaves `pages` empty rather than undefined.
+   */
+  it("still shows the error when the failed read left nothing to show", () => {
+    snapshotPages([], { isError: true, refetch: jest.fn() });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  /**
+   * ☠️ A later page that failed is not nothing: without a word under the rows the
+   * history simply stops, a cap wearing the face of its end (#2187). The nineteen paged
+   * list screens say it through `LoadMoreFooter`, and so does this one - the same
+   * component, not a second dialect of the same message.
+   */
+  it("says a later page failed under the rows it is holding, with a retry", () => {
+    const fetchNextPage = jest.fn();
+    snapshotPages([snapshot(0)], {
+      hasNextPage: true,
+      isError: true,
+      isFetchNextPageError: true,
+      fetchNextPage,
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(within(screen.getByTestId("bulls-eye-history")).getByText("1/10")).toBeTruthy();
+    expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
     expect(fetchNextPage).toHaveBeenCalled();
   });
 });

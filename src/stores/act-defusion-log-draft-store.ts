@@ -45,13 +45,14 @@ export const useActDefusionLogDraftStore = createDraftStore<ActDefusionLogDraft>
  * runs on arrival before it takes a hand-off's seed (#2197, #2206).
  *
  * ☠️ A live draft outranks a hand-off. Unsaved work the person typed here beats a
- * prefill the next fresh open still receives — the rule the CBT thought record
- * applies to its own doors (`use-thought-record-editor.ts`), and the one "Finish
- * later" promises: the entry is held. A seed that replaced it would be the only
- * writer to break that promise, with no undo, because this store is the form's
- * state and has no history. Since #2254 the seed waits in its own store
- * (`act-defusion-seed-store.ts`) and never touches this one until the person's
- * first edit, so "held" here always means typed.
+ * prefill — the rule the CBT thought record applies to its own doors
+ * (`use-thought-record-editor.ts`), and the one "Finish later" promises: the entry
+ * is held. A seed that replaced it would be the only writer to break that promise,
+ * with no undo, because this store is the form's state and has no history. Since
+ * #2254 the seed lives in its own store (`act-defusion-seed-store.ts`) and never
+ * touches this one until the person's first edit, so "held" here always means typed.
+ * The beaten hand-off is dropped rather than kept for a later open, and the arrival
+ * says so — a hand-off lives only as long as the navigation that carried it.
  *
  * Content, not presence: the form writes the store on every keystroke, so a draft can
  * exist with every field back at empty, and that one is free to take a seed.

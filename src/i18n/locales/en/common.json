@@ -76,6 +76,7 @@
     "dismiss": "Dismiss"
   },
   "handoff": {
-    "keptDraft": "Kept your open draft"
+    "keptDraft": "Kept your open draft",
+    "notCarriedOver": "Nothing was carried over from where you just were. Finish or discard this draft, then use that button again."
   }
 }

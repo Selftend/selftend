@@ -130,8 +130,10 @@ export default function DbtJudgementDetailScreen({ id }: { id: string }) {
               variant="outline"
               onPress={() => {
                 // In memory, never a route parameter; and always written, even
-                // over a live draft - the form keeps the draft and leaves the
-                // seed waiting for its next fresh open (#2206).
+                // over a live draft - the form decides, keeps the draft, and
+                // says the hand-off was not carried over (#2206). It lives for
+                // this one navigation, so pressing this again is what re-sends
+                // it once that draft is finished with.
                 seedDefusionLog({
                   fusedThought: judgement.judgement,
                   thoughtCategory: "selfJudgment",

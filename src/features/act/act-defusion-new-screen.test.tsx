@@ -7,7 +7,6 @@ import { useSaveDefusionLog } from "@/src/features/act/queries";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
 import { seedDefusionLog, useActDefusionSeedStore } from "@/src/stores/act-defusion-seed-store";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
-import { HANDOFF_SEED_TTL_MS } from "@/src/stores/handoff-seed";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -69,7 +68,7 @@ function setPlatform(os: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   useActDefusionLogDraftStore.getState().reset();
-  useActDefusionSeedStore.setState({ seed: null, mintedAt: null, deferred: false });
+  useActDefusionSeedStore.setState({ seed: null });
   useToastStore.getState().clearToasts();
   mockMutateAsync = jest.fn(() => Promise.resolve({} as never));
   mockUseSave.mockReturnValue({
@@ -366,6 +365,15 @@ describe("the category chips and technique cards", () => {
  * form opened on the wrong judgement, silently. The two tests at the end pin
  * both halves of that: an untouched seed leaves no draft, and a second door
  * opens on the second judgement.
+ *
+ * ☠️☠️ **A hand-off lives exactly as long as the navigation that carried it.**
+ * #2206's rule used to be implemented by LEAVING the seed in its store for "the
+ * next fresh open", and that stored state is what three rounds of edge cases came
+ * out of: it needed a window, the window ran from the door tap rather than from
+ * the deferral, and a window cannot express intent anyway - an unrelated open of
+ * this form minutes later still arrived on the old judgement with its category
+ * answered. The door mints, this form consumes, and nothing is stored across a
+ * navigation: a held entry DROPS the hand-off and the toast says so.
  */
 describe("a door's hand-off", () => {
   const SEED = { fusedThought: "She is ignoring me", thoughtCategory: "selfJudgment" as const };
@@ -383,60 +391,67 @@ describe("a door's hand-off", () => {
     expect(useToastStore.getState().visible).toBeNull();
   });
 
-  it("keeps a held entry, says so, and leaves the hand-off for the next fresh open", () => {
+  /**
+   * ☠️☠️ **The assertion that used to stand here was `seed` still equal to `SEED`**
+   * - the hand-off left waiting "for the next fresh open". It is replaced, not
+   * weakened: leaving it there is the stored state every later round of edge
+   * cases came out of, and what waits is a judgement the person read, which a
+   * later, unrelated open of this form can silently open itself on. The held
+   * entry still wins and the person is still told; what they are told is now
+   * true, and it says what to do to get the hand-off back.
+   */
+  it("keeps a held entry, says so, and drops the hand-off rather than storing it", () => {
     const first = renderWithProviders(<ActDefusionNewScreen />);
     fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
     first.unmount();
 
     seedDefusionLog(SEED);
-    const second = renderWithProviders(<ActDefusionNewScreen />);
+    renderWithProviders(<ActDefusionNewScreen />);
 
     // The entry the person typed, not the hand-off.
     expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("I never get anything right");
     expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
-    // ☠️ Un-consumed: still there for the next fresh open of this form.
-    expect(useActDefusionSeedStore.getState().seed).toEqual(SEED);
-
-    second.unmount();
-    useActDefusionLogDraftStore.getState().reset();
-    renderWithProviders(<ActDefusionNewScreen />);
-
-    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("She is ignoring me");
+    expect(useToastStore.getState().visible?.description).toBe(
+      "Nothing was carried over from where you just were. Finish or discard this draft, then use that button again.",
+    );
+    // ☠️ Nothing left behind: not the judgement, not a flag about it.
+    expect(useActDefusionSeedStore.getState().seed).toBeNull();
   });
 
   /**
-   * ☠️☠️ **A kept hand-off waits for the next fresh open, not for any open ever.**
-   * The seed store is a module singleton, so on native nothing ends the wait: the
-   * person finishes or discards the entry they were holding, opens this form from
-   * the ACT hub an hour later to log something unrelated, and it arrives on the
-   * old judgement with the category already answered and nothing on screen saying
-   * where that came from.
+   * ☠️☠️ **A later open of this form is a fresh intention, and no clock decides that.**
+   * The person finishes or discards the entry they were holding and opens this
+   * form from the ACT hub to log something they have right now. There is no
+   * hand-off any more, so it opens empty with nothing pre-answered - it does not
+   * matter whether one minute or one hour passed, which is exactly what a
+   * freshness window could never express.
    */
-  it("does not open a later, unrelated visit on a hand-off that has gone stale", () => {
+  it("opens empty when the form is opened again after a hand-off was dropped", () => {
     const first = renderWithProviders(<ActDefusionNewScreen />);
     fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
     first.unmount();
 
     seedDefusionLog(SEED);
     const second = renderWithProviders(<ActDefusionNewScreen />);
-    expect(useActDefusionSeedStore.getState().seed).toEqual(SEED);
     second.unmount();
 
-    // The entry is finished with, and the person comes back much later.
+    // The entry is finished with, and the person opens the form from the hub.
     useActDefusionLogDraftStore.getState().reset();
-    useActDefusionSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS - 1 });
+    useToastStore.getState().clearToasts();
     renderWithProviders(<ActDefusionNewScreen />);
 
     expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("");
     expect(screen.getByText("0 of 5 parts filled in")).toBeTruthy();
-    expect(useActDefusionSeedStore.getState().seed).toBeNull();
+    expect(useToastStore.getState().visible).toBeNull();
   });
 
   /**
-   * ☠️ The notice is about a decision this arrival caused. `keptDraft` is
-   * recomputed at every mount from (seed present) AND (draft has content), and
-   * neither side is consumed on that path - so it used to re-announce the
-   * hand-off on every visit for as long as the entry was held.
+   * ☠️ The notice is about a decision this arrival caused. It used to be
+   * recomputed at every mount from (seed present) AND (draft has content) with
+   * neither side consumed, so it re-announced the hand-off on every visit for as
+   * long as the entry was held; it needed a "said it once" flag ON the seed to
+   * stop. Consuming the seed at the arrival removes the flag AND the question -
+   * there is no seed left for a second mount to recompute a notice from.
    */
   it("says it kept the entry once, not on every visit while it is held", () => {
     const first = renderWithProviders(<ActDefusionNewScreen />);
@@ -456,10 +471,11 @@ describe("a door's hand-off", () => {
   });
 
   /**
-   * ☠️ A hand-off waiting for the next fresh open is a judgement the person read,
-   * held in memory - so the sign-out wipe has to reach it too, or the next
-   * session on the device (a fresh guest, on native, in the same process) would
-   * open the defusion form on the last person's words.
+   * ☠️ A hand-off can be minted and never arrived at - the door pressed, the app
+   * backgrounded before the form mounts - and what waits is a judgement the person
+   * read, held in memory. The sign-out wipe has to reach it, or the next session on
+   * the device (a fresh guest, on native, in the same process) would open the
+   * defusion form on the last person's words.
    */
   it("is dropped by the sign-out wipe while it waits", () => {
     seedDefusionLog(SEED);

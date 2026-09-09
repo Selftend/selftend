@@ -4,9 +4,7 @@ import ThoughtRecordEditorScreen from "@/app/(app)/modules/cbt/new";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { defaultValues } from "@/src/features/cbt/thought-record-form";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
-import { HANDOFF_SEED_TTL_MS } from "@/src/stores/handoff-seed";
 import {
-  hasThoughtRecordSeed,
   seedThoughtRecord,
   useThoughtRecordSeedStore,
 } from "@/src/stores/thought-record-seed-store";
@@ -331,13 +329,27 @@ describe("finishing later", () => {
  * seed store rather than the address bar.
  *
  * ☠️ The owner's rule for every cross-module door (#2206): a live draft WINS,
- * the hand-off is left in its store un-consumed for the next fresh open, and a
- * notice says so. Before it, the seed was read and cleared unconditionally at
- * mount and then dropped by the `??` under the draft - so a person holding an
+ * and a notice says so. Before it, the seed was read and cleared unconditionally
+ * at mount and then dropped by the `??` under the draft - so a person holding an
  * unfinished record lost the paragraph they had just written, silently, with
  * nothing left to re-press.
+ *
+ * ☠️☠️ **A hand-off lives exactly as long as the navigation that carried it.**
+ * The rule above used to be implemented by LEAVING the seed in its store for "the
+ * next fresh open", and that stored state is what three rounds of edge cases came
+ * out of: it needed a window, the window ran from the door tap rather than from
+ * the deferral, and a window cannot express intent anyway - an unrelated open of
+ * this form minutes later still arrived pre-filled with another episode's words.
+ * The door mints, this form consumes, and nothing is stored across a navigation:
+ * a kept draft DROPS the hand-off and the toast says so.
  */
 describe("a door's hand-off", () => {
+  /** What the store is still holding - the whole of it, so a leftover cannot hide. */
+  const seedInStore = () => {
+    const { emotions, situation } = useThoughtRecordSeedStore.getState();
+    return { emotions, situation };
+  };
+
   beforeEach(() => {
     useThoughtRecordSeedStore.setState({ emotions: [], situation: "" });
     useToastStore.getState().clearToasts();
@@ -352,55 +364,56 @@ describe("a door's hand-off", () => {
       "She did not reply for three days",
     );
     // Taken, so it can never be applied twice.
-    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
     expect(useToastStore.getState().visible).toBeNull();
   });
 
-  it("keeps a held draft, says so, and leaves the hand-off for the next fresh open", async () => {
+  /**
+   * ☠️☠️ **The assertion that used to stand here was `hasThoughtRecordSeed() === true`**
+   * - the hand-off left waiting "for the next fresh open". It is replaced, not
+   * weakened: leaving it there is the stored state every later round of edge
+   * cases came out of, and what waits is a paragraph about an episode that a
+   * later, unrelated open of this form can silently pre-fill itself with. The
+   * draft still wins and the person is still told; what they are told is now
+   * true, and it says what to do to get the hand-off back.
+   */
+  it("keeps a held draft, says so, and drops the hand-off rather than storing it", async () => {
     useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
     seedThoughtRecord(["anxious"], "She did not reply for three days");
 
-    const view = await renderColumn();
+    await renderColumn();
 
     // The draft the person was holding, not the hand-off.
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
     expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
-    // ☠️ Un-consumed: the paragraph is still in the store, so the door works the
-    // moment the draft is finished with - read back by opening the form again.
-    expect(hasThoughtRecordSeed()).toBe(true);
-
-    view.unmount();
-    useCbtDraftStore.getState().reset();
-    await renderColumn();
-
-    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
-      "She did not reply for three days",
+    expect(useToastStore.getState().visible?.description).toBe(
+      "Nothing was carried over from where you just were. Finish or discard this draft, then use that button again.",
     );
+    // ☠️ Nothing left behind: not the paragraph, not a flag about it.
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
   });
 
   /**
-   * ☠️☠️ **A kept hand-off waits for the next fresh open, not for any open ever.**
-   * The seed store is a module singleton, so on native nothing ends the wait: the
-   * person finishes the record they were holding, comes back to this form from the
-   * CBT hub an hour later to write about something else, and the Situation arrives
-   * pre-filled with a paragraph about an old episode - which they can save into a
-   * record that is not about it.
+   * ☠️☠️ **A later open of this form is a fresh intention, and no clock decides that.**
+   * The person finishes the record they were holding and comes back from the CBT
+   * hub to write about today. There is no hand-off any more, so the Situation is
+   * empty - it does not matter whether one minute or one hour passed, which is
+   * exactly what a freshness window could never express.
    */
-  it("does not open a later, unrelated visit on a hand-off that has gone stale", async () => {
+  it("opens empty when the form is opened again after a hand-off was dropped", async () => {
     useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
     seedThoughtRecord(["anxious"], "She did not reply for three days");
 
     const view = await renderColumn();
-    expect(hasThoughtRecordSeed()).toBe(true);
     view.unmount();
 
-    // The draft is finished with, and the person comes back much later.
+    // The draft is finished with, and the person opens the form from the hub.
     useCbtDraftStore.getState().reset();
-    useThoughtRecordSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS - 1 });
+    useToastStore.getState().clearToasts();
     await renderColumn();
 
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("");
-    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(useToastStore.getState().visible).toBeNull();
   });
 
   /**
@@ -439,7 +452,7 @@ describe("a door's hand-off", () => {
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
       "She did not reply for three days",
     );
-    expect(hasThoughtRecordSeed()).toBe(false);
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
     expect(useToastStore.getState().visible).toBeNull();
   });
 });

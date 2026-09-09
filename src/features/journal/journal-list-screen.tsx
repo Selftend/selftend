@@ -183,7 +183,16 @@ export default function JournalListScreen() {
                   <View className="items-center py-8">
                     <ActivityIndicator />
                   </View>
-                ) : writingQuery.isError ? (
+                ) : /*
+                    ☠️ `&& !writingBuckets`, never bare `isError`: query-core sets
+                    the query's error status on ANY failed fetch, held buckets or
+                    not (TanStack's own `isRefetchError`). `journalKeys.all` is
+                    invalidated on every entry save, so a failed post-save re-read
+                    - or an ordinary refetch past the 60s staleTime - replaced a
+                    drawn chart with this line about data still in the cache. The
+                    error answers for the blank; loaded bars stay drawn.
+                  */
+                writingQuery.isError && !writingBuckets ? (
                   <View className="items-start gap-2 py-4">
                     <Text variant="muted" className="text-[13px]">
                       {t("writing.error")}
