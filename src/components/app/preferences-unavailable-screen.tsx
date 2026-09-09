@@ -17,16 +17,20 @@ import { crisisActionUrls } from "@/src/features/policies/policy-content";
 import { openExternalUrl } from "@/src/lib/linking";
 
 /**
- * Which half of "unknown" this mount is answering.
+ * Which face of "unknown" this mount is answering.
  *
  * - `loading`: the row is still on the wire and has never arrived (#2229).
  * - `error`: the read failed with nothing cached (#2200).
+ * - `offline`: the read is PAUSED - there is no connection, so nothing is on
+ *   the wire and nothing has failed. It arrived here when the age gate stopped
+ *   being fenced by a failure count the library resets on every dispatch: an
+ *   offline read used to fall through to the consent gate, and now it does not.
  *
- * They are one state to the gates above - neither can answer a statutory
- * question - and two different things to say to a person, which is the only
+ * They are one state to the gates above - none of them can answer a statutory
+ * question - and three different things to say to a person, which is the only
  * reason the prop exists.
  */
-export type PreferencesVerdictState = "loading" | "error";
+export type PreferencesVerdictState = "loading" | "error" | "offline";
 
 interface PreferencesUnavailableScreenProps {
   /** Re-run the preferences fetch. The screen owns no query of its own. */
@@ -46,9 +50,11 @@ interface PreferencesUnavailableScreenProps {
  * country's floor reached the whole app and could write thought records, which
  * are GDPR Art. 9 special-category data, with no attestation on file.
  *
- * ☠️ So "unknown" renders THIS rather than the app, in BOTH its halves. #2200
- * closed the errored one; the in-flight one is the same unknown and fell open
- * for as long as the request took. The distinction that makes it safe to fail
+ * ☠️ So "unknown" renders THIS rather than the app, on ALL THREE of its faces.
+ * #2200 closed the errored one; the in-flight one is the same unknown and fell
+ * open for as long as the request took; the offline one fell through to the
+ * consent gate until the age floor stopped being fenced by a failure count
+ * TanStack resets on every dispatch. The distinction that makes it safe to fail
  * closed is that this screen is not a gate: #164's objection to failing closed
  * was that a *gate* shown on a transient error re-prompts someone who already
  * answered. This surface asks nothing and records nothing, so an
@@ -56,10 +62,13 @@ interface PreferencesUnavailableScreenProps {
  * the person is, the correct answer to "we cannot tell" is "wait" or "try
  * again", never "come in".
  *
- * ⚠️ The errored half must therefore always offer the retry. Nothing here may
+ * ⚠️ The errored face must therefore always offer the retry. Nothing here may
  * become a terminal state: the whole justification for failing closed is that
- * the person can get out of it the moment one fetch succeeds. The loading half
- * offers no retry on purpose - the fetch it would re-run is already running.
+ * the person can get out of it the moment one fetch succeeds. The loading face
+ * offers no retry on purpose - the fetch it would re-run is already running -
+ * and the offline face offers none either, for the stronger reason that a
+ * refetch with no connection pauses again on the spot; what ends that state is
+ * the network coming back, which resumes the query with no button involved.
  *
  * ☠️ That premise only holds for a fetch that has NEVER failed, which is why
  * `ProtectedLayout` picks the half off a sticky failure count rather than the
@@ -69,7 +78,7 @@ interface PreferencesUnavailableScreenProps {
  * one read has failed, the layout keeps the errored half for every later
  * attempt, so a retried request that hangs still has a Retry above it.
  *
- * ☠️☠️ **The support card is not a footer, and it is on BOTH halves** (#2228).
+ * ☠️☠️ **The support card is not a footer, and it is on EVERY face** (#2228).
  * This screen replaces the entire protected tree, and on shipped 0.17.0 the
  * same state fell through into the app shell, from which crisis guidance was
  * about two taps away - so blocking here without it makes crisis guidance
@@ -94,7 +103,17 @@ export function PreferencesUnavailableScreen({
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="grow items-center justify-center gap-4 p-6">
         <View className="w-full max-w-lg">
-          {state === "loading" ? (
+          {state === "offline" ? (
+            /* ⚠️ No retry, and that is the honest half of it: a refetch with no
+               connection pauses again where it stands, so a button here would
+               be a control that cannot win. The query resumes by itself the
+               moment the network comes back, which is what the copy promises. */
+            <ErrorState
+              icon="wifi-off"
+              title={t("errors:preferencesUnavailable.offlineTitle")}
+              description={t("errors:preferencesUnavailable.offlineDescription")}
+            />
+          ) : state === "loading" ? (
             <LoadingState
               title={t("errors:preferencesUnavailable.loadingTitle")}
               description={t("errors:preferencesUnavailable.loadingDescription")}

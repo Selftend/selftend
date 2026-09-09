@@ -75,7 +75,6 @@ export default function ProtectedLayout() {
     isLoading: prefsLoading,
     isError: prefsError,
     isPaused: prefsPaused,
-    failureCount: prefsFailureCount,
     errorUpdateCount: prefsErrorCount,
     refetch: refetchPreferences,
   } = useUserPreferences(user?.id ?? null);
@@ -233,34 +232,47 @@ export default function ProtectedLayout() {
   // blocking spinner on every cold start: a cached or persisted row passes
   // straight through, and a failing background refetch over one never raises it.
   //
-  // ☠️☠️ UNKNOWN HAS A THIRD STATE, and it is the one the 15s read timeout made
-  // reachable from an online cold start. TanStack's `fetchStatus: "paused"` is
-  // neither loading nor errored - `isLoading` is `isPending && fetching`, and
-  // for a data-less query the fetch reducer resets `status` to `"pending"` and
-  // `error` to `null` - so a paused read reported `prefsUnknown === false` with
-  // the row genuinely unread. `needsAgeAttestation` then died on its
-  // `Boolean(preferences)` conjunct while `needsConsent` survived, which
-  // INVERTS the ordering the comment below calls load-bearing: Art. 9 consent
-  // was put to somebody whose age floor had never been established, and if
-  // consent had already been dismissed in the same mount the whole shell was
-  // the fall-through. Before the timeout a black-holed read simply hung and
-  // `prefsLoading` held the screen; now it REJECTS, enters the retryer, and
-  // `retry: 1` sleeps a second before checking `focusManager.isFocused() &&
-  // onlineManager.isOnline()` - both really wired here (app-providers,
-  // lib/online-manager) - so a backgrounded app or a connection that dropped in
-  // that window parks the query in the paused state until focus or the network
-  // returns.
+  // ☠️☠️ AND IT IS NOT AN ENUMERATION OF STATUSES ANY MORE. This read
+  // `!preferences && (prefsError || prefsLoading || prefsReadAbandoned)`, with
+  // `prefsReadAbandoned = isPaused && failureCount > 0` - the third state,
+  // fenced by a failure count so an offline cold start (paused before it ever
+  // ran, zero failures) still fell through. TanStack erases that fence itself:
+  // the `"fetch"` action applies `fetchState`, which writes
+  // `fetchFailureCount: 0` and, for a query with `data === undefined`, also
+  // `error: null, status: "pending"`, while `fetchStatus` becomes `"paused"`
+  // when the device is offline. So ANY re-dispatch of a data-less read while
+  // offline reports paused / no error / not loading / zero failures - which is
+  // exactly the shape the exemption was cut for - and three things dispatch it
+  // with no tap at all: `onFocus` on return to the foreground (a data-less
+  // query is unconditionally stale), a fresh mount of this layout, and the
+  // block screen's own Retry. The guard erased itself, and the CONSENT gate
+  // rendered over an unestablished age floor: `needsAgeAttestation` dies on its
+  // `Boolean(preferences)` conjunct while `needsConsent` survives, which
+  // INVERTS the ordering the comment below calls load-bearing. Worse, it does
+  // not merely delay the age gate - for an account created before
+  // `AGE_GATE_INTRODUCED_AT` that has never accepted a policy, accepting the
+  // consent wrongly offered writes `policy_version_accepted`, `isExistingAccount`
+  // flips true, and nothing ever writes that column back to NULL. One accept
+  // and the floor is never asked again.
   //
-  // ⚠️ `prefsFailureCount > 0` is what keeps this off the ORDINARY OFFLINE
-  // CASE, which #2200/#2229 and `docs/age-floor.md` route to the consent gate
-  // on purpose. A query that was offline when it was asked to run pauses before
-  // it ever fetches, with a failure count of zero; raising the block screen
-  // there would put a spinner with no control in front of every offline cold
-  // start - the "blocking spinner" the paragraph above exists to avoid. Only a
-  // read that STARTED, FAILED and then stopped retrying counts as unknown here,
-  // and that state clears itself the moment focus or connectivity comes back.
-  const prefsReadAbandoned = Boolean(prefsPaused) && prefsFailureCount > 0;
-  const prefsUnknown = !preferences && (prefsError || prefsLoading || prefsReadAbandoned);
+  // ☠️☠️ So the verdict is UNKNOWN WHENEVER THERE IS NO ROW, full stop, and it
+  // is derived from no library status flag at all. Every status a data-less
+  // query can report - errored, loading, paused, idle, in any combination and
+  // at any failure count - is the same fact to a statutory gate: nobody has
+  // told us whether this person meets their age floor. A signal the library is
+  // free to reset is not something to hang a legal gate on, and the flags below
+  // are only ever used to decide WHAT TO SAY, never whether to let anyone past.
+  //
+  // ⚠️ THIS OVERRULES the offline pass-through `docs/age-floor.md` used to
+  // record, and the ruling is written down there rather than only here: an
+  // offline cold start with no cached row now meets the block screen instead of
+  // the consent gate. The two requirements genuinely conflict once the failure
+  // count is gone, and the age floor is statutory while the pass-through was a
+  // convenience - one the person could not have spent anyway, since the consent
+  // they were being offered could not be written without a network either. It
+  // is not a lockout: the paused query resumes on its own the moment the
+  // connection returns, the screen says so, and crisis guidance is on it.
+  const prefsUnknown = !preferences;
 
   // ☠️☠️ Unknown fails CLOSED (#2200). This used to fall through: `prefsUnknown`
   // was a conjunct of both `needsAgeAttestation` and `needsConsent`, so on an
@@ -313,14 +325,28 @@ export default function ProtectedLayout() {
     // running fetch and reverts the query to its errored state (so the sticky
     // half above is untouched), the signal reaches the socket through
     // `getUserPreferences`, and only then does the refetch start a new one.
+    //
+    // ⚠️ PAUSED OUTRANKS BOTH, and this picks WHAT TO SAY rather than who gets
+    // past: now that an offline read is held here rather than waved through,
+    // somebody with no connection is a real population on this screen, and
+    // neither of the other two faces tells them the truth. "Getting your
+    // account ready" over a spinner is a lie about a request that is not
+    // running, and a Retry is a control that cannot win - a refetch pauses on
+    // the spot. The offline face says what is happening and what ends it, and
+    // the query resumes on its own when the network returns.
+    //
+    // ⚠️ It cannot re-open #2238's hole either: a Retry press while ONLINE
+    // moves `fetchStatus` to `"fetching"`, not `"paused"`, so the sticky
+    // errored face still owns that transition.
     const prefsHasFailed = prefsError || prefsErrorCount > 0;
     const restartPreferencesRead = async () => {
       await queryClient.cancelQueries({ queryKey: preferencesQueryKey(user?.id ?? null) });
       await refetchPreferences();
     };
+    const prefsVerdictState = prefsPaused ? "offline" : prefsHasFailed ? "error" : "loading";
     return (
       <PreferencesUnavailableScreen
-        state={prefsHasFailed ? "error" : "loading"}
+        state={prefsVerdictState}
         onRetry={() => void restartPreferencesRead()}
       />
     );

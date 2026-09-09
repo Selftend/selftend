@@ -286,7 +286,17 @@ describe("NotificationsScreen", () => {
       renderWithProviders(<NotificationsScreen />);
 
       expect(screen.getByTestId("notification-channel-needs-permission")).toBeTruthy();
-      expect(screen.getByText("Your reminders aren't arriving")).toBeTruthy();
+      // ⚠️ The title names THIS BROWSER, and that is a correctness point rather
+      // than a wording preference. Every trigger except the channel status is
+      // account-wide (`notifications_enabled_global` and the per-target columns
+      // all live on `user_preferences`), while `channel.status` is per-browser -
+      // so this card renders for somebody whose reminders are arriving perfectly
+      // well on their phone and who has just opened a laptop that was never
+      // asked. "Your reminders aren't arriving" told that person something
+      // false, in the one line a scanner reads, to push them towards a browser
+      // permission they may not want.
+      expect(screen.getByText("This browser isn't showing your reminders")).toBeTruthy();
+      expect(screen.queryByText("Your reminders aren't arriving")).toBeNull();
 
       await act(async () => {
         fireEvent.press(screen.getByLabelText("Allow notifications"));

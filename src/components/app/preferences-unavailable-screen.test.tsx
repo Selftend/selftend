@@ -29,11 +29,13 @@ jest.mock("@/src/lib/linking", () => ({
 
 /**
  * The screen that stands where the app would be while neither legal verdict can
- * be read (#2200 for the errored half, #2229 for the in-flight one).
+ * be read (#2200 for the errored face, #2229 for the in-flight one, and the
+ * offline one since the age floor stopped being fenced by a failure count the
+ * library resets on every dispatch).
  *
  * `protected-layout.test.tsx` owns WHEN it renders. What this file owns is what
- * it offers once it has: the two halves say different things, only one of them
- * carries a retry, and BOTH have to leave crisis guidance reachable.
+ * it offers once it has: the three faces say different things, only one of them
+ * carries a retry, and ALL of them have to leave crisis guidance reachable.
  */
 describe("PreferencesUnavailableScreen", () => {
   it("offers a retry on the errored half, and runs it", () => {
@@ -62,6 +64,24 @@ describe("PreferencesUnavailableScreen", () => {
   });
 
   /**
+   * ☠️ The offline face, and why it says something of its own rather than
+   * borrowing one of the other two. A paused read is not running, so the
+   * in-flight copy ("Getting your account ready", under a spinner) would be a
+   * promise about a request that does not exist; and a Retry cannot win it,
+   * because a refetch with no connection pauses again where it stands. What is
+   * true is that there is no connection and that the query resumes by itself,
+   * so that is what this face says - and it carries no control.
+   */
+  it("names the missing connection on the offline face, and offers no retry", () => {
+    renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="offline" />);
+
+    expect(screen.getByText("You're offline")).toBeTruthy();
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.queryByText("Getting your account ready")).toBeNull();
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  /**
    * ☠️☠️ Gate test A2 (#2228). This screen replaces the WHOLE protected tree,
    * and the state it replaces it in reached the app shell on shipped 0.17.0 -
    * from which Support -> Crisis was about two taps away. A guest is the case
@@ -72,18 +92,21 @@ describe("PreferencesUnavailableScreen", () => {
    * outside the layout that is blocking - which is the whole reason the link can
    * work from here.
    */
-  it.each(["error", "loading"] as const)("routes to crisis guidance on the %s half", (state) => {
-    renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state={state} />);
+  it.each(["error", "loading", "offline"] as const)(
+    "routes to crisis guidance on the %s face",
+    (state) => {
+      renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state={state} />);
 
-    expect(screen.getByText("If you need support right now")).toBeTruthy();
-    expect(screen.getByText("Open crisis guidance")).toBeTruthy();
-    expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
-    // Not "/(app)/crisis": inside the group it would render under the very
-    // layout that is refusing to render, and lead nowhere.
-    expect(screen.queryAllByRole("link").map((node) => String(node.props.href))).not.toContain(
-      "(app)",
-    );
-  });
+      expect(screen.getByText("If you need support right now")).toBeTruthy();
+      expect(screen.getByText("Open crisis guidance")).toBeTruthy();
+      expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+      // Not "/(app)/crisis": inside the group it would render under the very
+      // layout that is refusing to render, and lead nowhere.
+      expect(screen.queryAllByRole("link").map((node) => String(node.props.href))).not.toContain(
+        "(app)",
+      );
+    },
+  );
 
   it("offers Find A Helpline beside it, which needs no account either", () => {
     renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="error" />);
