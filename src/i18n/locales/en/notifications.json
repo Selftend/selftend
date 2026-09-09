@@ -121,6 +121,6 @@
     }
   },
   "heldOut": {
-    "note": "Coming soon on phones. This reminder switches on with the next app update."
+    "note": "Not ready yet. This reminder can't be delivered until the phone apps can open the place it leads to, so the switch stays off everywhere until then."
   }
 }
