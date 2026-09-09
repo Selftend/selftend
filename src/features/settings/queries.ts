@@ -15,10 +15,18 @@ export const preferenceKeys = {
   detail: (userId: string) => ["preferences", userId] as const,
 };
 
+/** The key `useUserPreferences` reads under, for callers that cancel or refetch it by hand. */
+export function preferencesQueryKey(userId: string | null) {
+  return userId ? preferenceKeys.detail(userId) : (["preferences", "anonymous"] as const);
+}
+
 export function useUserPreferences(userId: string | null) {
   return useQuery({
-    queryKey: userId ? preferenceKeys.detail(userId) : ["preferences", "anonymous"],
-    queryFn: () => getUserPreferences(userId!),
+    queryKey: preferencesQueryKey(userId),
+    // ☠️ The signal is passed on, not dropped (#2251): it is how a cancelled
+    // query reaches the socket underneath, and the block screen's Retry relies
+    // on that to restart a hung read rather than de-duplicate into it.
+    queryFn: ({ signal }) => getUserPreferences(userId!, { signal }),
     enabled: Boolean(userId),
   });
 }

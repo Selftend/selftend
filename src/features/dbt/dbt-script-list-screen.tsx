@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import { useDoneScriptPages, useOpenScripts } from "@/src/features/dbt/queries";
 import { orderScriptsAsLadder } from "@/src/features/dbt/repository";
 import type { Script } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * `/modules/dbt/scripts` - **the list IS the ladder** (spec §3.4.1).
@@ -43,7 +44,7 @@ export default function DbtScriptListScreen() {
   // a ladder showed the easiest of the newest twenty, not the easiest.
   const open = useOpenScripts(user?.id ?? null);
   const done = useDoneScriptPages(user?.id ?? null);
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = done;
+  const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = done;
   const isPending = open.isPending || done.isPending;
   const isError = open.isError || done.isError;
   const scripts = useMemo(
@@ -51,9 +52,12 @@ export default function DbtScriptListScreen() {
     [open.data, done.data],
   );
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

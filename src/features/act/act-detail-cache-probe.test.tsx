@@ -51,7 +51,7 @@ jest.mock("@/src/features/act/queries", () => {
     // The entries the list screens fill.
     useChoicePointPages: jest.fn(),
     useConnectionLogPages: jest.fn(),
-    useDefusionLogPages: jest.fn(),
+    useListedDefusionLogs: jest.fn(),
     useExpansionLogPages: jest.fn(),
     useObservingSelfSessionPages: jest.fn(),
     useListedCommittedActions: jest.fn(),
@@ -153,7 +153,16 @@ const DETAILS = [
     "useConnectionLog",
     "useConnectionLogs",
   ],
-  ["defusion", ActDefusionDetailScreen, "useDefusionLogPages", "useDefusionLog", "useDefusionLogs"],
+  // Two doors into this one (#2256): the probe is the union of the pages the list fills
+  // and the plain list ACT home fills. `act-defusion-detail-probe.test.tsx` pins which
+  // keys those are against a real cache; here the union is one mocked hook.
+  [
+    "defusion",
+    ActDefusionDetailScreen,
+    "useListedDefusionLogs",
+    "useDefusionLog",
+    "useDefusionLogs",
+  ],
   [
     "expansion",
     ActExpansionDetailScreen,
@@ -183,16 +192,17 @@ beforeEach(() => {
     mocked[listed].mockReturnValue(pageResult(undefined));
     mocked[item].mockReturnValue({ data: null, isLoading: false });
   }
-  // The committed-action probe returns a bare array, not pages — it is already the
-  // flattened union of the three entries its list screen fills.
+  // The two union probes return a bare array, not pages — each is already the flattened
+  // union of the entries its doors fill.
   mocked.useListedCommittedActions.mockReturnValue({ data: undefined });
+  mocked.useListedDefusionLogs.mockReturnValue({ data: undefined });
 });
+
+const UNION_PROBES = new Set(["useListedCommittedActions", "useListedDefusionLogs"]);
 
 describe.each(DETAILS)("the %s detail", (_label, Screen, listed, item, plainList) => {
   it("paints a tapped row from the entry its list screen filled, with the single-row read off", () => {
-    mocked[listed].mockReturnValue(
-      listed === "useListedCommittedActions" ? { data: [row] } : pageResult([row]),
-    );
+    mocked[listed].mockReturnValue(UNION_PROBES.has(listed) ? { data: [row] } : pageResult([row]));
 
     renderWithProviders(<Screen />);
 
