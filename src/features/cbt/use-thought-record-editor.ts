@@ -16,8 +16,6 @@ import { filledThoughtRecordParts } from "@/src/features/cbt/thought-record-step
 import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
 import {
   consumeThoughtRecordSeed,
-  deferThoughtRecordSeed,
-  hasThoughtRecordSeed,
   type ThoughtRecordSeed,
 } from "@/src/stores/thought-record-seed-store";
 import { useFormDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
@@ -37,10 +35,19 @@ function hasThoughtRecordDraftContent(values: ThoughtRecordFormSchema): boolean 
  * What a door's hand-off found on arrival - decided ONCE, at first render.
  *
  * A live draft outranks the hand-off (#2206, the owner's rule for every
- * cross-module door): unsaved work the person typed here is kept, the seed is
- * left in its store UN-consumed so the next fresh open of this form still
- * receives it, and a notice says so. Content, not presence: a draft the person
- * typed into and then emptied again is not held work, and the seed takes it.
+ * cross-module door): unsaved work the person typed here is kept and a notice
+ * says so. Content, not presence: a draft the person typed into and then emptied
+ * again is not held work, and the seed takes it.
+ *
+ * ☠️☠️ **The seed is CONSUMED either way, and the notice says the hand-off was
+ * dropped.** A hand-off lives exactly as long as the navigation that carried it;
+ * keeping the beaten one "for the next fresh open" is a stored state that has to
+ * answer "is this later arrival still the same intention?", and nothing in the
+ * store knows. Two rounds of freshness windows failed at it - the window ran from
+ * the door tap rather than from the deferral, so the deferred case expired first
+ * and silently, and even re-stamped it let an unrelated hub open minutes later
+ * arrive pre-filled with another episode's paragraph, which the person can save
+ * into the wrong record. The person is told instead, and the door is one tap away.
  *
  * ☠️ Only sound because the screen mounts this hook AFTER the persisted draft
  * has been read back (`hydrated`): decided before that, a draft persisted in a
@@ -52,15 +59,15 @@ function decideArrival(
   recordId: string | null,
   storedDraftValues: ThoughtRecordFormSchema | null,
 ): { seed: ThoughtRecordSeed | null; keptDraft: boolean } {
-  // Edit never takes a seed and never consumes one: the seed is for the next
-  // fresh create, which is the only screen a door ever opens.
-  if (recordId !== null || !hasThoughtRecordSeed()) return { seed: null, keptDraft: false };
+  // Edit never takes a seed and never consumes one: a door only ever opens the
+  // create screen, so a seed reaching an edit mount was not minted for it.
+  if (recordId !== null) return { seed: null, keptDraft: false };
+  const seed = consumeThoughtRecordSeed();
+  if (seed === null) return { seed: null, keptDraft: false };
   if (storedDraftValues && hasThoughtRecordDraftContent(storedDraftValues)) {
-    // `keptDraft` drives the notice, and only the arrival that CAUSED the
-    // deferral gets one: every later mount recomputes the same true here.
-    return { seed: null, keptDraft: deferThoughtRecordSeed() };
+    return { seed: null, keptDraft: true };
   }
-  return { seed: consumeThoughtRecordSeed(), keptDraft: false };
+  return { seed, keptDraft: false };
 }
 
 /**
@@ -85,8 +92,8 @@ export function useThoughtRecordEditor() {
   // DBT emotion record's "Look at the whole picture" door. Emotions are the one
   // field all three forms share an id space for; the DBT hand-off adds the
   // situation, which the check-in has no equivalent of and leaves empty. Read
-  // once per mount and cleared on read when it is taken, so leaving the form
-  // and coming back starts empty rather than re-applying a stale prefill.
+  // once per mount and cleared on read whatever the arrival decides, so leaving
+  // the form and coming back starts empty rather than re-applying a prefill.
   const [arrival] = useState(() => decideArrival(recordId, storedDraftValues));
   const seed = arrival.seed;
 
@@ -94,7 +101,11 @@ export function useThoughtRecordEditor() {
   useEffect(() => {
     if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
     keptDraftNoticeRef.current = true;
-    showToast({ title: t("common:handoff.keptDraft"), tone: "success" });
+    showToast({
+      title: t("common:handoff.keptDraft"),
+      description: t("common:handoff.notCarriedOver"),
+      tone: "success",
+    });
   }, [arrival.keptDraft, showToast, t]);
 
   const { data: existingRecord, isLoading } = useThoughtRecord(user?.id ?? null, recordId);

@@ -1,21 +1,13 @@
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
-import { HANDOFF_SEED_TTL_MS } from "@/src/stores/handoff-seed";
 import {
   consumeThoughtRecordSeed,
-  deferThoughtRecordSeed,
-  hasThoughtRecordSeed,
   seedThoughtRecord,
   useThoughtRecordSeedStore,
 } from "@/src/stores/thought-record-seed-store";
 
 describe("thought-record seed store", () => {
   beforeEach(() => {
-    useThoughtRecordSeedStore.setState({
-      emotions: [],
-      situation: "",
-      mintedAt: null,
-      deferred: false,
-    });
+    useThoughtRecordSeedStore.setState({ emotions: [], situation: "" });
   });
 
   it("hands the seeded emotions to the next reader", () => {
@@ -48,7 +40,8 @@ describe("thought-record seed store", () => {
     seedThoughtRecord(["anxious"]);
 
     expect(consumeThoughtRecordSeed()).toEqual({ emotions: ["anxious"], situation: "" });
-    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
+    expect(consumeThoughtRecordSeed()).toBeNull();
+    expect(useThoughtRecordSeedStore.getState().emotions).toEqual([]);
   });
 
   /** ☠️ A situation-only seed must clear too, or it outlives its one navigation. */
@@ -56,11 +49,17 @@ describe("thought-record seed store", () => {
     seedThoughtRecord([], "Missed the bus");
 
     expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "Missed the bus" });
-    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
+    expect(consumeThoughtRecordSeed()).toBeNull();
   });
 
-  it("reads empty when nothing was seeded", () => {
-    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
+  /**
+   * ☠️ `null`, never an empty seed. An empty object is truthy, and the form picks
+   * its `defaultValues` with `seed ? … : storedDraftValues` - so "nothing was
+   * handed over" wearing the shape of a seed would discard a held draft in favour
+   * of nothing at all. The type is the guard; this is the assertion behind it.
+   */
+  it("reads null when nothing was seeded", () => {
+    expect(consumeThoughtRecordSeed()).toBeNull();
   });
 
   it("replaces a stale seed rather than appending to it", () => {
@@ -71,70 +70,40 @@ describe("thought-record seed store", () => {
   });
 
   /**
-   * ☠️☠️ **A kept hand-off has a window, because nothing else ends its wait.**
-   * This store is a module singleton, so on native (no page reload) a seed the
-   * form left un-consumed waits for the whole app process. Without a bound it
-   * lands on a LATER open of the form that had nothing to do with the door -
-   * the person opens `/modules/cbt/new` from the hub to write about today and
-   * the Situation arrives pre-filled with a paragraph about an old episode,
-   * which they can save into a record that is about something else.
+   * ☠️☠️ **A hand-off is stored across no navigation at all, so it needs no window.**
+   * The assertions replaced here pinned a 30-minute freshness window on a seed the
+   * arrival left waiting "for the next fresh open", and a `deferred` flag that owned
+   * the once-per-hand-off notice. Both are gone with the state they guarded: the
+   * arrival consumes the seed whatever it decides to do with it (see `decideArrival`
+   * in `use-thought-record-editor.ts`), so there is nothing left for a later open to
+   * find and nothing for a clock to adjudicate. What the window existed to prevent -
+   * an unrelated open of the form arriving pre-filled with an old episode - is now
+   * prevented by construction rather than by a chosen number.
    */
-  it("drops a hand-off that outlived its window instead of applying it", () => {
+  it("holds nothing once the seed has been taken", () => {
     seedThoughtRecord(["anxious"], "She did not reply for three days");
-    useThoughtRecordSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS - 1 });
 
-    expect(hasThoughtRecordSeed()).toBe(false);
-    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
-    // Dropped, not merely refused: a stale seed must not sit there for the open after this one.
-    expect(useThoughtRecordSeedStore.getState().emotions).toEqual([]);
-  });
+    consumeThoughtRecordSeed();
 
-  it("still applies a hand-off inside the window", () => {
-    // The control: the assertion above must fail for the AGE, not because the
-    // store stopped handing seeds over at all.
-    seedThoughtRecord(["anxious"], "She did not reply for three days");
-    useThoughtRecordSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS + 1000 });
-
-    expect(hasThoughtRecordSeed()).toBe(true);
-    expect(consumeThoughtRecordSeed()).toEqual({
-      emotions: ["anxious"],
-      situation: "She did not reply for three days",
+    expect(useThoughtRecordSeedStore.getState()).toMatchObject({
+      emotions: [],
+      situation: "",
     });
+    expect(consumeThoughtRecordSeed()).toBeNull();
   });
 
   /**
-   * The kept-draft notice belongs to the arrival that caused the deferral.
-   * `keptDraft` is recomputed from (seed present) AND (draft has content) at
-   * every mount, and neither side is consumed on that path - so the second
-   * caller has to be told "no", or the form re-announces the hand-off on every
-   * visit for as long as the draft is held.
-   */
-  it("owns the kept-draft notice once per hand-off", () => {
-    seedThoughtRecord(["anxious"], "She did not reply for three days");
-
-    expect(deferThoughtRecordSeed()).toBe(true);
-    expect(deferThoughtRecordSeed()).toBe(false);
-    // The seed itself is untouched: it is still waiting for the next fresh open.
-    expect(hasThoughtRecordSeed()).toBe(true);
-
-    // A NEW hand-off is a new decision and speaks again.
-    seedThoughtRecord(["angry"], "Something else");
-    expect(deferThoughtRecordSeed()).toBe(true);
-  });
-
-  /**
-   * ☠️ A seed can now outlive its navigation: the form keeps a live draft and
-   * leaves the hand-off waiting for the next fresh open (#2206). What waits is a
-   * paragraph about an episode, so the store is registered with the draft
-   * registry and sign-out drops it - otherwise the next person on the device
-   * would open a thought record on the last one's words.
+   * ☠️ A hand-off can still be minted and never arrived at - the door pressed, the
+   * app backgrounded before the form mounts - and what waits is a paragraph about an
+   * episode. The store is registered with the draft registry so sign-out drops it,
+   * or the next person on the device would open a thought record on the last one's
+   * words.
    */
   it("is dropped by the sign-out wipe", () => {
     seedThoughtRecord(["anxious"], "She did not reply for three days");
 
     resetAllDraftStores();
 
-    expect(hasThoughtRecordSeed()).toBe(false);
-    expect(consumeThoughtRecordSeed()).toEqual({ emotions: [], situation: "" });
+    expect(consumeThoughtRecordSeed()).toBeNull();
   });
 });

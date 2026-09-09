@@ -44,7 +44,15 @@ export default function DbtCopingPlanScreen() {
 
   // `isPending && isPaused`, never `isPaused` alone: a background refetch
   // pausing over a plan already read is `isPaused` with `status: "success"`.
-  const unread = isError || (isPending && isPaused);
+  //
+  // ☠️ And `isError && plan === undefined`, never bare `isError` (#2236, the
+  // editor's rule on this screen): a refetch that FAILS over a plan already read
+  // is `isError` with `data` intact - query-core's `isRefetchError` - and this
+  // key is invalidated on every save, so a failed post-save re-read swapped the
+  // person's plan for the shut door. `undefined` is the only shape "nothing was
+  // ever read" has; `null` is a read that found no plan, which the invitation
+  // below answers.
+  const unread = (isError && plan === undefined) || (isPending && isPaused);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

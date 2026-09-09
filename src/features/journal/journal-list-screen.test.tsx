@@ -189,6 +189,56 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText("Custom")).toBeNull();
   });
 
+  /**
+   * The control for the pair below: with nothing read there is nothing to keep,
+   * and the error line plus its retry is the honest answer.
+   */
+  it("says the writing chart could not be read when nothing has been read", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("Couldn't load the writing chart.")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+  });
+
+  /**
+   * ☠️☠️ **A failed refetch is not a failed read.** `isError` is the query's
+   * status, and query-core sets it on any failed fetch whether or not `data` is
+   * already there - which is why TanStack derives `isRefetchError` from
+   * `isError && hasData` at all. `journalKeys.all` is invalidated on every entry
+   * save, so a failed post-save re-read, or an ordinary refetch past the 60s
+   * `staleTime`, replaced a drawn chart with an error line. The buckets are in
+   * the cache and on the server. Same predicate mistake as #2253's.
+   */
+  it("keeps the drawn writing chart when a refetch over it fails", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: [
+        {
+          startDayKey: "2026-05-28",
+          endDayKey: "2026-05-28",
+          wordCount: 120,
+          unit: "day" as const,
+          rangeStartDayKey: "2026-05-28",
+          rangeEndDayKey: "2026-05-28",
+        },
+      ],
+      isError: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getAllByTestId("bar-chart-bar")).toHaveLength(1);
+    expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
+  });
+
   it("keeps the writing section and its control when the selected range is empty", () => {
     mockEntries([journalEntry("old", "2025-01-01")]);
     mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<

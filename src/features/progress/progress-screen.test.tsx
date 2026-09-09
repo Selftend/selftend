@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { Pressable, ScrollView } from "react-native";
 import { Svg } from "react-native-svg";
 import { router } from "expo-router";
@@ -9,7 +9,7 @@ import * as progressRepo from "@/src/features/progress/repository";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
-import { renderWithProviders } from "@/test/render-with-providers";
+import { createTestQueryClient, renderWithProviders } from "@/test/render-with-providers";
 
 /**
  * Mutable, not a hardcoded `"/progress"`: the round-trip test below has to move
@@ -369,6 +369,40 @@ describe("ProgressScreen", () => {
       expect(await screen.findByText("Your days could not be loaded just now.")).toBeTruthy();
       expect(screen.queryByText("Days you record anything will appear here.")).toBeNull();
       expect(screen.queryByTestId("record-band")).toBeNull();
+    });
+
+    /**
+     * ☠️☠️ **And a failed REFETCH is not a failed read.** The branch above is
+     * keyed on the query's `isError`, which query-core sets on any failed fetch
+     * whether or not `data` is already there - which is why TanStack derives
+     * `isRefetchError` from `isError && hasData` at all. `recordDaysKeys.all` is
+     * invalidated by every tool's save, so a post-save re-read that fails, or an
+     * ordinary refetch past the 60s `staleTime`, took the drawn band away and
+     * said the days could not be loaded - about days that were loaded, are in
+     * the cache, and are on the server. The same predicate mistake #2253
+     * removed from `LoadMoreFooter`.
+     */
+    it("keeps the drawn band when a refetch over it fails", async () => {
+      const queryClient = createTestQueryClient();
+      mockListRecordDays.mockResolvedValue(["2026-09-01", "2026-09-04"]);
+      jest.useFakeTimers({ now: NOW });
+
+      renderWithProviders(<ProgressScreen />, { queryClient });
+      await waitFor(() => expect(screen.queryByTestId("record-band")).not.toBeNull());
+
+      mockListRecordDays.mockRejectedValue(new Error("rpc down"));
+      await act(async () => {
+        await queryClient.refetchQueries();
+      });
+
+      // ⚠️ The refetch settles the query, but the observer's notify is scheduled
+      // rather than synchronous - without this the card is still rendering the
+      // PREVIOUS state and the assertions below pass on stale output.
+      await act(async () => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(screen.getByTestId("record-band")).toBeTruthy();
+      expect(screen.queryByText("Your days could not be loaded just now.")).toBeNull();
     });
 
     /**

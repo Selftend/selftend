@@ -8,6 +8,7 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Section } from "@/src/components/app/section";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ErrorState, ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
@@ -61,6 +62,7 @@ export default function ActValuesScreen() {
     fetchNextPage,
     hasNextPage,
     isError: historyFailed,
+    isFetchNextPageError,
     isFetchingNextPage,
     refetch: refetchHistory,
   } = useBullsEyeSnapshotPages(user?.id ?? null);
@@ -153,19 +155,32 @@ export default function ActValuesScreen() {
                 who reviews their values every week that none of it was ever recorded.
                 It is the same "cap wearing the face of an absence" that
                 `getLatestBullsEyeByDomain` already exists to avoid, one surface over.
+
+                ☠️☠️ And a failed read is not an empty screen either. The emptiness is
+                what the error answers for, so it is the OUTER test: `isError` is the
+                query's status and query-core sets it on any failed fetch, held pages or
+                not (which is why TanStack derives `isRefetchError` from `isError &&
+                hasData` at all). Keyed on the bare flag, a failed background refetch -
+                the return visit past the 60s `staleTime`, the invalidation after a
+                check-in saves - swapped a loaded history for an error card. The rows are
+                in the cache and on the server; only the screen said otherwise. This is
+                the predicate #2253 corrected inside `LoadMoreFooter`, whose docblock
+                spells the rule out.
               */}
-              {historyFailed ? (
-                <ErrorState
-                  icon="cloud-off"
-                  title={t("errors:fallback.title")}
-                  description={t("errors:fallback.description")}
-                  action={{
-                    label: t("errors:fallback.retry"),
-                    onPress: () => void refetchHistory(),
-                  }}
-                />
-              ) : snapshots.length === 0 ? (
-                <Text variant="muted">{t("values.bullsEye.noHistory")}</Text>
+              {snapshots.length === 0 ? (
+                historyFailed ? (
+                  <ErrorState
+                    icon="cloud-off"
+                    title={t("errors:fallback.title")}
+                    description={t("errors:fallback.description")}
+                    action={{
+                      label: t("errors:fallback.retry"),
+                      onPress: () => void refetchHistory(),
+                    }}
+                  />
+                ) : (
+                  <Text variant="muted">{t("values.bullsEye.noHistory")}</Text>
+                )
               ) : (
                 snapshots.map((snap) => (
                   <View
@@ -190,7 +205,21 @@ export default function ActValuesScreen() {
                 ))
               )}
 
-              {hasNextPage ? (
+              {/*
+                ☠️ A later page that failed is not the end of the history. This section is
+                not a `FlatList`, so it has no `onEndReached` and no `useLoadMore` - but the
+                failure it can hit is the same one, and it says it with the same component
+                the nineteen paged list screens use rather than a second dialect of it.
+                `isFetchNextPageError`, never bare `isError`: the latter is also true of a
+                failed refetch of the pages already on screen, which took nothing away.
+              */}
+              {isFetchNextPageError ? (
+                <LoadMoreFooter
+                  failed
+                  isFetchingNextPage={isFetchingNextPage}
+                  onRetry={() => void fetchNextPage()}
+                />
+              ) : hasNextPage ? (
                 <Button
                   variant="secondary"
                   disabled={isFetchingNextPage}

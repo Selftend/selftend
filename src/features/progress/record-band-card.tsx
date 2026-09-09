@@ -80,8 +80,18 @@ export function RecordBandCard() {
      * `QueryCache.onError` but raise no toast (only mutations do), so without
      * this the card would sit titled and blank for good, indistinguishable
      * from still loading.
+     *
+     * ☠️☠️ **`data === undefined`, never bare `isError`.** That argument holds
+     * only where there is nothing to draw. `isError` is the query's status and
+     * query-core sets it on ANY failed fetch, held data or not - which is why
+     * TanStack derives `isRefetchError` from `isError && hasData` at all - and
+     * `recordDaysKeys.all` is invalidated by every tool's save, so a failed
+     * post-save re-read, or an ordinary refetch past the 60s `staleTime`, took
+     * the drawn band away and reported days that were in the cache and on the
+     * server as unloadable. Held days stay drawn; the error answers for the
+     * blank. The same predicate #2253 removed from `LoadMoreFooter`.
      */
-    if (isError) {
+    if (isError && data === undefined) {
       return <Text variant="muted">{t("progress.timelineError")}</Text>;
     }
 
