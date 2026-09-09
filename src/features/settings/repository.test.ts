@@ -14,6 +14,9 @@ import {
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
+// The real filter, not a stand-in: what this file pins is that the two abort
+// causes land on OPPOSITE sides of it.
+import { isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/features/profile/repository", () => ({
@@ -161,8 +164,43 @@ describe("getUserPreferences on the wire", () => {
     jest.advanceTimersByTime(1);
 
     expect(wire.signal()?.aborted).toBe(true);
-    // Named so the Sentry filter reads it as the aborted fetch it is, not a defect.
-    await expect(read).rejects.toMatchObject({ name: "AbortError" });
+    // ☠️☠️ This assertion used to read `{ name: "AbortError" }`, with a comment
+    // saying the name was chosen so the Sentry filter would read the timeout as
+    // an aborted fetch. It ENCODED the defect: `isReportableError` drops every
+    // `AbortError`, so the deadline this release put in front of the whole app
+    // could expire on a real population and produce no signal anywhere. The
+    // timeout now has a name of its own; the assertion says so.
+    await expect(read).rejects.toMatchObject({ name: "PreferencesReadTimeoutError" });
+  });
+
+  /**
+   * ☠️☠️ The two abort causes report DIFFERENTLY, and this is the coupling that
+   * says so. `PREFERENCES_READ_TIMEOUT_MS` is a threshold this project picked
+   * for the read that gates both legal gates, and it cannot be validated or
+   * corrected after release without an event when it fires - the app has no
+   * other channel for it (no crash, and Play vitals reports nothing here).
+   *
+   * ⚠️ The other direction is the one #1548's narrowing bought and must keep:
+   * a cancellation the app asked for, and an ordinary offline failure, stay
+   * filtered. Reporting a timeout must not drag those back in.
+   */
+  it("makes the timeout reportable while a cancellation and an offline read stay filtered", async () => {
+    const wire = mockHungPreferenceSelect();
+
+    const timedOut = getUserPreferences("user-1");
+    jest.advanceTimersByTime(PREFERENCES_READ_TIMEOUT_MS);
+    await expect(timedOut.then(() => null).catch(isReportableError)).resolves.toBe(true);
+
+    const cancelledWire = mockHungPreferenceSelect();
+    const caller = new AbortController();
+    const cancelled = getUserPreferences("user-1", { signal: caller.signal });
+    caller.abort();
+    expect(cancelledWire.signal()?.aborted).toBe(true);
+    await expect(cancelled.then(() => null).catch(isReportableError)).resolves.toBe(false);
+
+    // And the plain offline shape PostgREST rejects with, unchanged by any of this.
+    expect(isReportableError(new TypeError("Network request failed"))).toBe(false);
+    expect(wire.signal()?.aborted).toBe(true);
   });
 
   it("does not fire the timeout on a read that has already answered", async () => {

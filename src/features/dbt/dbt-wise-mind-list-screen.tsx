@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -6,6 +6,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HairlineRow } from "@/src/components/app/hairline-row";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
@@ -91,12 +92,15 @@ export default function DbtWiseMindListScreen() {
             <Text variant="muted">{t("dbt:wiseMind.empty")}</Text>
           )
         }
+        // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+        // unrendered once rows exist, and the load-more latch (#2255) only clears
+        // through this Retry (#2187).
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={isFetchNextPageError}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
         renderItem={({ item }) => (
           <HairlineRow

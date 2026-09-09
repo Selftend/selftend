@@ -268,7 +268,7 @@ on the destructive step, not on the field.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
-### An unknown verdict fails closed, in both its halves
+### An unknown verdict fails closed, in all three of its states
 
 This section used to record a gap: **the gate fell open when the attestation
 could not be read.** The verdict lives on the `user_preferences` row, and with no
@@ -279,8 +279,9 @@ special-category data. It was deliberate and documented, which is precisely what
 made it worth closing rather than inheriting: a fail-open on a statutory gate
 should not survive on the strength of a comment.
 
-**Unknown has two halves, and both are now closed.** `ProtectedLayout` computes
-`prefsUnknown` as `!preferences && (prefsError || prefsLoading)` and returns
+**Unknown turned out to have three states, and all three are now closed.**
+`ProtectedLayout` computes `prefsUnknown` as
+`!preferences && (prefsError || prefsLoading || prefsReadAbandoned)` and returns
 `src/components/app/preferences-unavailable-screen.tsx` on it instead of falling
 through to the app. Nothing below renders: not the shell, not the age gate, not
 the consent gate.
@@ -296,6 +297,19 @@ the consent gate.
   longer on one that hangs, since the query retries once and passes no
   `AbortSignal`. To a legal gate, "we have not been told yet" and "we were told
   nothing" are the same state.
+- **Paused after a failure** — the third state, and the one the 15 s read
+  timeout below made reachable from an _online_ cold start. TanStack's
+  `fetchStatus: "paused"` is neither loading (`isLoading` is
+  `isPending && fetching`) nor errored (a data-less query has its `status` reset
+  to pending and its `error` to null the moment a fetch dispatches), so the
+  verdict read as **known** with the row unread. The age gate then died on its
+  `Boolean(preferences)` conjunct while the consent gate survived — Art. 9
+  consent put to somebody whose floor had never been established, which inverts
+  the ordering the two gates depend on. Before the timeout a black-holed read
+  simply hung and the in-flight half held the screen; now it rejects into the
+  retryer, which sleeps a second and then parks the query if focus or the
+  network went away in that window (a backgrounded app, a connection that
+  dropped). The guard is `isPaused && failureCount > 0`.
 
 **Keyed on `!preferences`, which is what keeps this from becoming a blocking
 spinner on every cold start.** A cached or persisted row passes straight through,
@@ -323,7 +337,11 @@ refetch starts, so keying off the live flag rendered the in-flight half — and
 took the only control away — at the moment Retry was pressed, and a retried
 request that hung left a spinner with nothing to press. Once one read has
 failed, the errored half and its Retry stay through every later attempt. Only a
-fetch that has never failed gets the in-flight half.
+fetch that has never failed gets the in-flight half — including the paused state
+above, where nothing is on the wire at all. That one carries no retry either,
+because a retry cannot win it: the query resumes on its own the moment focus or
+the network comes back, which is the same event a button press would be waiting
+on.
 
 ☠️ **A second press cancels the running read explicitly, and `refetch()` alone
 never did it** ([#2251](https://github.com/Selftend/selftend/issues/2251)). This
@@ -339,6 +357,18 @@ passes the query's `AbortSignal` through to PostgREST. It also **times out on
 its own** after `PREFERENCES_READ_TIMEOUT_MS` (15 s): Android's OkHttp is built
 with no timeouts at all and a browser `fetch` has none, so a black-holed request
 never errors, and `retry: 1` retries a rejection rather than a hang.
+
+☠️ **And that deadline reports itself.** The two abort causes used to share the
+name `AbortError`, and `isReportableError` (`src/lib/sentry.ts`) drops every
+error carrying it — so a 15 s ceiling that turned out to be too tight for a real
+population (a slow mobile network, a cold connection pool, a corporate proxy)
+would have failed on the launch path with no signal of any kind: no Sentry
+event, no Play vital, no crash, and no way to correct the number afterwards. A
+timeout now throws `PreferencesReadTimeoutError`, deliberately not named
+`AbortError`, and reaches Sentry through the query cache's error reporter. A
+cancellation the app itself asked for — the Retry, an unmount — still throws
+`PreferencesReadAbortedError` and stays filtered, as does an ordinary offline
+failure; nothing in the filter's rules changed.
 
 **And it is never a dead end** ([#2228](https://github.com/Selftend/selftend/issues/2228)).
 Both halves carry a support card of their own: the `/crisis` link and Find A
@@ -362,10 +392,16 @@ landing. `preferences-unavailable-screen.test.tsx` pins the crisis card on both
 halves and pins the retry to the errored one.
 
 A person whose preferences load passes through exactly as before. An offline
-device is a different state again and is untouched: with `networkMode: "online"`
-a never-fetched query pauses rather than fetches, so it is neither loading nor
-errored and never reaches this branch — the consent gate owns that case exactly
-as it did before.
+_cold start_ is a different state again and is still untouched: with
+`networkMode: "online"` a never-fetched query pauses rather than fetches, and
+because it pauses **before it ever runs** its failure count is zero, so the
+third state above does not claim it — the consent gate owns that case exactly as
+it did before. That zero is the whole reason the guard asks for a failure count
+rather than for `isPaused` alone: raising the block screen on an offline cold
+start would put a spinner with no control in front of it, which is the blocking
+spinner the `!preferences` key exists to avoid. Only a read that started, failed
+and then stopped retrying counts as unknown, and it clears itself the moment
+focus or connectivity returns.
 
 The second gap recorded here — _"the under-floor block is React state only"_ —
 is closed by [#1765](https://github.com/Selftend/selftend/issues/1765), below.
