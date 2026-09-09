@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HairlineRow } from "@/src/components/app/hairline-row";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
@@ -54,6 +55,20 @@ export default function DbtScriptListScreen() {
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  // ☠️ Two reads, two failures, and the empty-list slot can show only one of
+  // them - while the OTHER read's rows are on screen, `ListEmptyComponent` never
+  // renders, so a half that failed simply went missing: no error, no Retry, and
+  // the open rungs (or every closed script) absent from a list whose job is to
+  // be the whole climb (#2259). The footer carries the error for whichever half
+  // failed, and Retry re-reads only that half - the good pages stay.
+  const halfFailed = scripts.length > 0 && (open.isError || done.isError);
+  const retryFailedHalf = () => {
+    if (open.isError) void open.refetch();
+    // A first page that failed left no data to keep; a later one did, and
+    // `fetchNextPage` asks for exactly the page that failed (see LoadMoreFooter).
+    if (done.isError) void (done.data ? fetchNextPage() : done.refetch());
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -105,11 +120,12 @@ export default function DbtScriptListScreen() {
           )
         }
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={halfFailed}
+            isFetchingNextPage={isFetchingNextPage}
+            message={t("dbt:scripts.partFailed")}
+            onRetry={retryFailedHalf}
+          />
         }
         renderItem={({ item }) => (
           <HairlineRow

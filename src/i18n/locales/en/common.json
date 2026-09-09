@@ -74,5 +74,8 @@
     "message": "Selftend is on Google Play.",
     "action": "Get the app",
     "dismiss": "Dismiss"
+  },
+  "handoff": {
+    "keptDraft": "Kept your open draft"
   }
 }

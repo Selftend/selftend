@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
@@ -18,6 +19,7 @@ import {
 import enDbt from "@/src/i18n/locales/en/dbt.json";
 import { DRAFT_CAPTURE_DEBOUNCE_MS } from "@/src/lib/use-wizard-draft";
 import { useDbtEmotionRecordDraftStore } from "@/src/stores/dbt-emotion-record-draft-store";
+import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
 import { consumeThoughtRecordSeed } from "@/src/stores/thought-record-seed-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -243,6 +245,47 @@ describe("the emotion record form", () => {
       view.unmount();
 
       expect(useDbtEmotionRecordDraftStore.getState().values?.whatHappened).toBe("Missed the bus");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  /**
+   * ☠️ Sign-out is FINAL, including for the words still in the debounce (#2258).
+   * The wipe runs `reset()` then removes the key, and only then does the session
+   * change unmount this form - whose flush wrote the pending record straight back
+   * under the key the wipe had just removed. Nothing later removes it, so the next
+   * person on that device opened the emotion record on the previous person's
+   * episode, within the draft's 24h life.
+   *
+   * The storage assertion is the load-bearing half: values being null in memory
+   * would still hold if the disk copy had been written back.
+   */
+  it("writes nothing back after a sign-out wipes the draft mid-keystroke", () => {
+    jest.useFakeTimers();
+    try {
+      const view = renderWithProviders(<DbtEmotionRecordNewScreen />);
+      fireEvent.changeText(screen.getByLabelText("What happened"), "Missed the bus");
+
+      act(() => {
+        resetAllDraftStores();
+      });
+      view.unmount();
+
+      expect(useDbtEmotionRecordDraftStore.getState().values).toBeNull();
+
+      const key = "selftend:wizard-draft:dbt-emotion-record";
+      const orderOf = (fn: jest.Mock) =>
+        fn.mock.calls
+          .map((call, index) => ({ call, order: fn.mock.invocationCallOrder[index] }))
+          .filter(({ call }) => call[0] === key)
+          .map(({ order }) => order);
+      const removals = orderOf(AsyncStorage.removeItem as unknown as jest.Mock);
+      const writes = orderOf(AsyncStorage.setItem as unknown as jest.Mock);
+
+      expect(removals.length).toBeGreaterThan(0);
+      const lastRemoval = Math.max(...removals);
+      expect(writes.filter((order) => order > lastRemoval)).toEqual([]);
     } finally {
       jest.useRealTimers();
     }

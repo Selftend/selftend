@@ -382,6 +382,31 @@ describe("useWizardDraft - draft capture and persistence", () => {
     }
   });
 
+  /**
+   * ☠️ A reset from OUTSIDE the form is the sign-out wipe, and it has to be final
+   * (#2258). The capture is debounced, so a keystroke in the last 800ms is still
+   * in flight when `resetAllDraftStores` runs - and the timer, left alone, wrote
+   * the values back into the store (and through persist, back to disk) after the
+   * wipe had removed them.
+   */
+  it("drops a pending capture when the draft is reset from outside the form", async () => {
+    jest.useFakeTimers();
+    try {
+      const { emitChange, useDraftStore } = await setupHook({
+        formValues: { name: "typed", description: "text" },
+      });
+
+      act(() => emitChange());
+      // What resetAllDraftStores() does to every registered store on SIGNED_OUT.
+      act(() => useDraftStore.getState().reset());
+      act(() => jest.advanceTimersByTime(2000));
+
+      expect(useDraftStore.getState().values).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("persists the current values immediately on a valid handleNext", async () => {
     const { hookResult, useDraftStore } = await setupHook({
       triggerResult: true,

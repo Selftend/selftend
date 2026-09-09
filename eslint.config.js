@@ -310,6 +310,15 @@ module.exports = [
   {
     rules: {
       "import/no-unresolved": ["error", { commonjs: true }],
+      // A control character inside a regex literal is almost always a typo that
+      // makes an assertion vacuous: `\b` typed as a raw U+0008 matches a literal
+      // backspace, which no rendered text carries, so `queryByText(...)` is
+      // always null and `.toBeNull()` passes on every tree. Two test files
+      // shipped that shape (#2216, #2261); the expo base config does not pull
+      // in core `recommended`, so nothing flagged either. The one sanctioned
+      // use - a sanitiser that strips control characters on purpose - carries a
+      // per-line disable with its reason.
+      "no-control-regex": "error",
     },
     settings: {
       // Explicit version is LOAD-BEARING under ESLint 10: eslint-plugin-react's

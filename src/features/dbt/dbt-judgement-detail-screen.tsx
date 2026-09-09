@@ -16,10 +16,7 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { useDeleteJudgement, useJudgement } from "@/src/features/dbt/queries";
-import {
-  hasDefusionDraftContent,
-  useActDefusionLogDraftStore,
-} from "@/src/stores/act-defusion-log-draft-store";
+import { seedDefusionLog } from "@/src/stores/act-defusion-seed-store";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -29,20 +26,21 @@ import { useToastStore } from "@/src/stores/toast-store";
  *
  * **_Unhook from it_ opens ACT defusion**, seeded with this judgement as the
  * fused thought and the category preset to *self-judgment*. The seed goes
- * through ACT's own draft store rather than a route parameter: neither the ACT
- * form nor the journal takes one, and a person's own judgement in the web
+ * through an in-memory seed store rather than a route parameter: neither the
+ * ACT form nor the journal takes one, and a person's own judgement in the web
  * address bar is health data on the navigation path (#739).
  *
  * ⚠️ A cross-MODULE hand-off, which is new for a detail screen. It is the same
  * departure the learn pages' chips make, and it is argued the same way: this is
  * where the workbook's own next step already lives in this app.
  *
- * ☠️ A live defusion draft outranks the seed (#2197). That store IS the ACT
- * form's state, held for "Finish later", and it has no undo; the emotion
- * record's sibling door into the CBT thought record already gives a live
- * draft precedence over its prefill (`use-thought-record-editor.ts`), and the
- * two doors shipping in one release must not disagree. Only an empty form
- * takes the judgement.
+ * ☠️ The seed store, NOT the draft store (#2254). This door once wrote straight
+ * into the store the ACT form types into, and a seed the person never touched
+ * then counted as their work: the next judgement's door found it "held" and
+ * the form opened on the wrong judgement. The seed now waits in its own
+ * consume-once store, exactly as the emotion record's door into the CBT
+ * thought record does, and the FORM decides on arrival: a live draft is kept
+ * and the seed left waiting, with a notice (#2206); an empty form takes it.
  */
 export default function DbtJudgementDetailScreen({ id }: { id: string }) {
   const { t } = useTranslation("dbt");
@@ -51,7 +49,6 @@ export default function DbtJudgementDetailScreen({ id }: { id: string }) {
   const showToast = useToastStore((state) => state.showToast);
   const { data: judgement, isPending } = useJudgement(user?.id ?? null, id);
   const deleteMutation = useDeleteJudgement(user?.id ?? null);
-  const setDefusionDraft = useActDefusionLogDraftStore((state) => state.setValues);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const remove = useSingleFlight(async () => {
@@ -132,21 +129,13 @@ export default function DbtJudgementDetailScreen({ id }: { id: string }) {
             <Button
               variant="outline"
               onPress={() => {
-                // ACT's own draft store, in memory - never a route parameter.
-                // Unsaved work already held there wins: the person can come back
-                // through this door in one tap once that entry is saved or
-                // discarded, while the draft, once overwritten, is gone.
-                if (!hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
-                  setDefusionDraft({
-                    fusedThought: judgement.judgement,
-                    thoughtCategory: "selfJudgment",
-                    fusionLevelBefore: null,
-                    techniqueUsed: null,
-                    defusedVersion: "",
-                    fusionLevelAfter: null,
-                    notes: "",
-                  });
-                }
+                // In memory, never a route parameter; and always written, even
+                // over a live draft - the form keeps the draft and leaves the
+                // seed waiting for its next fresh open (#2206).
+                seedDefusionLog({
+                  fusedThought: judgement.judgement,
+                  thoughtCategory: "selfJudgment",
+                });
                 pushWithOrigin("/modules/act/defusion/new");
               }}
             >

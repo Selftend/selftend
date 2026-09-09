@@ -34,6 +34,32 @@ import { HotThoughtStep } from "@/src/features/cbt/steps/hot-thought-step";
 import { NatsStep } from "@/src/features/cbt/steps/nats-step";
 import { OutcomeStep } from "@/src/features/cbt/steps/outcome-step";
 import { SituationStep } from "@/src/features/cbt/steps/situation-step";
+import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+
+/**
+ * The persisted-draft gate, ABOVE the editor hook rather than inside it.
+ *
+ * ☠️ The editor decides at its first render whether a door's hand-off lands or a
+ * held draft is kept (#2206), and that decision is only sound once the persisted
+ * draft has been read back: on the first open of this screen in a page load or
+ * app process, rehydration lands a beat after mount, and a decision made before
+ * it would take the seed over a draft that then arrives and wins the form through
+ * the late-hydration restore - the seed gone, nothing said. The hook's own boot
+ * gate kept the COLUMN from flashing empty; this one keeps the DECISION honest.
+ * Same loading surface as before, one hook call later.
+ */
+export default function ThoughtRecordEditorScreen() {
+  const { t } = useTranslation("cbt");
+  const draftHydrated = useCbtDraftStore((state) => state.hydrated);
+
+  if (!draftHydrated) {
+    return (
+      <ScreenLoading title={t("detail.loading")} description={t("detail.loadingDescription")} />
+    );
+  }
+
+  return <ThoughtRecordEditorColumn />;
+}
 
 /**
  * The thought record, as ONE SCROLLING COLUMN (#1381).
@@ -55,7 +81,7 @@ import { SituationStep } from "@/src/features/cbt/steps/situation-step";
  * save with an inline message and focus - never a disabled button (the length
  * caps still complain inline through the resolver, also at save).
  */
-export default function ThoughtRecordEditorScreen() {
+function ThoughtRecordEditorColumn() {
   const { t } = useTranslation("cbt");
   const { t: tc } = useTranslation("common");
   const [discardOpen, setDiscardOpen] = useState(false);

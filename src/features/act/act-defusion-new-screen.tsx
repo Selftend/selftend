@@ -33,8 +33,10 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import {
   type ActDefusionLogDraft,
+  hasDefusionDraftContent,
   useActDefusionLogDraftStore,
 } from "@/src/stores/act-defusion-log-draft-store";
+import { consumeDefusionLogSeed, hasDefusionLogSeed } from "@/src/stores/act-defusion-seed-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -68,6 +70,30 @@ const EMPTY_DRAFT: ActDefusionLogDraft = {
 /** What the insert trigger would coalesce a null to; applied here so the saved row says it once. */
 const CATEGORY_WHEN_UNANSWERED: ThoughtCategory = "other";
 const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
+
+/**
+ * What a door's hand-off found on arrival - decided ONCE, at first render.
+ *
+ * A live draft outranks the hand-off (#2206, owner's rule for every cross-module
+ * door): unsaved work the person typed here is kept, the seed is left in its
+ * store UN-consumed so the next fresh open of this form still receives it, and a
+ * notice says so. Content, not presence: the form writes the store on every
+ * keystroke, so a draft object with every field back at empty is not held work,
+ * and the seed takes it.
+ *
+ * ☠️ The seed that IS taken lives in `seed`, never in the draft store, until the
+ * person's first edit moves it there (#2254). Written at arrival it would be a
+ * "live draft" the next door has to keep, and "Finish later" on an untouched
+ * seed would show the next judgement's door the previous judgement.
+ */
+function decideArrival(): { seed: ActDefusionLogDraft | null; keptDraft: boolean } {
+  if (!hasDefusionLogSeed()) return { seed: null, keptDraft: false };
+  if (hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
+    return { seed: null, keptDraft: true };
+  }
+  const seed = consumeDefusionLogSeed();
+  return { seed: seed ? { ...EMPTY_DRAFT, ...seed } : null, keptDraft: false };
+}
 
 /**
  * Which parts hold something the user put there.
@@ -116,10 +142,23 @@ export default function ActDefusionNewScreen() {
   const saveMutation = useSaveDefusionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
-  const draft = useActDefusionLogDraftStore((state) => state.values) ?? EMPTY_DRAFT;
+  const storedDraft = useActDefusionLogDraftStore((state) => state.values);
   const hydrateDraft = useActDefusionLogDraftStore((state) => state.hydrate);
   const resetDraft = useActDefusionLogDraftStore((state) => state.reset);
   const setDraftValues = useActDefusionLogDraftStore((state) => state.setValues);
+
+  const [arrival] = useState(decideArrival);
+  // The taken seed shows until the person's first edit writes it into the store;
+  // from then on the store is the form's state again (see `updateDraft`).
+  const [seedDraft, setSeedDraft] = useState(arrival.seed);
+  const draft = seedDraft ?? storedDraft ?? EMPTY_DRAFT;
+
+  const keptDraftNoticeRef = useRef(false);
+  useEffect(() => {
+    if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
+    keptDraftNoticeRef.current = true;
+    showToast({ title: t("common:handoff.keptDraft"), tone: "success" });
+  }, [arrival.keptDraft, showToast, t]);
 
   const [submitError, setSubmitError] = useState("");
   const [thoughtError, setThoughtError] = useState("");
@@ -148,13 +187,23 @@ export default function ActDefusionNewScreen() {
    * ☠️ Reads the CURRENT values off the store rather than closing over `draft`:
    * `setValues` takes a whole value, so two fields changed inside one render
    * pass would otherwise write the second on top of a stale copy of the first.
+   * The one exception is the first edit over a taken seed, which has to start
+   * from the seed - it is not in the store yet - and move it there. The store
+   * still decides for every edit after that, including a second one in the same
+   * render pass, because the first write left content in it: which is why the
+   * test below is "the store holds content", never a flag that a stale closure
+   * would carry into the second write.
    */
   const updateDraft = useCallback(
     (patch: Partial<ActDefusionLogDraft>) => {
-      const current = useActDefusionLogDraftStore.getState().values ?? EMPTY_DRAFT;
+      const stored = useActDefusionLogDraftStore.getState().values;
+      const current = hasDefusionDraftContent(stored)
+        ? (stored ?? EMPTY_DRAFT)
+        : (seedDraft ?? stored ?? EMPTY_DRAFT);
       setDraftValues({ ...current, ...patch });
+      if (seedDraft) setSeedDraft(null);
     },
-    [setDraftValues],
+    [seedDraft, setDraftValues],
   );
 
   const filled = useMemo(() => filledParts(draft), [draft]);
@@ -214,6 +263,7 @@ export default function ActDefusionNewScreen() {
         createdAt: loggedAtForSelectedDate(selectedDate),
       });
       resetDraft();
+      setSeedDraft(null);
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
     } catch {
@@ -307,6 +357,7 @@ export default function ActDefusionNewScreen() {
           onCancel={() => setDiscardOpen(false)}
           onConfirm={() => {
             resetDraft();
+            setSeedDraft(null);
             setDiscardOpen(false);
             router.back();
           }}

@@ -946,7 +946,8 @@
       "situation": "Add what's going on",
       "iThink": "Add the I think line",
       "iWant": "Add the I want line"
-    }
+    },
+    "partFailed": "Some of your scripts could not be loaded."
   },
   "program": {
     "startTitle": "Start the DBT programme",
