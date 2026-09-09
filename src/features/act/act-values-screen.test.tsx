@@ -151,6 +151,75 @@ describe("ActValuesScreen - the bull's-eye history is no longer capped at twelve
     expect(screen.queryByText("No previous ratings yet.")).toBeNull();
   });
 
+  /**
+   * ☠️☠️ **A read that never STARTED is not an empty history either, and it
+   * is the one case with nothing on screen to contradict it.** Queries keep
+   * `networkMode: "online"`, so an offline arrival never fires this read, never
+   * errors and sits at `isPending` true / `isPaused` true - and `pages.flat() ??
+   * []` collapses that to `[]`. The weekly reviewer this section exists for
+   * opened ACT > Values with no connection and was told in plain words that none
+   * of their reviews was ever recorded, with no error, no retry and no spinner
+   * beside it, for as long as they stayed offline. Same conjunct as #2237's on
+   * the coping-plan screen.
+   */
+  it("tells a read that never started apart from an empty one", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isPending: true,
+      isPaused: true,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  /**
+   * ☠️ And a read still IN FLIGHT claims nothing at all. Only the two sibling
+   * queries gate this screen, so the paged read is still going when the section
+   * first paints and the empty line used to flash on every open. Pending without
+   * paused is an ordinary online first load - never the offline face, which
+   * would put an error in front of a read that is going fine.
+   */
+  it("says nothing about the history while the first read is still in flight", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isPending: true,
+      isPaused: false,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByTestId("bulls-eye-history-loading")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+  });
+
+  /**
+   * The fourth state, and the one the sentence is FOR: a read that completed and
+   * found nothing. Without this the three above could all be satisfied by never
+   * saying it at all.
+   */
+  it("says the history is empty when the read came back empty", () => {
+    snapshotPages([]);
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("No previous ratings yet.")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+    expect(screen.queryByTestId("bulls-eye-history-loading")).toBeNull();
+  });
+
   it("asks for the next page when the user presses Show more", () => {
     const fetchNextPage = jest.fn();
     snapshotPages([snapshot(0)], { hasNextPage: true, fetchNextPage });

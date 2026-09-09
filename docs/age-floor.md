@@ -368,15 +368,32 @@ refetch starts, so keying off the live flag rendered the in-flight half — and
 took the only control away — at the moment Retry was pressed, and a retried
 request that hung left a spinner with nothing to press. Once one read has
 failed, the errored face and its Retry stay through every later attempt. Only a
-fetch that has never failed gets the in-flight face. **A paused read outranks
-both**, because neither of them is true for it: nothing is on the wire, so the
-in-flight promise is false, and a refetch with no connection pauses again where
-it stands, so a Retry is a control that cannot win. The offline face says so and
-carries no button — the query resumes on its own the moment focus or the network
-comes back, which is the same event a button press would be waiting on. ⚠️ It
-cannot re-open #2238's hole: a Retry pressed while ONLINE moves `fetchStatus` to
-`"fetching"`, never `"paused"`, so the sticky errored face still owns that
-transition.
+fetch that has never failed gets the in-flight face. **A read that is paused
+_and_ offline outranks both**, because neither of them is true for it: nothing is
+on the wire, so the in-flight promise is false, and a refetch with no connection
+pauses again where it stands, so a Retry is a control that cannot win. The
+offline face says so and carries no button — the query resumes on its own the
+moment focus or the network comes back, which is the same event a button press
+would be waiting on.
+
+☠️☠️ **Paused does not mean offline, and the offline face is keyed on both.**
+query-core has two pause predicates and only the dispatch one is about
+connectivity: the retry path is `canContinue = () => focusManager.isFocused() &&
+(networkMode === "always" || onlineManager.isOnline()) && canRun()`. A read that
+failed once on a healthy connection therefore pauses if its retry delay expires
+while the app is not focused — on native, any AppState other than `active`
+(`app-providers.tsx` feeds `handleFocus(state === "active")`), which covers an
+iOS system banner, the pulled-down shade, the app switcher, iPad Slide Over and
+Android split-screen; on web, a hidden tab. Keyed on `isPaused` alone this told
+that person "You're offline" about a connection that was fine and took the Retry
+away with it — the #2238 shape on the legal gate. The layout consults
+`onlineManager` (`useIsOnline`) alongside the flag, so an online focus-pause
+falls through to the errored face and keeps its control; it can only be there
+having failed at least once, since the dispatch-side pause is connectivity-only.
+
+⚠️ It cannot re-open #2238's hole: a Retry pressed while ONLINE moves
+`fetchStatus` to `"fetching"`, never `"paused"`, so the sticky errored face still
+owns that transition.
 
 ☠️ **A second press cancels the running read explicitly, and `refetch()` alone
 never did it** ([#2251](https://github.com/Selftend/selftend/issues/2251)). This
@@ -451,10 +468,12 @@ actually reaches the offline face is a first launch, a launch more than a day
 after the last one, a launch after sign-out — and web, which persists nothing by
 design because that would put decrypted entries in `localStorage`.
 
-**That face says what is happening rather than pretending to load.** A paused
-read is not running, so the in-flight copy would be a spinner's promise about a
-request that does not exist, and a Retry would be a control that cannot win — a
-refetch with no connection pauses again on the spot. The block screen has a
+**That face says what is happening rather than pretending to load.** A read
+paused with no connection is not running, so the in-flight copy would be a
+spinner's promise about a request that does not exist, and a Retry would be a
+control that cannot win — a refetch with no connection pauses again on the spot.
+(A read paused while merely unfocused is a different thing and gets the errored
+face; see above.) The block screen has a
 third face for it (`errors:preferencesUnavailable.offline*`): it names the
 missing connection, says the app carries on when it returns, offers no button,
 and carries the same crisis card as the other two.

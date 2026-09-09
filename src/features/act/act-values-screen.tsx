@@ -64,9 +64,26 @@ export default function ActValuesScreen() {
     isError: historyFailed,
     isFetchNextPageError,
     isFetchingNextPage,
+    isPaused: historyPaused,
+    isPending: historyPending,
     refetch: refetchHistory,
   } = useBullsEyeSnapshotPages(user?.id ?? null);
   const snapshots = snapshotPages?.pages.flat() ?? [];
+
+  /**
+   * A read that has NOT HAPPENED, told apart from one that found nothing - the
+   * conjunct #2237 put on the coping-plan screen, needed here for the same
+   * reason. Queries keep `networkMode: "online"`, so an offline arrival never
+   * starts this read, never errors and sits at `isPending` true / `isPaused`
+   * true; `pages.flat() ?? []` collapses that to `[]`, and the empty line below
+   * then told a weekly reviewer none of their ratings was ever recorded, with no
+   * error, no retry and no spinner to contradict it.
+   *
+   * ☠️ Pending AND paused, never `isPaused` alone: a background refetch pausing
+   * over pages already read is paused with `status: "success"`, and those rows
+   * are on screen and stay there.
+   */
+  const historyUnread = historyFailed || (historyPending && historyPaused);
 
   const entryForDomain = (domain: ACTLifeDomain) =>
     entries?.find((e) => e.lifeDomain === domain) ?? null;
@@ -166,9 +183,13 @@ export default function ActValuesScreen() {
                 in the cache and on the server; only the screen said otherwise. This is
                 the predicate #2253 corrected inside `LoadMoreFooter`, whose docblock
                 spells the rule out.
+
+                ☠️☠️ And a read that never STARTED is not an empty history: see
+                `historyUnread` above for the offline case, which arrives with no
+                error at all.
               */}
               {snapshots.length === 0 ? (
-                historyFailed ? (
+                historyUnread ? (
                   <ErrorState
                     icon="cloud-off"
                     title={t("errors:fallback.title")}
@@ -178,6 +199,17 @@ export default function ActValuesScreen() {
                       onPress: () => void refetchHistory(),
                     }}
                   />
+                ) : historyPending ? (
+                  /*
+                    ☠️ A read still in flight is not an empty history either. Only
+                    the two sibling queries gate this screen (`entriesLoading ||
+                    latestLoading`), so the paged read is still going when the
+                    section first paints and "No previous ratings yet." flashed on
+                    every open. Nothing is claimed until there is an answer.
+                  */
+                  <View className="items-center py-4">
+                    <ActivityIndicator testID="bulls-eye-history-loading" />
+                  </View>
                 ) : (
                   <Text variant="muted">{t("values.bullsEye.noHistory")}</Text>
                 )

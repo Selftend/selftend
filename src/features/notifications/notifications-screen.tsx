@@ -265,9 +265,28 @@ export default function NotificationsScreen() {
             </Text>
           </View>
 
+          {/* ☠️ ITS TITLE NAMES THIS BROWSER OR DEVICE, for the reason the
+              `prompt-needed` card below spells out (#2263): `channel.status` is
+              the one per-browser/per-device input on a screen whose every other
+              input is account-wide, so this card also renders for somebody whose
+              reminders are arriving perfectly well on their phone. "Notifications
+              are turned off" told that person, in the one line a scanner reads,
+              that their notifications were off - directly above a master switch
+              labelled "Notifications enabled" that is ON, and above its own body,
+              which named the browser correctly all along. Split per platform like
+              the body it sits over (`reminderChannelErrorKey`), and written as
+              two literal keys rather than one computed one so the i18n coverage
+              gate can still see both. */}
           {channel.status === "blocked" ? (
-            <View className="gap-1 rounded-xl border border-border bg-card p-4">
-              <Text className="text-[15px] font-semibold">{t("channel.blockedTitle")}</Text>
+            <View
+              testID="notification-channel-blocked"
+              className="gap-1 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">
+                {Platform.OS === "web"
+                  ? t("channel.blockedTitleWeb")
+                  : t("channel.blockedTitleNative")}
+              </Text>
               <Text variant="muted" className="text-[13px]">
                 {t(reminderChannelErrorKey("permission-denied"))}
               </Text>

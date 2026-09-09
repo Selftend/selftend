@@ -344,6 +344,10 @@ describe("finishing later", () => {
  * a kept draft DROPS the hand-off and the toast says so.
  */
 describe("a door's hand-off", () => {
+  const HANDOFF_BODY =
+    "Nothing was carried over from where you just were. " +
+    "Finish or discard this draft, then use that button again.";
+
   /** What the store is still holding - the whole of it, so a leftover cannot hide. */
   const seedInStore = () => {
     const { emotions, situation } = useThoughtRecordSeedStore.getState();
@@ -386,9 +390,9 @@ describe("a door's hand-off", () => {
     // The draft the person was holding, not the hand-off.
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
     expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
-    expect(useToastStore.getState().visible?.description).toBe(
-      "Nothing was carried over from where you just were. Finish or discard this draft, then use that button again.",
-    );
+    expect(useToastStore.getState().visible?.description).toBe(HANDOFF_BODY);
+    // ☠️ And on the form itself, where no toast policy can discard it.
+    expect(within(screen.getByTestId("handoff-notice")).getByText(HANDOFF_BODY)).toBeTruthy();
     // ☠️ Nothing left behind: not the paragraph, not a flag about it.
     expect(seedInStore()).toEqual({ emotions: [], situation: "" });
   });
@@ -436,6 +440,53 @@ describe("a door's hand-off", () => {
 
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
     expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **The notice has to survive a toast slot that is allowed to throw it
+   * away.** The seed is consumed and unrecoverable, so this sentence is the only
+   * record that anything was dropped - and `showToast` refuses a success outright
+   * while an unread error is in the slot (a failed save, the query client's own
+   * "couldn't save" toast), drops it on a full queue, and takes it away after
+   * 2.5s on the path where it does show. All three end with the person returning
+   * to a form they expected the judgement in, finding it empty, and never having
+   * been told why. The inline line is the channel that cannot be discarded.
+   */
+  it("says the hand-off was dropped inline, even when the toast slot refuses the toast", async () => {
+    // An unread error owns the slot; the store never displaces one with a success.
+    useToastStore.getState().showToast({ title: "Couldn't save that", tone: "error" });
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    // The toast was discarded - the error is still what is showing.
+    expect(useToastStore.getState().visible?.title).toBe("Couldn't save that");
+    const notice = within(screen.getByTestId("handoff-notice"));
+    expect(notice.getByText("Kept your open draft")).toBeTruthy();
+    expect(notice.getByText(HANDOFF_BODY)).toBeTruthy();
+  });
+
+  it("lets the person dismiss the notice once they have read it", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+    fireEvent.press(within(screen.getByTestId("handoff-notice")).getByLabelText("Close"));
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
+  });
+
+  /**
+   * And nothing to dismiss when nothing was dropped: the notice is about a
+   * decision this arrival made, not a fixture of the form.
+   */
+  it("shows no notice when the hand-off landed", async () => {
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
   });
 
   /**

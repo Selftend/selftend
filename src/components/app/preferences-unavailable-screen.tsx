@@ -21,10 +21,15 @@ import { openExternalUrl } from "@/src/lib/linking";
  *
  * - `loading`: the row is still on the wire and has never arrived (#2229).
  * - `error`: the read failed with nothing cached (#2200).
- * - `offline`: the read is PAUSED - there is no connection, so nothing is on
- *   the wire and nothing has failed. It arrived here when the age gate stopped
- *   being fenced by a failure count the library resets on every dispatch: an
- *   offline read used to fall through to the consent gate, and now it does not.
+ * - `offline`: the read is PAUSED **and the device is offline** - so nothing is
+ *   on the wire and nothing will be until the connection returns. It arrived
+ *   here when the age gate stopped being fenced by a failure count the library
+ *   resets on every dispatch: an offline read used to fall through to the
+ *   consent gate, and now it does not.
+ *
+ *   ☠️ Paused is NOT on its own evidence of that: query-core also parks a RETRY
+ *   while the app is unfocused, so the layout checks `onlineManager` too and
+ *   leaves a focus-pause on the `error` face, which keeps its Retry.
  *
  * They are one state to the gates above - none of them can answer a statutory
  * question - and three different things to say to a person, which is the only

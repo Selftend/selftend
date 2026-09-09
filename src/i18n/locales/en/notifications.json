@@ -11,7 +11,8 @@
   },
   "channel": {
     "requesting": "Waiting for permission",
-    "blockedTitle": "Notifications are turned off",
+    "blockedTitleWeb": "This browser is blocking notifications",
+    "blockedTitleNative": "This device is blocking notifications",
     "unsupportedTitle": "Reminders can't arrive here",
     "needsPermissionTitle": "This browser isn't showing your reminders",
     "needsPermissionBody": "These reminders are switched on, but this browser has never been asked for permission to show them, so nothing is being delivered.",

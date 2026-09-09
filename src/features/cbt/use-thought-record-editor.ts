@@ -97,6 +97,12 @@ export function useThoughtRecordEditor() {
   const [arrival] = useState(() => decideArrival(recordId, storedDraftValues));
   const seed = arrival.seed;
 
+  // ☠️ The toast is a SECOND channel, never the only one: the screen renders
+  // `HandoffNotice` off `handoffDropped` below and that line is the record. The
+  // toast slot may refuse this one outright (an unread error toast already on
+  // screen), drop it (a full queue) or take it away after 2.5s - and the seed is
+  // consumed and unrecoverable, so a missed notice used to cost the whole
+  // hand-off silently.
   const keptDraftNoticeRef = useRef(false);
   useEffect(() => {
     if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
@@ -217,6 +223,8 @@ export function useThoughtRecordEditor() {
     errors,
     getValues,
     recordId,
+    /** This arrival kept a held draft and dropped the door's hand-off (#2206). */
+    handoffDropped: arrival.keptDraft,
     submitError,
     natsError,
     clearNatsError: () => setNatsError(""),
