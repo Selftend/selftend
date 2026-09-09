@@ -53,6 +53,7 @@ jest.mock("@/src/features/act/queries", () => ({
   useChoicePointPages: jest.fn(),
   useConnectionLogPages: jest.fn(),
   useDefusionLogPages: jest.fn(),
+  useListedDefusionLogs: jest.fn(),
   useExpansionLogPages: jest.fn(),
   useObservingSelfSessionPages: jest.fn(),
   useUrgeSurfLogPages: jest.fn(),
@@ -110,6 +111,12 @@ const PAGE_HOOKS = [
   "useUrgeSurfLogPages",
 ];
 
+/**
+ * Probes that return the bare union of the entries their screen's doors fill, rather than
+ * one archive's `{ pages }` envelope. The defusion detail has two doors (#2256).
+ */
+const UNION_HOOKS = ["useListedDefusionLogs"];
+
 const ITEM_HOOKS = [
   "useChoicePoint",
   "useConnectionLog",
@@ -126,6 +133,7 @@ const ITEM_HOOKS = [
  */
 function feed(rows: unknown[]) {
   for (const name of PAGE_HOOKS) mocked[name].mockReturnValue(pageResult(rows));
+  for (const name of UNION_HOOKS) mocked[name].mockReturnValue({ data: rows });
   for (const name of ITEM_HOOKS) mocked[name].mockReturnValue({ data: null, isLoading: false });
 }
 

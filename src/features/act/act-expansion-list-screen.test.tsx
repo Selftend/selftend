@@ -27,6 +27,7 @@ function pages(over: Record<string, unknown> = {}) {
     hasNextPage: false,
     isError: false,
     isFetchingNextPage: false,
+    isFetchNextPageError: false,
     isPending: false,
     refetch: jest.fn(),
     ...over,
@@ -159,6 +160,7 @@ describe("ActExpansionListScreen", () => {
       data: { pages: [[log({ emotion: "page one emotion" })]], pageParams: [null] },
       hasNextPage: true,
       isError: true,
+      isFetchNextPageError: true,
       fetchNextPage,
     });
 
@@ -171,5 +173,29 @@ describe("ActExpansionListScreen", () => {
     expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
     fireEvent.press(screen.getByText("Retry"));
     expect(fetchNextPage).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️ `isError` alone is the wrong predicate for that footer (#2253). It is also true
+   * after a failed REFETCH of the pages already loaded — a focus, reconnect or post-save
+   * invalidation re-read that fails while online — where nothing "more" was being
+   * loaded. Keyed on it, a complete list said "Couldn't load more entries." and its Retry
+   * called `fetchNextPage` with no next page, which resolves the old data without a
+   * request and stamps the list fresh. Only `isFetchNextPageError` names a failed page.
+   */
+  it("keeps the load-more error out of a failed refresh of the loaded pages", () => {
+    pages({
+      data: { pages: [[log({ emotion: "a loaded emotion" })]], pageParams: [null] },
+      hasNextPage: false,
+      isError: true,
+      isFetchNextPageError: false,
+    });
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    expect(screen.getByText("a loaded emotion")).toBeTruthy();
+    expect(screen.queryByText("Couldn't load more entries.")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
   });
 });

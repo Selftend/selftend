@@ -18,6 +18,7 @@ import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * One tick.
@@ -79,8 +80,16 @@ export default function HabitsHistoryScreen() {
   // entry the overview reads (#762) - the overview filters the archived ones
   // out of its list rather than paying for a second fetch of the same table.
   const { data: habits } = useHabits(userId, { includeArchived: true });
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useHabitLogPages(userId);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useHabitLogPages(userId);
 
   const habitsById = useMemo(() => {
     const map = new Map<string, Habit>();
@@ -90,11 +99,12 @@ export default function HabitsHistoryScreen() {
 
   const sections = useMemo(() => groupLogsByDay(data?.pages.flat()), [data]);
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
-    // user keeps dragging, and each call would queue another page fetch.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

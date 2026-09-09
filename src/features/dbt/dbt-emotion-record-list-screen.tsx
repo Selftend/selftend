@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +15,7 @@ import { DBT_SHARED_TOOLS } from "@/src/features/dbt/dbt-shared-tools";
 import { useEmotionRecordPages } from "@/src/features/dbt/queries";
 import type { EmotionRecord } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * `/modules/dbt/emotions` - the emotion records, newest first (spec §3.3.1).
@@ -36,16 +36,24 @@ export default function DbtEmotionRecordListScreen() {
   const { t } = useTranslation(["dbt", "errors"]);
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useEmotionRecordPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useEmotionRecordPages(user?.id ?? null);
   const records = data?.pages.flat() ?? [];
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone is not enough: onEndReached fires repeatedly while a
-    // fetch is in flight, and each call would start another page from the same
-    // cursor.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>

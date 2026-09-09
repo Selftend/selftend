@@ -1,5 +1,4 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { useCallback } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -18,6 +17,7 @@ import type { ExpansionLog } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatCompactAtOffset } from "@/src/utils/date";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * Acceptance's front door AND its archive (#1515 shape A, #1517 tier 1). The day filter
@@ -28,13 +28,24 @@ export default function ActExpansionListScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["act", "errors"]);
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useExpansionLogPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useExpansionLogPages(user?.id ?? null);
   const logs = data?.pages.flat() ?? [];
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -98,7 +109,7 @@ export default function ActExpansionListScreen() {
           // unrendered once rows exist, so without this the list stops at the last good
           // page in silence (#2187).
           <LoadMoreFooter
-            failed={isError && logs.length > 0}
+            failed={isFetchNextPageError}
             isFetchingNextPage={isFetchingNextPage}
             onRetry={() => void fetchNextPage()}
           />

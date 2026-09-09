@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,7 @@ import { useDoneScriptPages, useOpenScripts } from "@/src/features/dbt/queries";
 import { orderScriptsAsLadder } from "@/src/features/dbt/repository";
 import type { Script } from "@/src/features/dbt/types";
 import { useSession } from "@/src/providers/session-provider";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * `/modules/dbt/scripts` - **the list IS the ladder** (spec §3.4.1).
@@ -44,7 +45,7 @@ export default function DbtScriptListScreen() {
   // a ladder showed the easiest of the newest twenty, not the easiest.
   const open = useOpenScripts(user?.id ?? null);
   const done = useDoneScriptPages(user?.id ?? null);
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = done;
+  const { fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = done;
   const isPending = open.isPending || done.isPending;
   const isError = open.isError || done.isError;
   const scripts = useMemo(
@@ -52,22 +53,33 @@ export default function DbtScriptListScreen() {
     [open.data, done.data],
   );
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   // ☠️ Two reads, two failures, and the empty-list slot can show only one of
   // them - while the OTHER read's rows are on screen, `ListEmptyComponent` never
   // renders, so a half that failed simply went missing: no error, no Retry, and
   // the open rungs (or every closed script) absent from a list whose job is to
-  // be the whole climb (#2259). The footer carries the error for whichever half
-  // failed, and Retry re-reads only that half - the good pages stay.
-  const halfFailed = scripts.length > 0 && (open.isError || done.isError);
-  const retryFailedHalf = () => {
-    if (open.isError) void open.refetch();
-    // A first page that failed left no data to keep; a later one did, and
-    // `fetchNextPage` asks for exactly the page that failed (see LoadMoreFooter).
-    if (done.isError) void (done.data ? fetchNextPage() : done.refetch());
+  // be the whole climb (#2259). The footer carries it, and Retry re-reads only
+  // the half that is missing - the good half is not re-decrypted.
+  //
+  // ☠️ MISSING, not merely errored (the #2253 rule this screen inherits): a read
+  // that has data and an error is a failed REFETCH - a focus, reconnect or
+  // post-save re-read that failed - and its rows are on screen, so saying they
+  // could not be loaded would be a lie about a complete list.
+  const openMissing = open.isError && !open.data;
+  const doneMissing = done.isError && !done.data;
+  const halfMissing = scripts.length > 0 && (openMissing || doneMissing);
+  const retryWhatIsMissing = () => {
+    if (openMissing) void open.refetch();
+    if (doneMissing) void done.refetch();
+    // A later done page is the footer's own case, and `fetchNextPage` asks for
+    // exactly the page that failed (see LoadMoreFooter).
+    else if (isFetchNextPageError) void fetchNextPage();
   };
 
   return (
@@ -121,10 +133,12 @@ export default function DbtScriptListScreen() {
         }
         ListFooterComponent={
           <LoadMoreFooter
-            failed={halfFailed}
+            failed={halfMissing || isFetchNextPageError}
             isFetchingNextPage={isFetchingNextPage}
-            message={t("dbt:scripts.partFailed")}
-            onRetry={retryFailedHalf}
+            // A whole half is a different sentence from one more page of it;
+            // the footer's own line covers the page case.
+            message={halfMissing ? t("dbt:scripts.partFailed") : undefined}
+            onRetry={retryWhatIsMissing}
           />
         }
         renderItem={({ item }) => (

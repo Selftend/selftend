@@ -564,6 +564,26 @@ describe("the script", () => {
     expect(screen.queryByText("Retry")).toBeNull();
   });
 
+  /**
+   * ☠️ Missing, not merely errored (#2253's rule, inherited here): a read holding
+   * data AND an error is a failed refetch - its rows are on screen - so telling
+   * the person they could not be loaded would be a lie about a complete list.
+   */
+  it("says nothing when a half errored on a REFETCH and its rows are still shown", () => {
+    mockPathname = "/modules/dbt/scripts";
+    (useOpenScripts as unknown as jest.Mock).mockReturnValue({
+      data: [SCRIPT],
+      isError: true,
+      isPending: false,
+      refetch: jest.fn(),
+    });
+    renderWithProviders(<DbtScriptListScreen />);
+
+    expect(screen.getByText("text me if you'll be late")).toBeTruthy();
+    expect(screen.queryByText("Some of your scripts could not be loaded.")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+  });
+
   it("reads the four lines back on the card, with no crisis bar", () => {
     mockPathname = "/modules/dbt/scripts/s-1";
     renderWithProviders(<DbtScriptDetailScreen id="s-1" />);
