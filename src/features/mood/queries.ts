@@ -14,6 +14,7 @@ import {
 import type { MoodInput } from "@/src/features/mood/types";
 import { addDaysToKey } from "@/src/utils/date";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
+import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -171,7 +172,13 @@ export function useMoodLogCount(userId: string | null) {
 }
 
 export function useDeleteMoodLog(userId: string | null) {
-  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all, recordDaysKeys.all);
+  return useDeleteMutation(
+    userId,
+    deleteMoodLog,
+    moodKeys.all,
+    recordDaysKeys.all,
+    homeToolStatsKeys.all,
+  );
 }
 
 export function useSaveMoodLog(userId: string | null) {
@@ -187,6 +194,8 @@ export function useSaveMoodLog(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: moodKeys.all }),
         // A check-in is one of the ten records that make a day a marked day.
         invalidateRecordDays(queryClient),
+        // ...and one of the eight tool stats Home draws (#2212).
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });

@@ -21,6 +21,7 @@ import {
 } from "@/src/features/habits/optimistic-logs";
 import type { HabitInput, HabitLog } from "@/src/features/habits/types";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
+import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -118,7 +119,12 @@ export function useSaveHabit(userId: string | null) {
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: habitKeys.all }),
+        // A new or edited habit moves the "N of M done today" fraction Home draws,
+        // and that query has no habits prefix to nest under (#2212).
+        invalidateHomeToolStats(queryClient),
+      ]);
     },
   });
 }
@@ -130,7 +136,10 @@ export function useArchiveHabit(userId: string | null) {
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: habitKeys.all }),
+        invalidateHomeToolStats(queryClient),
+      ]);
     },
   });
 }
@@ -142,7 +151,10 @@ export function useRestoreHabit(userId: string | null) {
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: habitKeys.all }),
+        invalidateHomeToolStats(queryClient),
+      ]);
     },
   });
 }
@@ -150,7 +162,13 @@ export function useRestoreHabit(userId: string | null) {
 export function useDeleteHabit(userId: string | null) {
   // Deleting a habit takes its logs with it, so days it alone marked stop
   // being marked days.
-  return useDeleteMutation(userId, deleteHabit, habitKeys.all, recordDaysKeys.all);
+  return useDeleteMutation(
+    userId,
+    deleteHabit,
+    habitKeys.all,
+    recordDaysKeys.all,
+    homeToolStatsKeys.all,
+  );
 }
 
 /**
@@ -226,6 +244,9 @@ export function useToggleHabitLog(userId: string | null) {
         // this rides the same both-arms settle as the rest: a rollback restores a
         // guess, not the server's answer.
         invalidateRecordDays(queryClient),
+        // A tick also moves Home's "N of M done today" (#2212), and that root is
+        // reached by name for the same reason: it spans seven tables.
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });
@@ -267,8 +288,9 @@ export function useUpsertHabitLogNote(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: habitKeys.all }),
         // The note upsert INSERTS when no log exists for that day, so it can mark
-        // a day that was not marked before.
+        // a day that was not marked before - and tick it, so Home's fraction moves.
         invalidateRecordDays(queryClient),
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });

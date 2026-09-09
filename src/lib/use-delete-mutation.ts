@@ -5,15 +5,15 @@ export function useDeleteMutation(
   deleteFn: (userId: string, id: string) => Promise<void>,
   invalidationKey: readonly unknown[],
   /**
-   * One further root this delete has to reach, beyond the tool's own.
+   * Further roots this delete has to reach, beyond the tool's own.
    *
-   * Singular rather than variadic because exactly one thing needs it and
-   * nothing suggests a second: the five deletes that remove a record day -
-   * check-ins, gratitude, journal, sleep and a whole habit - pass
-   * `recordDaysKeys.all`. That query spans ten tools, so it has no owning
-   * feature to nest under and no tool prefix can reach it (#1906).
+   * These are the queries that span tools and so have no owning feature to nest
+   * under, which no tool prefix can reach: `recordDaysKeys.all` (#1906, ten
+   * tools) and `homeToolStatsKeys.all` (#2212, seven tables). The five deletes
+   * that remove a record day - check-ins, gratitude, journal, sleep and a whole
+   * habit - pass both. It was singular until the second one existed.
    */
-  alsoInvalidate?: readonly unknown[],
+  ...alsoInvalidate: readonly (readonly unknown[])[]
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -22,7 +22,7 @@ export function useDeleteMutation(
     meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
       if (!userId) return;
-      const roots = alsoInvalidate ? [invalidationKey, alsoInvalidate] : [invalidationKey];
+      const roots = [invalidationKey, ...alsoInvalidate];
       await Promise.all(roots.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
     },
   });

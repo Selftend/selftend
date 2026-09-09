@@ -9,6 +9,7 @@ import {
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
+import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
@@ -73,6 +74,7 @@ export function useSaveGroundingSession(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: ["grounding"] }),
         queryClient.invalidateQueries({ queryKey: ["mindfulness"] }),
         invalidateRecordDays(queryClient),
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });

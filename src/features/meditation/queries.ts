@@ -20,6 +20,7 @@ import type {
   MeditationSessionInput,
 } from "@/src/features/meditation/types";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
+import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
@@ -137,6 +138,8 @@ export function useSaveMeditationSession(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: meditationKeys.all }),
         invalidateRecordDays(queryClient),
+        // A sit moves Home's sits count and median too (#2212).
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });
@@ -161,6 +164,8 @@ export function useUpdateMeditationSessionReflection(userId: string | null) {
         // writing a source table invalidates it, rather than each one
         // re-deciding whether its particular edit can reach a civil day.
         invalidateRecordDays(queryClient),
+        // Same rule for Home's stats root (#2212).
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });
