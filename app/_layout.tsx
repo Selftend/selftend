@@ -12,6 +12,7 @@ import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
 import { NotoSans_800ExtraBold } from "@expo-google-fonts/noto-sans/800ExtraBold";
 import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 import { ThemeProvider } from "expo-router";
+import Head from "expo-router/head";
 import { useFonts } from "expo-font";
 import { PortalHost } from "@rn-primitives/portal";
 import * as SplashScreen from "expo-splash-screen";
@@ -91,6 +92,19 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* PROTOTYPE (#2286): site-wide defaults, overridden by a screen's own <Head>. */}
+      <Head>
+        <title>Selftend - private mental health tools</title>
+        <meta
+          name="description"
+          content="Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. Open source, no ads, no subscriptions."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Selftend" />
+        <meta property="og:title" content="Selftend - private mental health tools" />
+        <meta property="og:image" content="https://selftend.org/favicon-512.png" />
+        <meta name="twitter:card" content="summary" />
+      </Head>
       <AppProviders>
         <ThemeProvider value={NAV_THEME[style][colorScheme]}>
           <View className="flex-1 bg-background" style={THEME_VARIABLES[style][colorScheme]}>

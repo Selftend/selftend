@@ -231,7 +231,7 @@ const baseConfig: ExpoConfig = withDevelopmentCleartextTraffic({
   },
   web: {
     bundler: "metro",
-    output: "single",
+    output: "static",
     favicon: "./assets/favicon.png",
   },
   plugins: [

@@ -34,7 +34,11 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   // Without a Supabase client there is nothing to wait for - start "ready".
-  const [status, setStatus] = useState<SessionStatus>(supabase ? "loading" : "ready");
+  // PROTOTYPE (#2286): at static export there is no browser and can be no session, so the
+  // tree renders its signed-out face (the landing on `/`) instead of the loading spinner.
+  const [status, setStatus] = useState<SessionStatus>(
+    supabase && typeof window !== "undefined" ? "loading" : "ready",
+  );
   const queryClient = useQueryClient();
 
   useEffect(() => {
