@@ -25,6 +25,14 @@ export interface LoadMoreSource {
  * with the Retry button rendered for about one frame per cycle. A failed page waits for
  * the user's Retry (`LoadMoreFooter`), which calls `fetchNextPage` directly and clears the
  * flag when it lands.
+ *
+ * ☠️ That last sentence is a PRECONDITION, not a description. TanStack keeps
+ * `isFetchNextPageError` set until a fetch succeeds or a plain `refetch` clears
+ * `fetchMeta`, and `onEndReached` is a list screen's only forward-fetch trigger — so on a
+ * screen with no `LoadMoreFooter`, this guard turns one transient page failure into a
+ * permanent, silent cap on the archive, wearing the face of its end. Adopting this hook
+ * without rendering that footer is therefore a defect, and `test/load-more-guard.test.ts`
+ * fails on it.
  */
 export function useLoadMore({
   fetchNextPage,

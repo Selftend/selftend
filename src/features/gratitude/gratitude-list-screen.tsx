@@ -1,8 +1,9 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -78,12 +79,15 @@ export default function GratitudeListScreen() {
             />
           )
         }
+        // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+        // unrendered once rows exist, and the load-more latch (#2255) only clears
+        // through this Retry (#2187).
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={isFetchNextPageError}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
         renderItem={({ item }) => <GratitudeEntryCard entry={item} />}
       />
