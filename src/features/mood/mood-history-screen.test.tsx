@@ -57,6 +57,7 @@ interface PagesState {
   hasNextPage?: boolean;
   isError?: boolean;
   isFetchingNextPage?: boolean;
+  isFetchNextPageError?: boolean;
   isPending?: boolean;
 }
 
@@ -68,6 +69,7 @@ function mockPages({
   hasNextPage = false,
   isError = false,
   isFetchingNextPage = false,
+  isFetchNextPageError = false,
   isPending = false,
 }: PagesState) {
   mockUseMoodHistoryPages.mockReturnValue({
@@ -76,6 +78,7 @@ function mockPages({
     hasNextPage,
     isError,
     isFetchingNextPage,
+    isFetchNextPageError,
     isPending,
     refetch,
   } as unknown as ReturnType<typeof useMoodHistoryPages>);
@@ -186,6 +189,66 @@ describe("MoodHistoryScreen", () => {
     screen.UNSAFE_getByType(SectionList).props.onEndReached();
 
     expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it("stops asking on its own once a later page has failed", () => {
+    // The retry loop #2255 filed: the footer's own height change re-fires
+    // `onEndReached`, so a page that keeps failing would keep being asked for.
+    mockPages({
+      pages: [[log(todayKey())]],
+      hasNextPage: true,
+      isFetchNextPageError: true,
+    });
+
+    renderWithProviders(<MoodHistoryScreen />);
+    screen.UNSAFE_getByType(SectionList).props.onEndReached();
+
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it("says a later page failed rather than letting the list stop in silence", () => {
+    // ...and because it stops asking, the failure needs a surface. `ListEmptyComponent`
+    // is not it: page one landed, so the empty slot is unrendered and the list would
+    // simply end at the last good row, indistinguishable from the end of the history.
+    mockPages({
+      pages: [[log(todayKey())]],
+      hasNextPage: true,
+      isFetchNextPageError: true,
+    });
+
+    renderWithProviders(<MoodHistoryScreen />);
+
+    expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
+    // The rows already on screen stay put.
+    expect(screen.getByText("Good · 4")).toBeTruthy();
+    // And the first page's error state does not double up over a loaded list.
+    expect(screen.queryByText("Couldn't load your history")).toBeNull();
+  });
+
+  it("retries just the failed page from the footer, not the whole history", () => {
+    // The only control that clears TanStack's `isFetchNextPageError` latch. It goes
+    // through `fetchNextPage` so the loaded pages are not re-read to recover one.
+    mockPages({
+      pages: [[log(todayKey())]],
+      hasNextPage: true,
+      isFetchNextPageError: true,
+    });
+
+    renderWithProviders(<MoodHistoryScreen />);
+    fireEvent.press(screen.getByText("Retry"));
+
+    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+    expect(refetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps the load-more error off a list that is merely refetching", () => {
+    // `isError` alongside loaded pages is a failed REFETCH, not a failed later page;
+    // saying "couldn't load more entries" under a complete list would be a lie.
+    mockPages({ pages: [[log(todayKey())]], isError: true });
+
+    renderWithProviders(<MoodHistoryScreen />);
+
+    expect(screen.queryByText("Couldn't load more entries.")).toBeNull();
   });
 
   it("shows the empty state once a loaded history turns out to be empty", () => {

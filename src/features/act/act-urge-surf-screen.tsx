@@ -13,6 +13,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
@@ -221,12 +222,15 @@ export default function ActUrgeSurfScreen() {
               <Text variant="muted">{t("act:expansion.noUrgeLogs")}</Text>
             )
           }
+          // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+          // unrendered once rows exist, and the load-more latch (#2255) only clears
+          // through this Retry (#2187).
           ListFooterComponent={
-            isFetchingNextPage ? (
-              <View className="py-6">
-                <ActivityIndicator />
-              </View>
-            ) : null
+            <LoadMoreFooter
+              failed={isFetchNextPageError}
+              isFetchingNextPage={isFetchingNextPage}
+              onRetry={() => void fetchNextPage()}
+            />
           }
           renderItem={({ item }) => (
             <UrgeSurfHistoryItem
