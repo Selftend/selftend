@@ -17,6 +17,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
+import { HandoffNotice } from "@/src/components/app/handoff-notice";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { ProgressSegments } from "@/src/components/app/progress-segments";
@@ -33,8 +34,10 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import {
   type ActDefusionLogDraft,
+  hasDefusionDraftContent,
   useActDefusionLogDraftStore,
 } from "@/src/stores/act-defusion-log-draft-store";
+import { consumeDefusionLogSeed } from "@/src/stores/act-defusion-seed-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -68,6 +71,37 @@ const EMPTY_DRAFT: ActDefusionLogDraft = {
 /** What the insert trigger would coalesce a null to; applied here so the saved row says it once. */
 const CATEGORY_WHEN_UNANSWERED: ThoughtCategory = "other";
 const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
+
+/**
+ * What a door's hand-off found on arrival - decided ONCE, at first render.
+ *
+ * A live draft outranks the hand-off (#2206, owner's rule for every cross-module
+ * door): unsaved work the person typed here is kept and a notice says so.
+ * Content, not presence: the form writes the store on every keystroke, so a draft
+ * object with every field back at empty is not held work, and the seed takes it.
+ *
+ * ☠️☠️ **The seed is CONSUMED either way, and the notice says the hand-off was
+ * dropped.** A hand-off lives exactly as long as the navigation that carried it;
+ * keeping the beaten one "for the next fresh open" is a stored state that has to
+ * answer "is this later arrival still the same intention?", and nothing in the
+ * store knows - a freshness window bounds the wait by TIME, and an open of this
+ * form from the ACT hub five minutes later is a fresh intention that a clock will
+ * happily serve the previous module's judgement to, with its category answered
+ * and two of five rail segments already lit. See `thought-record-seed-store.ts`.
+ *
+ * ☠️ The seed that IS taken lives in `seed`, never in the draft store, until the
+ * person's first edit moves it there (#2254). Written at arrival it would be a
+ * "live draft" the next door has to keep, and "Finish later" on an untouched
+ * seed would show the next judgement's door the previous judgement.
+ */
+function decideArrival(): { seed: ActDefusionLogDraft | null; keptDraft: boolean } {
+  const seed = consumeDefusionLogSeed();
+  if (seed === null) return { seed: null, keptDraft: false };
+  if (hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
+    return { seed: null, keptDraft: true };
+  }
+  return { seed: { ...EMPTY_DRAFT, ...seed }, keptDraft: false };
+}
 
 /**
  * Which parts hold something the user put there.
@@ -116,10 +150,31 @@ export default function ActDefusionNewScreen() {
   const saveMutation = useSaveDefusionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
-  const draft = useActDefusionLogDraftStore((state) => state.values) ?? EMPTY_DRAFT;
+  const storedDraft = useActDefusionLogDraftStore((state) => state.values);
   const hydrateDraft = useActDefusionLogDraftStore((state) => state.hydrate);
   const resetDraft = useActDefusionLogDraftStore((state) => state.reset);
   const setDraftValues = useActDefusionLogDraftStore((state) => state.setValues);
+
+  const [arrival] = useState(decideArrival);
+  // The taken seed shows until the person's first edit writes it into the store;
+  // from then on the store is the form's state again (see `updateDraft`).
+  const [seedDraft, setSeedDraft] = useState(arrival.seed);
+  const draft = seedDraft ?? storedDraft ?? EMPTY_DRAFT;
+
+  // ☠️ A second channel, never the only one - `HandoffNotice` below is the
+  // record. The toast slot is allowed to refuse this one (an unread error toast
+  // already on screen), drop it (a full queue), or take it away after 2.5s,
+  // while the seed it is about is consumed and unrecoverable.
+  const keptDraftNoticeRef = useRef(false);
+  useEffect(() => {
+    if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
+    keptDraftNoticeRef.current = true;
+    showToast({
+      title: t("common:handoff.keptDraft"),
+      description: t("common:handoff.notCarriedOver"),
+      tone: "success",
+    });
+  }, [arrival.keptDraft, showToast, t]);
 
   const [submitError, setSubmitError] = useState("");
   const [thoughtError, setThoughtError] = useState("");
@@ -148,13 +203,23 @@ export default function ActDefusionNewScreen() {
    * ☠️ Reads the CURRENT values off the store rather than closing over `draft`:
    * `setValues` takes a whole value, so two fields changed inside one render
    * pass would otherwise write the second on top of a stale copy of the first.
+   * The one exception is the first edit over a taken seed, which has to start
+   * from the seed - it is not in the store yet - and move it there. The store
+   * still decides for every edit after that, including a second one in the same
+   * render pass, because the first write left content in it: which is why the
+   * test below is "the store holds content", never a flag that a stale closure
+   * would carry into the second write.
    */
   const updateDraft = useCallback(
     (patch: Partial<ActDefusionLogDraft>) => {
-      const current = useActDefusionLogDraftStore.getState().values ?? EMPTY_DRAFT;
+      const stored = useActDefusionLogDraftStore.getState().values;
+      const current = hasDefusionDraftContent(stored)
+        ? (stored ?? EMPTY_DRAFT)
+        : (seedDraft ?? stored ?? EMPTY_DRAFT);
       setDraftValues({ ...current, ...patch });
+      if (seedDraft) setSeedDraft(null);
     },
-    [setDraftValues],
+    [seedDraft, setDraftValues],
   );
 
   const filled = useMemo(() => filledParts(draft), [draft]);
@@ -214,6 +279,7 @@ export default function ActDefusionNewScreen() {
         createdAt: loggedAtForSelectedDate(selectedDate),
       });
       resetDraft();
+      setSeedDraft(null);
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
     } catch {
@@ -288,6 +354,8 @@ export default function ActDefusionNewScreen() {
 
         <CrisisSupportBar />
 
+        <HandoffNotice visible={arrival.keptDraft} />
+
         {submitError ? (
           <Card {...politeLiveRegionProps()}>
             <CardHeader>
@@ -307,6 +375,7 @@ export default function ActDefusionNewScreen() {
           onCancel={() => setDiscardOpen(false)}
           onConfirm={() => {
             resetDraft();
+            setSeedDraft(null);
             setDiscardOpen(false);
             router.back();
           }}

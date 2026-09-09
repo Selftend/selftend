@@ -28,7 +28,7 @@ import { changedWidgetIds } from "@/src/features/widgets/diff-snapshots";
 import { WIDGET_CATALOG } from "@/src/features/widgets/widget-catalog";
 import type { Snapshot, WidgetData } from "@/src/features/widgets/snapshot-types";
 import type { UserPreferences } from "@/src/features/modules/types";
-import { useProgramWidgetTaskStatus } from "@/src/features/home/program-widget-status";
+import { useProgramWidgetTaskStatus } from "@/src/features/widgets/program-widget-status";
 
 /** Reuses the SAME data hooks the in-app widgets use; assembles the snapshot and pushes updates.
  *  Native widget APIs are loaded lazily behind a Platform guard so the web/iOS bundles stay clean. */

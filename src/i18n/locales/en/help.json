@@ -6,16 +6,16 @@
     "helpPrefix": "Help: "
   },
   "program": {
-    "title": "The CBT program",
+    "title": "The CBT programme",
     "what": "A guided journey through the CBT process, built from the tools already in this module.",
     "how": "Each phase follows a stage of the CBT process - from assessment through to resilience - mixing recurring daily practices with one-time milestones. Work through them at your own pace.",
     "why": "Spacing practice over days builds real habits and lasting change rather than a one-off burst."
   },
   "actProgram": {
-    "title": "The ACT program",
-    "what": "A guided 4-week ACT path for practicing psychological flexibility: be present, open up, and do what matters.",
+    "title": "The ACT programme",
+    "what": "A guided 4-week ACT path for practising psychological flexibility: be present, open up, and do what matters.",
     "how": "Each week combines a recurring ACT practice with small milestones such as anchoring, mapping choice points, unhooking from thoughts, clarifying values, and taking committed action.",
-    "why": "ACT skills are learned through repeated, values-guided practice. The program helps you practice responding flexibly without promising to remove difficult thoughts or feelings."
+    "why": "ACT skills are learned through repeated, values-guided practice. The programme helps you practice responding flexibly without promising to remove difficult thoughts or feelings."
   },
   "thoughtRecords": {
     "title": "Thought records",
@@ -34,12 +34,6 @@
     "what": "A method for containing repetitive worry instead of letting it run all day.",
     "how": "Postpone worries to a short daily worry time, then sort each into solvable (problem-solve) or hypothetical (let go).",
     "why": "Worry rarely changes outcomes; scheduling it frees the rest of your day and breaks the worry habit."
-  },
-  "distortions": {
-    "title": "Thinking distortions",
-    "what": "Common biased thinking patterns, like catastrophising or all-or-nothing thinking.",
-    "how": "Learn to spot the distortion behind a thought, then reframe it more realistically.",
-    "why": "Naming the pattern makes an automatic thought easier to challenge and let go."
   },
   "goals": {
     "title": "Goals",
@@ -118,5 +112,11 @@
     "what": "Taking values-guided steps even when discomfort, fear, or difficult feelings are present.",
     "how": "Choose a small, concrete action toward your values, commit to it, and follow through regardless of how you feel in the moment.",
     "why": "Waiting to feel ready means waiting forever. Small committed steps build momentum and prove values-guided living is possible even in difficulty."
+  },
+  "dbtProgram": {
+    "title": "The DBT programme",
+    "what": "A path in four phases through the module's four skill groups, in the book's order: getting through a hard moment, steadying your attention, working with a feeling, and asking for what you want.",
+    "how": "Each phase names two things to do once and, most phases, one thing to try that day. You advance when you decide to - the daily practice never holds a phase shut, and a day without it changes nothing.",
+    "why": "The skills build on each other, and the order is the one the book teaches. The programme is a way to take them in that order without having to remember it."
   }
 }

@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 
 import { INVISIBLE_HEADER_HEIGHT, InvisibleHeader } from "./invisible-header";
 import { Icon } from "@/src/components/react-native-reusables/icon";
-import { getTourTarget, setTourTarget } from "@/src/features/tours/tour-targets";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => {
@@ -45,10 +44,6 @@ jest.mock("react-native-safe-area-context", () => {
     ...mock,
     useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
   };
-});
-
-afterEach(() => {
-  setTourTarget("home-navigation", null);
 });
 
 describe("InvisibleHeader", () => {
@@ -137,16 +132,6 @@ describe("InvisibleHeader", () => {
     renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
 
     expect(screen.getByText("User menu")).toBeTruthy();
-  });
-
-  it("registers the hamburger as the home-navigation tour target", () => {
-    const { unmount } = renderWithProviders(
-      <InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />,
-    );
-
-    expect(getTourTarget("home-navigation")).not.toBeNull();
-    unmount();
-    expect(getTourTarget("home-navigation")).toBeNull();
   });
 
   // #669: signed out there is no nav — the hamburger slot renders an invisible

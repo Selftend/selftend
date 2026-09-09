@@ -21,6 +21,9 @@ import {
 } from "../scripts/audio/ship-plan.mjs";
 import {
   SFX_CLIPS,
+  LIBRARY_BEDS,
+  SHIPPED_SFX_CLIPS,
+  SYNTH_BEDS,
   VOICES,
   VOICE_CUES,
   clipsForRound,
@@ -34,7 +37,15 @@ import {
  */
 type Unit = ReturnType<typeof shippingUnits>[number];
 
-/** The lengths the four cues take to say, measured off the clips shipping today. */
+/**
+ * The lengths the four cues take to say, measured off the clips shipping today.
+ *
+ * ☠️ THIS MUST COVER EVERY CUE, and the trap is that nothing makes it.
+ * `withVoiceSeconds` falls back to `?? null`, so a cue missing from this map
+ * silently resolves to "unknown" — and every assertion about a complete set still
+ * passes while testing a subset of one. #1573 hit exactly that: it added four
+ * Bulgarian cues and this fixture kept quietly covering only the English four.
+ */
 const VOICE_SECONDS: Record<string, number> = {
   guide_intro: 3.08,
   guide_inhale: 0.939637,
@@ -43,6 +54,17 @@ const VOICE_SECONDS: Record<string, number> = {
 };
 
 const withVoiceSeconds = (unit: Unit) => VOICE_SECONDS[unit.clip] ?? null;
+
+/**
+ * ☠️ The guard for the trap above, by construction rather than by remembering.
+ * A cue absent from `VOICE_SECONDS` weakens every prediction test in this file
+ * without failing any of them, so the absence itself has to be the failure.
+ */
+it("has a measured length for every voice cue, so no prediction test is vacuous", () => {
+  for (const cue of VOICE_CUES as { id: string }[]) {
+    expect(VOICE_SECONDS[cue.id]).toBeGreaterThan(0);
+  }
+});
 
 const fileFor = (units: Unit[], id: string) => units.find((unit) => unit.id === id)!.file;
 
@@ -103,9 +125,12 @@ describe("the budget ceiling", () => {
 });
 
 describe("shippingUnits", () => {
-  it("is the twenty-one files #1210 and #1138 both count", () => {
+  it("is the nineteen files the set now counts", () => {
+    // 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus the six
+    // breath textures the owner retired on 2026-08-30. ⚠️ Briefly 27 for #1573's
+    // Bulgarian set, which was rendered, auditioned and rejected by ear.
     expect(shippingUnits()).toHaveLength(SHIP_FILE_COUNT);
-    expect(SHIP_FILE_COUNT).toBe(21);
+    expect(SHIP_FILE_COUNT).toBe(19);
   });
 
   /**
@@ -119,25 +144,44 @@ describe("shippingUnits", () => {
   it("is exactly both rounds' sound effects plus every cue in every voice", () => {
     const units: Unit[] = shippingUnits();
     const sfxIds = units.filter((unit) => !unit.voice).map((unit) => unit.clip);
+    // ☠️ THE SHIP SET IS NO LONGER THE RENDER SET. Since #1130 the three noise
+    // beds are computed by `synth-noise.mjs` and never rendered, so they appear in
+    // no round's clip list while still landing in `assets/`. The budget must count
+    // them — undercounting by three 30s beds is 1.03 MiB of a 4 MiB ceiling — and
+    // `SFX_CLIPS` must not, or they would be quoted and paid for.
     const fromRounds = [...clipsForRound("A"), ...clipsForRound("B")].map(
       (clip: { id: string }) => clip.id,
     );
+    const notRendered = [...SYNTH_BEDS, ...LIBRARY_BEDS].map((bed: { id: string }) => bed.id);
 
-    expect([...sfxIds].sort()).toEqual([...fromRounds].sort());
-    expect(sfxIds).toHaveLength(SFX_CLIPS.length);
+    expect([...sfxIds].sort()).toEqual([...fromRounds, ...notRendered].sort());
+    expect(sfxIds).toHaveLength(SHIPPED_SFX_CLIPS.length);
+    expect(SHIPPED_SFX_CLIPS.length).toBe(SFX_CLIPS.length + notRendered.length);
 
+    // ☠️ NOT `cues.length * voices.length`. That product is what `shippingUnits`
+    // used to compute for itself, and with two languages it is 32 against a real
+    // 16 — every extra one a voice paired with a language it does not speak, each
+    // with a unique filename that this budget would happily wave through (#1581).
     const spec = voiceSlotSpec("B");
     const voiceUnits = units.filter((unit) => unit.voice);
-    expect(voiceUnits).toHaveLength(spec.cues.length * spec.voices.length);
+    expect(voiceUnits).toHaveLength(spec.slots.length);
   });
 
-  it("gives every cue one unit per voice, and they are distinct files", () => {
+  it("gives every cue one unit per voice OF ITS OWN LANGUAGE, in distinct files", () => {
     const units: Unit[] = shippingUnits();
-    for (const cue of VOICE_CUES as { id: string }[]) {
+    const voices = VOICES as { id: string; lang: string }[];
+    for (const cue of VOICE_CUES as { id: string; lang: string }[]) {
       const mine = units.filter((unit) => unit.clip === cue.id);
       expect(mine.map((unit) => unit.voice).sort()).toEqual(
-        (VOICES as { id: string }[]).map((voice) => voice.id).sort(),
+        voices
+          .filter((voice) => voice.lang === cue.lang)
+          .map((voice) => voice.id)
+          .sort(),
       );
+      // ☠️ The assertion that actually bites: two per cue, not four. A cue paired
+      // with all four voices still yields distinct filenames, so the file-name
+      // check below cannot notice a mis-pair on its own.
+      expect(mine).toHaveLength(2);
       expect(new Set(mine.map((unit) => unit.file)).size).toBe(mine.length);
     }
   });
@@ -150,12 +194,20 @@ describe("shippingUnits", () => {
   it("carries each unit's own output spec, not one class's", () => {
     const units: Unit[] = shippingUnits();
     const bed = units.find((unit) => unit.clip === "rain")!;
-    const texture = units.find((unit) => unit.clip === "wind_inhale")!;
+    // A bell, not a texture: the texture lane was retired on 2026-08-30, and the
+    // point of this test is that the three surviving classes each keep their OWN
+    // spec rather than inheriting one.
+    const bell = units.find((unit) => unit.clip === "meditation-bell")!;
     const voice = units.find((unit) => unit.clip === "guide_hold")!;
 
-    expect(bed).toMatchObject({ bitrate: "128k", channels: 2, seconds: 30 });
-    expect(texture).toMatchObject({ bitrate: "96k", channels: 1, seconds: 10 });
+    // 96k since #1130: nine beds do not fit under the ceiling at 128k. Bells stay
+    // at 128k — a struck bowl is a transient, where a bed is stationary noise.
+    expect(bed).toMatchObject({ bitrate: "96k", channels: 2, seconds: 30 });
+    expect(bell).toMatchObject({ bitrate: "128k", channels: 1 });
     expect(voice).toMatchObject({ bitrate: "64k", channels: 1, klass: "voice" });
+    // The distinction that matters: they do not all carry one class's numbers.
+    expect(bell.bitrate).not.toBe(bed.bitrate);
+    expect(voice.bitrate).not.toBe(bed.bitrate);
   });
 
   /** How long a cue takes to say comes back from TTS; nobody decided it. */
@@ -242,9 +294,13 @@ describe("predictShipping", () => {
    * one — if they ever diverge, the check is measuring against a number that was
    * decided about something else.
    */
-  it("reproduces the 3.21 MB #1138 published", () => {
+  it("fits with real room once the breath textures are gone", () => {
+    // ☠️ #1138 published 3.21 MB for the 21-file set. #1130 added four beds and
+    // paid for them by dropping the bed bitrate to 96k, landing the set at ~3.99
+    // MiB — inside the ceiling by about 12 KB and no more. The six retired breath
+    // textures are still counted here; dropping them returns ~0.69 MiB.
     const predicted = predictShipping(shippingUnits(), withVoiceSeconds);
-    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.2, 1);
+    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.31, 1);
     expect(predicted.complete).toBe(true);
     expect(predicted.over).toBe(false);
   });
@@ -256,10 +312,18 @@ describe("predictShipping", () => {
     expect(predicted.budgetBytes).toBe(SHIP_BUDGET_BYTES);
   });
 
-  /** ☠️ An unknown length must not weigh zero and pass by being absent. */
+  /**
+   * ☠️ An unknown length must not weigh zero and pass by being absent.
+   *
+   * Every one of them is a voice unit: in a clean checkout `referenceClipFor`
+   * probes a `.wav` that exists nowhere in this repo (the masters live in
+   * `app-audio-masters` and `audio-masters/` is gitignored), so PREDICTED is
+   * permanently a FLOOR for the voice half. Quote the ACTUAL survey instead.
+   */
   it("reports unknown lengths instead of counting them as nothing", () => {
     const predicted = predictShipping(shippingUnits());
     expect(predicted.unknown).toHaveLength(8);
+    expect(predicted.unknown.every((row) => row.voice)).toBe(true);
     expect(predicted.complete).toBe(false);
     for (const row of predicted.unknown) {
       expect(row.bytes).toBeNull();

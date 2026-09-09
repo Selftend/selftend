@@ -2,7 +2,13 @@ import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-
 
 import ThoughtRecordEditorScreen from "@/app/(app)/modules/cbt/new";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
+import { defaultValues } from "@/src/features/cbt/thought-record-form";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+import {
+  seedThoughtRecord,
+  useThoughtRecordSeedStore,
+} from "@/src/stores/thought-record-seed-store";
+import { useToastStore } from "@/src/stores/toast-store";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -314,5 +320,190 @@ describe("finishing later", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+/**
+ * The doors into this form - the check-in's "Go deeper" (#739) and the DBT
+ * emotion record's "Look at the whole picture" (#1980) - hand off through the
+ * seed store rather than the address bar.
+ *
+ * ☠️ The owner's rule for every cross-module door (#2206): a live draft WINS,
+ * and a notice says so. Before it, the seed was read and cleared unconditionally
+ * at mount and then dropped by the `??` under the draft - so a person holding an
+ * unfinished record lost the paragraph they had just written, silently, with
+ * nothing left to re-press.
+ *
+ * ☠️☠️ **A hand-off lives exactly as long as the navigation that carried it.**
+ * The rule above used to be implemented by LEAVING the seed in its store for "the
+ * next fresh open", and that stored state is what three rounds of edge cases came
+ * out of: it needed a window, the window ran from the door tap rather than from
+ * the deferral, and a window cannot express intent anyway - an unrelated open of
+ * this form minutes later still arrived pre-filled with another episode's words.
+ * The door mints, this form consumes, and nothing is stored across a navigation:
+ * a kept draft DROPS the hand-off and the toast says so.
+ */
+describe("a door's hand-off", () => {
+  const HANDOFF_BODY =
+    "Nothing was carried over from where you just were. " +
+    "Finish or discard this draft, then use that button again.";
+
+  /** What the store is still holding - the whole of it, so a leftover cannot hide. */
+  const seedInStore = () => {
+    const { emotions, situation } = useThoughtRecordSeedStore.getState();
+    return { emotions, situation };
+  };
+
+  beforeEach(() => {
+    useThoughtRecordSeedStore.setState({ emotions: [], situation: "" });
+    useToastStore.getState().clearToasts();
+  });
+
+  it("opens the form on the hand-off when no draft is held", async () => {
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
+      "She did not reply for three days",
+    );
+    // Taken, so it can never be applied twice.
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **The assertion that used to stand here was `hasThoughtRecordSeed() === true`**
+   * - the hand-off left waiting "for the next fresh open". It is replaced, not
+   * weakened: leaving it there is the stored state every later round of edge
+   * cases came out of, and what waits is a paragraph about an episode that a
+   * later, unrelated open of this form can silently pre-fill itself with. The
+   * draft still wins and the person is still told; what they are told is now
+   * true, and it says what to do to get the hand-off back.
+   */
+  it("keeps a held draft, says so, and drops the hand-off rather than storing it", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    // The draft the person was holding, not the hand-off.
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    expect(useToastStore.getState().visible?.description).toBe(HANDOFF_BODY);
+    // ☠️ And on the form itself, where no toast policy can discard it.
+    expect(within(screen.getByTestId("handoff-notice")).getByText(HANDOFF_BODY)).toBeTruthy();
+    // ☠️ Nothing left behind: not the paragraph, not a flag about it.
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
+  });
+
+  /**
+   * ☠️☠️ **A later open of this form is a fresh intention, and no clock decides that.**
+   * The person finishes the record they were holding and comes back from the CBT
+   * hub to write about today. There is no hand-off any more, so the Situation is
+   * empty - it does not matter whether one minute or one hour passed, which is
+   * exactly what a freshness window could never express.
+   */
+  it("opens empty when the form is opened again after a hand-off was dropped", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    const view = await renderColumn();
+    view.unmount();
+
+    // The draft is finished with, and the person opens the form from the hub.
+    useCbtDraftStore.getState().reset();
+    useToastStore.getState().clearToasts();
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("");
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  /**
+   * ☠️ The notice is about a decision this arrival caused. `keptDraft` is
+   * recomputed at every mount from (seed present) AND (draft has content) and
+   * neither side is consumed on that path - so it used to re-announce the
+   * hand-off on every visit for as long as the draft was held, including visits
+   * reached from the hub with no hand-off in mind.
+   */
+  it("says it kept the draft once, not on every visit while the draft is held", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    const first = await renderColumn();
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    first.unmount();
+
+    useToastStore.getState().clearToasts();
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **The notice has to survive a toast slot that is allowed to throw it
+   * away.** The seed is consumed and unrecoverable, so this sentence is the only
+   * record that anything was dropped - and `showToast` refuses a success outright
+   * while an unread error is in the slot (a failed save, the query client's own
+   * "couldn't save" toast), drops it on a full queue, and takes it away after
+   * 2.5s on the path where it does show. All three end with the person returning
+   * to a form they expected the judgement in, finding it empty, and never having
+   * been told why. The inline line is the channel that cannot be discarded.
+   */
+  it("says the hand-off was dropped inline, even when the toast slot refuses the toast", async () => {
+    // An unread error owns the slot; the store never displaces one with a success.
+    useToastStore.getState().showToast({ title: "Couldn't save that", tone: "error" });
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    // The toast was discarded - the error is still what is showing.
+    expect(useToastStore.getState().visible?.title).toBe("Couldn't save that");
+    const notice = within(screen.getByTestId("handoff-notice"));
+    expect(notice.getByText("Kept your open draft")).toBeTruthy();
+    expect(notice.getByText(HANDOFF_BODY)).toBeTruthy();
+  });
+
+  it("lets the person dismiss the notice once they have read it", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+    fireEvent.press(within(screen.getByTestId("handoff-notice")).getByLabelText("Close"));
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
+  });
+
+  /**
+   * And nothing to dismiss when nothing was dropped: the notice is about a
+   * decision this arrival made, not a fixture of the form.
+   */
+  it("shows no notice when the hand-off landed", async () => {
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
+  });
+
+  /**
+   * Content, not presence: the form captures into the draft store while the
+   * person types, so a draft object whose every part is back at empty is not
+   * held work, and the hand-off takes it.
+   */
+  it("still lands over a draft that holds nothing", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "   " });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
+      "She did not reply for three days",
+    );
+    expect(seedInStore()).toEqual({ emotions: [], situation: "" });
+    expect(useToastStore.getState().visible).toBeNull();
   });
 });

@@ -92,3 +92,4 @@ This file is planning guidance, not legal advice. Before a public launch, get a 
 - minors / future under-18 expansion
 - privacy and data retention
 - crisis and safety copy
+- the "DBT®" mark - whether the DBT module may use the abbreviation in its h1, its copy and the store listing as the app does for CBT and ACT (the module spec, `docs/modules/dbt-mckay-skills-workbook.md` §13, records the question; the app never writes "DBT-certified")

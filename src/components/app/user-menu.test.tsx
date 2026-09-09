@@ -8,6 +8,7 @@ import { appEnv } from "@/src/lib/env";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { openExternalUrl } from "@/src/lib/linking";
 import { useToastStore } from "@/src/stores/toast-store";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 // ☠️ Load-bearing for exactly ONE test: "shows the compact get-the-app section on
@@ -80,6 +81,41 @@ afterEach(() => {
   mockCancelAllReminders.mockResolvedValue(undefined);
   mockSignOut.mockResolvedValue(undefined);
 });
+
+/**
+ * The open menu's landmarks in real document order (#1862).
+ *
+ * ☠️ Order, not presence. "The actions are above the preference sections" and
+ * "the actions are somewhere in the menu" are different claims, and only the
+ * flattened tree separates them — `getByText` would pass either way, which is
+ * exactly how the old action-row test managed to be green while the row it
+ * named sat below the fold.
+ *
+ * Landmarks are read off props rather than off nesting, so the sections can be
+ * re-wrapped freely without touching this. The two radiogroups are matched by
+ * their accessible name, which is translated — hence the parameters, so the
+ * Bulgarian run asserts the same shape rather than a weaker one.
+ */
+function menuOrder(languageLabel = "Switch language", themeLabel = "Switch theme"): string[] {
+  const order: string[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return void node.forEach(walk);
+    if (!node || typeof node !== "object") return;
+    const { props = {}, children } = node as {
+      props?: Record<string, unknown>;
+      children?: unknown;
+    };
+    if (props.testID === "user-menu-actions") order.push("actions");
+    if (props.accessibilityRole === "radiogroup") {
+      if (props.accessibilityLabel === languageLabel) order.push("language");
+      if (props.accessibilityLabel === themeLabel) order.push("theme");
+    }
+    if (props.testID === "user-menu-palette-row") order.push("palette");
+    if (children) walk(children);
+  };
+  walk(screen.toJSON());
+  return order;
+}
 
 describe("UserMenu", () => {
   // The header (and this menu) persists across routes: navigating from a
@@ -247,12 +283,124 @@ describe("UserMenu", () => {
     expect(body.props.scrollEnabled).not.toBe(false);
   });
 
-  it("still renders the actions below the palette grid", () => {
+  /**
+   * #1862: this menu is taller than its own scroll cap at every phone height,
+   * in both locales — `menuMaxHeight` bounds the body to 70% of the viewport
+   * and seven sections in a 288px column run past that. So whatever renders
+   * LAST is below the fold at rest, for everyone, and what rendered last was
+   * `[Settings] [Send feedback] [Sign Out]` — simultaneously the menu's least
+   * reachable region and its only route to any of the three. #1774 closed the
+   * same class of failure ("the actions became unreachable") when the palette
+   * grid caused it.
+   *
+   * The fix is ORDER, not height: nothing can make 638px of Bulgarian fit a
+   * 398px cap, and the menu is still expected to overflow and scroll. What
+   * changes is which end of it takes the overflow — the preference shortcuts,
+   * each of which has a second home on the Settings screen this row leads to.
+   *
+   * ☠️ Asserted as real document order. The test this replaces was named
+   * "still renders the actions below the palette row" and asserted only that
+   * two labels existed, so it passed with the action row anywhere at all —
+   * including where it actually was. A name is not an assertion.
+   */
+  it("puts the actions above the preference sections, not last in the menu", () => {
     renderWithProviders(<UserMenu />);
     fireEvent.press(screen.getByLabelText("Open account menu"));
 
-    expect(screen.getByText("Sign Out")).toBeTruthy();
+    expect(menuOrder()).toEqual(["actions", "language", "theme", "palette"]);
+    // The row itself is unchanged at three buttons — this moves it, nothing else.
     expect(screen.getByText("Settings")).toBeTruthy();
+    expect(screen.getByText("Send feedback")).toBeTruthy();
+    expect(screen.getByText("Sign Out")).toBeTruthy();
+  });
+
+  /**
+   * The taller locale, which is the one the cap fails hardest: Bulgarian wraps
+   * the action row to three stacked full-width lines (`Изпрати обратна връзка`
+   * cannot share a 264px line with `Настройки`), so it is the state that sank
+   * furthest below the fold. jest cannot see the wrap — RNTL has no layout — so
+   * what is pinned here is that the order fix is not English-only.
+   *
+   * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")`: only `en` is
+   * registered at init, so a Cyrillic assertion would be vacuously green.
+   */
+  it("puts the actions above the preference sections in Bulgarian too", async () => {
+    await setLanguage("bg");
+
+    const view = renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+    expect(menuOrder("Смени езика", "Смени темата")).toEqual([
+      "actions",
+      "language",
+      "theme",
+      "palette",
+    ]);
+    expect(screen.getByText("Настройки")).toBeTruthy();
+    expect(screen.getByText("Изпрати обратна връзка")).toBeTruthy();
+    expect(screen.getByText("Излизане")).toBeTruthy();
+
+    view.unmount();
+    await setLanguage("en");
+  });
+
+  // #1774: eight cards were about 470px of a 288px-wide popover - the largest
+  // thing in the menu, and the reason the scroller above it exists. The grid
+  // now sits behind one row and opens as a pane that REPLACES the body.
+  describe("the palette submenu (#1774)", () => {
+    function openMenu() {
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+    }
+
+    it("shows one row carrying the active palette, and not the grid", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+
+      // Section and value are both in the accessible name: an explicit label
+      // hides a Pressable's children from assistive tech on the web.
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-quiet-lilac")).toBeNull();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
+
+    it("opens the grid in a pane that replaces the menu body", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+
+      expect(screen.getByTestId("style-card-glacier")).toBeTruthy();
+      // Replaced, not expanded - an accordion would leave the grid competing
+      // with every other section, which is the shape being retired.
+      expect(screen.queryByText("Send feedback")).toBeNull();
+      expect(screen.queryByLabelText("Palette, Quiet Lilac")).toBeNull();
+    });
+
+    it("returns to the root view from the back row", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+      fireEvent.press(screen.getByTestId("user-menu-palette-back"));
+
+      expect(screen.getByText("Send feedback")).toBeTruthy();
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
+
+    // The route-change close is imperative (`triggerRef.close()`), not a press -
+    // it still has to reset the pane, or the next open lands mid-submenu.
+    it("reopens on the root view after a route change closed it mid-pane", () => {
+      const { rerender } = renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+      expect(screen.getByTestId("style-card-glacier")).toBeTruthy();
+
+      mockPathname = "/routines";
+      rerender(<UserMenu />);
+      openMenu();
+
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
   });
 
   // #1442: a guest's session token is the only key to their account, so
@@ -262,7 +410,12 @@ describe("UserMenu", () => {
   it("hides Sign Out for a guest, keeping Settings and Send feedback", () => {
     mockSession = {
       session: { access_token: "token" },
-      user: { id: "guest-1", is_anonymous: true },
+      // ☠️ `email: ""`, not an absent key. THIS FIXTURE IS WHAT HID THE BLANK
+      // IDENTITY LINE: supabase gives an anonymous user an EMPTY STRING, and the
+      // type is `email?: string`, so a fixture that omits the key makes `??`
+      // reach its fallback and look correct. Under the live shape it does not.
+      // Leaving it absent would let the header regress to `??` and stay green.
+      user: { id: "guest-1", email: "", is_anonymous: true },
     };
 
     renderWithProviders(<UserMenu />);
@@ -271,6 +424,314 @@ describe("UserMenu", () => {
     expect(screen.queryByText("Sign Out")).toBeNull();
     expect(screen.getByText("Settings")).toBeTruthy();
     expect(screen.getByText("Send feedback")).toBeTruthy();
+  });
+
+  /**
+   * #1829/#1810. This line rendered BLANK for every guest: `email ?? t(…)` with
+   * an empty-string email passes the empty string straight through, so the
+   * fallback never fired — which also means `navigation:userMenu.account` never
+   * rendered for anyone, since every registered identity has an email. The key
+   * is deleted and the state is named instead.
+   */
+  it("names the guest state instead of rendering a blank identity line", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Guest")).toBeTruthy();
+    // The word it replaces, so a later "restore consistency" cannot bring back
+    // a string nobody chose.
+    expect(screen.queryByText("Account")).toBeNull();
+  });
+
+  // A guest has no photo and no letter to take, so the trigger and the header
+  // both draw the glyph rather than `getInitial`'s old `?`.
+  it("draws the person glyph for a guest, never a `?`", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getAllByTestId("profile-avatar-person").length).toBeGreaterThan(0);
+    expect(screen.queryByText("?")).toBeNull();
+  });
+
+  /**
+   * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")` — only `en` is
+   * registered at init, so changing the language alone falls through to English
+   * and a `Гост` assertion would be vacuously green against English copy.
+   */
+  it("names the guest state in Bulgarian too", async () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+    await setLanguage("bg");
+
+    const view = renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+    expect(screen.getByText("Гост")).toBeTruthy();
+
+    // Unmounted BEFORE the language goes back, or i18n's change notifies a
+    // still-mounted tree and the un-acted update fails the suite.
+    view.unmount();
+    await setLanguage("en");
+  });
+
+  /**
+   * ☠️ The row #1810 pins as UNCHANGED, and the one a fallback written into the
+   * SUB-line silently breaks. A guest who opens `Edit name` and saves "Alex"
+   * must read as Alex and nothing else — putting `Guest` below the name would be
+   * a second guest-status signal on one surface, which #1784 and #1805 refused.
+   * Caught by review after exactly that version shipped here.
+   */
+  it("shows only the name for a guest who has saved one, never Guest beside it", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true, user_metadata: { full_name: "Alex" } },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Alex")).toBeTruthy();
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
+  /**
+   * Apple sends no name at all, so the email stands in — ONCE, in the name slot,
+   * with nothing repeated beneath it. `showEmail = Boolean(name && email)` is
+   * what makes that true; gating on the email alone renders it twice, and
+   * without this test that mutation survives (it did).
+   */
+  it("puts the email in the name slot when there is no name, and never twice", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "user-2", email: "apple@example.com" },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getAllByText("apple@example.com")).toHaveLength(1);
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
+  /** Registered users are pinned unchanged: the shared helper is a superset. */
+  it("still shows a registered user's name and email, unchanged", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "user-1", email: "person@example.com", user_metadata: { full_name: "Alex" } },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Alex")).toBeTruthy();
+    expect(screen.getByText("person@example.com")).toBeTruthy();
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
+  /**
+   * #1869/#1807. Before this row a guest had NO route back into their own
+   * account from anywhere inside the app: sign-out is hidden for them (#1442),
+   * `app/index.tsx` bounces any session past the landing screen's Sign in, and
+   * on native there is no URL bar to type `/sign-in` into. The only in-app path
+   * from a guest session to the sign-in form was deleting the account.
+   */
+  describe("the guest's Sign in door (#1869)", () => {
+    const guestSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    it("opens the sign-in screen for a guest, closing the menu behind it", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+      fireEvent.press(screen.getByTestId("user-menu-sign-in-row"));
+
+      // ☠️ No `{ dangerouslySingular: true }` — unlike the two `(app)` lateral
+      // jumps this menu makes, `sign-in` declares its own singularity in
+      // `app/(auth)/_layout.tsx`, so passing it here would be a second answer.
+      expect(mockPush).toHaveBeenCalledWith("/(auth)/sign-in");
+      expect(screen.queryByText("Settings")).toBeNull();
+    });
+
+    /**
+     * The gate is `isSignedIn && !email`, never `is_anonymous` — the JWT keeps
+     * claiming that flag after conversion, so a converted user would keep a door
+     * built on it. This fixture is a registered user and must not see the row.
+     */
+    it("does not offer it to a registered user", () => {
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.queryByTestId("user-menu-sign-in-row")).toBeNull();
+      expect(screen.getByText("Sign Out")).toBeTruthy();
+    });
+
+    /**
+     * ☠️ The mutation the two tests above CANNOT kill, and the whole reason the
+     * gate reads `email`. The registered fixture omits `is_anonymous`, so it is
+     * `undefined` — which means a gate written as `user.is_anonymous === true`
+     * passes every other test in this block while being wrong.
+     *
+     * This is the state that separates them: `convertGuestWithPassword` flips
+     * the flag server-side but "the live JWT keeps claiming `is_anonymous: true`
+     * until the token is minted again" (`api.ts`), so between conversion and the
+     * refresh a REGISTERED person carries a true flag AND an email. A flag-based
+     * door would still be offering them a way to sign in to the account they are
+     * already signed in to. The email is the honest signal, and it is already
+     * correct in that window.
+     */
+    it("withdraws the door from a converted guest whose flag is still stale", () => {
+      mockSession = {
+        session: { access_token: "token" },
+        user: { id: "guest-1", email: "converted@example.com", is_anonymous: true },
+      };
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.queryByTestId("user-menu-sign-in-row")).toBeNull();
+    });
+
+    /**
+     * The same rule from the other side: the door must not REQUIRE the flag
+     * either. `is_anonymous` is absent here, and this person is still a guest —
+     * an empty email and nothing else to go on.
+     */
+    it("offers the door on an empty email alone, with no flag to read", () => {
+      mockSession = {
+        session: { access_token: "token" },
+        user: { id: "guest-1", email: "" },
+      };
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.getByTestId("user-menu-sign-in-row")).toBeTruthy();
+    });
+
+    /** The registered menu is untouched: no shared markup moved. */
+    it("leaves the registered action row at three buttons", () => {
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.getByText("Settings")).toBeTruthy();
+      expect(screen.getByText("Send feedback")).toBeTruthy();
+      expect(screen.getByText("Sign Out")).toBeTruthy();
+    });
+
+    /**
+     * ☠️ #1863: the row carries NO `accessibilityLabel`. With a single `Text`
+     * child the label IS the accessible name, and an explicit one would hide
+     * that child from assistive tech on the web. The Palette row composes a name
+     * only because it has a value to fold in — this row has no value slot, by
+     * decision, so it must not copy that prop along with the rest.
+     */
+    it("takes its accessible name from the label, with no explicit one", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      const row = screen.getByTestId("user-menu-sign-in-row");
+      expect(row.props.accessibilityLabel).toBeUndefined();
+      expect(row.props["aria-label"]).toBeUndefined();
+      expect(screen.getByText("Sign in")).toBeTruthy();
+      // ☠️ `role="button"`, never `role="link"`: react-native-web skips `onPress`
+      // on Enter for an href-less link role, the keyboard-dead failure the #1730
+      // chain closed. jest(ios) cannot fail on that, so it is pinned as a prop.
+      expect(row.props.role).toBe("button");
+    });
+
+    /**
+     * ☠️ Position IS the ruling (#1811), not a detail: the candidate that lost
+     * put the door in the action row, which the prototype measured 156px BELOW
+     * the fold in Bulgarian on a 667pt screen — the menu overflows its own 70%
+     * cap for everyone, and the action row was last, so it was the menu's LEAST
+     * reachable region. A door nobody scrolls to is not a door.
+     *
+     * #1862 has since moved the action row directly BELOW this one, which
+     * retires that measurement without retiring the ruling: the door stays here
+     * on grammar, not on reachability. Label-plus-chevron is this menu's word
+     * for navigation and a button is its word for "do this now" — and #1809
+     * permitted the door only as the former.
+     *
+     * Asserted as real document order rather than "before the palette row",
+     * which a door dropped BELOW the language group would also satisfy.
+     */
+    it("sits directly beneath the identity row, above the language group", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      // The rendered tree flattened in document order, which is the only thing
+      // that distinguishes "beneath the identity row" from "somewhere in the
+      // menu". Landmarks are read off props so nesting can change freely.
+      const order: string[] = [];
+      const walk = (node: unknown): void => {
+        if (Array.isArray(node)) return void node.forEach(walk);
+        if (!node || typeof node !== "object") return;
+        const { props = {}, children } = node as {
+          props?: Record<string, unknown>;
+          children?: unknown;
+        };
+        if (props.testID === "user-menu-sign-in-row") order.push("door");
+        if (
+          props.accessibilityRole === "radiogroup" &&
+          props.accessibilityLabel === "Switch language"
+        ) {
+          order.push("language");
+        }
+        if (props.testID === "user-menu-palette-row") order.push("palette");
+        if (children) walk(children);
+      };
+      walk(screen.toJSON());
+
+      // The identity row carries no testID, so its text anchors the top edge:
+      // the door is below the word naming the state it is offered for.
+      expect(screen.getByText("Guest")).toBeTruthy();
+      expect(order).toEqual(["door", "language", "palette"]);
+    });
+
+    /**
+     * ☠️ `Вход`, not `Влез`. Both ship today, and the menu's rows split by part
+     * of speech: `Настройки` is a noun naming a place, `Изпрати обратна връзка` a
+     * verb naming an act. #1811 put this row in the navigation grammar so it
+     * reads as a place, and `navigation:breadcrumb.signIn` already calls this
+     * very destination `Вход`.
+     *
+     * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")` — only `en` is
+     * registered at init, so a Cyrillic assertion would be vacuously green.
+     */
+    it("reads Вход in Bulgarian", async () => {
+      mockSession = guestSession;
+      await setLanguage("bg");
+
+      const view = renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+      expect(screen.getByText("Вход")).toBeTruthy();
+      // The CTA wording this row is NOT, so a later "consistency" pass cannot
+      // quietly swap the place for the act.
+      expect(screen.queryByText("Влез")).toBeNull();
+
+      view.unmount();
+      await setLanguage("en");
+    });
   });
 
   // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes

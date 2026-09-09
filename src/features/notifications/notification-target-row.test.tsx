@@ -2,12 +2,21 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
 
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { NotificationTargetRow } from "@/src/features/notifications/notification-target-row";
-import { getNotificationTarget } from "@/src/features/notifications/registry";
+import {
+  NotificationRowSkeleton,
+  NotificationTargetRow,
+} from "@/src/features/notifications/notification-target-row";
+import {
+  getNotificationTarget,
+  type NotificationTargetKey,
+} from "@/src/features/notifications/registry";
 import type { ReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import type { ReminderChannelStatus, ReminderScheduleResult } from "@/src/lib/notifications";
+import bgNotifications from "@/src/i18n/locales/bg/notifications.json";
+import enNotifications from "@/src/i18n/locales/en/notifications.json";
 import i18n from "@/src/i18n";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockShowToast = jest.fn();
@@ -53,10 +62,11 @@ function renderRow({
   masterEnabled = true,
   preferences = defaultUserPreferences,
   locked = false,
+  targetKey = "sleep" as NotificationTargetKey,
 } = {}) {
   return renderWithProviders(
     <NotificationTargetRow
-      target={getNotificationTarget("sleep")}
+      target={getNotificationTarget(targetKey)}
       preferences={preferences}
       userId="user-1"
       masterEnabled={masterEnabled}
@@ -328,5 +338,270 @@ describe("NotificationTargetRow - state it renders", () => {
 
     expect(screen.queryByText("Save")).toBeNull();
     expect(screen.queryByText("Coming soon")).toBeNull();
+  });
+});
+
+describe("NotificationTargetRow - a held-out target (#2260)", () => {
+  const NOTE =
+    "Not ready yet. This reminder can't be delivered until the phone apps can open the place it leads to, so the switch stays off everywhere until then.";
+
+  /**
+   * ☠️ **The note is read on desktop web too** - it renders with no `Platform.OS`
+   * branch, and the web build goes live the moment a promotion merges. It used to
+   * say "Coming soon on phones. This reminder switches on with the next app
+   * update.", which told a browser user to perform an update they cannot perform,
+   * on a switch disabled for a reason that has nothing to do with their browser.
+   *
+   * ☠️ And it named a release the product does not control. Lifting a target is a
+   * MANUAL post-release step (`docs/releasing.md`, "Post-release: lift held-out
+   * reminder targets"), so "the next app update" is a date that can slip - and a
+   * specific untrue thing on a control the app disabled for them.
+   */
+  it("promises no release and asks for no app update, in either language", () => {
+    for (const note of [enNotifications.heldOut.note, bgNotifications.heldOut.note]) {
+      expect(note).not.toMatch(/updat|актуализац|обнов/i);
+      expect(note).not.toMatch(/\bnext\b|следващ/i);
+      expect(note).not.toMatch(/\bsoon\b|скоро/i);
+    }
+  });
+
+  it("shows the row switched off and disabled, under the hold-out note, while the cron holds it out", async () => {
+    // DBT is on the real list today. The cron sends nothing for it, so the row
+    // must not take an opt-in it would then confirm and never honour.
+    renderRow({ targetKey: "dbt" });
+
+    expect(screen.getByTestId("notification-row-held-out-dbt")).toBeTruthy();
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    expect(screen.getByLabelText("DBT").props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText("DBT reminder time").props.accessibilityState?.disabled).toBe(
+      true,
+    );
+
+    // Belt and braces: a press that somehow lands writes nothing and asks the channel nothing.
+    fireEvent(screen.getByLabelText("DBT"), "valueChange", true);
+    await act(async () => {});
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockEnsure).not.toHaveBeenCalled();
+  });
+
+  it("leaves a target that is not held out alone: no note, switch live", () => {
+    renderRow({ targetKey: "sleep" });
+
+    expect(screen.queryByTestId("notification-row-held-out-sleep")).toBeNull();
+    expect(screen.queryByText(NOTE)).toBeNull();
+    expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+  });
+});
+
+const LONGEST_BG_LABEL = "Дневник на благодарността";
+
+function atWidth<T>(width: number, run: () => T): T {
+  const spy = jest
+    .spyOn(Dimensions, "get")
+    .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
+  try {
+    return run();
+  } finally {
+    spy.mockRestore();
+  }
+}
+
+/**
+ * Renders the row and its skeleton for the same target at the same width, and hands back the
+ * pieces whose agreement IS the no-jump guarantee.
+ */
+function renderRowAndSkeleton(width: number, targetKey: NotificationTargetKey) {
+  return atWidth(width, () => {
+    const target = getNotificationTarget(targetKey);
+    const label = i18n.t(`notifications:${target.labelKey}`);
+
+    const row = renderWithProviders(
+      <NotificationTargetRow
+        target={target}
+        preferences={defaultUserPreferences}
+        userId="user-1"
+        masterEnabled
+        channel={channel("granted")}
+        locked={false}
+        onRequestChange={onRequestChange}
+      />,
+    );
+    const rowBody = row.getByTestId(`notification-row-body-${targetKey}`);
+    const rowLabel = row.getByText(label);
+
+    const skeleton = renderWithProviders(<NotificationRowSkeleton target={target} />);
+    const skeletonBody = skeleton.getByTestId(`notification-row-skeleton-body-${targetKey}`, {
+      includeHiddenElements: true,
+    });
+    const skeletonLabel = skeleton.getByText(label, { includeHiddenElements: true });
+
+    return { label, rowBody, rowLabel, skeletonBody, skeletonLabel };
+  });
+}
+
+/**
+ * Measured, not estimated: at 15px `NotoSans_600SemiBold` the longest Bulgarian name,
+ * "Дневник на благодарността", is **212.8px** wide, against a body box of 158px at 320dp and
+ * 198px at 360dp. #1231 put the supported floor at 360, so on one line it ellipsized across
+ * the whole supported phone range - and 375dp cleared it by 0.2px, which is not a margin.
+ * Wrapped it takes two lines whose widest is its longest word at **120.2px**, so two lines
+ * are enough at 320 too and nothing breaks mid-word (#1248).
+ */
+describe("NotificationTargetRow - the name is not truncated at phone width (#1248)", () => {
+  it.each([
+    [360, 2],
+    [1280, 1],
+  ])("at %ipx the name may run to %i line(s)", (width, lines) => {
+    atWidth(width, () => {
+      renderRow();
+      expect(screen.getByText("Sleep").props.numberOfLines).toBe(lines);
+    });
+  });
+});
+
+describe("NotificationTargetRow - the longest Bulgarian name (#1248)", () => {
+  beforeAll(async () => {
+    // Via the helper, never a bare `changeLanguage`: bg's bundles are lazy, and without them
+    // these assertions would run against English and go vacuous.
+    await setLanguage("bg");
+  });
+
+  afterAll(async () => {
+    await setLanguage("en");
+  });
+
+  it("gets a second line at the 360dp floor, where one line ellipsized it", () => {
+    atWidth(360, () => {
+      renderRow({ targetKey: "gratitude" });
+      // The whole string, not a prefix: an ellipsized name is the bug.
+      expect(screen.getByText(LONGEST_BG_LABEL).props.numberOfLines).toBe(2);
+    });
+  });
+
+  it("stays on one line in the wide branch, where nothing truncates", () => {
+    atWidth(1280, () => {
+      renderRow({ targetKey: "gratitude" });
+      const label = screen.getByText(LONGEST_BG_LABEL);
+      expect(label.props.numberOfLines).toBe(1);
+      // The `min-w-[150px]` floor is a MINIMUM in the wide branch and has nothing to do with
+      // the phone truncation - widening it would fix nothing and squeeze the time.
+      expect(label.props.className).toContain("min-w-[150px]");
+    });
+  });
+});
+
+/**
+ * The skeleton's one job is to be the row's height, so nothing jumps when preferences land
+ * (#981). Once the name can wrap, that height is no longer a constant - it depends on the
+ * locale, the width and which target - so the skeleton derives it from the same name in the
+ * same box rather than restating a number that would drift (#1248).
+ */
+describe("NotificationRowSkeleton - the row's real height", () => {
+  it.each([[360], [1280]])(
+    "at %ipx the skeleton lays its body out exactly as the row does",
+    (width) => {
+      const { rowBody, skeletonBody } = renderRowAndSkeleton(width, "sleep");
+
+      // Identical, not merely similar: the shared box IS the reason the two heights agree,
+      // and a hardcoded pixel height could drift from the row with no test noticing.
+      expect(skeletonBody.props.className).toBe(rowBody.props.className);
+    },
+  );
+
+  it.each([
+    [360, 2],
+    [1280, 1],
+  ])("at %ipx it reserves the same line count the name will take", (width, lines) => {
+    const { rowLabel, skeletonLabel } = renderRowAndSkeleton(width, "sleep");
+
+    expect(skeletonLabel.props.numberOfLines).toBe(lines);
+    expect(skeletonLabel.props.numberOfLines).toBe(rowLabel.props.numberOfLines);
+    // Same type metrics, so the reserved box is the same height as the rendered one.
+    expect(skeletonLabel.props.className).toContain("text-[15px] font-semibold");
+  });
+
+  it("stays hidden from assistive tech - ten empty rows are worth nothing to announce", () => {
+    atWidth(360, () => {
+      renderWithProviders(<NotificationRowSkeleton target={getNotificationTarget("sleep")} />);
+
+      // The reserved name is a measuring stick, not copy: it must not reach a screen reader,
+      // and `opacity-0` keeps it out of sight while it still takes up its real height.
+      expect(screen.queryByText("Sleep")).toBeNull();
+      const skeleton = screen.getByTestId("notification-row-skeleton-sleep", {
+        includeHiddenElements: true,
+      });
+      expect(skeleton.props.accessibilityElementsHidden).toBe(true);
+      expect(skeleton.props.importantForAccessibility).toBe("no-hide-descendants");
+      // ☠️ The two props above are the NATIVE half. react-native-web implements neither -
+      // `node_modules/react-native-web/dist` has no reference to either name - so on web the
+      // only thing standing between ten real names and a screen reader is `aria-hidden`.
+      // jest runs as ios, so nothing else in this file can fail when it goes missing.
+      expect(skeleton.props["aria-hidden"]).toBe(true);
+      expect(screen.getByText("Sleep", { includeHiddenElements: true }).props.className).toContain(
+        "opacity-0",
+      );
+    });
+  });
+
+  it("reserves the time control's real height, the one piece the row does not share", () => {
+    const spy = jest
+      .spyOn(Dimensions, "get")
+      .mockReturnValue({ width: 360, height: 844, scale: 3, fontScale: 1 });
+    try {
+      const target = getNotificationTarget("sleep");
+      renderWithProviders(
+        <NotificationTargetRow
+          target={target}
+          preferences={defaultUserPreferences}
+          userId="user-1"
+          masterEnabled
+          channel={channel("granted")}
+          locked={false}
+          onRequestChange={onRequestChange}
+        />,
+      );
+      // The real compact TimeField, by its own accessible name.
+      expect(screen.getByLabelText("Sleep reminder time").props.className).toContain("h-9");
+
+      renderWithProviders(<NotificationRowSkeleton target={target} />);
+      expect(
+        screen.getByTestId("notification-row-skeleton-time-sleep", { includeHiddenElements: true })
+          .props.className,
+      ).toContain("h-9");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("no longer claims a fixed height, which a wrapping name would make a lie", () => {
+    const { skeletonBody } = renderRowAndSkeleton(360, "sleep");
+
+    const skeleton = screen.getByTestId("notification-row-skeleton-sleep", {
+      includeHiddenElements: true,
+    });
+    // The two constants this replaced: 88px phone, 64px desktop. Either one is 20px short
+    // the moment the name takes a second line.
+    expect(skeleton.props.className).not.toContain("h-[88px]");
+    expect(skeleton.props.className).not.toContain("h-16");
+    expect(skeletonBody.props.className).toContain("items-start gap-1");
+  });
+});
+
+describe("NotificationRowSkeleton - the Bulgarian name that wraps", () => {
+  beforeAll(async () => {
+    await setLanguage("bg");
+  });
+
+  afterAll(async () => {
+    await setLanguage("en");
+  });
+
+  it("reserves the wrapped height for the name that actually wraps at 360dp", () => {
+    const { label, rowLabel, skeletonLabel } = renderRowAndSkeleton(360, "gratitude");
+
+    // The measuring stick is the REAL name, so the reserved box wraps where the name wraps.
+    expect(label).toBe(LONGEST_BG_LABEL);
+    expect(skeletonLabel.props.children).toBe(LONGEST_BG_LABEL);
+    expect(skeletonLabel.props.numberOfLines).toBe(rowLabel.props.numberOfLines);
   });
 });

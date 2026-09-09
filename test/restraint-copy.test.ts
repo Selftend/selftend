@@ -1,4 +1,10 @@
 import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-strings";
+import {
+  PLAY_VERBATIM_SURFACE,
+  STORE_LISTING_TEXT,
+  storeListingText,
+  type StoreListingEntry,
+} from "@/test/store-listing-text";
 
 /**
  * `show the record, don't read it` (#711), and its companion: **the framework may
@@ -16,6 +22,26 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  *
  * So this guard reads **every namespace in both locales**. A namespace-scoped
  * version of this test has now been wrong twice.
+ *
+ * ☠️ AND THE TWO STORE LISTINGS (#2216). The Google Play full description closed
+ * its "What's inside" block with "Missing a day is never punished." — the exact
+ * sentence shape this file was written against, on the highest-traffic copy
+ * surface the project owns, and the one surface no restraint rule reached: the
+ * corpus was i18n values only, and `positioning-copy` (which does read the Play
+ * mirror) carries no restraint rule. So the App Store fields and the Play
+ * verbatim block join the `en` corpus here, through the same extractor
+ * `positioning-copy` uses (`test/store-listing-text.ts`). The store text is
+ * English: bg patterns do not run over it.
+ *
+ * ☠️ CONFIG SURFACES ARE DISCLOSURE; PRACTICE SURFACES ARE ADVERTISING
+ * (#1662). On a configuration screen, stating the default and what a control
+ * does answers a configuration question the user is standing in front of —
+ * the settings and notifications descriptions ("off by default", the
+ * routines steps note, `form.onDemandHelp`) are legal by that ruling. The
+ * same sentence on a practice surface is restraint advertising. Before
+ * adding a tempting pattern like `/no reminders/`, check which surface the
+ * hits live on; its sibling `practice-copy.test.ts` records the same
+ * exception.
  */
 const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "en", pattern: /no shame/i },
@@ -39,15 +65,121 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    * the obvious `натиск`-only pattern walks straight past — the same string in en said
    * "no pressure", so a locale-blind reading would have called bg clean.
    */
-  { locale: "en", pattern: /no pressure/i },
+  { locale: "en", pattern: /\bno pressure\b/i },
   { locale: "en", pattern: /create pressure/i },
+  /**
+   * ☠️ The mirror of the warning above, and it stayed open two rules longer. bg
+   * has caught the `без <noun>` construction since #963; en only ever had the
+   * `no <noun>` form - so **"without pressure" walked straight past this guard**
+   * while "без натиск" was caught. The same locale-blind spot the note above
+   * describes, pointing the other way.
+   *
+   * The string that proved it is the one #1342 rewrote: "…without pressure or
+   * punishment." was caught ONLY by `/punishment/i`. Trim it to "…without
+   * pressure." and the whole suite goes green on a live violation.
+   *
+   * Same shape as the bg pattern (one optional intervening word, so "without any
+   * pressure" is caught) and, like it, keyed on the NEGATION rather than the
+   * noun - bare "pressure" stays legal for the grounding content that teaches it.
+   *
+   * ☠️ `judgement` is DELIBERATELY not in this list, and must not be added.
+   * "Without judgement" is the vocabulary of the technique itself, not the
+   * product's voice - non-judgemental awareness is what body-scan and noticing
+   * practices ARE. Including it failed three live strings, all of them correct:
+   *   - `act:observingSelf.techniqueDescriptions.bodyAwareness` - "Notice
+   *     sensations as a witness - without judgement or the urge to change anything."
+   *   - `gratitude:onboarding.levels.level1Body` - "Simply report what happened
+   *     today without judgement."
+   *   - `meditation:practices.body-scan.instructions[3]` - "noticing sensation
+   *     without judgement."
+   *
+   * ⚠️ Two of those three quoted the AMERICAN spelling until #1651 standardised
+   * them; the citations are updated with the copy. A guard's rationale that
+   * quotes strings which no longer exist is how the next reader concludes the
+   * rationale is stale and deletes the rule.
+   * That is the #711 rule working as written: the framework may talk about
+   * missing, and it may teach non-judgement; only the product may not advertise
+   * its own restraint. Same reasoning that keeps bare "pressure" legal above.
+   */
+  {
+    locale: "en",
+    pattern: /\bwithout\s+(?:\S+\s+)?(pressure|punishment|penalty|shame|scores?)/i,
+  },
+  /**
+   * The fourth form, after *shame* (#763), *punishment* (#805) and *pressure*
+   * (#963/#1342). `meditation:module.insights.subtitle` read "The last {{count}}
+   * days of practice - no scores." — the product telling the user it does not
+   * grade them, which is the "not keeping a streak" example #711 names outright.
+   *
+   * ☠️ The pattern is `no scores`, never bare `score`. A user's own mood number
+   * is called a score all over `mood` and `cbt` ("Pick a mood score first.",
+   * "Average score per day…"), and those are the record, not restraint about it.
+   */
+  { locale: "en", pattern: /\bno scores?\b/i },
   { locale: "bg", pattern: /без\s+(?:\S+\s+)?(натиск|напрежени)/i },
+  /**
+   * The bg half of `no scores`, and ☠️ **it must stay PLURAL**. In Bulgarian the
+   * two senses split on number, and only one of them is the product's voice:
+   *
+   *   - `без оценки` (plural, countable) = *no grades* — the restraint claim.
+   *   - `без оценка` / `без преценка` (singular, abstract) = *without judgement* —
+   *     the vocabulary of the technique itself.
+   *
+   * A `без оценк` stem pattern fails two live, correct strings:
+   * `meditation:practices.body-scan.instructions` ("забелязвайки усещанията без
+   * оценка") and `gratitude:onboarding.levels.level1Body` ("без преценка"). That
+   * is the same line the en list draws by leaving `judgment`/`judgement` out
+   * deliberately — non-judgemental awareness is what these practices ARE.
+   *
+   * Bare `оценки` is also legal and stays legal: `act:*.saveAll` ("Запази
+   * оценките") and `cbt:*.strengthTrackerDescription` name real ratings the user
+   * gives. The negation is what makes it a restraint claim.
+   *
+   * ☠️ **No trailing `\b` on a Cyrillic pattern.** JavaScript's `\b` is defined
+   * against ASCII `\w`, so between "оценки" and the "." that follows it there is
+   * no word boundary at all — `/оценки\b/` matched NOTHING and the guard went
+   * green on the very string it was written for. Caught only because this pattern
+   * was added while the offending copy was still in the file.
+   */
+  { locale: "bg", pattern: /без\s+(?:\S+\s+)?оценки/i },
   { locale: "bg", pattern: /създава\w*\s+натиск/i },
   { locale: "bg", pattern: /без срам/i },
   { locale: "bg", pattern: /не наказва/i },
   { locale: "bg", pattern: /наказва(ме|ш|т)?\b/i },
   { locale: "bg", pattern: /наказание/i },
   { locale: "bg", pattern: /не провал/i },
+  /**
+   * The fifth form: negated undoing (#1669, ruled in #1662 from #1658's
+   * contested list). `routines:strip.note` said "one missed day doesn't undo
+   * what you're building" / "един пропуснат ден не разваля това, което градиш"
+   * — naming the absent breakage is the #711 shape ("naming the absent
+   * punishment is what puts it in the room"), and "missed day" imports
+   * miss-vocabulary into a tool whose own glossary refuses it (routine status
+   * is deliberately neutral; miss-talk belongs to habits' Never-Miss-Twice
+   * framework, which stays legal - "Missing once is data. Missing twice starts
+   * a new habit." is the framework teaching, not the product promising its
+   * record can't break).
+   *
+   * ☠️ The pattern is the ACTIVE reassurance, never the passive disclosure.
+   * "This can't be undone." on a delete confirmation states a destructive
+   * action's real consequence and stays legal - the guard keys on
+   * doesn't/won't/does-not + undo-family, the product promising that absence
+   * breaks nothing.
+   *
+   * ☠️ No trailing `\b` on the bg twin - JS `\b` is ASCII-only (see the
+   * `оценки` note above), so a Cyrillic pattern ending in `\b` matches
+   * NOTHING. Both shapes allow one intervening word ("doesn't ever undo",
+   * "не го разваля") - a slot only one locale has is the documented
+   * `without`/`без` blind spot, pointing whichever way was forgotten.
+   *
+   * ☠️ `изтрива` is DELIBERATELY not in the bg alternation. It is Bulgarian's
+   * ordinary *delete*, and bg disclosure speaks in the active voice where
+   * English gets to lean on the passive carve-out above - "не изтрива данните
+   * ти" (doesn't delete your data) would be disclosure about a destructive
+   * action, not restraint advertising. `заличава` keeps the erase sense.
+   */
+  { locale: "en", pattern: /(doesn'?t|won'?t|does not)\s+(?:\S+\s+)?(undo|erase|break|reset)/i },
+  { locale: "bg", pattern: /не\s+(?:\S+\s+)?(разваля|отменя|нулира|заличава|чупи)/i },
 ];
 
 /**
@@ -58,29 +190,76 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
  * silently rewriting copy on surfaces whose wording is not this change's to
  * decide. Removing an entry is the fix; adding one needs a reason.
  *
- * - `cbt:recovery.maintenanceCommitmentsHint` - "Small practices you want to keep,
- *   without pressure or punishment." / "без натиск или наказание". Same shape as
- *   the four #763 rewrote, on a surface #805 did not cover. Tracked separately.
+ * **It is now EMPTY, and that is the finished state (#1342).** The last entry was
+ * `cbt:recovery.maintenanceCommitmentsHint` - "Small practices you want to keep,
+ * without pressure or punishment." / "без натиск или наказание" - the sixth
+ * instance, on the recovery-plan form that #805 did not cover. Its rewrite
+ * retired the entry in the same change, which is exactly what the stale-exemption
+ * test below exists to force.
  *
- * It is the ONLY remaining offender across all twenty namespaces in both locales.
+ * So every restraint pattern below now runs unexempted across all twenty
+ * namespaces in both locales. An empty allowlist makes that test vacuous by
+ * construction - there is nothing left to check - and that is the point: the
+ * scan it guards is the one doing the work now.
  *
  * Each entry names its **namespace** as well as its key. A key-only entry would
  * exempt the same dotted path in every other namespace too - a namespace blind
  * spot inside the guard built to remove one.
  */
-const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [
-  { locale: "en", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
-  { locale: "bg", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
+const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [];
+
+/**
+ * The store-surface analogue of `ALLOWED`, and ☠️ **it is scoped to ONE RULE,
+ * never to a surface.** A store entry is a whole listing in one string, so a
+ * surface-wide exemption would have waved the Play block past `/never punish/i`
+ * — the very sentence #2216 was filed on — in order to let one licensed phrase
+ * through. Each entry names the rule it exempts and the ruling that licenses
+ * the phrase; the stale-exemption test below makes the entry die with the phrase.
+ *
+ * The one entry is the collision `positioning-copy` and this file have always
+ * had and could not see while their corpora were disjoint: `docs/positioning.md`
+ * § _Words never to use_ ends with "Allowed adjacent phrasing: 'no pressure',
+ * 'no shame', 'no ads, no subscriptions'", and #1619 put "no pressure" into the
+ * Play listing by owner decision as the replacement for "no streak pressure"
+ * (`store/play-listing.md` § _Known contradictions_). That is an owner ruling on
+ * the listing's own words, and a guard does not reverse it. ⚠️ The same
+ * document's allowance is NOT extended to i18n strings here: the i18n corpus has
+ * been clean of "no pressure" since #963, and widening the exemption to it would
+ * re-open the very hole that rule closed.
+ */
+const STORE_ALLOWED: { surface: string; pattern: RegExp; reason: string }[] = [
+  {
+    surface: PLAY_VERBATIM_SURFACE,
+    pattern: /\bno pressure\b/i,
+    reason:
+      "docs/positioning.md § Words never to use lists 'no pressure' as allowed adjacent phrasing; " +
+      "#1619 put it in the Play listing by owner decision (store/play-listing.md § Known contradictions)",
+  },
 ];
 
-function isAllowed(locale: Locale, namespace: string, key: string) {
-  return ALLOWED.some(
-    (allowed) =>
-      allowed.locale === locale && allowed.namespace === namespace && allowed.keyPattern.test(key),
+function isAllowed(locale: Locale, namespace: string, key: string, pattern: RegExp) {
+  return (
+    ALLOWED.some(
+      (allowed) =>
+        allowed.locale === locale &&
+        allowed.namespace === namespace &&
+        allowed.keyPattern.test(key),
+    ) ||
+    STORE_ALLOWED.some(
+      (allowed) => allowed.surface === namespace && allowed.pattern.source === pattern.source,
+    )
   );
 }
 
-const STRINGS = LOCALE_STRINGS;
+/** A store listing as this guard reads it: the surface path is the namespace, the field the key. */
+function asLocaleStrings(entries: StoreListingEntry[]): LocaleString[] {
+  return entries.map(({ surface, id, text }) => ({ namespace: surface, key: id, text }));
+}
+
+const STRINGS: Record<Locale, LocaleString[]> = {
+  en: [...LOCALE_STRINGS.en, ...asLocaleStrings(STORE_LISTING_TEXT)],
+  bg: LOCALE_STRINGS.bg,
+};
 
 /** Every string in `locale` whose text `pattern` matches. */
 function matching(locale: Locale, pattern: RegExp) {
@@ -108,10 +287,67 @@ describe("product copy states the record instead of advertising restraint", () =
     // restraint phrasing can be a copy call still awaiting an owner, but a
     // sentence that misreports the user's own number is never exemptable.
     const offenders = matching(locale, pattern).filter(
-      ({ namespace, key }) => !isAllowed(locale, namespace, key),
+      ({ namespace, key }) => !isAllowed(locale, namespace, key, pattern),
     );
 
     expect(describeEntries(offenders)).toEqual([]);
+  });
+
+  /**
+   * The store listings are in the corpus (#2216), proven on the wiring rather
+   * than on the live files: if the Play text ever carries the #711 shape again,
+   * a rule has to see it. Planting the sentence in a synthetic listing and
+   * running it through the same filter the live scan uses is the only assertion
+   * here that fails if the store text stops being appended to `STRINGS.en`.
+   */
+  describe("the store listings are in scope (#2216)", () => {
+    it("reads both store surfaces as en copy", () => {
+      const namespaces = new Set(STRINGS.en.map((entry) => entry.namespace));
+
+      expect(namespaces).toContain("store/apple-info.json");
+      expect(namespaces).toContain(PLAY_VERBATIM_SURFACE);
+      // And the Play half is the listing, not the file's prose about it.
+      const verbatim = STRINGS.en.find(({ namespace }) => namespace === PLAY_VERBATIM_SURFACE);
+      expect(verbatim?.text).toContain("What's inside:");
+    });
+
+    it("catches the #711 sentence shape planted in either store surface", () => {
+      const planted = asLocaleStrings(
+        storeListingText(
+          JSON.stringify({ promoText: "Missing a day is never punished." }),
+          "## Verbatim, as saved on 2026-01-01\n\n> No penalty for a missed day.\n",
+        ),
+      );
+      const rules = RESTRAINT_CLAIMS.filter(({ locale }) => locale === "en");
+
+      const caught = planted
+        .filter(({ namespace, key, text }) =>
+          rules.some(
+            ({ pattern }) => pattern.test(text) && !isAllowed("en", namespace, key, pattern),
+          ),
+        )
+        .map(({ namespace }) => namespace);
+
+      expect(caught).toEqual(["store/apple-info.json", PLAY_VERBATIM_SURFACE]);
+    });
+
+    it("every store exemption still matches a live listing phrase, so it dies with the phrase", () => {
+      // Same discipline as the `ALLOWED` test below: the day the owner's Console
+      // edit drops "no pressure", this entry stops matching and must go — an
+      // exemption that outlives its phrase is a permission for whatever lands next.
+      const enRules = RESTRAINT_CLAIMS.filter((claim) => claim.locale === "en").map(
+        (claim) => claim.pattern.source,
+      );
+
+      for (const { surface, pattern } of STORE_ALLOWED) {
+        const entries = STRINGS.en.filter((entry) => entry.namespace === surface);
+        expect(entries.length).toBeGreaterThan(0);
+        expect(entries.some(({ text }) => pattern.test(text))).toBe(true);
+        // And the exempted pattern is a rule this file actually carries, so the
+        // entry cannot quietly name a regex nothing scans for.
+        expect(enRules).toContain(pattern.source);
+      }
+    });
   });
 
   it("every allowlisted entry still breaks a rule, so a stale exemption cannot hide a new offence", () => {

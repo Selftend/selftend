@@ -67,7 +67,7 @@ describe("GratitudeFavoritesScreen", () => {
 
     renderWithProviders(<GratitudeFavoritesScreen />);
 
-    expect(screen.getByRole("heading", { name: "Favorite moments" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Favourite moments" })).toBeTruthy();
   });
 
   it("routes to the entry detail when a favorite row is pressed", () => {

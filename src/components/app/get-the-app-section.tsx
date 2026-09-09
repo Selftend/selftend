@@ -36,10 +36,16 @@ export function GetTheAppSection({
   // the Android app (or iOS inside iOS) is noise.
   if (Platform.OS !== "web") return null;
 
+  // An unconfigured store is absent, not "coming soon": both apps are published,
+  // so the only build reaching an empty URL is a fork that opted out, and it is
+  // never coming to a listing we could name. With neither store configured the
+  // heading would sit over nothing, so the whole section goes.
   const stores: { id: StoreId; url: string }[] = [
     { id: "android", url: playStoreUrl },
     { id: "ios", url: appStoreUrl },
-  ];
+  ].filter((store): store is { id: StoreId; url: string } => Boolean(store.url));
+
+  if (stores.length === 0) return null;
 
   return (
     <View>
@@ -47,34 +53,19 @@ export function GetTheAppSection({
         {t("getTheApp.title")}
       </Text>
       <View className={compact ? "gap-1" : "gap-2"}>
-        {stores.map(({ id, url }) =>
-          url ? (
-            <Button
-              key={id}
-              accessibilityLabel={t(`getTheApp.${id}Accessibility`)}
-              variant="outline"
-              size="sm"
-              className="justify-start"
-              onPress={() => openExternalUrl(url)}
-            >
-              <Ionicons name={STORE_ICONS[id]} size={16} color={iconColor} />
-              <Text>{t(`getTheApp.${id}`)}</Text>
-            </Button>
-          ) : (
-            <View
-              key={id}
-              className="h-9 flex-row items-center gap-2 rounded-md px-3 opacity-60 sm:h-8"
-            >
-              <Ionicons name={STORE_ICONS[id]} size={16} color={iconColor} />
-              <Text className="text-sm text-muted-foreground">{t(`getTheApp.${id}`)}</Text>
-              <View className="ml-auto rounded-full bg-muted px-2 py-0.5">
-                <Text className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("getTheApp.comingSoon")}
-                </Text>
-              </View>
-            </View>
-          ),
-        )}
+        {stores.map(({ id, url }) => (
+          <Button
+            key={id}
+            accessibilityLabel={t(`getTheApp.${id}Accessibility`)}
+            variant="outline"
+            size="sm"
+            className="justify-start"
+            onPress={() => openExternalUrl(url)}
+          >
+            <Ionicons name={STORE_ICONS[id]} size={16} color={iconColor} />
+            <Text>{t(`getTheApp.${id}`)}</Text>
+          </Button>
+        ))}
       </View>
     </View>
   );

@@ -54,6 +54,31 @@ export function spaceKeyActivationProps(onPress: () => void) {
   };
 }
 
+/**
+ * Web-only Enter-key activation for a `role="link"` Pressable that has no
+ * `href`. react-native-web (0.21.2, `PressResponder.js:217`) treats a `link`
+ * role as a native anchor and hands its Enter to the browser instead of calling
+ * `onPress` - but a Pressable without `href` renders `<div role="link">`, which
+ * the browser does nothing with, so the row is dead to the keyboard. Spread the
+ * result onto the Pressable. Space is deliberately not handled: a link never
+ * activates on Space. No-op on native.
+ */
+export function enterKeyActivationProps(onPress: () => void) {
+  if (Platform.OS !== "web") {
+    return {};
+  }
+
+  return {
+    onKeyDown: (event: WebSpaceKeyEvent) => {
+      if (event.key !== "Enter" || event.repeat) {
+        return;
+      }
+      event.preventDefault();
+      onPress();
+    },
+  };
+}
+
 interface WebArrowKeyEvent {
   key: string;
   preventDefault: () => void;
@@ -100,8 +125,9 @@ interface ReorderMoveOptions {
  * Drag-alone reordering fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), and every
  * reorderable surface answers it the same way: a named `accessibilityActions` pair for
  * screen readers, plus Up/Down keys for the keyboard. Both halves live here rather than
- * being copied per screen - `arrange-screen` (#956) and `manage-emotions-modal` (#965) are
- * the callers, and a copied `actionName` cascade is a cascade that can drift.
+ * being copied per screen - `manage-emotions-modal` (#965) is the caller (`arrange-screen`,
+ * #956, was the other until #1959 deleted it), and a copied `actionName` cascade is a
+ * cascade that can drift.
  *
  * Spread onto a `View`, not a `Pressable`: pressing a drag handle does nothing - the
  * gesture is the pointer path - and a button whose press does nothing would be a lie.

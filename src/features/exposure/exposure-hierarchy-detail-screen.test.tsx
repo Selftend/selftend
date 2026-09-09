@@ -188,13 +188,13 @@ describe("ExposureHierarchyDetailScreen error surfaces", () => {
       deleteHierarchy.mockRejectedValue(new Error("network"));
       renderWithProviders(<ExposureHierarchyDetailScreen />);
 
-      fireEvent.press(screen.getByText("Delete hierarchy"));
+      fireEvent.press(screen.getByText("Delete ladder"));
       await act(async () => {
         fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
       });
 
       await waitFor(() =>
-        expect(screen.getByText("Unable to delete the hierarchy. Try again.")).toBeTruthy(),
+        expect(screen.getByText("Unable to delete the ladder. Try again.")).toBeTruthy(),
       );
       expect(useToastStore.getState().visible).toBeNull();
     });
@@ -208,25 +208,25 @@ describe("ExposureHierarchyDetailScreen error surfaces", () => {
       deleteHierarchy.mockRejectedValue(new Error("network"));
       renderWithProviders(<ExposureHierarchyDetailScreen />);
 
-      fireEvent.press(screen.getByText("Delete hierarchy"));
+      fireEvent.press(screen.getByText("Delete ladder"));
       await act(async () => {
         fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
       });
       await waitFor(() =>
-        expect(screen.getByText("Unable to delete the hierarchy. Try again.")).toBeTruthy(),
+        expect(screen.getByText("Unable to delete the ladder. Try again.")).toBeTruthy(),
       );
 
       fireEvent.press(screen.getByText("Cancel"));
-      fireEvent.press(screen.getByText("Delete hierarchy"));
+      fireEvent.press(screen.getByText("Delete ladder"));
 
-      expect(screen.queryByText("Unable to delete the hierarchy. Try again.")).toBeNull();
+      expect(screen.queryByText("Unable to delete the ladder. Try again.")).toBeNull();
     });
 
     it("still toasts and leaves the screen on a successful delete", async () => {
       deleteHierarchy.mockResolvedValue(undefined);
       renderWithProviders(<ExposureHierarchyDetailScreen />);
 
-      fireEvent.press(screen.getByText("Delete hierarchy"));
+      fireEvent.press(screen.getByText("Delete ladder"));
       await act(async () => {
         fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
       });

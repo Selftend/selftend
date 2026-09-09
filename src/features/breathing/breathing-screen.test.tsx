@@ -41,10 +41,8 @@ jest.mock("@/src/components/app/help-sheet", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-jest.mock("@/src/components/app/add-to-home-button", () => ({ AddToHomeButton: () => null }));
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: undefined }),
-  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
 const mockUseBreathingSessions = useBreathingSessions as jest.MockedFunction<

@@ -1,3 +1,4 @@
+import type { SteppableToolId } from "@/src/features/routines/derive";
 import {
   addStep,
   createRoutine,
@@ -8,6 +9,7 @@ import {
   reorderSteps,
   updateRoutine,
 } from "@/src/features/routines/repository";
+import { WITHHELD_STEP_TOOL_IDS } from "@/src/features/routines/step-tool-rollout";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
@@ -419,6 +421,31 @@ describe("routines repository", () => {
     mockRequireSupabase.mockReturnValue(buildClient({ routine_steps: { insert } }));
 
     await expect(addStep("user-1", "r-1", "mood", 0)).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("addStep refuses a tool id withheld from writing, without a round trip (#2203)", async () => {
+    // ☠️ This is the single choke point for `routine_steps` inserts - the
+    // editor's chips and the starter's "Keep" both arrive here through
+    // useAddStep - so it is where a step the SHIPPED native client cannot read
+    // has to stop. On that build an unknown tool id has no route (its "Do next
+    // step" throws a TypeError dereferencing an undefined href), no
+    // done-predicate (the step never ticks and the routine never completes)
+    // and no label (it renders as the raw key). None of that is patchable
+    // after the fact; only what we write is.
+    const insert = jest.fn();
+    mockRequireSupabase.mockReturnValue(buildClient({ routine_steps: { insert } }));
+
+    for (const toolId of WITHHELD_STEP_TOOL_IDS) {
+      await expect(addStep("user-1", "r-1", toolId, 0)).rejects.toThrow(/not writable/i);
+    }
+    // ☠️ The loop above goes vacuous the day the withheld list empties, so the
+    // guard is also proved against an id that can never be writable - a
+    // caller reaching this function with a value TypeScript did not vouch for
+    // (a row round-tripped from the database, say) must not reach the insert.
+    await expect(
+      addStep("user-1", "r-1", "weeklyReview" as unknown as SteppableToolId, 0),
+    ).rejects.toThrow(/not writable/i);
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("removeStep issues a scoped delete", async () => {

@@ -88,7 +88,10 @@ function readsSearchParams(file: string, depth = 0): boolean {
  */
 const MUST_REMOUNT: Record<string, string> = {
   // Nine pieces of state driving a timed practice; re-entering mid-surf is not a resume.
-  "modules/act/expansion/urge-surfing": "in-progress exercise",
+  // ⚠️ The route leaf became a directory in #1517 (it grew an `[id]` sibling for the detail
+  // screen), so the screen name gained `/index`. The route PATH is unchanged; only the
+  // Expo Router screen name moved, and this exception is keyed by the latter.
+  "modules/act/expansion/urge-surfing/index": "in-progress exercise",
   // ⚠️ `modules/act/values/bulls-eye` used to be here, for exactly the reason this list
   // exists: it held four ratings the user had typed and not saved. #1379 folded that
   // check-in onto `modules/act/values`, which is single-instance, so the entry is
@@ -101,6 +104,16 @@ const MUST_REMOUNT: Record<string, string> = {
   // then scrubs the auth material from history. A reused instance would never process a
   // second, different code — and it reads `window.location.href`, not `useLocalSearchParams`,
   // so the query-keyed derivation above is blind to it.
+  // The builder holds a whole coping plan the person has chosen and not yet
+  // saved; a reused instance hands it back half-edited, over the plan they
+  // did save. Seeded once from the query at mount, deliberately.
+  "modules/dbt/coping-plan/edit": "unsaved plan",
+  // Four steps that record nothing: re-entering is starting again, and
+  // reuse would drop the person back on step three of a run they left.
+  "modules/dbt/pause": "in-progress flow",
+  // A timed session with a running clock; re-entering mid-run is not a
+  // resume, and this session records on completion only.
+  "modules/dbt/sessions/muscle-relaxation": "in-progress session",
   "auth-callback": "mount performs the auth callback",
 };
 

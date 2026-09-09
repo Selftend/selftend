@@ -26,9 +26,15 @@ jest.mock("@/src/lib/linking", () => ({
   openExternalUrl: jest.fn(),
 }));
 
+// ☠️ This factory REPLACES `appEnv`, it does not extend it: a URL the footer
+// reads and this object omits arrives as `undefined`, which is falsy, so the
+// link would simply never render and a presence test would fail for a reason
+// that has nothing to do with the component.
 jest.mock("@/src/lib/env", () => ({
   appEnv: {
     discordUrl: "https://discord.gg/pdaAr9FhcQ",
+    redditUrl: "https://www.reddit.com/r/Selftend/",
+    youtubeUrl: "https://www.youtube.com/@Selftend",
   },
 }));
 
@@ -40,6 +46,8 @@ function linkHref(name: string) {
 
 beforeEach(() => {
   appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
+  appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
+  appEnv.youtubeUrl = "https://www.youtube.com/@Selftend";
   jest.clearAllMocks();
 });
 
@@ -49,7 +57,7 @@ describe("LandingFooter", () => {
 
     expect(
       screen.getByText(
-        "Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
+        "Selftend is a set of mental health tools for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
       ),
     ).toBeTruthy();
   });
@@ -88,5 +96,53 @@ describe("LandingFooter", () => {
     renderWithProviders(<LandingFooter />);
 
     expect(screen.queryByText("Join our Discord")).toBeNull();
+  });
+
+  it("opens the subreddit externally when appEnv.redditUrl is set", () => {
+    renderWithProviders(<LandingFooter />);
+
+    fireEvent.press(screen.getByText("Join r/Selftend"));
+
+    expect(mockOpen).toHaveBeenCalledWith("https://www.reddit.com/r/Selftend/");
+  });
+
+  it("hides the subreddit link when appEnv.redditUrl is empty, keeping Discord", () => {
+    appEnv.redditUrl = "";
+
+    renderWithProviders(<LandingFooter />);
+
+    expect(screen.queryByText("Join r/Selftend")).toBeNull();
+    expect(screen.getByText("Join our Discord")).toBeTruthy();
+  });
+
+  it("opens the YouTube channel externally when appEnv.youtubeUrl is set", () => {
+    renderWithProviders(<LandingFooter />);
+
+    fireEvent.press(screen.getByText("Watch on YouTube"));
+
+    expect(mockOpen).toHaveBeenCalledWith("https://www.youtube.com/@Selftend");
+  });
+
+  it("hides the YouTube link when appEnv.youtubeUrl is empty, keeping its neighbours", () => {
+    appEnv.youtubeUrl = "";
+
+    renderWithProviders(<LandingFooter />);
+
+    expect(screen.queryByText("Watch on YouTube")).toBeNull();
+    expect(screen.getByText("Join our Discord")).toBeTruthy();
+    expect(screen.getByText("Join r/Selftend")).toBeTruthy();
+  });
+
+  it("closes the row with Discord, the subreddit, then YouTube, after the policy links", () => {
+    renderWithProviders(<LandingFooter />);
+
+    // Order is the assertion: all three are external buttons appended to the
+    // same wrapping row, so any of them could land anywhere in it and still be
+    // found by the presence checks above. `getAllByText` returns tree order.
+    expect(screen.getAllByText(/^(Join|Watch) /).map((node) => node.props.children)).toEqual([
+      "Join our Discord",
+      "Join r/Selftend",
+      "Watch on YouTube",
+    ]);
   });
 });

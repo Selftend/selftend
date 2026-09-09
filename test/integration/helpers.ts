@@ -257,6 +257,21 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
   if (error) throw new Error(`deleteAllWidgetPreferencesForUser cleanup failed: ${error.message}`);
 }
 
+/**
+ * The favourites table Home reads since #1956 (`widget_preferences` serves only older
+ * native builds, and no seed writes it any more - #1959).
+ *
+ * ☠️ Not for the SEED users: bob carries four seeded rows (#1953) and alice's zero rows
+ * are themselves a fixture, and neither is restored by anything short of
+ * `npm run db:reset` — `npm run db:seed:demo` writes the demo user only. Right for
+ * throwaway and e2e worker users, which own no seeded favourites.
+ */
+export async function deleteAllFavoritesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("favorites").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllFavoritesForUser cleanup failed: ${error.message}`);
+}
+
 export async function deleteAllBreathingExercisesForUser(userId: string) {
   const admin = createServiceClient();
   const { error } = await admin.from("breathing_exercises").delete().eq("user_id", userId);
@@ -303,6 +318,25 @@ export async function deleteAllActLogsForUser(userId: string) {
   for (const table of tables) {
     const { error } = await admin.from(table).delete().eq("user_id", userId);
     if (error) throw new Error(`deleteAllActLogsForUser (${table}) failed: ${error.message}`);
+  }
+}
+
+/** Every DBT table (#1980) - the coping plan singleton, sessions and the five record kinds. */
+export const DBT_TABLES = [
+  "dbt_coping_plans",
+  "dbt_sessions",
+  "dbt_wise_mind_checkins",
+  "dbt_judgements",
+  "dbt_emotion_records",
+  "dbt_opposite_action_plans",
+  "dbt_scripts",
+] as const;
+
+export async function deleteAllDbtForUser(userId: string) {
+  const admin = createServiceClient();
+  for (const table of DBT_TABLES) {
+    const { error } = await admin.from(table).delete().eq("user_id", userId);
+    if (error) throw new Error(`deleteAllDbtForUser (${table}) failed: ${error.message}`);
   }
 }
 

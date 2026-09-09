@@ -11,7 +11,12 @@
   },
   "channel": {
     "requesting": "Waiting for permission",
-    "blockedTitle": "Notifications are turned off"
+    "blockedTitleWeb": "This browser is blocking notifications",
+    "blockedTitleNative": "This device is blocking notifications",
+    "unsupportedTitle": "Reminders can't arrive here",
+    "needsPermissionTitle": "This browser isn't showing your reminders",
+    "needsPermissionBody": "These reminders are switched on, but this browser has never been asked for permission to show them, so nothing is being delivered.",
+    "needsPermissionAction": "Allow notifications"
   },
   "copy": {
     "cbt": {
@@ -57,6 +62,10 @@
     "routine": {
       "title": "Your routine",
       "body": "A couple of small steps, whenever you're ready."
+    },
+    "dbt": {
+      "title": "DBT practice",
+      "body": "A few minutes with one skill - relax your body, or write one record."
     }
   },
   "targets": {
@@ -89,6 +98,9 @@
     },
     "habits": {
       "label": "Habits"
+    },
+    "dbt": {
+      "label": "DBT"
     }
   },
   "reminderPrompt": {
@@ -111,5 +123,8 @@
       "web": "This browser doesn't support reminders.",
       "native": "This device can't deliver reminders."
     }
+  },
+  "heldOut": {
+    "note": "Not ready yet. This reminder can't be delivered until the phone apps can open the place it leads to, so the switch stays off everywhere until then."
   }
 }

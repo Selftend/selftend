@@ -21,7 +21,10 @@ describe("ScreenTopBar", () => {
   it("renders the uppercase trail for the current screen", () => {
     renderWithProviders(<ScreenTopBar leading="close" />);
 
-    expect(screen.getByText("Tools")).toBeTruthy();
+    // `Check-in · New`, not `Tools · Check-in · New`: `tools` is a transparent
+    // segment since #2096, so the trail opens at the tool rather than at a hub
+    // page that no longer exists. Two crumbs is still a rendered trail - this
+    // screen is one level below the tool home, not on it.
     expect(screen.getByText("Check-in")).toBeTruthy();
     expect(screen.getByText("New")).toBeTruthy();
   });

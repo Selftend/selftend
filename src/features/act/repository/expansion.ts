@@ -8,6 +8,7 @@ import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface ExpansionLogRow {
   id: string;
@@ -60,6 +61,34 @@ export async function listExpansionLogs(userId: string, limit = 30) {
         .limit(limit),
     mapExpansionLog,
   );
+}
+
+/**
+ * One page of every expansion log, newest first - the archive read behind `/modules/act/expansion` (#1517).
+ *
+ * Keyset on the plaintext `created_at` rather than `.range()`: ACT rows are encrypted, so
+ * ADR-0001 prices a read at `rows returned x encrypted columns`, and an offset page
+ * re-reads and re-decrypts every row it skips. Ordering and filtering stay plaintext,
+ * which is exactly what lets the `LIMIT` push below the decrypt.
+ *
+ * `id` breaks the tie so a page boundary cannot straddle two rows sharing a
+ * timestamp - `created_at` is not unique.
+ */
+export async function listExpansionLogsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  return selectList<ExpansionLogRow, ExpansionLog>((c) => {
+    let query = c
+      .from("act_expansion_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));
+    return query.limit(limit);
+  }, mapExpansionLog);
 }
 
 export async function getExpansionLog(userId: string, logId: string) {

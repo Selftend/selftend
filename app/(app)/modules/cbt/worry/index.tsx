@@ -21,7 +21,6 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -51,15 +50,7 @@ export default function WorryScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <ScreenHeader
-                title={t("worry.title")}
-                right={
-                  <View className="flex-row items-center gap-3">
-                    <AddToHomeButton widgetId="cbt-worry" />
-                    <HelpButton helpKey="worry" />
-                  </View>
-                }
-              />
+              <ScreenHeader title={t("worry.title")} right={<HelpButton helpKey="worry" />} />
               <Text variant="muted">{t("worry.description")}</Text>
             </View>
             <Button onPress={() => pushWithOrigin("/modules/cbt/worry/new")} size="sm">

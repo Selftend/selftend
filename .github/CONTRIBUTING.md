@@ -39,7 +39,7 @@ You do not need Supabase, EAS, or Google OAuth for docs, copy, design notes, tra
 | `supabase/`                              | Migrations, RLS policies, and edge functions. See [supabase/README.md](../supabase/README.md).                                    |
 | `functions/`                             | Supabase Edge Function source for web push reminders.                                                                             |
 | `test/`                                  | Shared Jest setup/helpers plus separate integration and e2e suites. Unit tests live next to source files as `*.test.ts(x)`.       |
-| `scripts/`                               | Maintainer scripts for Android and dev-client workflows.                                                                          |
+| `scripts/`                               | Maintainer scripts: Android and dev-client workflows, audio tooling, the r/Selftend release-thread drafter (`release-thread/`).   |
 | `docs/`                                  | Product, platform, policy, and process docs.                                                                                      |
 
 New modules must follow [docs/modules/tools.md](../docs/modules/tools.md). For app structure and data-flow details, read [docs/architecture.md](../docs/architecture.md).
@@ -81,7 +81,7 @@ Do not open public issues for vulnerabilities, private account data, private hea
 2. Branch from `dev` with a short descriptive name, such as `fix/cbt-empty-state` or `docs/contributing-map`.
 3. Keep each PR to one concern.
 4. Open the PR against `dev` (GitHub defaults the base to `main` — retarget it) and fill in the template honestly. Give it a Conventional Commit title (`feat:`, `fix:`, `docs:` …): PRs are squash-merged and the title becomes the commit release-please versions from.
-5. Update [.github/ROADMAP.md](ROADMAP.md) when the change affects product status, implementation progress, or next steps.
+5. Open or update a [GitHub issue](https://github.com/Selftend/selftend/issues) when the change affects product status or next steps. Task tracking lives in issues, not in the repo.
 6. Update docs in the same PR when setup, commands, deployment, env vars, safety boundaries, legal boundaries, or current blockers change.
 
 ## Local Checks

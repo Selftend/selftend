@@ -30,10 +30,10 @@ test.describe("edit and delete a gratitude entry", () => {
     await expect(page.getByText(originalItem)).toBeVisible({ timeout: 15_000 });
 
     // --- FAVORITE ---
-    // The detail screen has a "Favorite" button (unfavorited state); clicking it stars the entry.
-    await page.getByRole("button", { name: "Favorite", exact: true }).click();
-    // Toast "Added to favorites" appears (best-effort check; detail stays on screen).
-    await expect(page.getByRole("button", { name: "Favorited", exact: true })).toBeVisible({
+    // The detail screen has a "Favourite" button (unfavourited state); clicking it stars the entry.
+    await page.getByRole("button", { name: "Favourite", exact: true }).click();
+    // Toast "Added to favourites" appears (best-effort check; detail stays on screen).
+    await expect(page.getByRole("button", { name: "Favourited", exact: true })).toBeVisible({
       timeout: 10_000,
     });
 

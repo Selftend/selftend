@@ -22,26 +22,159 @@ Contributors must not add ad-hoc tracking without explicit review through the ro
 
 #### Phase 1 in use (2026-07)
 
-Two aggregate-only reports run through the shared runner `scripts/analytics-report.js`.
+Three aggregate-only reports run through the shared runner `scripts/analytics-report.js`.
 Pass `--local` to run against the local Docker stack; for the linked production
 project, set `SUPABASE_DB_URL` (from the dashboard) in the environment first.
+
+`test/integration/analytics-reports.integration.test.ts` executes all three
+against the local schema on every CI run, so a renamed column fails there rather
+than three months later when someone runs a report by hand.
+
+##### Everything is split by account type
+
+Every table in every report carries an `account` column: `registered` or
+`guest`. Guest accounts are `auth.users` rows with `is_anonymous = true`, minted
+one per tap of the landing CTA by `useStartAsGuest`, and only purged after 12
+months of dormancy. Without the split, the day anonymous sign-ins are switched
+on, "signups" quietly becomes "visitors who tapped a button" and every
+percentage in these reports collapses toward zero with nothing on screen to say
+why. The split landed while the toggle was still off, on purpose; the
+production toggle went live 2026-09-02 (#1674).
+
+Two things to know when reading it:
+
+- **Fixed-shape tables print both populations always**, zeros included — the two
+  account types, the four modules, the ten concern arms. Open-shape tables
+  (weeks, widget ids, feature names) print only what exists. Section 0 of each
+  report carries the axis unconditionally.
+- **The split reads current account state, not state at signup.** Signing up
+  from a guest session converts the same `auth.users` row in place, so a
+  converted guest reads as `registered` across their whole history. The `guest`
+  rows are unconverted guests only, and conversion itself is invisible here.
 
 `npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
 2026-07-14). It covers: activation (first row in any user-content table, ever
 and within 72h of signup; setup actions excluded), retention (signup-anchored
 weekly cohorts, W1-W4, retained = any content row in the window, percentages
-over mature users only), module adoption (per enableable module: % enabled,
-% with >=1 record, % enabled-but-never-used), and core tool usage (mood,
-journal, sleep, habits, mindfulness — always available, so usage % only).
-All queries count distinct users; none emit per-user rows.
+over mature users only), module usage (per module — cbt, meditation,
+gratitude, act, dbt — % with >=1 record in the module's tables), and core tool usage
+(mood, journal, sleep, habits, mindfulness, per feature). All queries count
+distinct users; none emit per-user rows.
+
+The module table carried an "enabled" and an "enabled-but-never-used" column
+until 2026-09-02, read from `user_preferences.enabled_modules`. That array
+gates nothing: every module's tools are on the tools grid whether or not it
+lists them, the last write hook went in the May 2026 dead-code sweep, and what
+is left is the column default (`['cbt']`) plus one write from the meditation
+wizard. Read against production it said cbt was "enabled" by 45 of 46 people
+(the default) while gratitude was used by people who had never "enabled" it —
+an instrument measuring a mechanism that does not exist (#1672). Usage is the
+only adoption signal the schema carries, so it is the only one reported;
+`test/analytics-shared-sql.test.ts` fails any report that reads the column.
+
+Section 6, **asked, never attested**, counts accounts that met the age gate and
+did not get past it — `age_floor_met` null, on an account created at or after
+the instant the gate scopes itself on — split guest from registered, as a count
+and as a share of accounts created in the same window. It collects nothing new:
+the column already exists and this is a derived count over it. It is the evidence
+[#1936](https://github.com/Selftend/selftend/issues/1936) settled the age gate's
+placement on: the gate is the first screen of a clean install on native, and
+**the placement is revisited if this share is large against guests minted in the
+same window; the owner sets the number once a real cohort exists.** The reasoning
+behind the placement lives in [age-floor.md](age-floor.md) § _The gate that
+asks_, not here.
+
+☠️ **Read the cutoff before reading the number.** `age_floor_met` is null for
+every account that predates the gate, and null means _never asked_, never
+_refused_ — so without the created-after cutoff this figure is the entire
+pre-gate install base rather than a count of people who stopped. The cutoff is
+the gate's own: `AGE_GATE_INTRODUCED_AT` in
+`src/components/app/protected-layout.tsx`, `2026-09-05T00:00:00Z`, the instant
+of `supabase/migrations/20260905000000_age_attestation.sql` — deliberately the
+migration and not the release, because the gate asks by account age against that
+constant and a client cannot know a release date (see
+[age-floor.md](age-floor.md) § _The gate that asks_). It is set by the two
+`\set` lines at the top of the report and printed on every row as
+`cutoff_source` and `cutoff_at`; `test/analytics-age-gate-cutoff.test.ts` fails
+if the report's instant and the client's constant ever differ, so they move
+together. Under-floor exits are not in this number — they delete the account, so
+they never appear as a null. Platform is not an axis and is not to be added: the
+row cannot say which platform it came from, and #1936 accepted that the figure
+answers "how many stop at the first screen" and nothing else.
+
+⚠️ **The report follows the gate's rule since
+[#2241](https://github.com/Selftend/selftend/issues/2241), and was narrower than
+it before.** After [#2227](https://github.com/Selftend/selftend/issues/2227) the
+gate exempts only an account that is _both_ older than the instant _and_ has
+already accepted a policy version; everyone created at or after the instant is
+asked whatever their consent column says. The report used to require
+`policy_version_accepted` to be null as well — true of an account whose first
+launch carries the gate, and false for the cohort #2227 exists for, an account
+created on 0.17.0 that consented before ever seeing the gate — and used the
+release as its cutoff, so accounts created between the migration and the release
+were asked and not counted. Both are gone: the window is keyed on the instant and
+the consent column is not a condition. What the figure still leaves out, on
+purpose, is an account created _before_ the instant that never accepted any
+policy — the gate asks it too, but it is the pre-gate install base whose null
+means _never asked_, and the row cannot tell one that stopped at 0.17.0's consent
+wall from one that met the age gate on updating. So the number answers "how many
+stop at the first screen of a new account", exactly as #1936 framed it.
 
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
-The report covers: signups, widget-suggestion wizard conversion, finish-vs-skip
-(`user_preferences.app_onboarding_completed_via` / `_at`, written at wizard
-completion), concern distribution, current Home widget selection, and home-tour
-engagement. The wizard can legitimately finish or skip with zero widgets; it never
-seeds hidden defaults. The two funnel columns are ordinary first-party preferences,
-included in `export_user_data()` and account deletion.
+The report covers: signups, first-run introduction conversion, finish-vs-skip
+(`user_preferences.app_onboarding_completed_via` / `_at`, written when the
+one-panel introduction is finished or skipped) and the Home widget selection
+older native builds still write. The home-tour engagement section went with the
+tour (#2109): `shown_button_tours` is still a column and still exported, but
+nothing writes it, so reporting it would present a frozen residue as current.
+The two funnel columns are
+ordinary first-party preferences, included in `export_user_data()` and account
+deletion. The concern-distribution sections (§4a/4b) were removed with the
+`selected_concerns` column on 2026-09-05 (#1958): the introduction no longer asks
+a concern, so nothing writes the column and it is gone; anything cohorted by
+concern reads the immutable `initial_concerns` in the segment report below, which
+covers the pre-redesign cohort only and is never written again by the app.
+
+`npm run analytics:segment` runs `scripts/analytics-segment.sql` (added
+2026-09-01). It cross-tabs W4 retention against the concern each person declared
+when they arrived, read from the immutable `user_preferences.initial_concerns`
+column — never from the since-dropped `selected_concerns`, which was
+last-write-wins and therefore flattered retained users by construction. It
+collects nothing new: every column it reads already exists. Since 2026-09-05
+(#1958) the app writes `initial_concerns` for nobody — the one-panel
+introduction asks no concern — so every concern arm covers the pre-redesign
+cohort only, and users onboarded since land in `unknown`.
+
+How to read it, in the order the report prints:
+
+- **Read orderings, never percentages, until the gate opens.** Section 2 is
+  ordered by retention rate for exactly that reason.
+- **The gate is 30 W4-retained users**, reusing the warrant-to-continue number
+  rather than inventing a second constant. Section 1 prints how far off it is.
+  That puts the segment question on the **2027-08-31** clock, not the
+  **2027-02-28** frame-review clock: the February read is informational only,
+  and the segment slot in [positioning.md](positioning.md) cannot be filled
+  there.
+- **The arms overlap; they are not a partition.** Concerns are multi-select, so
+  someone with three picks appears in three rows and the rows sum past 100%.
+  Section 3 prints that overlap so it stays visible. Alongside the six concern
+  keys there are `skipped` and `finished-with-none` (distinguishable only via
+  `app_onboarding_completed_via` — the empty array cannot tell them apart),
+  `zero-concerns-no-mode`, and `unknown` for rows predating the column. There is
+  no backfill, deliberately.
+- **Cells below k=5 print `<5`, and a percentage resting on one prints `-`.**
+  This is a false-precision control first: a printed "67%" that means two users
+  out of three is the number that gets believed.
+- **A flat reading is a finding, not a failure.** If every arm retains alike,
+  the concern axis is not the segment axis, and the next axes to look at are
+  module usage, platform, and locale (EN/BG). That is decided in advance so
+  the standing interpretation cannot quietly become "not enough data yet",
+  permanently.
+
+Cadence: **quarterly by hand**, mandatory at both dates above, no third clock.
+Only the owner can run it (`SUPABASE_DB_URL` from the dashboard); there is no CI
+job and no schedule. The report is the instrument, not the judgement — the
+segment decision stays something a person makes while looking at it.
 
 When basic product questions arise ("how many users signed up this week?", "how many exercises were completed?"), use server-side SQL against existing tables:
 

@@ -290,6 +290,86 @@ describe("RoutineFab", () => {
     });
   });
 
+  // #102: on-demand routines never nudge - and this is the seam where that is
+  // really enforced (#1542). The continue sheet carries a defensive
+  // `cadence === "on-demand"` guard on its reminder offer, but the sheet is
+  // mounted in exactly one place and fed `scheduledViews`, so the guard is
+  // unreachable: the offer can never be put in front of an on-demand routine
+  // because the sheet never opens on one. These pin the composition end to
+  // end - if a future change widened the sheet's input, the guard alone would
+  // hold the rule, and these would be the tests that noticed the widening.
+  describe("the reminder offer never reaches an on-demand routine (#102)", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("plays no completion check when an on-demand routine finishes its last step", () => {
+      // Mid-flight (journal done, mood open) and now finishing - the shape the
+      // completion check exists for. It was never counted, so this is not a
+      // transition to zero open steps: nothing arms, and with no check there is
+      // no way to open the sheet on it. (The never-counted half is already
+      // pinned above; what is new here is that FINISHING one stays silent.)
+      setRoutines([makeRoutine("r-1", "Reset kit", ["journal", "mood"], { cadence: "on-demand" })]);
+      mockUseRoutineToolRecords.mockReturnValue({
+        journalEntries: [{ dayKey: currentDateKey() }],
+      });
+
+      renderWithProviders(<RoutineFab />);
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+
+      mockUseRoutineToolRecords.mockReturnValue({
+        journalEntries: [{ dayKey: currentDateKey() }],
+        moodLogs: [{ dayKey: currentDateKey() }],
+      });
+      screen.rerender(<RoutineFab />);
+
+      expect(screen.queryByTestId("routine-fab")).toBeNull();
+      expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
+    });
+
+    it("pins the offer to the scheduled routine even when an on-demand one is mid-flight", () => {
+      // r-2 is on-demand and IN PROGRESS (journal done, gratitude open), which
+      // is exactly what firstOpenRoutineView prefers (#121) - so if the
+      // schedule filter ever stopped excluding on-demand, r-2 would become the
+      // counted routine, then the latched `completedRoutineId`, and the sheet
+      // would open on ITS completion. r-1 is the only scheduled routine, so it
+      // must be the one counted, pinned, and offered a reminder.
+      setRoutines([
+        makeRoutine("r-1", "Morning reset", ["mood"]),
+        makeRoutine("r-2", "Reset kit", ["journal", "gratitude"], { cadence: "on-demand" }),
+      ]);
+      mockUseRoutineToolRecords.mockReturnValue({
+        journalEntries: [{ dayKey: currentDateKey() }],
+      });
+
+      renderWithProviders(<RoutineFab />);
+      // r-1's own count, not r-2's in-progress "1/2 ·+1".
+      expect(screen.getByText("0/1")).toBeTruthy();
+      expect(
+        screen.getByLabelText('Continue "Morning reset": 0 of 1 steps done today'),
+      ).toBeTruthy();
+
+      mockUseRoutineToolRecords.mockReturnValue({
+        journalEntries: [{ dayKey: currentDateKey() }],
+        moodLogs: [{ dayKey: currentDateKey() }],
+      });
+      screen.rerender(<RoutineFab />);
+
+      fireEvent.press(screen.getByTestId("routine-fab-complete"));
+
+      // The offer is live, and it belongs to the scheduled routine...
+      expect(screen.getByText("Morning reset")).toBeTruthy();
+      expect(screen.getByText("Set a daily reminder")).toBeTruthy();
+      // ...while the on-demand routine never entered the sheet at all, so its
+      // completion state - and the defensive cadence guard - is never reached.
+      expect(screen.queryByText("Reset kit")).toBeNull();
+    });
+  });
+
   // #90: the FAB never renders over data-entry screens - it covered
   // MobileFormScreen's sticky Save footer (e.g. the mood editor on mobile).
   describe("data-entry route suppression (#90)", () => {

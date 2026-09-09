@@ -10,8 +10,10 @@ type WizardStoreHook<TForm> = UseBoundStore<StoreApi<WizardDraftStore<TForm>>>;
 
 // One persist write at most ~every 800ms while typing: fast enough that an
 // accidental refresh loses a sentence at worst, slow enough that AsyncStorage
-// is not hammered on every keystroke.
-const DRAFT_CAPTURE_DEBOUNCE_MS = 800;
+// is not hammered on every keystroke. Exported so a persisted draft that is
+// not a react-hook-form wizard (the DBT emotion record) debounces at the same
+// rate rather than inventing its own (#2202).
+export const DRAFT_CAPTURE_DEBOUNCE_MS = 800;
 
 interface UseWizardDraftArgs<TForm extends FieldValues, TSaved> {
   useDraftStore: WizardStoreHook<TForm>;
@@ -97,6 +99,21 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
       subscription.unsubscribe();
     };
   }, [form, setValues]);
+
+  // A reset from OUTSIDE the form - the sign-out wipe (`resetAllDraftStores`) -
+  // drops any capture still pending, so the debounce cannot land the record back
+  // in the store (and on disk) after the wipe removed it (#2258). The hook's own
+  // save and discard clear the timer before they reset, so this is a no-op for them.
+  useEffect(
+    () =>
+      useDraftStore.subscribe((state, previous) => {
+        if (state.generation !== previous.generation && captureTimerRef.current) {
+          clearTimeout(captureTimerRef.current);
+          captureTimerRef.current = null;
+        }
+      }),
+    [useDraftStore],
+  );
 
   // If rehydration finishes AFTER the form mounted (web refresh straight onto a
   // wizard URL: AsyncStorage resolves a beat after first render), the form was

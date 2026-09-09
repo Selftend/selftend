@@ -32,6 +32,8 @@ type ProgramCardView = {
     themeDescKey?: string;
     milestones: ProgramTaskView[];
     dailyPractice: ProgramTaskView | null;
+    /** Presentation order only: render the daily practice above the milestones (#1676). */
+    leadsWithDailyPractice?: boolean;
   } | null;
 };
 
@@ -78,7 +80,7 @@ function TaskRow({ task, ns }: { task: ProgramTaskView; ns: string }) {
   const { t } = useTranslation(ns);
   const label = t(task.labelKey);
   // A program task can sit outside its own module - CBT's programme sends the user
-  // to `/tools/check-in/new`, whose Up climbs to `/tools` - so the row records
+  // to `/tools/check-in/new`, whose Up climbs to the tool, not back to CBT - so the row records
   // where it left from (#1265, O3). An on-trail task records too and costs
   // nothing: the off-trail test runs at the destination, and leaving the
   // judgement to each call site is what makes an Origin rule fail invisibly.
@@ -186,6 +188,30 @@ export function ProgramCard({
     onAdvance();
   }
 
+  const milestonesSection = (
+    <View key="milestones" className="gap-2">
+      <Text className="text-sm font-semibold text-muted-foreground">
+        {t("program.milestonesLabel")}
+      </Text>
+      {phase.milestones.map((milestone) => (
+        <TaskRow key={milestone.key} task={milestone} ns={ns} />
+      ))}
+    </View>
+  );
+
+  const practiceSection = phase.dailyPractice ? (
+    <View key="practice" className="gap-2">
+      <Text className="text-sm font-semibold text-muted-foreground">
+        {t("program.practiceLabel")}
+      </Text>
+      <TaskRow task={phase.dailyPractice} ns={ns} />
+    </View>
+  ) : (
+    <Text key="practice" variant="muted" className="text-sm">
+      {t("program.noDailyPractice")}
+    </Text>
+  );
+
   return (
     <>
       <ConfirmDialog
@@ -271,29 +297,14 @@ export function ProgramCard({
           ) : null}
         </View>
 
-        {/* Milestones section */}
-        <View className="gap-2">
-          <Text className="text-sm font-semibold text-muted-foreground">
-            {t("program.milestonesLabel")}
-          </Text>
-          {phase.milestones.map((milestone) => (
-            <TaskRow key={milestone.key} task={milestone} ns={ns} />
-          ))}
-        </View>
-
-        {/* Daily practice section */}
-        {phase.dailyPractice ? (
-          <View className="gap-2">
-            <Text className="text-sm font-semibold text-muted-foreground">
-              {t("program.practiceLabel")}
-            </Text>
-            <TaskRow task={phase.dailyPractice} ns={ns} />
-          </View>
-        ) : (
-          <Text variant="muted" className="text-sm">
-            {t("program.noDailyPractice")}
-          </Text>
-        )}
+        {/* Milestones and daily practice, in the phase's presented order.
+            Milestones-first is the default; a phase that leads with its daily
+            practice (#1676: Assessment opens with the active noticing skill,
+            setup follows) renders the practice on top. Presentation only -
+            the legs, their rules, and their signals do not move. */}
+        {phase.leadsWithDailyPractice
+          ? [practiceSection, milestonesSection]
+          : [milestonesSection, practiceSection]}
 
         {/* Ready banner */}
         {program.phaseReady ? (

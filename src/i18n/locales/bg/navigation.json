@@ -5,13 +5,15 @@
     "goHome": "Към начало",
     "appName": "Selftend",
     "joinDiscord": "Присъедини се към нашия Discord",
+    "joinReddit": "Присъедини се към r/Selftend",
     "openReddit": "Отвори субредита на Selftend",
+    "watchYoutube": "Гледай в YouTube",
     "openYoutube": "Отвори YouTube канала на Selftend",
     "viewGithub": "Виж изходния код в GitHub"
   },
   "sidebar": {
     "home": "Начало",
-    "progress": "Наблюдения",
+    "progress": "Поглед назад",
     "routines": "Рутини",
     "notifications": "Напомняния",
     "settings": "Настройки",
@@ -26,21 +28,19 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "КПТ",
-    "cbtA11y": "Модул КПТ - Когнитивно-поведенческа терапия",
-    "actA11y": "Модул ACT - Терапия на приемане и ангажираност",
-    "dbtA11y": "Преглед на DBT - Диалектична поведенческа терапия",
-    "modules": "Модули",
     "gratitudeLog": "Дневник на благодарността",
     "sleep": "Сън",
     "habits": "Проследяване на навици",
-    "tools": "Инструменти"
+    "donate": "Дарение",
+    "donateA11y": "Дари на Selftend през GitHub Sponsors - отваря се в браузъра"
   },
   "userMenu": {
-    "account": "Акаунт",
+    "guest": "Гост",
     "avatarAlt": "Аватар на потребителя",
     "openMenu": "Отвори меню на акаунта",
     "settings": "Настройки",
     "sendFeedback": "Изпрати обратна връзка",
+    "signIn": "Вход",
     "signOut": "Излизане"
   },
   "getTheApp": {
@@ -48,8 +48,7 @@
     "android": "Android",
     "ios": "iOS",
     "androidAccessibility": "Изтегли приложението за Android от Google Play",
-    "iosAccessibility": "Изтегли приложението за iOS от App Store",
-    "comingSoon": "Скоро"
+    "iosAccessibility": "Изтегли приложението за iOS от App Store"
   },
   "languageToggle": {
     "toggle": "Смени езика",
@@ -72,22 +71,16 @@
     "greetingEvening": "Добър вечер",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "emptyTitle": "Добави инструменти, с които искаш да се проверяваш всеки ден",
-    "emptyDescription": "Подреди таблото самостоятелно или отговори на няколко въпроса за подходящи предложения.",
-    "unsupportedTitle": "Част от таблото ти изисква по-нова версия",
-    "unsupportedDescription": "Добавил си неща, които тази версия на приложението още не може да покаже. Обнови, когато можеш, или добави нещо друго междувременно.",
-    "addManually": "Добави ръчно",
-    "getSuggestions": "Получаване на предложения",
     "plan": {
       "open": "Отвори"
     },
     "modules": {
       "cbtName": "Когнитивно-поведенческа терапия",
-      "cbtDescription": "Рамката Мисли · Действай · Бъди. Доказани стратегии за тревожност, депресия, гняв, паника и тревога.",
+      "cbtSub": "Мисли · Действай · Бъди",
       "actName": "Терапия на приемане и ангажираност",
-      "actDescription": "Умения за справяне с трудни чувства и действане според това, което е важно за теб (терапия на приемане и ангажираност).",
+      "actSub": "Действай според важното",
       "dbtName": "Диалектична поведенческа терапия",
-      "dbtDescription": "Четири групи умения - осъзнатост, толерантност към стрес, регулация на емоции, междуличностна ефективност. Преглед на подхода."
+      "dbtSub": "Когато чувствата се надигат"
     },
     "tools": {
       "moodTracker": "Запис на настроението",
@@ -108,10 +101,6 @@
       "habitsSub": "Изгради постоянни ежедневни навици"
     },
     "dashboard": {
-      "removeWidget": "Премахни {{title}}",
-      "undo": "Отмени",
-      "moveEarlier": "Премести {{title}} по-напред",
-      "moveLater": "Премести {{title}} по-назад",
       "doneToday": "Направено днес",
       "startBreathing": "Започни дишане",
       "write": "Напиши",
@@ -127,31 +116,19 @@
       "habitsAllDone": "Всичко е свършено за днес!",
       "newHabit": "Нов навик",
       "done": "Готово"
+    },
+    "sections": {
+      "favorites": "Любими",
+      "tools": "Инструменти",
+      "modules": "Модули"
+    },
+    "favorites": {
+      "empty": "Отбележи със звезда инструмент или модул, за да стои тук.",
+      "add": "Добави {{name}} в любими",
+      "remove": "Премахни {{name}} от любими"
     }
   },
   "home": {
-    "doneLabel": "Готово",
-    "arrangeLabel": "Подреди",
-    "addToolLabel": "Добави инструмент",
-    "arrange": {
-      "hint": "Плъзни, за да пренаредиш, или премахни това, с което не се проверяваш.",
-      "handle": "Пренареждане на {{title}}",
-      "handleHint": "Премества този инструмент нагоре или надолу в списъка.",
-      "addHeading": "Добави към началния екран",
-      "addChip": "Добави {{title}}",
-      "addChipTagged": "Добави {{title}}, {{module}}",
-      "moduleTag": {
-        "cbt": "CBT",
-        "act": "ACT",
-        "cbtA11y": "CBT - Когнитивно-поведенческа терапия",
-        "actA11y": "ACT - Терапия на приемане и ангажираност"
-      },
-      "allAdded": "Всичко вече е на началния екран."
-    },
-    "addToHome": {
-      "button": "Добави в начало",
-      "title": "Добави в начало"
-    },
     "categories": {
       "mood": "Запис на настроението",
       "journal": "Дневник",
@@ -173,22 +150,6 @@
       "moreGoals_one": "+още {{count}} цел",
       "moreGoals_other": "+още {{count}} цели"
     },
-    "tiers": {
-      "tools": "Твоите инструменти",
-      "programmes": "Насочени програми"
-    },
-    "programme": {
-      "phase": "Фаза {{current}} от {{total}}",
-      "complete": "Завършена"
-    },
-    "rightNow": {
-      "heading": "Точно сега",
-      "moodTitle": "Как си?",
-      "sleepTitle": "Сън",
-      "sleepNothing": "Няма записано от вчера",
-      "habitsTitle": "Навиците за днес",
-      "sleepNothingWithAverage": "Няма записано от вчера — средно {{value}} тази седмица"
-    },
     "rows": {
       "empty": "Още нищо",
       "nothingScheduled": "Нищо насрочено за днес",
@@ -207,13 +168,7 @@
       "minutes_one": "{{count}} минута",
       "minutes_other": "{{count}} минути",
       "sits_one": "{{count}} седене",
-      "sits_other": "{{count}} седения",
-      "records_one": "{{count}} запис",
-      "records_other": "{{count}} записа",
-      "activeGoals_one": "{{count}} активна цел",
-      "activeGoals_other": "{{count}} активни цели",
-      "active_one": "{{count}} активно",
-      "active_other": "{{count}} активни"
+      "sits_other": "{{count}} седения"
     },
     "widgets": {
       "moodCheckin": {
@@ -235,7 +190,7 @@
         "itemsLabel": "Неща"
       },
       "meditationPick": {
-        "title": "Изборът за днес",
+        "title": "Медитация",
         "desc": "Кратка сесия, избрана за часа на деня.",
         "sessionsLabel": "Сесии",
         "minutesLabel": "Минути"
@@ -371,48 +326,19 @@
     }
   },
   "progress": {
-    "title": "Наблюдения",
-    "description": "Спокойно място за проследяване на моделите в настроението и размисъл какво може да помага.",
-    "moodTrend": "Тенденция на настроението",
-    "moodTrendDescription": "Дневно средно за последните 30 дни.",
-    "noMoodData": "Запиши настроение, за да започне тенденцията.",
+    "title": "Поглед назад",
+    "description": "Твоят запис във времето и въпрос, върху който да поразмишляваш.",
+    "timelineTitle": "Твоите дни",
+    "timelineDescription": "По един знак за всеки ден със запис.",
+    "timelineEmpty": "Дните, в които запишеш нещо, ще се появяват тук.",
+    "timelineSingleDay": "Твоят запис започва тук.",
+    "timelineError": "Твоите дни не можаха да се заредят в момента.",
+    "timelineA11y": "Записите ти във времето, от {{from}} до {{to}}.",
     "reflectionTitle": "Въпрос за размисъл",
     "reflectionDescription": "Тих въпрос, върху който да поразмишляваш.",
-    "prompt1": "Какво се усещаше поносимо този месец, което преди изглеждаше трудно?",
-    "prompt2": "Кога се подкрепи, дори по малък начин?",
-    "prompt3": "Какво би казал на приятел, който е имал месец като твоя?",
-    "prompt4": "Едно нещо, което забеляза за настроението или енергията си?"
-  },
-  "tools": {
-    "title": "Инструменти",
-    "description": "Самостоятелни инструменти за проследяване, които всеки модул може да ползва. Работят и сами по себе си.",
-    "stats": {
-      "moodLogs_one": "{{count}} запис",
-      "moodLogs_other": "{{count}} записа",
-      "moodLast7": "{{average}} средно тази седмица",
-      "moodNoData": "Още няма записи",
-      "journalEntries_one": "{{count}} запис",
-      "journalEntries_other": "{{count}} записа",
-      "journalNoData": "Още няма записи",
-      "breathingSessions_one": "{{count}} сесия",
-      "breathingSessions_other": "{{count}} сесии",
-      "breathingNoData": "Още няма сесии",
-      "gratitudeEntries_one": "{{count}} запис за благодарност",
-      "gratitudeEntries_other": "{{count}} записа за благодарност",
-      "gratitudeNoData": "Още няма записи за благодарност",
-      "groundingSessions_one": "{{count}} сесия",
-      "groundingSessions_other": "{{count}} сесии",
-      "groundingNoData": "Още няма сесии",
-      "meditationSessions_one": "{{count}} сесия",
-      "meditationSessions_other": "{{count}} сесии",
-      "meditationNoData": "Още няма сесии",
-      "sleepLogs_one": "{{count}} запис",
-      "sleepLogs_other": "{{count}} записа",
-      "sleepNoData": "Още няма записи",
-      "habits_one": "{{count}} навик",
-      "habits_other": "{{count}} навика",
-      "habitsNoData": "Още няма навици"
-    }
+    "prompt": "Като погледнеш назад към този период, какво изпъква за теб?",
+    "recoveryTitle": "Твоят план за възстановяване",
+    "recoveryDescription": "Записаното от теб за това, което ти помага."
   },
   "headerButton": {
     "tune": "Настройки",
@@ -420,21 +346,10 @@
     "program": "КПТ програма",
     "info": "За този модул"
   },
-  "homeTour": {
-    "skipAll": "Пропусни всички",
-    "edit": {
-      "description": "Подреди началния екран - добавяй, махай и размествай инструментите си.",
-      "dismiss": "Разбрах"
-    },
-    "navigation": {
-      "description": "Тук ще намериш всички модули и инструменти.",
-      "dismiss": "Разбрах"
-    }
-  },
   "breadcrumb": {
     "session": "Сесия",
     "history": "История",
-    "progress": "Размисъл",
+    "progress": "Поглед назад",
     "legal": "Правна информация",
     "entry": "Запис",
     "entries": "Записи",
@@ -462,6 +377,14 @@
     "observingSelf": "Наблюдаващото Аз",
     "dailyLife": "Ежедневие",
     "learn": "Обучение",
+    "copingPlan": "План за справяне",
+    "pause": "Спри и избери",
+    "muscleRelaxation": "Мускулна релаксация",
+    "emotions": "Записи на емоции",
+    "wiseMind": "Мъдър ум",
+    "judgements": "Осъждания",
+    "oppositeAction": "Противоположно действие",
+    "scripts": "Сценарии",
     "edit": "Редактиране",
     "log": "Запис",
     "favorites": "Любими",
@@ -472,14 +395,6 @@
     "resetPassword": "Смяна на паролата",
     "updatePassword": "Обновяване на паролата",
     "verifyEmail": "Потвърждаване на имейла"
-  },
-  "modulesPage": {
-    "title": "Модули",
-    "description": "Структурирани терапевтични програми, по които можеш да работиш във времето. Всяка използва споделените инструменти.",
-    "whereToStart": "Не си сигурен откъде да започнеш? Ежедневните инструменти помагат за общото благосъстояние. Пробвай КПТ, ако трудните мисли са основният ти проблем. Спокойно можеш да комбинираш.",
-    "stats": {
-      "overview": "Преглед"
-    }
   },
   "plan": {
     "wizard": {
@@ -496,6 +411,7 @@
   },
   "styleToggle": {
     "toggle": "Палитра",
-    "default": "По подразбиране"
+    "default": "По подразбиране",
+    "back": "Назад"
   }
 }

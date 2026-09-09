@@ -1,9 +1,10 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { memo, useCallback, useMemo } from "react";
-import { ActivityIndicator, Pressable, SectionList, View } from "react-native";
+import { Pressable, SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -18,6 +19,7 @@ import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * One tick.
@@ -79,8 +81,16 @@ export default function HabitsHistoryScreen() {
   // entry the overview reads (#762) - the overview filters the archived ones
   // out of its list rather than paying for a second fetch of the same table.
   const { data: habits } = useHabits(userId, { includeArchived: true });
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useHabitLogPages(userId);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useHabitLogPages(userId);
 
   const habitsById = useMemo(() => {
     const map = new Map<string, Habit>();
@@ -90,11 +100,12 @@ export default function HabitsHistoryScreen() {
 
   const sections = useMemo(() => groupLogsByDay(data?.pages.flat()), [data]);
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
-    // user keeps dragging, and each call would queue another page fetch.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -148,12 +159,15 @@ export default function HabitsHistoryScreen() {
             />
           )
         }
+        // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+        // unrendered once rows exist, and the load-more latch (#2255) only clears
+        // through this Retry (#2187).
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={isFetchNextPageError}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
         renderSectionHeader={({ section }) => (
           <View className="mb-0.5 mt-5 flex-row items-center gap-3">

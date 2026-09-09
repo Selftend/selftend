@@ -24,7 +24,7 @@ import {
   type GoalFormSeed,
 } from "@/src/features/goals/schemas";
 import { useValuesProfile } from "@/src/features/values/queries";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useGoalDraftStore } from "@/src/stores/goal-draft-store";
@@ -85,6 +85,9 @@ export default function NewGoalScreen() {
     selectedValue && !priorityValues.includes(selectedValue)
       ? [...priorityValues, selectedValue]
       : priorityValues;
+  // Shared between the values link's pointer press and its web Enter handler,
+  // so the two paths cannot drift apart.
+  const openValues = () => pushWithOrigin("/modules/cbt/values");
 
   useEffect(() => {
     if (!existingGoal || !existingMilestones || storedDraftValues) return;
@@ -264,8 +267,10 @@ export default function NewGoalScreen() {
                   accessibilityLabel={t("goals.valueEmptyLink")}
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => pushWithOrigin("/modules/cbt/values")}
+                  onPress={openValues}
                   className="self-start"
+                  role="link"
+                  {...enterKeyActivationProps(openValues)}
                 >
                   <Text className="text-sm text-primary underline">
                     {t("goals.valueEmptyLink")}

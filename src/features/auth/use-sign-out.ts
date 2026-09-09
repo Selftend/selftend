@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
 
 import { signOut } from "@/src/features/auth/api";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -30,14 +31,24 @@ import { useToastStore } from "@/src/stores/toast-store";
  * here rather than at each surface means the settings row and the header menu
  * cannot drift apart. "Start fresh" for a guest is delete-account; "switch
  * accounts" is sign-in - both stay visible.
+ *
+ * ☠️ **The reason is guest-ness, not the `is_anonymous` flag** (#1896). The
+ * argument above is that the session token is the only key to their account - and
+ * a just-converted person has a second key, their email and password. This read
+ * the flag until #1896, so for the length of the stale-flag window a converted
+ * user got neither Sign Out (hidden here) nor Sign in (withdrawn by the menu,
+ * which was already absence-driven). `isGuestAccount` closes that window.
  */
-export function useSignOut(user: Pick<User, "id" | "is_anonymous"> | null) {
+// ⚠️ `is_anonymous` is deliberately NOT in this Pick (#1896). Nothing here reads
+// it any more, and leaving it in the type kept the flag passable - so a future
+// "restore the flag check" edit would have compiled. Narrowed, it does not.
+export function useSignOut(user: Pick<User, "id" | "email"> | null) {
   const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
   const clearToasts = useToastStore((state) => state.clearToasts);
 
   const userId = user?.id ?? null;
-  const canSignOut = user !== null && user.is_anonymous !== true;
+  const canSignOut = user !== null && !isGuestAccount(user);
 
   const handleSignOut = async () => {
     // Enforced here, not just advertised: a future surface that renders a

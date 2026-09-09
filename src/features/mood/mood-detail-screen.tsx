@@ -23,7 +23,7 @@ import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { formatAtOffset, formatCompactAtOffset } from "@/src/utils/date";
 
 /**
@@ -110,6 +110,11 @@ export default function MoodDetailScreen() {
   const when = formatRelativeDayKey(entry.dayKey, t);
   const trimmedNotes = entry.notes.trim();
   const linked = entry.linkedStrategy ? LINKED_STRATEGIES[entry.linkedStrategy] : undefined;
+  // Wired only to the row that renders inside `linked ? … : null` below; the guard
+  // restates that narrowing for the type-checker, nothing more.
+  const openLinked = () => {
+    if (linked) pushWithOrigin(linked.href as Href);
+  };
 
   /**
    * Seven possible rows, every one conditional on having content (#703).
@@ -155,9 +160,10 @@ export default function MoodDetailScreen() {
         <Pressable
           accessibilityRole="link"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => pushWithOrigin(linked.href as Href)}
+          onPress={openLinked}
           className="flex-row items-center gap-1 self-start active:opacity-70"
           role="link"
+          {...enterKeyActivationProps(openLinked)}
         >
           <Text className="text-sm font-semibold text-primary-ink">{t(linked.labelKey)}</Text>
           <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />

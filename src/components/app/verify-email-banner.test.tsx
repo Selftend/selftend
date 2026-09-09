@@ -95,12 +95,29 @@ describe("VerifyEmailBanner", () => {
     expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
   });
 
-  it("renders nothing while the session is a guest, whatever else the user carries (#1442)", () => {
-    // A real guest has no email and no identities, which the other guards
-    // already catch - this user is deliberately over-endowed so the assertion
-    // pins the is_anonymous claim itself, not its usual side effects.
+  it("renders nothing while the session is a guest (#1442)", () => {
+    // A guest has no email and no identities. The banner's contract is "never
+    // while the session is a guest", so the guard is the claim itself rather
+    // than its side effects - but the claim is ABSENCE OF AN EMAIL, not the
+    // `is_anonymous` flag. The test below is why that distinction matters.
+    mockUser = { id: "guest-1", email: "", app_metadata: {}, identities: [], is_anonymous: true };
+
+    renderWithProviders(<VerifyEmailBanner />);
+    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+  });
+
+  /**
+   * ☠️ This assertion was INVERTED until #1896, and the comment beside it
+   * called this user "deliberately over-endowed" - impossible in production.
+   * It is not impossible: it is exactly what a guest looks like for the few
+   * seconds after converting, because `convertGuestWithPassword` flips
+   * `is_anonymous` server-side while the live JWT keeps claiming it. So the
+   * banner was suppressed for precisely the person who had just attached an
+   * email and needed to verify it.
+   */
+  it("shows the prompt inside the stale-flag window, where the token still claims anonymous", () => {
     mockUser = {
-      id: "guest-1",
+      id: "user-1",
       email: "person@example.com",
       app_metadata: {},
       identities: [{ provider: "email" }],
@@ -108,7 +125,7 @@ describe("VerifyEmailBanner", () => {
     };
 
     renderWithProviders(<VerifyEmailBanner />);
-    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+    expect(screen.getByText("Verify your email to secure your account.")).toBeTruthy();
   });
 
   it("shows the prompt for a converted guest, whose provider claim never arrives (#1443)", () => {

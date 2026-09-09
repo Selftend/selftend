@@ -122,7 +122,6 @@ export default function CbtHomeScreen() {
               are cards rather than sections space themselves instead. */}
           <View className={HOME_COLUMN}>
             <ModuleHomeHeader
-              addWidgetCategory="cbt"
               title={t("fullTitle")}
               tourScope="cbt"
               description={t("home.description")}

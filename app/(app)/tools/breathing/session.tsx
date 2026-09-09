@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
-import { Pressable, View, ScrollView } from "react-native";
+import { Platform, Pressable, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { cancelAnimation, useSharedValue, withTiming, Easing } from "react-nativ
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -31,7 +32,8 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
-import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
+import { useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
+import { prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
@@ -64,6 +66,7 @@ const PACER_SIZE = 268;
 type PrefsPatch = {
   breathVolume?: number;
   ambientVolume?: number;
+  hapticCues?: boolean;
   lastBreathingPatternId?: string;
   breathingCycles?: number;
 };
@@ -115,6 +118,10 @@ export default function BreathingSessionScreen() {
   const [ambientVolumeOverride, setAmbientVolumeOverride] = useState<number | null>(null);
   const breathVolume = breathVolumeOverride ?? prefs?.breathVolume ?? 0.7;
   const ambientVolume = ambientVolumeOverride ?? prefs?.ambientVolume ?? 0.5;
+  // The phase's tap (#1741): the same one preference the sit setup toggles,
+  // frontend-authoritative like the volumes. Off by default.
+  const [hapticOverride, setHapticOverride] = useState<boolean | null>(null);
+  const hapticCues = hapticOverride ?? prefs?.hapticCues ?? false;
 
   // Global cycle count: the local override, else the server-remembered count,
   // else the resolved pattern's default once it loads.
@@ -140,6 +147,13 @@ export default function BreathingSessionScreen() {
   const cycleProgress = useSharedValue(0);
   const saveMutation = useSaveBreathingSession(user?.id ?? null);
   const audioPrefs = mergeUserPreferences(prefs, {});
+  // Looked up ONCE, from ids the repository has already resolved: a stored id the
+  // catalog lacks reaches this screen as `none` (#1745). The intro decision and the
+  // two Sounds rows below all read these, where each used to index the catalog on
+  // its own and this screen, unlike the runner and the sheet, never resolved first.
+  const { breathSoundId, ambientSoundId } = audioPrefs;
+  const breathSound = breathSoundLookup[breathSoundId];
+  const ambientSound = ambientSoundLookup[ambientSoundId];
 
   const elapsedNow = () => ((pausedAtMsRef.current || Date.now()) - startMsRef.current) / 1000;
 
@@ -165,11 +179,31 @@ export default function BreathingSessionScreen() {
   useBreathingAudio({
     active: screenPhase === "active" && !paused,
     phaseLabel: currentPhase?.label ?? null,
-    breathSoundId: audioPrefs.breathSoundId,
-    ambientSoundId: audioPrefs.ambientSoundId,
+    breathSoundId,
+    ambientSoundId,
     breathVolume,
     ambientVolume,
+    hapticCues,
   });
+
+  // The guided intro is LOADED while setup shows (#1744): Start used to build its
+  // player at the tap, and the spoken intro arrived late by the asset load. One
+  // per visit to setup - a voice change or a return from a session re-prepares -
+  // and let go if Start is never tapped. Off stays off: at 0 nothing is built, so
+  // a user who muted the voice never has the global audio session configured on
+  // their behalf (#1188).
+  const introAsset = breathSound?.introAsset ?? null;
+  const introAhead = screenPhase === "intro" && introAsset !== null && breathVolume > 0;
+  const introRef = useRef<PreparedOneShot | null>(null);
+  useEffect(() => {
+    if (!introAhead || introAsset === null) return;
+    const intro = prepareOneShot(introAsset);
+    introRef.current = intro;
+    return () => {
+      introRef.current = null;
+      intro.release();
+    };
+  }, [introAhead, introAsset]);
 
   const colorScheme = useColorSchemeName();
   const accent = resolved?.color ?? "aqua";
@@ -432,10 +466,12 @@ export default function BreathingSessionScreen() {
     if (prefs?.lastBreathingPatternId !== patternId)
       patchPrefs({ lastBreathingPatternId: patternId });
     // Guided voice sounds get a short spoken intro before the cycle starts.
-    const breathSound = breathSoundLookup[audioPrefs.breathSoundId];
     if (breathSound?.introAsset) {
       setScreenPhase("preroll");
-      playIntroCue(breathSound.introAsset, audioPrefs.breathVolume);
+      // Loaded ahead by the effect above; the tap only plays it. At the slider's
+      // live value, like the cues that follow it - not the last value the server
+      // saw, which a failed write would leave behind.
+      introRef.current?.play(breathVolume);
       prerollRef.current = setTimeout(
         beginActive,
         (breathSound.introMs ?? 3000) + POST_INTRO_PAUSE_MS,
@@ -517,6 +553,33 @@ export default function BreathingSessionScreen() {
             onCommit={(v) => patchPrefs({ ambientVolume: v })}
             value={ambientVolume}
           />
+          {/* The cues' non-sound counterpart (#1741): a tap at each phase
+              boundary, and per bell in a meditation sit - the same one
+              preference the sit setup toggles, so the copy is the same in both
+              places. Opt-in, off by default, never required (#777). Native
+              only, so not offered on web (docs/accessibility.md). */}
+          {Platform.OS !== "web" ? (
+            <View className="flex-row items-center gap-3.5" testID="breathing-haptic-cues">
+              <Icon name="vibration" size={18} className="text-muted-foreground" />
+              <View className="flex-1 gap-0.5">
+                <Text variant="muted" className="text-[13px]">
+                  {t("breathing.sounds.hapticLabel")}
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  {t("breathing.sounds.hapticHint")}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel={t("breathing.sounds.hapticLabel")}
+                accessibilityHint={t("breathing.sounds.hapticHint")}
+                checked={hapticCues}
+                onCheckedChange={(value) => {
+                  setHapticOverride(value);
+                  patchPrefs({ hapticCues: value });
+                }}
+              />
+            </View>
+          ) : null}
         </View>
 
         {/* Controls exist only once the clock does. During the preroll there is
@@ -652,21 +715,13 @@ export default function BreathingSessionScreen() {
               // `sounds.none`, not under `sounds.breath.*`, so building the
               // key from the id here would render a raw key string for the
               // default selection.
-              value={
-                breathSoundLookup[audioPrefs.breathSoundId]
-                  ? t(breathSoundLookup[audioPrefs.breathSoundId].labelKey)
-                  : t("breathing.setup.none")
-              }
+              value={breathSound ? t(breathSound.labelKey) : t("breathing.setup.none")}
               onPress={() => setSoundsOpen(true)}
             />
             <SoundRow
               icon="graphic-eq"
               label={t("breathing.setup.ambientSound")}
-              value={
-                ambientSoundLookup[audioPrefs.ambientSoundId]
-                  ? t(ambientSoundLookup[audioPrefs.ambientSoundId].labelKey)
-                  : t("breathing.setup.none")
-              }
+              value={ambientSound ? t(ambientSound.labelKey) : t("breathing.setup.none")}
               onPress={() => setSoundsOpen(true)}
               last
             />

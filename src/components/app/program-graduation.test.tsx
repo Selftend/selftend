@@ -15,7 +15,7 @@ describe("ProgramGraduation", () => {
         onReplay={jest.fn()}
       />,
     );
-    expect(screen.getByText("Program complete")).toBeTruthy();
+    expect(screen.getByText("Programme complete")).toBeTruthy();
     expect(screen.getByText("5 thought records")).toBeTruthy();
   });
 
@@ -29,7 +29,7 @@ describe("ProgramGraduation", () => {
         onReplay={jest.fn()}
       />,
     );
-    fireEvent.press(screen.getByText("Continue with my tools"));
+    fireEvent.press(screen.getByText("Done"));
     expect(onDismiss).toHaveBeenCalled();
   });
 
@@ -39,7 +39,7 @@ describe("ProgramGraduation", () => {
       <ProgramGraduation lines={lines} dismissed onDismiss={jest.fn()} onReplay={onReplay} />,
     );
     expect(screen.queryByText("5 thought records")).toBeNull();
-    fireEvent.press(screen.getByText("Replay the program"));
+    fireEvent.press(screen.getByText("Replay the programme"));
     expect(onReplay).toHaveBeenCalled();
   });
 });

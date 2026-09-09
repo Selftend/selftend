@@ -9,6 +9,26 @@ const PAGE_READS = [
   ["meditation/repository.ts", "listMeditationSessionsPage"],
   ["mindfulness/repository.ts", "listMindfulnessSessionsExcludingNamesPage"],
   ["journal/repository.ts", "listJournalEntriesPage"],
+  // ACT's eight archive reads (#1517). Every ACT row is encrypted, so an offset page is
+  // not merely slower here — ADR-0001 prices a read at `rows returned x encrypted
+  // columns`, and `.range()` re-decrypts everything it skips.
+  ["act/repository/defusion.ts", "listDefusionLogsPage"],
+  ["act/repository/expansion.ts", "listExpansionLogsPage"],
+  ["act/repository/connection.ts", "listConnectionLogsPage"],
+  ["act/repository/observing-self.ts", "listObservingSelfSessionsPage"],
+  ["act/repository/choice-points.ts", "listChoicePointsPage"],
+  ["act/repository/urge-surf.ts", "listUrgeSurfLogsPage"],
+  ["act/repository/bulls-eye.ts", "listBullsEyeSnapshotsPage"],
+  ["act/repository/committed-action.ts", "listCommittedActionArchivePage"],
+  // DBT's five record archives (#1980 spec §6): every row is encrypted, so the same
+  // ADR-0001 pricing applies; sessions have no list and no page read.
+  ["dbt/repository/wise-mind.ts", "listWiseMindCheckinsPage"],
+  ["dbt/repository/judgements.ts", "listJudgementsPage"],
+  ["dbt/repository/emotion-records.ts", "listEmotionRecordsPage"],
+  ["dbt/repository/opposite-action.ts", "listOppositeActionPlansPage"],
+  // The scripts ladder pages only its DONE half (#2196); the open half is one
+  // whole, server-ordered read with no page at all, so it is not listed here.
+  ["dbt/repository/scripts.ts", "listDoneScriptsPage"],
 ] as const;
 
 function exportedFunction(file: string, name: string): string {

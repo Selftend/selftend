@@ -37,6 +37,23 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
   ignores OS key auto-repeat. Spread it onto any raw Pressable with a toggle role. Never
   combine it with `role="button"` - react-native-web already activates Space there, and
   the pair double-fires (the control toggles on at keydown and back off at keyup).
+- `enterKeyActivationProps()` adds web-only Enter activation to a `role="link"` Pressable
+  that has no `href`. react-native-web treats a link as a native anchor and leaves its
+  Enter to the browser, but an href-less Pressable renders `<div role="link">`, which the
+  browser does nothing with - Tab reaches it, Enter is dead. Spread it onto every such
+  Pressable, and skip it when the element is disabled. The shared components do (the
+  "Show all" door, the shared-tools chips, the breadcrumb, the sidebar's donate row, the
+  settings colophon and the external settings row), and so do the screen-local links in
+  the habits, meditation, journal and mood screens (#1735) and the CBT route screens'
+  sleep, gratitude and values links (#1736). Never spread it onto `role="button"`
+  (react-native-web already activates buttons on Enter, and the pair double-fires) or
+  onto an expo-router `Link asChild` (that renders a real anchor, which the browser
+  already follows). It does not handle Space: a link never activates on Space.
+  `test/link-enter-activation-guard.test.ts` (#1737) derives every element with a
+  literal link role from `src/` and `app/` and fails CI when one is neither a
+  `Link asChild` child nor carries the helper, when the helper lands on a button, or
+  when its pinned lists no longer match the tree: the anchor-backed sites, and the
+  files whose role is an expression the walk cannot read (each with its reason).
 - `toggleButtonStateProps(pressed)` is the state for add/remove toggle buttons:
   `aria-pressed` on web (the valid ARIA for a toggle), the selected announcement on native.
 - `currentStateProps(active, "page" | "step")` is the "you are here" state for navigation
@@ -84,8 +101,19 @@ persisted on `user_preferences`:
 - `breath_volume` and `ambient_volume` — the breathing session's two lanes.
 - `bell_volume` — all three meditation bells; **0 is off**, and at 0 nothing is played and
   the global audio session is never configured at all.
+- `meditation_ambient_volume` — the meditation sit's looping bed, its own preference rather
+  than the breathing one so a bed chosen for breathing never plays under a sit uninvited.
+  `meditation_ambient_sound_id` defaults to `none`, which is the off switch.
 
 A new audio lane without a volume control is an accessibility regression, not a follow-up.
+
+The cues also have a non-sound counterpart. `haptic_cues` (off by default, opt-in from the
+sit setup and from a running breathing session, one preference for both) taps once for each
+meditation bell and once at each breath phase boundary through
+[src/lib/native-haptics.ts](../src/lib/native-haptics.ts), for a person who cannot hear the
+cue or sits with the bells at 0 — the tap fires at volume 0 too. It is a supplement and never
+required, and it is **native only**: the module is a no-op on web and the switch is not shown
+there (see Known Gaps).
 
 ## Contributor Checklist
 
@@ -103,6 +131,11 @@ Before opening a PR that adds or changes UI:
 ## Known Gaps
 
 These should be addressed as MVP flows expand:
+
+- The haptic counterpart to the bells and breath cues is native only. The web build has no
+  haptic path (`expo-haptics` would fall back to the Vibration API on a few browsers only,
+  which is deliberately not wired) and hides the switch; a visual pulse for the meditation
+  bell on web would be a separate piece of work.
 
 - Add focused component tests for each new module's critical accessible actions, not just visual text.
 - Add manual screen-reader notes to the release checklist once Android and web device testing resumes.

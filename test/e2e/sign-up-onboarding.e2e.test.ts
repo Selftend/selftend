@@ -8,7 +8,13 @@
 
 import { expect, test } from "@playwright/test";
 
-import { deleteUserByEmail, dismissCookieBanner, fetchVerificationCodeViaMailpit } from "./helpers";
+import {
+  answerConsentGate,
+  clearAgeGate,
+  deleteUserByEmail,
+  dismissCookieBanner,
+  fetchVerificationCodeViaMailpit,
+} from "./helpers";
 
 test.describe("sign-up + onboarding + first record", () => {
   const email = `signup-e2e-${Date.now()}@test.local`;
@@ -38,6 +44,23 @@ test.describe("sign-up + onboarding + first record", () => {
     // ownership is proven later through the verify banner, exercised at the
     // end of this journey.
 
+    // The age gate (#1764) is what a brand-new account meets FIRST - above the
+    // consent gate, and this is the only spec that walks it, because every
+    // other one signs in as a user whose preferences were normalized.
+    const dayField = page.getByTestId("age-gate-day");
+    await expect(dayField).toBeVisible({ timeout: 10_000 });
+    // ☠️ Nothing is pre-filled, and the year especially: §3 of spec #227 rules
+    // out a default year, and a calendar picker could not avoid one.
+    await expect(dayField).toHaveValue("");
+    await expect(page.getByTestId("age-gate-year")).toHaveValue("");
+    // Nothing is submittable until every question is answered. The COPPA
+    // neutrality of the copy itself is pinned in age-gate.test.tsx, against
+    // both locales' strings - a body-text scan here would fail on unrelated
+    // chrome and get deleted rather than fixed.
+    await expect(page.getByTestId("age-gate-submit")).toBeDisabled();
+
+    await clearAgeGate(page);
+
     // First-time user must accept consent before anything else.
     // Handle the consent gate manually so the wizard is left for us to walk below.
     const consentTitle = page.getByText("Quick policy check", { exact: true });
@@ -46,50 +69,37 @@ test.describe("sign-up + onboarding + first record", () => {
       .then(() => true)
       .catch(() => false);
     if (consentVisible) {
-      await page.getByRole("checkbox").first().click();
-      const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
-      await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
-      await acceptButton.click();
+      await answerConsentGate(page);
       await expect(consentTitle).toBeHidden({ timeout: 10_000 });
     }
 
-    // Panel 1: welcome + disclaimer.
+    // The introduction: one panel since #1958 - welcome + disclaimer, and Finish is
+    // its only CTA. There is no concern, module, guidance or starter-routine panel
+    // to walk, and finishing seeds nothing.
+    // (The one-panel contract itself - exactly two controls, Finish and the
+    // pinned Skip - is pinned by count in app-onboarding-wizard.test.tsx; an
+    // absence assertion on "Continue" here would pass vacuously.)
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 2: pick a concern.
-    await expect(page.getByText("What brings you here?")).toBeVisible();
-    await page.getByText("Sleep", { exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 3: leave both optional modules unselected for a tools-only setup.
-    // Guidance is skipped; with >= 2 eligible steps and zero routines the
-    // starter-routine offer (#46) is the panel before finish.
-    await expect(page.getByText("Would a self-help module be useful?")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Final panel: the pre-composed starter routine. Decline it - skipping must
-    // write nothing and simply finish onboarding with the tool suggestions.
-    await expect(page.getByText("One small routine to start?")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: "Skip", exact: true }).click();
-    await expect(page.getByText("One small routine to start?", { exact: true })).toBeHidden({
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
     });
 
-    // Personalization payoff: the selected shared widgets are now on Home.
-    //
-    // The two `.last()` here were read as one workaround and were really two different
-    // things. `Check-in` was the #989 duplicate-home mount, now fixed, so it goes back to
-    // a plain text locator that a returning duplicate would break. `Sleep` never was:
-    // it names the Right now nudge AND the tool row on a SINGLE home (the mood card reads
-    // "How are you?", which is why only Sleep has this twin), so it goes by testID.
-    await expect(page.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible({ timeout: 10_000 });
-
-    // The optional Home tour may be ineligible after the personalized setup. If
-    // it appears, dismiss it so the reload assertion remains deterministic.
-    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
-    if (await skipTour.isVisible()) await skipTour.click();
+    // Home rendered (#1956): a brand-new account lands with an EMPTY Favourites line over
+    // the complete catalogue - eight tools and three modules - which is what proves the
+    // screen came up. Counted within each section rather than looked up by text: a
+    // favourited item renders its card twice on Home (Favourites and catalogue), so an
+    // unscoped `getByText("Check-in")` is a strict-mode violation the moment one is
+    // starred, and an absence assertion on Favourites would pass vacuously.
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible({
+      timeout: 10_000,
+    });
+    const tools = page.getByTestId("home-tools");
+    await expect(tools.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(tools.locator('[data-testid^="card-tool-"]')).toHaveCount(8);
+    await expect(
+      page.getByTestId("home-modules").locator('[data-testid^="card-module-"]'),
+    ).toHaveCount(3);
 
     // Reload: the one-time widget wizard must not reappear.
     await page.reload();

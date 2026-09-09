@@ -46,8 +46,6 @@ const RAW_MODAL_EXEMPT_FILES = [
   "src/components/app/delete-account-modal.tsx",
   // Web-only crop dialog with a visible Cancel; the native file is a null stub.
   "src/components/app/avatar-crop-modal.web.tsx",
-  // Coach-mark overlay with its own text dismissals, ruled out of scope by #1165.
-  "src/features/tours/tour-overlay.tsx",
 ];
 
 // The Origin contract (#1167 clause O3, built by #1269). #1164 decided the
@@ -126,6 +124,9 @@ const CAPTURED_FRAME_FILES = [
   "src/features/grounding/**/*.{ts,tsx}",
   "src/features/activities/**/*.{ts,tsx}",
   "src/features/cbt/**/*.{ts,tsx}",
+  // DBT is born in the captured frame (#1980 spec §5.2): every one of its dated
+  // tables carries an offset from day one, so the module joins whole.
+  "src/features/dbt/**/*.{ts,tsx}",
   "app/(app)/tools/breathing/**/*.{ts,tsx}",
 ];
 
@@ -309,6 +310,15 @@ module.exports = [
   {
     rules: {
       "import/no-unresolved": ["error", { commonjs: true }],
+      // A control character inside a regex literal is almost always a typo that
+      // makes an assertion vacuous: `\b` typed as a raw U+0008 matches a literal
+      // backspace, which no rendered text carries, so `queryByText(...)` is
+      // always null and `.toBeNull()` passes on every tree. Two test files
+      // shipped that shape (#2216, #2261); the expo base config does not pull
+      // in core `recommended`, so nothing flagged either. The one sanctioned
+      // use - a sanitiser that strips control characters on purpose - carries a
+      // per-line disable with its reason.
+      "no-control-regex": "error",
     },
     settings: {
       // Explicit version is LOAD-BEARING under ESLint 10: eslint-plugin-react's
@@ -391,10 +401,33 @@ module.exports = [
     // after travel and skews daily averages. Activities carry TWO such days -
     // `completedDayKey` for when it was done, `scheduledDayKey` for the day it was
     // planned for - so neither the completion nor the plan may be re-derived from
-    // its timestamp here. The viewer-local helpers stay available to ACT, which has
-    // no captured offset and is deliberately out of #330's scope until it grows a
-    // history surface, and to routines, whose day axis is deliberately viewer-local
-    // (#330 owner decision). Habits are already correct by a different route:
+    // its timestamp here. The viewer-local helpers stay available to ACT, and that is
+    // permanent until ACT graduates as a whole, NOT a gap waiting to be closed: ACT
+    // carries no captured offset on any of its tables, so the viewer's frame is the
+    // only frame it has, and #1513 holds the deferral on that being true UNIFORMLY -
+    // every ACT day-namer resolving from the viewer's device, so ACT's surfaces can
+    // be wrong together after travel but never contradict each other. ACT growing a
+    // history surface (#1514, shipped #1517) did NOT expire this; the archives are
+    // flat and newest-first precisely so they name no second frame.
+    // ☠️ So do NOT add `src/features/act/` to CAPTURED_FRAME_FILES - it is backwards.
+    // This block bans the viewer-local helpers; #1513 REQUIRES ACT to use them. ACT's
+    // guard is this block's mirror and lives in `test/act-captured-offset-gate.test.ts`,
+    // which fires if any one ACT table graduates alone. Graduation is a single
+    // module-wide change across every day-stamped ACT table, and it deletes that gate
+    // and this sentence together. Routines are viewer-local for a different reason -
+    // their day axis is deliberately so (#330 owner decision).
+    // ⚠️ Known hole, unrelated to ACT: `@/src/lib/locale-format`'s
+    // `useLocaleFormats().formatDateTime` renders the byte-identical string to
+    // `formatTimestamp` from a module this gate does not name. Unexploited today (every
+    // caller outside ACT renders `updatedAt`, the sanctioned viewer-local use), but it
+    // means an import-layer gate naming one of two modules exporting the same string.
+    // ⚠️ Note also what this block does NOT ban: `formatRelativeDayKey`, correctly, since
+    // captured-frame features are supposed to use it. That makes gratitude a trap for ACT
+    // rather than a model - `gratitude-entry-card.tsx` renders it, and gratitude is
+    // flat-family and keyset-paged, so it is the closest structural match to ACT's own
+    // archives and the likeliest screen to be copied. It measures a CAPTURED dayKey
+    // against the viewer's today, which is the second frame ACT may not have.
+    // Habits are already correct by a different route:
     // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
     // ever converted.
     files: CAPTURED_FRAME_FILES,

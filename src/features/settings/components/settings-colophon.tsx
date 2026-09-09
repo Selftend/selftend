@@ -1,22 +1,21 @@
-import { Platform, Pressable, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { useWideFrame } from "@/src/features/settings/use-wide-frame";
 import { getRunningVersion } from "@/src/lib/update-availability";
 import { cn } from "@/lib/utils";
 
 /**
- * Phone stacks the colophon and centres it; desktop lays it out as one line.
- * Same 640 breakpoint and the same `useWindowDimensions` source the tool and
- * reminder rows use.
- */
-const WIDE_WIDTH = 640;
-
-/**
  * The page's last line: the running version, and the one door to the repository.
+ *
+ * Phone stacks it and centres it; desktop lays it out as one line. The 640
+ * breakpoint that used to live here as a private `WIDE_WIDTH` moved to
+ * `useWideFrame` (#1830), so the page's type scale steps at the same width this
+ * does — one number, one place.
  *
  * **Two nodes rather than one string**, which is a correction to the spec's
  * `"Selftend v{{version}} · open source"`. Two things make a single key
@@ -33,9 +32,9 @@ const WIDE_WIDTH = 640;
  */
 export function SettingsColophon() {
   const { t } = useTranslation("settings");
-  const { width } = useWindowDimensions();
-  const wide = width >= WIDE_WIDTH;
+  const wide = useWideFrame();
   const version = getRunningVersion();
+  const openRepo = () => openExternalUrl(appEnv.githubRepoUrl);
 
   return (
     <View
@@ -72,7 +71,11 @@ export function SettingsColophon() {
         // a new tab with `noopener,noreferrer`, where `Linking.openURL` navigates
         // the app's own tab away - and it logs the native rejection that a `void`
         // would swallow. Every other outbound link in the app already uses it.
-        onPress={() => openExternalUrl(appEnv.githubRepoUrl)}
+        onPress={openRepo}
+        // No `href`, so on web this is a `<div role="link">` that react-native-web
+        // leaves to the browser on Enter as though it were an anchor. The link
+        // brings its own Enter handler (#1730).
+        {...enterKeyActivationProps(openRepo)}
         testID="settings-open-source"
         className={cn("active:opacity-70", Platform.select({ web: "hover:opacity-80" }))}
       >

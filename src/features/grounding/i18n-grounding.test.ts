@@ -32,6 +32,24 @@ describe("grounding i18n additions", () => {
         expect(Array.isArray(tech.stepHints)).toBe(true);
         expect(tech.stepHints).toHaveLength(tech.steps.length);
       });
+
+      // The cold-water caution (#1996, shape ruled on #1985): two lines at
+      // most, the stop rule first and the who-should-check line second. It is
+      // the first technique-level caution in the app, so the shape is pinned
+      // here for the DBT physical skills to reuse. A caution is a technique's
+      // own line, not a shared one — the other two techniques carry none, which
+      // is what keeps the "no caution" branch in the session real.
+      it("carries a two-line caution on cold-water and none on the others", () => {
+        const caution = g.techniques["cold-water"].caution;
+        expect(Array.isArray(caution)).toBe(true);
+        expect(caution).toHaveLength(2);
+        for (const line of caution) {
+          expect(typeof line).toBe("string");
+          expect(line.trim().length).toBeGreaterThan(0);
+        }
+        expect(g.techniques["54321"].caution).toBeUndefined();
+        expect(g.techniques["feet-floor"].caution).toBeUndefined();
+      });
     });
   }
 });

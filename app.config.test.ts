@@ -15,6 +15,7 @@ import assetlinks from "./public/.well-known/assetlinks.json";
 // plugin runs solely for dev-variant builds), so a pass-through stub is safe.
 jest.mock("expo/config-plugins", () => ({
   withAndroidManifest: (config: unknown) => config,
+  withGradleProperties: (config: unknown) => config,
 }));
 
 // SHA-256 fingerprint as Play/keytool print it: 32 colon-separated hex bytes.

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { useMeditationSessionPages } from "@/src/features/meditation/queries";
@@ -13,6 +14,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { formatCompactAtOffset } from "@/src/utils/date";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
@@ -72,16 +74,36 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
 export default function MeditationSessionsScreen() {
   const { t } = useTranslation("meditation");
   const { user } = useSession();
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useMeditationSessionPages(user?.id ?? null);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPaused,
+    isPending,
+    refetch,
+  } = useMeditationSessionPages(user?.id ?? null);
 
   const sessions = useMemo(() => data?.pages.flat() ?? [], [data]);
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
-    // user keeps dragging, and each call would queue another page fetch.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  // ☠️ `isPending` is not "a request is in flight" (#2237). Queries keep
+  // `networkMode: "online"`, so an offline first read never starts: it sits at
+  // `isPending` true / `isPaused` true, and a paused query never errors. Keyed
+  // on `isPending` alone, an offline arrival spun forever with the retry beside
+  // it unreachable. Pending AND paused is a read that did not happen, and takes
+  // the failed read's branch; query-core resumes it when the connection
+  // returns. `isPending && isPaused`, never `isPaused` alone - a later page
+  // pausing over pages already read is `isPaused` with `status: "success"`.
+  const unread = isError || (isPending && isPaused);
+
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -116,17 +138,17 @@ export default function MeditationSessionsScreen() {
           // hundreds of sits that their record is gone. A failed background
           // refetch that still has pages cached never reaches this branch,
           // because the list is not empty.
-          isPending ? (
-            <View className="py-10">
-              <ActivityIndicator />
-            </View>
-          ) : isError ? (
+          unread ? (
             <ErrorState
               icon="cloud-off"
               title={t("module.sessions.error.title")}
               description={t("module.sessions.error.description")}
               action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
             />
+          ) : isPending ? (
+            <View className="py-10">
+              <ActivityIndicator />
+            </View>
           ) : (
             // The message IS the title here: `module.sessions.title` is already
             // the screen heading two nodes up, and repeating it puts the same
@@ -134,12 +156,15 @@ export default function MeditationSessionsScreen() {
             <EmptyState icon="self-improvement" title={t("module.sessions.empty")} />
           )
         }
+        // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+        // unrendered once rows exist, and the load-more latch (#2255) only clears
+        // through this Retry (#2187).
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={isFetchNextPageError}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
       />
     </SafeAreaView>

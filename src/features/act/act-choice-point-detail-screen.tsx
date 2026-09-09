@@ -16,22 +16,25 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
-import { useChoicePoint, useChoicePoints, useDeleteChoicePoint } from "@/src/features/act/queries";
+import {
+  useChoicePoint,
+  useChoicePointPages,
+  useDeleteChoicePoint,
+} from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActChoicePointDetailScreen() {
   const { t } = useTranslation(["act", "common"]);
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const cpId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: cp, isLoading } = useCachedItem(
-    useChoicePoints,
+    useChoicePointPages,
     useChoicePoint,
     user?.id ?? null,
     cpId,
@@ -72,7 +75,7 @@ export default function ActChoicePointDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={t("act:choicePoint.title")} />
-            <Text variant="muted">{formatDateTime(cp.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(cp.createdAt, null)}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
                 <Icon name="delete-outline" className="size-4 text-destructive" />

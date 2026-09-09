@@ -1,3 +1,5 @@
+import { DBT_GROUP_BY_SLUG } from "@/src/features/dbt/dbt-home-config";
+
 export interface Breadcrumb {
   label: string;
   href?: string;
@@ -25,7 +27,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/notifications": "sidebar.notifications",
   "/settings": "sidebar.settings",
 
-  "/modules": "sidebar.modules",
   "/modules/act": "sidebar.act",
   "/modules/act/choice-point": "act:choicePoint.title",
   "/modules/act/committed-action": "breadcrumb.committedAction",
@@ -64,8 +65,16 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/self-care": "breadcrumb.selfCare",
   "/modules/cbt/recovery": "breadcrumb.recovery",
   "/modules/dbt": "sidebar.dbt",
+  "/modules/dbt/learn": "breadcrumb.learn",
+  "/modules/dbt/coping-plan": "breadcrumb.copingPlan",
+  "/modules/dbt/pause": "breadcrumb.pause",
+  "/modules/dbt/sessions/muscle-relaxation": "breadcrumb.muscleRelaxation",
+  "/modules/dbt/emotions": "breadcrumb.emotions",
+  "/modules/dbt/wise-mind": "breadcrumb.wiseMind",
+  "/modules/dbt/judgements": "breadcrumb.judgements",
+  "/modules/dbt/opposite-action": "breadcrumb.oppositeAction",
+  "/modules/dbt/scripts": "breadcrumb.scripts",
 
-  "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
   "/tools/check-in/history": "breadcrumb.history",
   "/tools/check-in/new": "breadcrumb.new",
@@ -133,7 +142,18 @@ const STATIC_ROUTES: Record<string, string> = {
 // index: a list there would duplicate `/modules/cbt/history`, and nothing in
 // the app ever navigates to the bare path. #1251's `breadcrumb.saved` label
 // left with it - the trail now ends in the generic "Entry" and Up is CBT.
-const TRANSPARENT_SEGMENTS = new Set(["session", "saved"]);
+//
+// `tools` and `modules` joined them on #2096, and their two `STATIC_ROUTES` rows
+// left in the same change. They are route DIRECTORIES with no page: a static row
+// there names a `<Redirect>` stub as an ancestor and sends Up into it.
+//
+// ☠️ Deleting the rows WITHOUT this is worse than doing neither. The segment
+// falls through to the generic branch instead, so `/tools/check-in` reads
+// `Entry · Check-in`, that `Entry` crumb carries an href into the stub, and
+// because it is `unresolved` the Escape degrades from "Back to Home" to a bare
+// "Go back". The two edits are one change; `breadcrumbs.test.ts` fails on the
+// crumb count if only half of it is made.
+const TRANSPARENT_SEGMENTS = new Set(["session", "sessions", "saved", "tools", "modules"]);
 
 // Known named sub-segments that appear after dynamic segments
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {
@@ -155,6 +175,10 @@ const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
   "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
   "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
   "/tools/habits/learn": (slug) => `habits:learn.cards.${slug}.title`,
+  // The skill-group slugs are kebab-case URLs and their copy keys are
+  // camelCase, so the map is data (`DBT_GROUP_BY_SLUG`) rather than a
+  // transformation - a slug outlives a rename of the symbol beside it.
+  "/modules/dbt/learn": (slug) => `dbt:groups.${DBT_GROUP_BY_SLUG[slug] ?? slug}.name`,
 };
 
 /**

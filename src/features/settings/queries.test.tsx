@@ -9,7 +9,6 @@ import {
   useExportUserData,
   useRecordPolicyConsent,
   useUpdateOnboardingPreferences,
-  useUpdateShownButtonTours,
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
@@ -19,7 +18,6 @@ import {
   getUserPreferences,
   recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
@@ -32,7 +30,6 @@ jest.mock("@/src/features/settings/repository", () => ({
   getUserPreferences: jest.fn(),
   recordPolicyConsent: jest.fn(),
   updateOnboardingPreferences: jest.fn(),
-  updateShownButtonTours: jest.fn(),
   updateUserPreferences: jest.fn(),
 }));
 
@@ -40,9 +37,6 @@ const mockUpdateUserPreferences = updateUserPreferences as jest.MockedFunction<
   typeof updateUserPreferences
 >;
 const mockGetUserPreferences = getUserPreferences as jest.MockedFunction<typeof getUserPreferences>;
-const mockUpdateShownButtonTours = updateShownButtonTours as jest.MockedFunction<
-  typeof updateShownButtonTours
->;
 const mockUpdateOnboardingPreferences = updateOnboardingPreferences as jest.MockedFunction<
   typeof updateOnboardingPreferences
 >;
@@ -62,7 +56,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUpdateUserPreferences.mockResolvedValue(defaultUserPreferences);
   mockGetUserPreferences.mockResolvedValue(defaultUserPreferences);
-  mockUpdateShownButtonTours.mockResolvedValue(defaultUserPreferences);
   mockUpdateOnboardingPreferences.mockResolvedValue(defaultUserPreferences);
   mockRecordPolicyConsent.mockResolvedValue(undefined);
   mockDeleteUserAccount.mockResolvedValue(undefined);
@@ -91,7 +84,11 @@ describe("useUserPreferences enabled gate", () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockGetUserPreferences).toHaveBeenCalledWith("u1");
+    // The query's own signal travels with the id (#2251): it is how a cancelled
+    // read is stopped on the wire rather than only forgotten in the cache.
+    expect(mockGetUserPreferences).toHaveBeenCalledWith("u1", {
+      signal: expect.any(AbortSignal),
+    });
     expect(result.current.data).toEqual(defaultUserPreferences);
     expect(client.getQueryState(preferenceKeys.detail("u1"))).toBeDefined();
   });
@@ -220,12 +217,6 @@ describe("useUpdateUserPreferences - invalidation", () => {
 // exact preferences detail key) and null user (mutationFn runs, invalidate skipped).
 // ---------------------------------------------------------------------------
 const invalidatingMutations = [
-  [
-    "useUpdateShownButtonTours",
-    useUpdateShownButtonTours,
-    mockUpdateShownButtonTours,
-    ["tour-a"] as const,
-  ],
   [
     "useUpdateOnboardingPreferences",
     useUpdateOnboardingPreferences,

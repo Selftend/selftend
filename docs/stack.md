@@ -39,22 +39,25 @@ Do not add a second broad UI kit without a specific reason. `daisyUI` is web-DOM
 
 Supported languages: English (`en`) and Bulgarian (`bg`). English is the fallback.
 
-Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Ten cover app-level surfaces:
+Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Nine cover app-level surfaces:
 
-| Namespace       | Scope                                          |
-| --------------- | ---------------------------------------------- |
-| `common`        | shared UI strings                              |
-| `auth`          | sign-in, sign-up, verification, passwords      |
-| `settings`      | settings, profile, consent, cookie banner      |
-| `navigation`    | tabs, sidebar, header, not-found               |
-| `policies`      | policy page chrome and section content         |
-| `errors`        | error messages                                 |
-| `notifications` | reminder and notification settings             |
-| `security`      | app lock and security settings                 |
-| `help`          | in-app help content for tools and programs     |
-| `modules`       | module copy without a dedicated tool namespace |
+| Namespace       | Scope                                      |
+| --------------- | ------------------------------------------ |
+| `common`        | shared UI strings                          |
+| `auth`          | sign-in, sign-up, verification, passwords  |
+| `settings`      | settings, profile, consent, cookie banner  |
+| `navigation`    | tabs, sidebar, header, not-found           |
+| `policies`      | policy page chrome and section content     |
+| `errors`        | error messages                             |
+| `notifications` | reminder and notification settings         |
+| `security`      | app lock and security settings             |
+| `help`          | in-app help content for tools and programs |
 
-The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
+The other eleven are one per tool or module: `act`, `cbt`, `dbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
+
+The count held at 20 across [#1980](https://github.com/Selftend/selftend/issues/1980): `dbt` arrived and `modules` left in the same change. `modules` had exactly one block in it — the DBT overview screen's copy — and that copy moved into the module's own namespace, leaving an empty file rather than a general-purpose home (the `/modules` index page read from `navigation`, not from `modules`, which is what made the namespace's name misleading; that page was itself deleted by [#2114](https://github.com/Selftend/selftend/issues/2114)). **Weblate has not caught up:** its `modules` component now matches no file and its `dbt` namespace has no component. Both are owner actions — remove the one, run `node scripts/weblate-create-components.js --apply` for the other, after the change reaches `main`.
+
+Some key paths are deliberately stale. `navigation.json`'s `home.widgets.*` block (with `today.dashboard.*`, `home.programWidget.*`, `today.plan.open` and `home.categories.routines`) is the Android launcher widget's copy — `src/features/widgets/snapshot-builder.ts` and `widget-config-screen.tsx` — and nothing on Home has rendered it since the dashboard was deleted ([#1959](https://github.com/Selftend/selftend/issues/1959)). Renaming it to `widgets.*` was rejected because every namespace is Weblate-tracked: a rename presents ~100 keys per locale as new source strings and orphans the Bulgarian. `home.rows.*` keeps its path for the same reason. Neither i18n test can see those keys' consumers (the launcher's `t` arrives as a parameter), so `src/features/widgets/widget-meta.test.ts` resolves every launcher literal in both locales instead; a key's existence in a locale file is no evidence that anything renders it.
 
 Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`.
 
@@ -69,6 +72,16 @@ Do not take that count on trust — it is a snapshot. `node scripts/weblate-crea
 Weblate tracks `main`, while this repo develops on `dev`, so a namespace can be ready in the tree and not yet ready to track. Before creating anything the script reads each namespace's file as `main` has it and withholds the ones that would come up with error-level alerts — a key with both a bare and an i18next-v4 plural form (`key` beside `key_other`, where v4 wants `key_one`), or a file that has not reached `main` at all and would leave the filemask matching nothing. Withheld namespaces are named with their reason and wait for the next dev→main release; the rest are created anyway, so a release is never a reason to postpone the whole pass. The screen reads GitHub rather than the local checkout, because a stale `origin/main` would clear a namespace that is not actually clean.
 
 `--apply` closes with the same steps a human would do afterwards, while the token is still live: it pulls the project repository, then reports the project's failing-check count, any namespace still untracked, and each component's alerts. `--finish` runs just that closing step. Alerts are listed rather than judged — the API exposes no severity field — so confirming they are warnings and not errors is still a human call. As of 2026-08-27 hosted Weblate answers `GET /api/components/selftend/<slug>/alerts/` with `404` for every component, even for a token that reads and writes those same components — the endpoint is gone, not guarded. The script distinguishes that from a token that cannot see alerts: a `404` on every component is reported once as a property of the deployment and does not fail the pass, while a `403`, or a `404` on only some components, stays loud and holds the exit code at 1. A run that could not read alerts says so in its closing line rather than implying a clean bill. Read the severities from the UI instead: each component page carries an **Alerts** tab whose cards are badged `Information`, `Warning`, or `Error`.
+
+Removing a source string is a repo-side operation, and it is the one direction the steps above do not cover. Delete the key and **both** locale files in the same commit, together with any asset the key pulls in. For a help key that is five places: the entry in `HELP_KEYS` (`src/features/help/help-content.ts`), the block in `en/help.json`, the block in `bg/help.json`, the `HELP_IMAGES` entry (`src/features/help/help-images.ts`), and the PNG under `assets/images/help/`. Other namespaces are the same shape with a shorter tail — the key, both locales, and whatever the key referenced.
+
+Both locales moving together is the binding constraint, and it is a repo test rather than anything Weblate does: `src/features/help/help-content.test.ts` asserts the `bg` help namespace holds exactly the `en` key set, and `src/i18n/locale-parity.test.ts` holds the same line across every namespace and every key path. A one-locale removal is a red build, not a staged migration.
+
+`tsc` forces the code reference out but never the file on disk. `HELP_IMAGES` is typed `Partial<Record<HelpKey, ImageSourcePropType>>`, so an entry naming a deleted key fails the excess-property check (TS2353); removing the `require()` is therefore mandatory, and it is what drops the asset from the bundle. The PNG itself survives in git until it is deleted deliberately. `test/help-key-doors.test.ts` is the guard that catches what is left behind; read its clauses there rather than reconstructing them from here. A half-done removal fails CI instead of living on Weblate.
+
+Weblate is silent about removals and loud about changes. Checked 2026-08-28 ([#1521](https://github.com/Selftend/selftend/issues/1521)): its change vocabulary carries repository-sourced _added_ and _changed_ events but no repository-sourced removal, and no alert covers removed or surplus strings, so nothing there signals a deleted source string — the unreadable `/alerts/` endpoint described above hides nothing on this path. A deletion reaches Weblate as a pull from the repository, so it never triggers a push. What does surface is a **changed** source string, which is why rewording is the visible half of a removal that rescues its content elsewhere: [#1545](https://github.com/Selftend/selftend/issues/1545) deleted the `distortions` help entry and moved its `why` sentence into `cbt.learn.description`, and that rewrite is the only half of it Weblate will ever show. Write the `bg` side of a rescued string by hand in the same commit — parity checks that a key is present, never that its translation is current.
+
+That batch is also the first source-string removal to round-trip through this project: as of 2026-08-28 none of the 8,718 change events on the Weblate project was a removal of any kind, so the path is unexercised rather than proven — and since Weblate tracks `main`, nothing of it reaches Weblate at all until the next dev→main release.
 
 To add a language:
 

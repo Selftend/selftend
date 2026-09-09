@@ -47,6 +47,15 @@ export interface WizardDraftStore<TValues> {
   updatedAt: number | null;
   /** True once the persisted draft (if any) has been read back from storage. */
   hydrated: boolean;
+  /**
+   * Bumped by every `reset()`; session-only, never persisted. A form that
+   * captures on a timer, or flushes what is still pending when it unmounts,
+   * subscribes to this and drops its pending write when it changes (#2258).
+   * Without that, the sign-out wipe is undone by the form's own tail: the wipe
+   * removes the key, the form's unmount flush writes the record straight back
+   * under it, and the next person on the device opens the form on it.
+   */
+  generation: number;
   hydrate: (mode: DraftMode, entityId?: string | null) => void;
   nextStep: (maxStepIndex: number) => void;
   previousStep: () => void;
@@ -119,6 +128,7 @@ export function createWizardDraftStore<TValues>(flowKey: string) {
         values: null,
         updatedAt: null,
         hydrated: false,
+        generation: 0,
         hydrate: (mode, entityId = null) => {
           set((state) => {
             const isSameDraft = state.mode === mode && state.entityId === entityId;
@@ -140,7 +150,14 @@ export function createWizardDraftStore<TValues>(flowKey: string) {
           set((state) => ({ stepIndex: Math.max(state.stepIndex - 1, 0) }));
         },
         reset: () => {
-          set({ mode: "create", entityId: null, stepIndex: 0, values: null, updatedAt: null });
+          set((state) => ({
+            mode: "create",
+            entityId: null,
+            stepIndex: 0,
+            values: null,
+            updatedAt: null,
+            generation: state.generation + 1,
+          }));
         },
         setValues: (values) => {
           set({ values, updatedAt: Date.now() });

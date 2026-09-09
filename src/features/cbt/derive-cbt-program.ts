@@ -47,6 +47,8 @@ export interface CurrentPhaseView {
   themeDescKey?: string;
   milestones: ProgramTaskView[];
   dailyPractice: ProgramTaskView | null;
+  /** Presentation order only - see the definition's comment (#1676). */
+  leadsWithDailyPractice: boolean;
 }
 
 export interface CbtProgramView {
@@ -129,6 +131,7 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
         themeDescKey: def.themeDescKey,
         milestones,
         dailyPractice,
+        leadsWithDailyPractice: def.leadsWithDailyPractice === true,
       };
 
   return {

@@ -53,7 +53,7 @@ Force-quit the app first, so the recording begins at a genuine cold launch.
 
 Open **Selftend**. You land on a screen with the app icon, **"Selftend"**, the line _"Calm, guided self-help tools for personal reflection."_, and a sign-in form.
 
-**Scroll down on this screen without tapping anything else.** Below the form is a short safety paragraph — _"Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders."_ — and a row of links: **Open crisis guidance**, Terms, Privacy, Cookies.
+**Scroll down on this screen without tapping anything else.** Below the form is a short safety paragraph — _"Selftend is a set of mental health tools for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders."_ — and a row of links: **Open crisis guidance**, Terms, Privacy, Cookies.
 
 **Let that sit on screen for ~3 seconds.** This is the shot proving crisis guidance is reachable **before signing in**, which is one of the written answers.
 
@@ -103,13 +103,13 @@ Scroll the dashboard slowly to the bottom and back up.
 
 From the dashboard, open the **Check-in** card and log a mood — pick a face, save it.
 
-Then open the navigation and go to **Tools › Mood tracker** to show the entry you just made sitting in the list with the others.
+Then open its **history** to show the entry you just made sitting in the list with the others.
 
-> ⚠️ The tools hub calls this **"Mood tracker"**. The navigation sidebar calls the same thing **"Check-in"**. Both are correct; they are the same tool.
+> ⚠️ On screen the tool is called **"Check-in"** — that is what the **breadcrumb above it** says, and what the card you opened it from says. Earlier cuts of this script called it "Mood tracker"; no step here does any more, and it was always the same tool.
 
 ### 6. A journal entry, saved and shown in its history
 
-Go to **Tools › Journal**, tap to add an entry, type two or three sentences of ordinary text, and save.
+From Home, open the **Journal** card, tap to add an entry, type two or three sentences of ordinary text, and save.
 
 Show the saved entry in the journal list.
 
@@ -117,7 +117,7 @@ Show the saved entry in the journal list.
 
 ### 7. A timed breathing session, run to completion
 
-Go to **Tools › Breathing** and start a session. **Let it run to the end** rather than cutting away — the point is that a timed exercise actually completes and is recorded.
+From Home, open the **Breathing** card and start a session. **Let it run to the end** rather than cutting away — the point is that a timed exercise actually completes and is recorded.
 
 When it finishes you may see **"Nice work. Want a daily reminder?"** with **Set reminder** and **No thanks**.
 
@@ -126,13 +126,13 @@ When it finishes you may see **"Nice work. Want a daily reminder?"** with **Set 
 
 Then show the session in the breathing history.
 
-### 8. The tools hub and the modules
+### 8. The catalogue — eight tools and three modules
 
-Open **Tools**. Let the list sit for ~3 seconds. It shows **eight** tools: Mood tracker, Journal, Breathing, Gratitude log, Grounding, Meditation, Sleep tracker, Habit tracking.
+Go back to **Home** and scroll to the **Tools** section. Let it sit for ~3 seconds. It shows **eight** tools: Check-in, Journal, Breathing, Gratitude log, Grounding, Meditation, Sleep, Habit tracking.
 
-> This shot matters more than it looks. Apple cited **2.1 App Completeness** — the guideline for apps that look unfinished. A hub of eight working tools, each showing real counts, is the direct answer.
+> This shot matters more than it looks. Apple cited **2.1 App Completeness** — the guideline for apps that look unfinished. Eight working tools, each showing a real count, is the direct answer.
 
-Then open **Modules** and let that sit. Open **CBT** briefly, then go back.
+Keep scrolling to the **Modules** section below it and let that sit — CBT, ACT and DBT. Open **CBT** briefly, then go back.
 
 ### 9. Enable a reminder — the notification prompt
 
@@ -196,7 +196,7 @@ Every item below must be visible in the footage. A recording missing one is wors
 - [ ] A mood entry created **and** shown in its history
 - [ ] A journal entry created **and** shown in its history
 - [ ] A breathing session run to completion **and** shown in its history
-- [ ] The tools hub showing eight tools
+- [ ] Home's Tools section showing eight tools
 - [ ] The **notification** permission prompt, granted
 - [ ] The **photo library** permission prompt, granted
 - [ ] Account deletion, end to end, on `vasil.yoshev+delete-demo@gmail.com` — **never** `demo@selftend.org`

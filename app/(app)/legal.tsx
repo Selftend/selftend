@@ -14,6 +14,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LEGAL_REVIEW_PENDING } from "@/src/features/policies/policy-content";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { HOME_COLUMN } from "@/src/lib/layout";
+import { cn } from "@/lib/utils";
 
 export default function LegalScreen() {
   const pushWithOrigin = usePushWithOrigin();
@@ -21,7 +23,8 @@ export default function LegalScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
+      {/* Column on the padded box, not inside it - see `layout.ts` (#1721). */}
+      <ScrollView contentContainerClassName={cn("grow p-6", HOME_COLUMN)}>
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={t("legal.title")} />

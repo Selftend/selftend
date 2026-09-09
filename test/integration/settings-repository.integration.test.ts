@@ -169,10 +169,16 @@ describe("user_preferences (integration)", () => {
           privacy_policy_accepted_at: now.toISOString(),
           terms_accepted_at: now.toISOString(),
           policy_version_accepted: "2.0.0",
+          // The explicit Art. 9(2)(a) consent (#1766). Written in the same
+          // upsert as the contractual acceptance because one submit gives both,
+          // but kept as its own column so it can be read back as its own act.
+          health_data_consent_at: now.toISOString(),
         },
         { onConflict: "user_id" },
       )
-      .select("policy_version_accepted, privacy_policy_accepted_at, terms_accepted_at")
+      .select(
+        "policy_version_accepted, privacy_policy_accepted_at, terms_accepted_at, health_data_consent_at",
+      )
       .single();
 
     expect(upsert.error).toBeNull();
@@ -181,6 +187,10 @@ describe("user_preferences (integration)", () => {
       now.getTime(),
     );
     expect(new Date(upsert.data?.terms_accepted_at as string).getTime()).toBe(now.getTime());
+    // Against the live schema, so this is also what proves the column exists
+    // and that the row's own owner may write it under the existing RLS - the
+    // unit tests above run against a mocked client and cannot say either.
+    expect(new Date(upsert.data?.health_data_consent_at as string).getTime()).toBe(now.getTime());
   });
 });
 

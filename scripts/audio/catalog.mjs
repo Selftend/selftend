@@ -42,7 +42,7 @@
  * masters were unusable.
  *
  * What survives is the half that measured HARMLESS — the tone sentence, at -5.4
- * with the body. What goes is the pile-up: "Very low noise floor. No music, no
+ * with the body. What went was the pile-up: "Very low noise floor. No music, no
  * speech. No sudden events. No silence at start or end. No wide stereo."
  *
  * The zero-silence rule (#1134) is not dropped, only re-phrased positively as
@@ -52,6 +52,32 @@
  *
  * ⚠️ Round A's bells were rendered under the OLD tail and are not re-rendered;
  * their manifest rows record what was actually sent.
+ *
+ * ☠️☠️ "Very low noise floor." WAS TRIED AGAIN ON 2026-08-30 AND MEASURED AGAIN.
+ * IT SILENCES THE RENDER. DO NOT REACH FOR IT A THIRD TIME.
+ *
+ * The owner auditioned the rendered set and rejected `night` and `ocean` for
+ * audible hiss while calling `rain` and `forest` good. Since #1316 had removed
+ * the whole block, nothing was asking for a quiet background any more — and the
+ * clause is the one in that block phrased POSITIVELY, so it looked like collateral
+ * damage rather than a cause. It is a cause.
+ *
+ * Added to `night`'s clip text alone and preflighted: **-44.11 and -29.85 dBTP**,
+ * against -3.98 for `forest` in the same run. #1316 had already measured this
+ * exact clip at **-47.4 with the old tail and -4.7 without it** — so this is that
+ * measurement reproduced, and the mechanism is not negation-specific. Reverted.
+ *
+ * 📌 The hiss is therefore NOT a prompting problem. It is what the model returns,
+ * and the place to address it is post-processing (a denoise pass over a
+ * stationary bed is cheap, deterministic and reversible) or acceptance — never
+ * another wording attempt at this clause.
+ *
+ * ☠️ AND IF SOMETHING IS EVER ADDED HERE: `planSlot` keys the resume on PROMPT
+ * EQUALITY, and this tail is appended to every clip, so editing it supersedes
+ * every accepted take in the round at once. With `rain` c2 and `forest` c1
+ * already chosen, a tail edit re-rolls both — spending credits to replace takes
+ * already judged good, which a seedless API cannot give back. Per-clip text is
+ * the only safe place to iterate once any take is chosen.
  */
 export const SHARED_TAIL =
   "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Begins immediately and holds to the very end.";
@@ -138,7 +164,7 @@ export const SFX_MASTER_PCM = { codec: "s16le", sampleRate: 48000, channels: 2 }
 export const TTS_MODEL = "eleven_multilingual_v2";
 
 /**
- * #1141: WAV output needs Pro, so the eight voice cues were costed as
+ * #1141: WAV output needs Pro, so the voice cues were costed as
  * `mp3_44100_192` on Creator. #1210 left it conditional on #1159's probe. Rather
  * than hard-code the pessimistic answer, `render-voices` ASKS: it tries the
  * lossless format first and falls back on rejection, recording which one each
@@ -215,10 +241,62 @@ export const AAC_ENCODER = "aac"; // pinned: ffmpeg's native encoder, what #1138
  */
 export const BED_FOLD_SECONDS = 0.4; // CF in generate-breathing-sounds.py:154
 
+/**
+ * The peak the bed limiter works to, in linear amplitude (0.7 ~ -3.1 dBFS).
+ *
+ * Gentle on purpose. The job is to take the tops off the occasional crackle or
+ * wave so the gain that follows can reach the target, NOT to compress the bed
+ * into a flat wall — that would remove the very movement that makes ambience
+ * sound alive, which is the whole reason the synthesised beds were rejected.
+ */
+export const BED_LIMITER_PEAK = 0.6;
+
 const CLASS_OUTPUT = {
-  beds: { channels: 2, bitrate: "128k", lufs: -20 },
+  // ☠️ 96k, not #1138's 128k. The 2026-08-29 bed request takes the set from five
+  // beds to nine, and nine 30s beds at 128k are 4.12 MiB on their own — over the
+  // 4 MiB ceiling before a single bell or voice cue is counted. 96k puts the whole
+  // set at ~3.23 MiB with room left for the voice half.
+  //
+  // The quality cost is small for this class specifically: every bed is noise or
+  // ambience, continuous by construction and with no transients — the material
+  // AAC codes most efficiently and where a listener has least to miss. Owner
+  // decision, 2026-08-29, made against the measured numbers rather than as a
+  // default. ⚠️ Bells stay at 128k: a struck bowl IS a transient.
+  // ☠️☠️ -28 AND LIMITED, NOT -20 WITH PURE GAIN. #1138 chose -20 under a -3 dBTP
+  // ceiling and explicitly refused a limiter, so that normalisation stayed one
+  // exact arithmetic gain. For a bell that is right. For ambience it is
+  // unreachable, and this was established from three independent directions on
+  // 2026-08-30 rather than argued:
+  //
+  //   · 36 ElevenLabs generations of `ocean`/`stream`/`fire` — every one rejected
+  //     `ceiling-bound` or `clipped`, 13,530 credits.
+  //   · SIX human-vetted sounds from the Explore library, one with 183 downloads
+  //     — crest 17.9, 20.0, 20.3, 20.5, 33.7, 35.6 dB against a 17 dB budget.
+  //     Every one over.
+  //   · Synthesis, which met the spec and did not sound like the thing.
+  //
+  // Real ambience has a high crest factor: it is quiet on average with occasional
+  // peaks, and that IS the sound. A target that forbids it forbids the material.
+  // So beds move to -28 with a gentle limiter ahead of the gain — the one class
+  // where a limiter is the correct tool rather than a compromise.
+  //
+  // ⚠️ Beds are now deliberately QUIETER than the other classes (bells -20/-23,
+  // voice -16). That is the right order for a background layer under a spoken cue.
+  // Owner approved 2026-08-30 after auditioning all six candidates.
+  beds: { channels: 2, bitrate: "96k", lufs: -28, limit: true },
   textures: { channels: 1, bitrate: "96k", lufs: -20 },
-  voice: { channels: 1, bitrate: "64k", lufs: -16 },
+  // ☠️ -18, NOT #1138's -16, and it is what the material can actually reach.
+  // Measured across all eight rendered cues (2026-08-30), the loudest each could
+  // be gained to under the -3 dBTP ceiling: -16.25, -15.97, -16.59, -16.00,
+  // -17.16, -16.01. Speech has a high crest, so -16 left several capped and the
+  // set spanning 1.2 LU for no reason anyone chose.
+  //
+  // ⚠️ A LIMITER IS NOT THE ANSWER HERE, unlike beds. Tried and measured: it
+  // reintroduced 4.94ms of LEAD SILENCE on five of the eight, because alimiter's
+  // lookahead pads the head — and #1134 makes zero leading silence a hard rule
+  // precisely for these clips, since a cue fires on a phase boundary that is
+  // already up to 250ms late. Harmless on a bed, disqualifying on a cue.
+  voice: { channels: 1, bitrate: "64k", lufs: -18 },
 };
 
 /** The `-20 LUFS-I, <= -3 dBTP` string `plan` prints, built from the numbers. */
@@ -287,10 +365,36 @@ export const BEDS = [
     id: "night",
     // #1316: +22.6 dB median over three takes against the old wording. "Evenly
     // blended" carries what "no single insect audible above the others" meant.
-    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets over soft dark air, one steady unbroken texture held at exactly the same level from beginning to end.",
+    //
+    // ☠️ "over soft dark air" REMOVED 2026-08-30, and it was asking for the very
+    // thing the owner rejected. All three takes came back with audible hiss; an
+    // "air tone" under the crickets IS broadband hiss, so the prompt was ordering
+    // it. Asking for a low noise floor was tried first and SILENCED the clip
+    // (-44 dBTP — see the SHARED_TAIL docblock), which is what sent the search
+    // back to the clip's own words.
+    //
+    // The one exclusion this clip is allowed now spends itself on that air tone
+    // rather than on insect behaviour, which "evenly blended" already covers.
+    // ⚠️ Unverified by ear at the time of writing: it is a reasoned change, not a
+    // measured one, and the audition is what settles it.
+    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets, one steady unbroken texture held at exactly the same level from beginning to end. Crickets only, with no air tone under them.",
   },
   {
     id: "brown-noise",
+    // ☠️ SYNTHESISED SINCE 2026-08-29, and the comment below called it. #1134
+    // flagged this as "the obvious single-class reopen" if any bed failed the
+    // gate — and Round B returned all three takes HARD-CLIPPED at 0.0 dBTP with
+    // thousands of samples pinned at full scale, which the old floor-only gate
+    // graded `ok`. The reopen condition was met, so the class moved.
+    //
+    // White and pink joined it for the same reason plus a second one: SHARED_TAIL
+    // opens "Dark and warm, no glassy highs", which a bright noise contradicts by
+    // definition. There is no prompt that asks for white noise under that tail —
+    // the same shape of conflict #1262 found between the `ocean` bed and its
+    // distance, and unlike that one it cannot be resolved by rewording, because
+    // brightness IS the spec. Deterministic DSP has no such problem: it is exact,
+    // seamless, free, and costs no credits.
+    source: "synth",
     // ⚠️ #1134 flagged this as the one clip a generative model is a strictly
     // worse tool for — brown noise is deterministic, free and inherently
     // seamless in eight lines of the existing script. #1133 stands, but if any
@@ -302,6 +406,37 @@ export const BEDS = [
   },
   {
     id: "ocean",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `ocean` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: breaking waves are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (20.0 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because the owner rejected every generated take with "the waves are too frequent", and this one's own description promises "wave intensity remains consistent with no sudden crashes or strong surges".
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    libraryFile: "AMBSea-A_long,_uninterrupte-Elevenlabs.wav",
+    libraryDescription:
+      "A long, uninterrupted nighttime ocean waves ambience recorded from inside a quiet luxury hotel room near the shore",
+    libraryDownloads: 115,
     // ☠️ #1137 separated this bed from the `ocean-swell` texture "by distance in
     // the prompt" — bed wide and distant, texture close. That mechanism does not
     // exist: SHARED_TAIL is appended to *every* SFX prompt, beds included, and it
@@ -316,22 +451,154 @@ export const BEDS = [
     // surf on sand at the ear. The shoreline ban is the fence — "no surf on sand"
     // alone let the model drift into the texture's territory.
     //
-    // ⚠️ Swell is still barred, and not only for #1137's loop-tell reason: the
-    // seam gate measures short-time energy delta across the wrap, SFX is
-    // non-deterministic so a swell cannot be phase-aligned to 30s, and a
-    // mid-cycle swell at the wrap fails that check by construction.
+    // ☠️ THIS COMMENT USED TO SAY "SWELL IS STILL BARRED" AND THE PROMPT DID NOT
+    // BAR IT. #1316 cut the exclusion list down to one and took the swell ban out
+    // with it, leaving the claim behind — so the file asserted a constraint it had
+    // stopped carrying. The owner then auditioned the result and reported exactly
+    // the thing the vanished clause forbade: "the waves are too frequent".
+    //
+    // The reason swell must not be there is unchanged and worth keeping: the seam
+    // gate measures short-time energy delta across the wrap, SFX is
+    // non-deterministic so a swell cannot be phase-aligned to 30s, and a mid-cycle
+    // swell at the wrap fails that check by construction.
     //
     // ⚠️ Open risk, deliberately deferred to the audition (#1262): stripped of
     // distance, breaking, swell and sand, this may be indistinguishable from
     // `brown-noise` — the very redundancy that got a warm drone rejected in
     // #1137. Three candidates cost ~297 credits, so the call is made by ear.
-    // ⚠️ #1316 keeps ONE exclusion here on purpose. #1262's separation from the
-    // `ocean-swell` texture IS the shoreline, so it cannot be dropped — but the
-    // rest of the old list goes, since the pile-up is what silences. Positive
-    // description plus at most one essential exclusion is the rule.
-    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Open sea only, with no shoreline in it.",
+    // ⚠️ #1316 keeps ONE exclusion here, and 2026-08-30 MOVED WHICH ONE.
+    //
+    // It used to be the shoreline, because #1262 needed a fence between this bed
+    // and the `ocean-swell` TEXTURE — "so it cannot be dropped", said the note
+    // that stood here. That texture was retired the same day the owner asked for
+    // background beds only, so the fence now guards nothing at all, while the
+    // clause the set actually needed had been dropped two rounds earlier.
+    //
+    // So the single slot is spent on swell instead. Still one exclusion, still
+    // positive-description-first — the rule is unchanged, only its target moved.
+    // 📌 The general lesson: an exclusion that exists to separate two clips dies
+    // with the clip it was separating from. Re-check the fences after a retirement.
+    // ☠️ "Very low noise floor." added 2026-08-30: the owner rejected all three
+    // takes as noisy — "none, all noisy". Per-clip rather than in SHARED_TAIL for
+    // the resume reason in that docblock. ⚠️ This clip already carried an open
+    // risk of being indistinguishable from `brown-noise`; if the quieter draw
+    // lands there, `ocean` is the bed to reconsider rather than to re-roll again.
+    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. One unchanging wash only, with no swell rising or falling in it.",
+  },
+  {
+    id: "stream",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `stream` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: splashes over stones are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (17.9 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because the cleanest measurement of the six candidates, and free of the birdsong that would put a recurring event in a 30-second loop.
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    libraryFile: "AMBMisc-Natural_river_stream-Elevenlabs.wav",
+    libraryDescription:
+      "Natural river stream ambience, clear flowing water rushing over smooth stones and small boulders",
+    libraryDownloads: 32,
+    // Added on the owner's 2026-08-29 bed request, with `fire`. It has to be
+    // fenced from both neighbours: from `rain` because both are water on a
+    // surface, and from `ocean` because both are a continuous body of it. Moving
+    // water over stones is what this one owns.
+    //
+    // ⚠️ Written against the #1130 crest finding rather than for flavour. `rain`
+    // failed at spec because it rendered as sparse discrete events — a 24.6 dB
+    // crest against `forest`'s 12.7 — and could not be gained to -20 LUFS under
+    // the ceiling. Separate splashes are that same shape, so the one exclusion
+    // this prompt is allowed spends itself there.
+    text: "A small stream running over stones heard close, blended into one continuous even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Running water only, with no separate splashes in it.",
+  },
+  {
+    id: "fire",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `fire` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: crackles are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (35.6 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because by far the most downloaded of any candidate, and "minimal crackle, very low volume" is what a bed under a meditation should be.
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    output: { lufs: -36 },
+    libraryFile: "FIRECrkl-Ultra-soft_small_fir-Elevenlabs.wav",
+    libraryDescription:
+      "Ultra-soft small fireplace fire, gentle warm crackling, very light and subtle embers",
+    libraryDownloads: 183,
+    // ☠️ THE RISKIEST BED IN THE SET, knowingly. A hearth fire IS crackle, and a
+    // crackle is a discrete event — precisely the sparse shape that made `rain`
+    // unusable at spec (#1130). So the prompt asks for the crackle to be dense
+    // enough to blend into a wash, which is the same move that rescued `forest`
+    // once it lost its birds (#1316).
+    //
+    // If it still returns `ceiling-bound` under the fixed gate, that is the gate
+    // working. The answer would be a denser prompt, never a louder one — and if
+    // a dense one cannot be had, fire is not a bed this palette can hold.
+    text: "A hearth fire heard close, its crackle so dense that it blends into one continuous even wash, a steady unbroken texture held at exactly the same level from beginning to end. A settled fire only, with no separate pops in it.",
+  },
+  {
+    id: "white-noise",
+    source: "synth",
+    text: null,
+  },
+  {
+    id: "pink-noise",
+    source: "synth",
+    text: null,
   },
 ].map((bed) => ({
+  // ☠️ THREE SOURCES NOW, and only one of them costs anything.
+  //
+  //   `elevenlabs` — generated by `render.mjs` against the prompt below. The
+  //                 default, and the only one that spends credits.
+  //   `synth`      — computed by `synth-noise.mjs`. Exact for noise whose
+  //                 definition IS a spectrum: white, pink, brown.
+  //   `library`    — downloaded from the ElevenLabs Explore library. Free, and
+  //                 the only route that produced a convincing ocean, stream or
+  //                 fire after the other two were tried and rejected.
+  //
+  // `SFX_CLIPS` is what keeps the non-`elevenlabs` beds out of a render; they
+  // stay in `BEDS` and `SHIPPED_SFX_CLIPS` because they still ship.
+  source: "elevenlabs",
   ...bed,
   klass: "beds",
   round: "B",
@@ -339,8 +606,18 @@ export const BEDS = [
   promptInfluence: 0.6,
   loop: CLASS_LOOP.beds,
   candidates: 3,
-  output: CLASS_OUTPUT.beds,
-  loudnessTarget: loudnessLabel(CLASS_OUTPUT.beds.lufs),
+  // ☠️ A bed MAY carry its own target, and one does. `fire` measures -34.7 LUFS
+  // with a +0.88 dBTP peak — a 35.6 dB crest — so reaching the class -28 would
+  // take limiting so heavy the crackle flattens into noise, which is exactly the
+  // character the owner approved it for. Measured: un-limited it can only be
+  // attenuated to -38.6; at the gentle 0.7 limiter it reaches -36.2; only at a
+  // brutal 0.18 does it touch -28.4. So it ships at its own honest level.
+  //
+  // ⚠️ THE CONSEQUENCE IS AUDIBLE AND DELIBERATE: `fire` sits ~8 dB below the
+  // other beds, so switching to it is a real drop in level. Accepted in exchange
+  // for keeping the sound; the alternative is a squashed fire at matched level.
+  output: { ...CLASS_OUTPUT.beds, ...(bed.output ?? {}) },
+  loudnessTarget: loudnessLabel(bed.output?.lufs ?? CLASS_OUTPUT.beds.lufs),
   // The only class whose seam is gated, and the only one the fold can apply to.
   // ⚠️ Carrying a fold length is no longer the same as folding: since #1359 this
   // is the length available to the fallback, and `foldPlan` decides whether it
@@ -349,89 +626,70 @@ export const BEDS = [
 }));
 
 /**
- * ☠️ #1316: the exhale modifier says "pitched ... in tone, at exactly the same
- * level" rather than the old bare "Lower and darker." #1134 meant that as PITCH
- * and TIMBRE - the only audible signal of a phase change in the texture lane -
- * but a generative model can read "lower" as lower VOLUME, and `wind_exhale` was
- * the last clip in the set still measuring BROKEN after everything else had been
- * fixed. Saying which axis is meant costs nothing.
+ * ☠️ THE SIX BREATH TEXTURES ARE RETIRED (owner, 2026-08-30). This is where
+ * `TEXTURE_FAMILIES` and `TEXTURES` used to be.
  *
- * Inhale and exhale stay separate files. They differ in pitch today
- * (soft-breath is 196 Hz vs 147 Hz) and that step at the phase boundary is the
- * *only* audible signal of a phase change in the texture lane — #1134 keeps it
- * deliberately: inhale slightly higher and brighter, exhale lower and darker.
+ * They were the inhale/exhale-paced lane: `soft-breath`, `ocean-swell` and
+ * `wind`, each split in two and swapped on the breath phase (#1134, #1137). The
+ * owner auditioned the rendered set and asked for background beds ONLY — "no
+ * inhale/exhale specific noises" — even though `ocean-swell_inhale` was judged
+ * good on its own terms. The lane goes, not the takes' quality.
+ *
+ * ⚠️ IT IS ALSO LOAD-BEARING FOR THE BUNDLE. Nine beds put the set at ~3.99 MiB
+ * of the 4 MiB ceiling with these six still counted; dropping them returns ~0.69
+ * MiB. Re-adding a texture lane means re-checking the budget first, not after.
+ *
+ * `CLASS_OUTPUT.textures` and `CLASS_LOOP.textures` are deliberately KEPT: the
+ * six files are still in `assets/sounds/breathing/` until the app change lands,
+ * and `postprocess` must still be able to look up a spec for one.
  */
-const TEXTURE_FAMILIES = [
-  {
-    id: "soft-breath",
-    inhale:
-      "A steady continuous stream of soft warm air, as through slightly parted lips, one even unbroken texture held at exactly the same intensity from beginning to end. A sustained sound rather than a breath being taken.",
-    exhaleModifier: "Pitched a little lower, darker and warmer in tone, at exactly the same level.",
-  },
-  {
-    id: "ocean-swell",
-    // The shoreline half of the ocean pair whose open-water half is the `ocean`
-    // bed above. ☠️ #1137 said the separation was by distance; #1262 found that
-    // distance is unavailable (SHARED_TAIL forces every clip close and dry) and
-    // moved it to content. Surf on sand is what this clip owns, and what the bed
-    // is now explicitly forbidden. Still not by name (#1137) — renaming costs a
-    // Weblate string in en and bg and disguises the pairing rather than fixing it.
-    inhale:
-      "A continuous even wash of surf on sand, close at the ear, one steady unbroken band of water noise held at exactly the same level from beginning to end.",
-    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
-  },
-  {
-    id: "wind",
-    // ⚠️ The shipped `wind` is gusty by design
-    // (generate-breathing-sounds.py:122-124). Removing gusts is deliberate: any
-    // recurring event is heard several times per phase.
-    // ☠️ #1316 RE-CONCEPTED, like `forest`. Positive rewriting alone was not
-    // enough: six takes of the reworded version still measured -22 to -28 dBTP,
-    // BROKEN on every one. "Wind" is rendered as sparse gusts however it is
-    // phrased. What the preflight shows working across the whole set is DENSE,
-    // CONTINUOUS, CLOSE material - brown noise, the water washes, forest once it
-    // became a wash of many leaves - and `soft-breath_inhale`, which is already
-    // wind at close range and renders fine. So this asks for that instead.
-    inhale:
-      "A broad, dense rush of moving air heard close, like a steady draught through a doorway, blended into one smooth unbroken texture held at exactly the same level from beginning to end.",
-    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
-  },
-];
-
-export const TEXTURES = TEXTURE_FAMILIES.flatMap((family) => [
-  { id: `${family.id}_inhale`, text: family.inhale },
-  // #1134 writes the exhale as "as above, with <modifier>". The API needs
-  // literal text, so the modifier is appended rather than left as a reference.
-  { id: `${family.id}_exhale`, text: `${family.inhale} ${family.exhaleModifier}` },
-]).map((texture) => ({
-  ...texture,
-  klass: "textures",
-  round: "B",
-  // #1137 lengthened textures from #1134's 3.4s to 10s — long enough to outlast
-  // the longest phase they must cover (the 8s 4-7-8 exhale), which is why they
-  // never loop and why seam quality stops mattering for this lane entirely.
-  durationSeconds: 10,
-  promptInfluence: 0.3, // the default; creative variety is fine for a texture
-  loop: CLASS_LOOP.textures,
-  candidates: 2,
-  output: CLASS_OUTPUT.textures,
-  loudnessTarget: loudnessLabel(CLASS_OUTPUT.textures.lufs),
-}));
+export const TEXTURES = [];
 
 /**
- * #1136 — two voices on a gender axis, 8 clips. The female voice keeps the id
- * `guided` because an unrecognised breath_sound_id fails twice over (silence,
- * *and* the sheet displays "None") and shipped store clients live forever, so
- * the male voice is purely additive and there is no migration.
+ * #1136 — a gender axis, 2 voices x 4 cues, 8 clips. The female voice keeps the id `guided` because an
+ * unrecognised breath_sound_id fails twice over (silence, *and* the sheet displays
+ * "None") and shipped store clients live forever, so the male voice is purely
+ * additive and there is no migration.
  *
- * Voice ids are deliberately empty: #1136 routed the actual pick to the render
- * session on stated criteria — Voice Library only (defaults expire
- * 2026-12-31), a matched pair, auditioned on the shipping words rather than on
- * the library's demo reel. Fill these in at Round B.
+ * ☠️ THE VOICES ARE CHOSEN (owner, 2026-08-30). #1136 routed the pick to the
+ * render session on stated criteria — Voice Library only (defaults expire
+ * 2026-12-31), a matched pair — and these are the two the owner picked.
+ *
+ * ☠️ `lang` IS LOAD-BEARING, NOT A LABEL. It is the join key {@link voiceSlotSpec}
+ * pairs on. With one language it is trivially satisfied — that is the point, and
+ * not a reason to delete it: the moment a second language exists, the join is the
+ * only thing standing between the render and a whole set of takes in which a
+ * voice reads another language's words. See that function's docblock.
+ *
+ * ☠️☠️ BULGARIAN WAS RENDERED, AUDITIONED AND REJECTED BY EAR (owner, 2026-08-31).
+ * #1573 ran to completion: both voices were added to the account, all 32 takes
+ * rendered and measured, and the owner's verdict on the listen was that neither
+ * Bulgarian voice was good enough to ship. **The lane is English-only again.**
+ *
+ * ⚠️ THIS IS THE AUDITION WORKING, NOT A FAILURE OF IT. The whole reason #1578
+ * put an ear test after the measurements is that no number can say whether a voice
+ * is pleasant, and the rejection landed BEFORE the app-side wiring was built —
+ * which is the cheap place to find out. Do not re-open the expansion on the
+ * grounds that "the pipeline supports it": the pipeline is not what said no.
+ *
+ * 📌 The measurements, kept because they are the expensive part to re-obtain:
+ * Moonglow (`vnewfQdVVk9Y9DZWVRNm`) was technically clean — all 8 takes at -18
+ * LUFS with 0 ms lead. Yakim Petrov (`NG3DzyUGmLkog1AFB5iv`) was not: 6 of 8 takes
+ * breached the 1.0 ms lead-silence rule, and `guide_exhale_bg` and `guide_intro_bg`
+ * had NO passing candidate. Both are `professional` Library voices on a 730-day
+ * notice, verified for bg on `eleven_multilingual_v2`, if anyone revisits.
+ *
+ * ⚠️ The `lang` field STAYS. It is one word per entry, it is what the slot join
+ * reads, and it is the difference between adding a language being a data change
+ * and being a re-run of #1581's whole mis-pairing problem.
  */
 export const VOICES = [
-  { id: "guided", axis: "female", voiceId: null },
-  { id: "guided-male", axis: "male", voiceId: null },
+  // ☠️ #1580: these two ids were TRANSPOSED until 2026-08-31 — `guided` (the row
+  // the app labels female) carried Adam, and `guided-male` carried Carla. Confirmed
+  // twice over: by the owner's ear on the audition, and by the provider's own
+  // `gender` label. Check the NAME, not the position, before editing either line.
+  { id: "guided", axis: "female", lang: "en", voiceId: "l32B8XDoylOsZKiSdfhE" }, // Carla
+  { id: "guided-male", axis: "male", lang: "en", voiceId: "s3TPKV1kjDlVtZbl4Ksh" }, // Adam
 ];
 
 /**
@@ -449,9 +707,9 @@ export const VOICES = [
  * moment a different voice is written in for real, so a shortlist can never leak
  * into the winner's candidates.
  *
- * @param {{id: string, axis: string, voiceId: string|null}[]} voices the catalog pair
+ * @param {{id: string, axis: string, lang: string, voiceId: string|null}[]} voices the catalog voices
  * @param {string[]} pairs `id=voiceId` strings, as passed on the command line
- * @returns {{id: string, axis: string, voiceId: string|null}[]}
+ * @returns {{id: string, axis: string, lang: string, voiceId: string|null}[]}
  */
 export function resolveVoices(voices, pairs = []) {
   const overrides = new Map();
@@ -474,12 +732,30 @@ export function resolveVoices(voices, pairs = []) {
   );
 
   // ☠️ #1136 frames the pair as a PURE GENDER AXIS. Two identical ids would render
-  // sixteen takes of one voice and turn the matched-pair comparison into a clip
+  // eight takes of one voice and turn the matched-pair comparison into a clip
   // compared against itself — a silent way to waste a whole audition.
-  const ids = resolved.map((voice) => voice.voiceId).filter(Boolean);
-  const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
-  if (duplicate) {
-    throw new Error(`both voices resolve to "${duplicate}" — #1136 asks for a matched PAIR`);
+  //
+  // ☠️☠️ THE CHECK IS PER-LANGUAGE, AND THAT IS NOT A DETAIL. A global uniqueness
+  // check across all of `VOICES` would fire on #1578's own documented escape hatch:
+  // language is a property of the REQUEST, not of the voice, so a second language
+  // may legitimately be spoken by a voice this list already holds — which makes two
+  // entries share a voiceId on purpose. A global check turns that into a dead
+  // render with a message about a matched pair, which is the opposite of what went
+  // wrong. (#1573 named that as its own fallback before the lane was dropped.)
+  //
+  // What must stay unique is the pair WITHIN one language: that is the comparison
+  // #1136 asks for, and it is still nonsense to audition a voice against itself.
+  for (const lang of new Set(resolved.map((voice) => voice.lang))) {
+    const ids = resolved
+      .filter((voice) => voice.lang === lang)
+      .map((voice) => voice.voiceId)
+      .filter(Boolean);
+    const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
+    if (duplicate) {
+      throw new Error(
+        `both ${lang} voices resolve to "${duplicate}" — #1136 asks for a matched PAIR`,
+      );
+    }
   }
   return resolved;
 }
@@ -500,9 +776,16 @@ export function resolveVoices(voices, pairs = []) {
  * pattern-agnostic (one clip serves 4-7-8, box and coherent alike) and carries no
  * coach framing — no "I", no "we", no claimed outcome.
  *
- * ⚠️ Both voices say the SAME script. Different wording would give a user a
- * *content* reason to prefer one voice, contradicting #1136's framing of the pair
- * as a pure gender axis.
+ * ⚠️ Both voices OF A LANGUAGE say the SAME script. Different wording would give a
+ * user a *content* reason to prefer one voice, contradicting #1136's framing of the
+ * pair as a pure gender axis.
+ *
+ * ☠️ ACROSS languages a cue set deliberately would NOT say the same thing, which is
+ * why `lang` is on every entry: it is the key {@link voiceSlotSpec} joins on, and
+ * without it every voice meets every cue and a voice gets billed for reading words
+ * it does not speak. One entry per language, never a `text: {en, bg}` map —
+ * {@link OUTPUT_CLIPS} is keyed by `cue.id`, so a distinct id per language is what
+ * lets each carry its OWN loudness target rather than inheriting another's (#1581).
  *
  * ⚠️ `introMs` is then set from the RENDERED clip's own header, never from this
  * text (#1136 corrected #1134 on exactly this). Today's clip measures 3.08s
@@ -510,10 +793,33 @@ export function resolveVoices(voices, pairs = []) {
  * POST_INTRO_PAUSE_MS settling beat after it stays, deliberately.
  */
 export const VOICE_CUES = [
-  { id: "guide_inhale", text: "Breathe in" },
-  { id: "guide_hold", text: "Hold" }, // holdOut reuses this — confirmed, not deferred
-  { id: "guide_exhale", text: "Breathe out" },
-  { id: "guide_intro", text: "Find a comfortable position, and let your shoulders soften." },
+  { id: "guide_inhale", lang: "en", text: "Breathe in" },
+  // holdOut reuses this — confirmed, not deferred
+  { id: "guide_hold", lang: "en", text: "Hold" },
+  { id: "guide_exhale", lang: "en", text: "Breathe out" },
+  {
+    id: "guide_intro",
+    lang: "en",
+    text: "Find a comfortable position, and let your shoulders soften.",
+    // ☠️ -21, three below the other cues, and that is to make it MATCH them by
+    // ear rather than to make it quieter. LUFS-I integrates the whole clip, and
+    // this one is a sentence with a natural pause at the comma while the others
+    // are single words with none — so the pause dilutes the measurement and the
+    // intro reads quieter than it sounds. Held at the same LUFS it would come
+    // out audibly LOUDER than "Breathe in".
+    //
+    // It is also the only target both intros can reach: measured, the loudest
+    // they can be gained to is -20.74 (guided) and -19.39 (guided-male).
+    // ⚠️ The 3 dB is reasoned and reachable, not verified by ear.
+    output: { lufs: -21 },
+  },
+
+  // ☠️ THE FOUR BULGARIAN CUES WERE HERE AND WERE REMOVED (owner, 2026-08-31).
+  // #1573 rendered and auditioned them (Вдишай / Задръж / Издишай / "Настани се
+  // удобно. Отпусни раменете си.") and the owner rejected both Bulgarian voices on
+  // the listen. The wording itself was never the problem and is recorded on #1577
+  // if the lane is ever reopened — but reopening it is a product decision, not a
+  // matter of pasting these back.
 ];
 
 /** #1134 §6 — unhurried, low, warm; falling intonation; no performance. */
@@ -524,23 +830,73 @@ export const TTS_VOICE_SETTINGS = {
   use_speaker_boost: true,
 };
 
-export const SFX_CLIPS = [...BELLS, ...BEDS, ...TEXTURES];
+/**
+ * Every clip the API is asked to generate.
+ *
+ * ☠️ SYNTH BEDS ARE EXCLUDED HERE, and this line is the only thing that keeps
+ * them out. `render`, `preflight`, `clipsForRound` and every credit estimate read
+ * this list, so a synth bed that leaked in would be quoted, generated and paid
+ * for — spending credits on a sound the repo can compute exactly for free. They
+ * remain in {@link BEDS} and in {@link OUTPUT_CLIPS} because they still ship and
+ * still need a post-processing spec; they are simply not *rendered*.
+ */
+export const SFX_CLIPS = [
+  ...BELLS,
+  ...BEDS.filter((bed) => bed.source === "elevenlabs"),
+  ...TEXTURES,
+];
+
+/**
+ * Every non-voice clip the app SHIPS — the superset `SFX_CLIPS` used to be.
+ *
+ * ☠️ THESE TWO LISTS ARE NOT THE SAME AND THE DIFFERENCE COSTS MONEY OR TRUTH.
+ * `SFX_CLIPS` is what the API generates; this is what ends up in `assets/`. The
+ * six non-generated beds — three computed, three from the library — sit in this
+ * list only. Read the wrong one and you either quote
+ * credits for a sound that is computed for free (`SFX_CLIPS` too wide) or under-
+ * count the bundle by three 30s beds (this one too narrow) — the second is what
+ * `shippingUnits` did the moment the synth beds appeared, reporting 2.88 MiB for
+ * a set that actually weighs more.
+ */
+export const SHIPPED_SFX_CLIPS = [...BELLS, ...BEDS, ...TEXTURES];
+
+/** The beds `synth-noise.mjs` owns — the complement of `SFX_CLIPS`'s filter. */
+export const SYNTH_BEDS = BEDS.filter((bed) => bed.source === "synth");
+
+/**
+ * The beds downloaded from the ElevenLabs Explore library.
+ *
+ * ⚠️ These have no prompt and no seed, so unlike every other clip they cannot be
+ * remade from anything in this repo — the WAV IS the source. Archive them with
+ * the masters; a lost library file is as unrecoverable as a lost generation.
+ */
+export const LIBRARY_BEDS = BEDS.filter((bed) => bed.source === "library");
 
 /**
  * Every clip the post-processor can be asked about, keyed by id — the thirteen
- * sound effects plus the four voice cues. Voice cues carry no prompt-side fields
+ * sound effects plus the four voice cues. Keying by cue id alone is what keeps this
+ * list right by construction as cues come and go — N cues give N entries with no
+ * edit here, and each one can carry its own loudness target. Voice cues carry no
+ * prompt-side fields
  * (no duration, no candidates); they exist here only so `postprocess` can look up
  * the channels, bitrate and loudness target a `guide_*` file has to hit.
  */
 export const OUTPUT_CLIPS = new Map([
-  ...SFX_CLIPS.map((clip) => [clip.id, clip]),
+  // ☠️ BELLS + BEDS + TEXTURES, deliberately NOT `SFX_CLIPS`. Since the synth
+  // beds left the render list, `SFX_CLIPS` is "what the API generates" while this
+  // is "what the app ships" — and the three noise beds are in the second set but
+  // not the first. Building this from `SFX_CLIPS` made `outputSpecFor` throw for
+  // `white-noise`, which would have stopped the post-processor dead on a file it
+  // is perfectly able to encode.
+  ...SHIPPED_SFX_CLIPS.map((clip) => [clip.id, clip]),
   ...VOICE_CUES.map((cue) => [
     cue.id,
     {
       ...cue,
       klass: "voice",
-      output: CLASS_OUTPUT.voice,
-      loudnessTarget: loudnessLabel(CLASS_OUTPUT.voice.lufs),
+      // A cue may carry its own target, and `guide_intro` does — see its entry.
+      output: { ...CLASS_OUTPUT.voice, ...(cue.output ?? {}) },
+      loudnessTarget: loudnessLabel(cue.output?.lufs ?? CLASS_OUTPUT.voice.lufs),
     },
   ]),
 ]);
@@ -573,7 +929,8 @@ export function clipsForRound(round) {
 }
 
 /**
- * The VOICE half of a round, in the shape `voiceSlots` takes.
+ * The VOICE half of a round: the ALREADY-PAIRED slot list, one entry per cue per
+ * voice that speaks the cue's language.
  *
  * ☠️ THIS CONDITIONAL IS WHY THE FUNCTION EXISTS. "A round is `clipsForRound`
  * plus, if it is B, the voice cues" has been re-derived by every subsystem that
@@ -583,17 +940,80 @@ export function clipsForRound(round) {
  * There is now one place that answers it, and a third consumer cannot disagree
  * with the first two.
  *
+ * ☠️☠️ IT RETURNS PAIRED SLOTS, NOT TWO LISTS, AND THAT CHANGE IS THE WHOLE POINT
+ * OF #1581. It used to hand back `{voices, cues}` and every consumer built the
+ * cartesian product itself — `render`, `ship-plan` and `audition-plan`, three
+ * copies of one line. With one language — today's state — that product is correct
+ * BY LUCK: every voice does say every cue. #1573 worked the two-language case all
+ * the way to a real render and it is CORRECT IN COUNT AND WRONG IN CONTENT — 4
+ * voices x 8 cues is 32 slots where 16 ship, and half the extras were a Bulgarian
+ * voice reading "Breathe in", each with a plausible unique filename that sails
+ * through the budget gate. A measurement of the right size taken of the wrong
+ * render is the failure this repo is worst at seeing. Pairing lives here so no
+ * consumer CAN mis-pair, and that is why it survives the lane being dropped.
+ *
+ * ☠️ CUE-MAJOR ORDER IS LOAD-BEARING and must survive any edit here: #1136's
+ * matched female/male pair has to be heard back to back on the same words, and
+ * grouping by voice puts the two halves of that comparison four players apart.
+ *
  * Round A is the two bells and their gate (#1159); the cues are Round B's, which
  * is where #1136 routed the voice pick itself. An empty spec yields no slots, so
  * callers need no conditional of their own.
  *
+ * ⚠️ `voiceId` is nullable in the parameter type on purpose: that is what
+ * `resolveVoices` returns (the catalog can legitimately carry a voice whose id has
+ * not been picked yet), and narrowing it here would make the shortlist path fail to
+ * typecheck at the one call site this parameter exists for.
+ *
  * @param {string} round
- * @returns {{voices: typeof VOICES, cues: typeof VOICE_CUES, candidates: number}}
+ * @param {{id: string, axis: string, lang: string, voiceId: string|null}[]} [voices]
+ *   the voices to pair against, so `render-voices` can pair a `--voice-id`
+ *   shortlist through this same join rather than beside it
+ * @returns {{slots: {cue: {id: string, lang: string, text: string},
+ *                    voice: {id: string, axis: string, lang: string, voiceId: string|null}}[],
+ *            candidates: number}}
  */
-export function voiceSlotSpec(round) {
-  return round === "B"
-    ? { voices: VOICES, cues: VOICE_CUES, candidates: TTS_CANDIDATE_SEEDS.length }
-    : { voices: [], cues: [], candidates: 0 };
+export function voiceSlotSpec(round, voices = VOICES) {
+  if (round !== "B") return { slots: [], candidates: 0 };
+  return { slots: pairByLanguage(VOICE_CUES, voices), candidates: TTS_CANDIDATE_SEEDS.length };
+}
+
+/**
+ * The join itself: cues ⋈ voices ON `lang`, cue-major.
+ *
+ * ☠️ IT THROWS ON AN EMPTY SIDE RATHER THAN RETURNING FEWER SLOTS. A join is the
+ * one shape where a typo does not raise anything — misspell a cue's `lang` and it
+ * simply matches no voice, the slot list quietly loses two entries, and every
+ * count downstream agrees with every other count because they all read this. The
+ * set would ship a language short and `SHIP_FILE_COUNT` would be the only witness,
+ * on a map whose whole history is counts that agreed with each other and not with
+ * reality (#1317, #1393). So an unpaired cue or an unused voice is an error here,
+ * where the language is still on screen, and not a discrepancy three files away.
+ *
+ * @param {{id: string, lang: string, text: string}[]} cues
+ * @param {{id: string, axis: string, lang: string, voiceId: string|null}[]} voices
+ */
+export function pairByLanguage(cues, voices) {
+  const slots = cues.flatMap((cue) => {
+    const speakers = voices.filter((voice) => voice.lang === cue.lang);
+    if (!speakers.length) {
+      throw new Error(
+        `cue "${cue.id}" is ${cue.lang} and no voice speaks ${cue.lang} — ` +
+          `voices are ${voices.map((v) => `${v.id} (${v.lang})`).join(", ")}`,
+      );
+    }
+    return speakers.map((voice) => ({ cue, voice }));
+  });
+
+  const spoken = new Set(slots.map((slot) => slot.voice.id));
+  const idle = voices.filter((voice) => !spoken.has(voice.id));
+  if (idle.length) {
+    throw new Error(
+      `no ${idle[0].lang} cue for voice "${idle[0].id}" — a voice with nothing to ` +
+        `say renders nothing and costs nothing, so only this check notices`,
+    );
+  }
+  return slots;
 }
 
 /** Total Sound Effects seconds, which is what the credit cost is priced on. */

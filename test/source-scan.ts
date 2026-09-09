@@ -60,8 +60,7 @@ const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-nativ
  * police those files — `modal-web-unmount.test.ts` (#1054) and
  * `modal-overlay-registration.test.ts` (#1473) — so their detection cannot
  * drift apart. Only the detection is shared: each suite keeps its own EXEMPT
- * map, because the exemption sets genuinely differ (tour-overlay is exempt
- * from the unmount gate but must register).
+ * map, because the exemption sets genuinely differ.
  */
 export function rawModalRenderers(root: string): string[] {
   return sourceFiles(root, { dirs: ["src", "app"] }).filter((file) => {

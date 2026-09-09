@@ -65,15 +65,23 @@ const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
 // test was baked with the expected key.
 const BAKED_ENV_MANIFEST = "e2e-baked-env.json";
 const manifestPath = path.join(process.cwd(), OUTPUT_DIR, BAKED_ENV_MANIFEST);
-// The manifest records every baked EXPO_PUBLIC_* for debuggability, but only
-// the VAPID key is guarded (skip-build refusal + bundle verification): it is
-// the one value whose absence makes a whole suite silently test nothing.
+// The manifest records every baked EXPO_PUBLIC_* for debuggability. Two of
+// them also gate E2E_SKIP_BUILD: the VAPID key, whose absence makes the
+// reminder re-arm suite silently test nothing, and the support address, whose
+// absence removes the support page's form (#1728) - an export from before
+// either was pinned is rebuilt rather than served. Only the VAPID key is
+// verified inside the bundle itself.
 const BAKED_ENV_KEYS = [
   "EXPO_PUBLIC_SUPABASE_URL",
   "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "EXPO_PUBLIC_PUBLIC_APP_URL",
   "EXPO_PUBLIC_PLAY_STORE_URL",
   "EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY",
+  "EXPO_PUBLIC_SUPPORT_EMAIL",
+];
+const SKIP_BUILD_REQUIRED_KEYS = [
+  "EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY",
+  "EXPO_PUBLIC_SUPPORT_EMAIL",
 ];
 
 function readBakedEnvManifest() {
@@ -87,11 +95,12 @@ function readBakedEnvManifest() {
 let skipBuild = process.env.E2E_SKIP_BUILD === "1" && fs.existsSync(distIndex);
 if (skipBuild) {
   const recorded = readBakedEnvManifest();
-  if (!recorded?.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY) {
+  const missingKey = SKIP_BUILD_REQUIRED_KEYS.find((key) => !recorded?.[key]);
+  if (missingKey) {
     console.log(
       `[e2e-web] refusing E2E_SKIP_BUILD=1: ${OUTPUT_DIR}/${BAKED_ENV_MANIFEST} ` +
-        `${recorded ? "records no EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY" : "is missing"} ` +
-        `- the existing export predates the web-push key. Rebuilding.`,
+        `${recorded ? `records no ${missingKey}` : "is missing"} ` +
+        `- the existing export predates that value being pinned. Rebuilding.`,
     );
     skipBuild = false;
   }

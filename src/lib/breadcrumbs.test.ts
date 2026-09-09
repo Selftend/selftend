@@ -4,9 +4,7 @@ import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
 // Minimal label table covering the keys these paths resolve to. Unknown keys fall
 // through to the key itself, which would surface as a bug in an assertion.
 const LABELS: Record<string, string> = {
-  "sidebar.tools": "Tools",
   "sidebar.meditation": "Meditation",
-  "sidebar.modules": "Modules",
   "sidebar.cbt": "CBT",
   "breadcrumb.goals": "Goals",
   "breadcrumb.entry": "Entry",
@@ -37,21 +35,20 @@ const t = (key: string) => LABELS[key] ?? key;
 describe("computeBreadcrumbs", () => {
   it("resolves the meditation route to its static label", () => {
     const crumbs = computeBreadcrumbs("/tools/meditation", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Meditation"]);
-    expect(crumbs[0].href).toBe("/tools");
-    expect(crumbs[1].href).toBeUndefined();
+    expect(crumbs.map((c) => c.label)).toEqual(["Meditation"]);
+    expect(crumbs[0].href).toBeUndefined();
   });
 
   it("resolves the meditation practices route to its own label, not the Entry fallback", () => {
     // An unregistered static route reads as an opaque dynamic segment and
     // renders the generic "Entry" - which is how #921's review caught this one.
     const crumbs = computeBreadcrumbs("/tools/meditation/practices", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Meditation", "Practices"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["Meditation", "Practices"]);
   });
 
   it("falls back to a generic label for an opaque-id detail route", () => {
     const crumbs = computeBreadcrumbs("/modules/cbt/goals/3f9a-uuid", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Goals", "Entry"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["CBT", "Goals", "Entry"]);
   });
 
   it("returns nothing for the root", () => {
@@ -67,8 +64,8 @@ describe("computeBreadcrumbs", () => {
 
   it("labels the gratitude entries list as History, not a generic entry", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/entries", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "History"]);
-    expect(crumbs[2].href).toBeUndefined();
+    expect(crumbs.map((c) => c.label)).toEqual(["Gratitude log", "History"]);
+    expect(crumbs[1].href).toBeUndefined();
   });
 
   it("labels the journal entries list as Entries, not a singular record", () => {
@@ -78,12 +75,12 @@ describe("computeBreadcrumbs", () => {
   });
 
   // `history` sits beside the `[id]` detail route, so without a static entry it
-  // would fall through to the dynamic branch and read "Tools · Check-in · Entry".
+  // would fall through to the dynamic branch and read "Check-in · Entry".
   it("labels the check-in all-history screen as History, not a generic entry", () => {
     const crumbs = computeBreadcrumbs("/tools/check-in/history", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Check-in", "History"]);
-    expect(crumbs[1].href).toBe("/tools/check-in");
-    expect(crumbs[2].href).toBeUndefined();
+    expect(crumbs.map((c) => c.label)).toEqual(["Check-in", "History"]);
+    expect(crumbs[0].href).toBe("/tools/check-in");
+    expect(crumbs[1].href).toBeUndefined();
   });
 
   /**
@@ -113,11 +110,11 @@ describe("computeBreadcrumbs", () => {
   });
 
   // #468 sweep: the favorites page fell through to the dynamic-segment branch
-  // and read "Tools · Gratitude log · Entry".
+  // and read "Gratitude log · Entry".
   it("labels the gratitude favorites page as Favorites, not a generic entry", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/favorites", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Favorites"]);
-    expect(crumbs[2].href).toBeUndefined();
+    expect(crumbs.map((c) => c.label)).toEqual(["Gratitude log", "Favorites"]);
+    expect(crumbs[1].href).toBeUndefined();
   });
 });
 
@@ -128,13 +125,13 @@ describe("computeBreadcrumbs", () => {
 describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
   it("names the ACT choice point instead of falling back to Entry", () => {
     const crumbs = computeBreadcrumbs("/modules/act/choice-point", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "ACT", "Choice point"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["ACT", "Choice point"]);
     expect(crumbs.at(-1)?.href).toBeUndefined();
   });
 
   it("names drop anchor instead of falling back to Entry", () => {
     const crumbs = computeBreadcrumbs("/modules/act/connection/drop-anchor", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "ACT", "Connection", "Drop anchor"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["ACT", "Connection", "Drop anchor"]);
   });
 
   /**
@@ -145,18 +142,13 @@ describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
    */
   it("skips the saved segment, so Up from a saved thought record is CBT, not a 404", () => {
     const crumbs = computeBreadcrumbs("/modules/cbt/saved/3f9a-uuid", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Entry"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["CBT", "Entry"]);
     expect(findUpCrumb(crumbs)?.href).toBe("/modules/cbt");
   });
 
   it("resolves a habits learn card to its real title", () => {
     const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
-    expect(crumbs.map((c) => c.label)).toEqual([
-      "Tools",
-      "Habits",
-      "Learn",
-      "The 1% compounding effect",
-    ]);
+    expect(crumbs.map((c) => c.label)).toEqual(["Habits", "Learn", "The 1% compounding effect"]);
   });
 
   // T3: the six (auth) routes are one-crumb screens whose trail hides, so this
@@ -195,7 +187,7 @@ describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
 describe("computeBreadcrumbs - an unmapped segment never swallows the next (#1251)", () => {
   it("keeps the segment after an unmapped one instead of dropping it", () => {
     const crumbs = computeBreadcrumbs("/modules/cbt/not-a-mapped-route/new", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Entry", "New"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["CBT", "Entry", "New"]);
   });
 
   it("terminates href-less even when the current screen's own segment is unmapped", () => {
@@ -253,8 +245,8 @@ describe("computeBreadcrumbs - an unmapped segment never swallows the next (#125
 describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)", () => {
   it("marks the opaque-id crumb that fell through to the generic label", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/3f9a-uuid/edit", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Entry", "Edit"]);
-    expect(crumbs[2].unresolved).toBe(true);
+    expect(crumbs.map((c) => c.label)).toEqual(["Gratitude log", "Entry", "Edit"]);
+    expect(crumbs[1].unresolved).toBe(true);
   });
 
   it("leaves a slug-resolved dynamic crumb resolved", () => {
@@ -266,7 +258,7 @@ describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)
 
   it("leaves static and known-sub-segment crumbs resolved", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/new", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "New"]);
+    expect(crumbs.map((c) => c.label)).toEqual(["Gratitude log", "New"]);
     for (const crumb of crumbs) expect(crumb.unresolved).toBeUndefined();
   });
 
@@ -283,4 +275,89 @@ describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)
       expect(findUpCrumb(computeBreadcrumbs(pathname, t))?.unresolved).toBe(true);
     },
   );
+});
+
+/**
+ * #2096: a tool home and a module home are their own top crumb.
+ *
+ * `/tools` and `/modules` are route DIRECTORIES with no page of their own. While
+ * they had a `STATIC_ROUTES` row, every screen beneath them opened with a crumb
+ * naming a page that is about to be a redirect stub, and the Escape hopped into
+ * it. The row is gone and the segment is transparent instead, so `/tools/check-in`
+ * resolves to one crumb, `ScreenBreadcrumb` hides a lone crumb, and the Escape
+ * falls back to Home.
+ *
+ * ☠️ Every assertion here is POSITIVE. `expect(labels).not.toContain("Tools")`
+ * passes unconditionally the moment the label is deleted, so it would go on
+ * passing if the transparency edit were reverted and the row restored under a
+ * different key - the exact rot this repo has been bitten by before.
+ *
+ * ☠️ The two edits are ONE change. Deleting the row alone drops the segment into
+ * the generic branch: `/tools/check-in` reads `Entry · Check-in`, the `Entry`
+ * crumb carries an href into the stub, and because it is `unresolved` the Escape
+ * degrades from "Back to Home" to a bare "Go back". The first case below fails
+ * on the crumb COUNT if only half the change is made.
+ */
+describe("computeBreadcrumbs - the hub segments are transparent (#2096)", () => {
+  it.each([
+    ["/tools/check-in", "Check-in"],
+    ["/tools/meditation", "Meditation"],
+    ["/modules/cbt", "CBT"],
+    ["/modules/act", "ACT"],
+  ])("%s is a single crumb naming itself", (path, label) => {
+    const crumbs = computeBreadcrumbs(path, t);
+
+    expect(crumbs).toEqual([{ label }]);
+  });
+
+  it.each([["/tools/check-in"], ["/modules/cbt"]])(
+    "%s has no ancestor crumb, so the Escape falls back to Home",
+    (path) => {
+      // `undefined` is the whole of #2096: the caller owns the fallback, and its
+      // fallback is `sidebar.home` + `replace("/")`. Asserted through
+      // `findUpCrumb` rather than by re-deriving the Up rule here.
+      expect(findUpCrumb(computeBreadcrumbs(path, t))).toBeUndefined();
+    },
+  );
+
+  it("leaves a deep route's Up exactly where it was", () => {
+    // The half of the change that must NOT move. `findUpCrumb` already returned
+    // the deepest href-carrying crumb, and the tool home still carries one here.
+    expect(findUpCrumb(computeBreadcrumbs("/tools/check-in/history", t))?.href).toBe(
+      "/tools/check-in",
+    );
+  });
+
+  it("sends a nonexistent tool to Home rather than into the hub", () => {
+    // A terminal crumb never carries an href, so this is "Back to Home" and not
+    // the "Go back" fallback - that one needs an unresolved crumb that HAS an
+    // href, which is precisely what the deleted row used to supply.
+    const crumbs = computeBreadcrumbs("/tools/definitely-not-a-tool", t);
+
+    expect(crumbs).toEqual([{ label: "Entry", href: undefined, unresolved: true }]);
+    expect(findUpCrumb(crumbs)).toBeUndefined();
+  });
+
+  it("keeps both invariant clauses on a wholly unmapped tool path", () => {
+    const crumbs = computeBreadcrumbs("/tools/not-a-mapped-tool/session", t);
+
+    expect(crumbs.map((c) => c.label)).toEqual(["Entry", "Entry"]);
+    expect(crumbs[0].href).toBe("/tools/not-a-mapped-tool");
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+  });
+
+  it("resolves a slug template through the transparent segment", () => {
+    // `SLUG_LABEL_KEYS` is keyed on the PARENT PATH, which still contains
+    // `/tools` even though no crumb does - so making the segment transparent
+    // cannot silently unname these.
+    //
+    // ☠️ The WHOLE array, not just the last label. `at(-1)` alone is true with or
+    // without the transparency edit - the slug branch never read crumb 0 - so it
+    // would have passed under a half-applied change and proved nothing about the
+    // sentence above it. The first element is what carries the claim: `Habits`,
+    // not the `Entry` the generic branch would put there.
+    const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
+
+    expect(crumbs.map((c) => c.label)).toEqual(["Habits", "Learn", "The 1% compounding effect"]);
+  });
 });

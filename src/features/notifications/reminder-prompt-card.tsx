@@ -57,6 +57,7 @@ export function ReminderPromptCard() {
   const showToast = useToastStore((state) => state.showToast);
   const request = useReminderPromptStore((state) => state.request);
   const dismissRequest = useReminderPromptStore((state) => state.dismissReminderPrompt);
+  const setPromptVisible = useReminderPromptStore((state) => state.setPromptVisible);
   // Layer 2 of the bottom-inset ladder (#1339): reads only the layers strictly
   // below it (keyboard, in-flow strips) and publishes its own top edge for the
   // toast above. It can never see itself, so it cannot climb.
@@ -98,6 +99,14 @@ export function ReminderPromptCard() {
       reminderPromptedTools: promptedToolsIncluding(preferences, request.targetKey),
     }).catch(() => {});
   }, [request, userId, preferences, dismissRequest, persistPreferences]);
+
+  // Publish visibility for the starter-routine offer (#1677): the two floaters
+  // share the same bottom slot, and on any save the reminder prompt wins - the
+  // starter offer checks this flag at show time and yields while it is set.
+  useEffect(() => {
+    setPromptVisible(activeTarget !== null);
+    return () => setPromptVisible(false);
+  }, [activeTarget, setPromptVisible]);
 
   if (!activeTarget || !preferences || !userId) return null;
 

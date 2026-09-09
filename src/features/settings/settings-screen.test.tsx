@@ -1,19 +1,18 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Text as mockText, View as mockView } from "react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
+import { Platform, Text as mockText, View as mockView, useWindowDimensions } from "react-native";
 import type { ReactNode } from "react";
 import { router } from "expo-router";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import {
-  REPLAY_INTRODUCTION_PREFERENCES,
-  SHOW_TIPS_AGAIN_PREFERENCES,
-} from "@/src/features/settings/onboarding-reset";
+import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { useThemeStore } from "@/src/stores/theme-store";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -27,6 +26,17 @@ jest.mock("expo-router", () => ({
 
 jest.mock("expo-linking", () => ({
   openURL: jest.fn(),
+}));
+
+// ☠️ The factory carries the default, not just `beforeEach`. `jest.config.js`
+// sets neither `resetMocks` nor `restoreMocks` and `clearAllMocks` keeps
+// implementations, so a bare `jest.fn()` here would leave any describe that
+// never calls `mockWidth` depending on a value LEAKED from an earlier block -
+// green today, and a crash the moment the file is reordered or run with `.only`,
+// because `useWideFrame` destructures the undefined return.
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ width: 750, height: 800, scale: 2, fontScale: 1 })),
 }));
 
 jest.mock("expo-image-picker", () => ({
@@ -56,8 +66,12 @@ const registeredSessionUser = {
   email: "person@example.com",
   id: "user-1",
 };
-let mockSessionUser: { id: string; email?: string; is_anonymous?: boolean } | null =
-  registeredSessionUser;
+let mockSessionUser: {
+  id: string;
+  email?: string;
+  is_anonymous?: boolean;
+  user_metadata?: Record<string, unknown>;
+} | null = registeredSessionUser;
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockSessionUser }),
 }));
@@ -104,6 +118,8 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+const ORIGINAL_OS = Platform.OS as "web" | "ios" | "android";
+const mockDimensions = useWindowDimensions as jest.MockedFunction<typeof useWindowDimensions>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
   typeof useUpdateOnboardingPreferences
@@ -117,6 +133,16 @@ const loadedPreferences = {
   shownButtonTours: ["tune", "notifications", "info"],
 };
 
+/**
+ * ⚠️ Jest reports a 750px window by default, so every `useWideFrame` branch
+ * renders wide unless a test says otherwise. Tests that do not call this keep
+ * the default and therefore the wide frame, which is what the pre-#1830
+ * assertions in this file were written against.
+ */
+function mockWidth(width: number) {
+  mockDimensions.mockReturnValue({ width, height: 800, scale: 2, fontScale: 1 });
+}
+
 function mockPreferences(data: unknown, isLoading = false) {
   mockUseUserPreferences.mockReturnValue({ data, isLoading } as unknown as ReturnType<
     typeof useUserPreferences
@@ -126,6 +152,10 @@ function mockPreferences(data: unknown, isLoading = false) {
 describe("SettingsScreen structure", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Jest's own reported width, restored per test so a width set by one case
+    // cannot leak into the next. The factory above carries the same default for
+    // any describe that never calls this.
+    mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
@@ -147,6 +177,492 @@ describe("SettingsScreen structure", () => {
     // #1446: the guest invitation card renders nothing for this registered
     // user (its guest-side visibility is pinned in create-account-card.test).
     expect(screen.queryByTestId("create-account-card")).toBeNull();
+  });
+
+  /**
+   * ☠️ #2188. There are FIVE `SettingsRun`s on this page, not four: the profile
+   * disclosure panel is the fifth, and #1800's card-removal sweep never opened
+   * its file, so it kept the primitive's `card` default and drew the one box on a
+   * page that has none. Asserted as a RELATION to the four labelled runs rather
+   * than as a class list of its own, so the next surface change moves all five
+   * or fails here - `settings-run.test.tsx` pins what each surface draws.
+   */
+  it("draws the profile panel on the same surface as the four labelled runs", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+    const classesOf = (testID: string) =>
+      String(screen.getByTestId(testID).props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort();
+
+    const panel = classesOf("settings-profile-panel");
+    expect(panel).not.toContain("bg-card");
+    expect(panel).not.toContain("rounded-xl");
+    for (const run of ["app", "data", "help", "account"]) {
+      expect(panel).toEqual(classesOf(`settings-run-${run}`));
+    }
+  });
+
+  /**
+   * The row descriptions (#1831). Copy only — and the half that matters most is
+   * what STAYS BARE, because this page has rejected drawn descriptions five
+   * times for promising behaviour that does not exist.
+   */
+  describe("the row descriptions", () => {
+    /**
+     * ✅ The promise was checked, not assumed: export withholds only
+     * credentials, ids and encrypted twins, and a completeness test holds that
+     * line. ⚠️ "One JSON file" is exact on web and loose on native (a share
+     * sheet) — the CONTENTS promise holds on both.
+     */
+    it("gives Export my data its description", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("One JSON file, everything you've written.")).toBeTruthy();
+    });
+
+    /** The shorter drawn line: the same thing in fewer words. */
+    it("shortens the reminders description", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("Off by default. You choose which ones to turn on.")).toBeTruthy();
+      expect(screen.queryByText(/Reminders stay explicit/)).toBeNull();
+    });
+
+    /**
+     * ☠️ Rejected, and pinned so the next fidelity pass cannot slip them back:
+     *
+     * - `Support` — the drawn "within a couple of days" contradicts the FAQ's
+     *   "within a week", and a response-time promise lives in ONE place.
+     * - `Replay introduction`, `Cookies` — the drawing gives them empty
+     *   descriptions on BOTH frames.
+     *
+     * ☠️ `Show tips again` was the third of those and is no longer a row at all
+     * (#2109). The drawing still shows it, so the design file is STALE here on
+     * purpose, not ahead of the code: the button's only live subject was the home
+     * tour's last stop, and retiring the tour left it promising tips that could
+     * never appear. Do not restore it from the drawing.
+     */
+    it.each(["settings-row-support", "settings-row-replay-introduction"])(
+      "leaves %s bare",
+      async (testID) => {
+        renderWithProviders(<SettingsScreen />);
+        await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+        // A bare row passes no hint, because the hint IS the description.
+        expect(screen.getByTestId(testID).props.accessibilityHint).toBeUndefined();
+      },
+    );
+
+    /**
+     * ⚠️ Cookies needs its own case: the row is WEB-ONLY, so under jest's
+     * default iOS it never renders and an assertion grouped with the three
+     * above would pass without ever seeing it.
+     */
+    it("leaves the web-only Cookies row bare", async () => {
+      setPlatformOS("web");
+      try {
+        renderWithProviders(<SettingsScreen />);
+        await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+        const cookies = screen.getByTestId("settings-row-cookies");
+        expect(cookies.props.accessibilityHint).toBeUndefined();
+      } finally {
+        // The captured original, not a hardcoded "ios": the repo runs a single
+        // iOS jest project today, so a literal is right by accident rather than
+        // by construction.
+        setPlatformOS(ORIGINAL_OS);
+      }
+    });
+
+    /**
+     * ☠️ Unchanged, character for character. `Delete my account`'s drawn line
+     * ("Removes your data from this device and any sync.") has been rejected
+     * FOUR times: it re-promises a local wipe that does not happen.
+     */
+    it("leaves the privacy and delete descriptions exactly as they were", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("What we store, and how it is handled.")).toBeTruthy();
+      expect(screen.getByText("This cannot be undone.")).toBeTruthy();
+      expect(screen.queryByText(/Removes your data from this device/)).toBeNull();
+    });
+  });
+
+  /**
+   * D4 + D5 (#1830): the column rhythm and the page's own padding, on the ONE
+   * breakpoint the page owns (`useWideFrame`, 640). Two hand-written width
+   * tests on one page is the drift this map keeps closing.
+   *
+   * ⚠️ Jest reports 750px by default, so the phone frame is invisible without
+   * mocking the hook — which is why `mockWidth` exists rather than a resize.
+   */
+  describe("the column rhythm and page padding", () => {
+    const layoutClasses = () =>
+      String(screen.getByTestId("settings-layout").props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+
+    it("opens the column rhythm to 34px on the wide frame", async () => {
+      mockWidth(900);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(layoutClasses()).toContain("gap-[34px]");
+      expect(layoutClasses()).not.toContain("gap-[26px]");
+    });
+
+    it("tightens it to 26px below 640", async () => {
+      mockWidth(390);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(layoutClasses()).toContain("gap-[26px]");
+      expect(layoutClasses()).not.toContain("gap-[34px]");
+    });
+
+    /**
+     * ☠️ The SIDES stay at 16px at every width. That inset is what keeps the
+     * content column at 672px inside `max-w-2xl`, which the design system's own
+     * kit backs — `14a`'s drawn 720 is its hand-rolled number (#1788), and a
+     * `p-*` change here would widen a column that is already settled.
+     */
+    it("breathes at top and bottom while the sides stay 16px, keeping the 672px column", async () => {
+      mockWidth(900);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const scroller = screen.UNSAFE_root.findAll(
+        (node) => typeof node.props?.contentContainerClassName === "string",
+      )[0];
+      const padding = String(scroller.props.contentContainerClassName).split(/\s+/);
+
+      expect(padding).toContain("pt-[40px]");
+      expect(padding).toContain("pb-[48px]");
+      expect(padding).toContain("px-4");
+      // The old symmetric inset, which would also have changed the sides.
+      expect(padding).not.toContain("p-4");
+
+      expect(layoutClasses()).toContain("max-w-2xl");
+    });
+  });
+
+  /**
+   * The identity row (#1829, word from #1810).
+   *
+   * ☠️ Every test in this file mocks `useUserProfile` as `{ data: null }`, so a
+   * guest assertion MUST also pin `user` — otherwise a registered Apple user,
+   * who has an email and no name, satisfies it for the wrong reason. Each case
+   * below sets `mockSessionUser` explicitly for exactly that reason.
+   */
+  describe("the identity row", () => {
+    async function renderSettings() {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+    }
+
+    /**
+     * ☠️ The circle is `aria-hidden`, and RNTL excludes hidden subtrees from
+     * EVERY query by default — `*ByTestId` included, not just the a11y ones. So
+     * the row being correctly hidden from assistive tech is exactly what puts
+     * its contents out of reach here, and the query has to opt back in. Without
+     * this the glyph assertion fails while the component is right.
+     */
+    const insideCircle = (testID: string) =>
+      screen.queryByTestId(testID, { includeHiddenElements: true });
+
+    /**
+     * The bug. A guest saw a 96px band holding an empty circle beside an empty
+     * line, because `profile?.displayName ?? user?.email ?? ""` found neither —
+     * `user.email` being `""` rather than `undefined` is what walked past the
+     * `??`. The band does not collapse, so it read as breakage.
+     */
+    it("names the guest state and draws the glyph, instead of an empty band", async () => {
+      mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
+      await renderSettings();
+
+      expect(screen.getByText("Guest")).toBeTruthy();
+      expect(insideCircle("profile-avatar-person")).toBeTruthy();
+      // No sub-line: `showEmail` is `Boolean(name && email)`, false by
+      // construction here. #1784 and #1805 both rejected a guest subtitle.
+      expect(screen.queryByText("person@example.com")).toBeNull();
+      // The sentinel that used to leak into the circle. (The deleted
+      // `userMenu.account` key is asserted in `user-menu.test.tsx` instead: on
+      // this page "Account" is also the hero eyebrow AND a run label, so its
+      // absence here would say nothing about the key.)
+      expect(screen.queryByText("?")).toBeNull();
+    });
+
+    /**
+     * ☠️ Not a guest-only fix. `resolveDisplayName` reads `full_name` THEN
+     * `name`, while the hand-rolled expression read the profile only — so a
+     * provider supplying just `name` put the EMAIL in the name slot here while
+     * the header showed the name. This is the row that proves the widened half.
+     */
+    it("shows a metadata `name` in the name slot, not the email", async () => {
+      mockSessionUser = {
+        id: "user-2",
+        email: "nick@example.com",
+        user_metadata: { name: "Nick" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Nick")).toBeTruthy();
+      expect(screen.getByText("nick@example.com")).toBeTruthy();
+    });
+
+    it("shows both lines for a user with a name and an email", async () => {
+      mockSessionUser = {
+        id: "user-3",
+        email: "alex@example.com",
+        user_metadata: { full_name: "Alex Petrov" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Alex Petrov")).toBeTruthy();
+      expect(screen.getByText("alex@example.com")).toBeTruthy();
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+    });
+
+    /** Apple sends no name at all: the email stands in, with no sub-line under it. */
+    it("puts the email in the name slot when there is no name, with no sub-line", async () => {
+      mockSessionUser = { id: "user-4", email: "person@example.com" };
+      await renderSettings();
+
+      expect(screen.getAllByText("person@example.com")).toHaveLength(1);
+      expect(screen.queryByText("Guest")).toBeNull();
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+    });
+
+    /**
+     * ☠️ #1810 §5 pins this row UNCHANGED: a guest who saves a name reads as
+     * that name and nothing else. `showEmail = Boolean(name && email)` is what
+     * keeps `Guest` from appearing beside it — making the word persist would
+     * need the banned `is_anonymous` branch.
+     */
+    it("shows only the name for a guest who has saved one, never Guest beside it", async () => {
+      mockSessionUser = {
+        id: "guest-1",
+        email: "",
+        is_anonymous: true,
+        user_metadata: { full_name: "Alex" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Alex")).toBeTruthy();
+      expect(screen.queryByText("Guest")).toBeNull();
+      // A real letter, taken from the name they gave — not the glyph.
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+      expect(screen.getByText("A", { includeHiddenElements: true })).toBeTruthy();
+    });
+
+    /**
+     * ☠️ No `is_anonymous` branch anywhere. The JWT keeps claiming it after a
+     * guest converts, which is why `support.tsx` hand-codes `&& !user.email`.
+     * A converted user carries a stale `is_anonymous: true` AND an email, and
+     * an absence-driven expression must show the email regardless.
+     */
+    it("shows the email of a converted guest still carrying a stale is_anonymous", async () => {
+      mockSessionUser = { id: "guest-1", email: "converted@example.com", is_anonymous: true };
+      await renderSettings();
+
+      expect(screen.getByText("converted@example.com")).toBeTruthy();
+      expect(screen.queryByText("Guest")).toBeNull();
+    });
+  });
+
+  /**
+   * The appearance group, whose second control arrived with #1827. Settings had
+   * only ever had the STYLE axis - #594 shipped half of #583 while claiming
+   * compliance - so the assertion that matters is that the scheme control is
+   * here at all, and that adding it left the page with two radiogroups a screen
+   * reader can tell apart.
+   */
+  describe("the appearance group", () => {
+    it("offers the scheme axis beside the palette, under distinct group names", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const schemeGroup = screen.getByLabelText("Switch theme");
+      expect(schemeGroup.props.accessibilityRole).toBe("radiogroup");
+      expect(screen.getByLabelText("Palette").props.accessibilityRole).toBe("radiogroup");
+      for (const name of ["System", "Light", "Dark"]) {
+        expect(screen.getByRole("radio", { name })).toBeTruthy();
+      }
+    });
+
+    // Both captions are suppressed here: the group is named once, above them.
+    // `StylePicker heading={false}` is the shipped half of that and stays.
+    it("drops both grids' own captions, keeping the groups named", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.queryByText("Switch theme")).toBeNull();
+      expect(screen.queryByText("Palette")).toBeNull();
+    });
+
+    /**
+     * #1828. Both premises of the shipped "two labels for one grid" ruling died:
+     * #1827 gave the group a second control, and #1800 removed the card that was
+     * delimiting it - leaving the only region on the page with no name.
+     */
+    it("carries an Appearance eyebrow, the group's own name", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByRole("header", { name: "Appearance" })).toBeTruthy();
+    });
+
+    /**
+     * The eyebrow is what cures the "wrong by omission" worry, so the sentence
+     * it relieves must not also be rewritten - it stops standing in as the group
+     * label and is read as the palette's own line, unchanged.
+     */
+    it("leaves the palette line's copy alone, and drops its optical inset", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const line = screen.getByText("Choose a palette. This device only.");
+      // The inset was optical, against a card edge #1800 removed - the same
+      // reasoning that took it off the runs.
+      expect(String(line.props.className ?? "").split(/\s+/)).not.toContain("px-1");
+    });
+
+    /**
+     * ☠️ Do not hoist "This device only" to a group-level caption, however the
+     * drawing shows it: `theme` syncs to `user_preferences.theme` while only
+     * `style` is device-local, so the claim is false about the control above.
+     * The drawn palette note is out too - it describes the palette while sitting
+     * beside the scheme pill, and does not fit a phone column.
+     */
+    it("hoists no caption to the group and adds no palette note", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getAllByText(/This device only/)).toHaveLength(1);
+      expect(screen.queryByText(/Palettes change colour/)).toBeNull();
+    });
+  });
+
+  /**
+   * D7 applies to the five GROUP labels and must not reach the page eyebrow,
+   * which is the same `variant="eyebrow"` doing the other of two jobs the design
+   * separates. Asserted from both sides so a sweep cannot silently take the hero
+   * with it.
+   */
+  describe("the eyebrow scale", () => {
+    /** Both the hero eyebrow and the Account run label render the word "Account". */
+    function eyebrowClasses(text: string, isHeader: boolean): string[] {
+      const node = screen
+        .getAllByText(text)
+        .find((el) => (el.props.accessibilityRole === "header") === isHeader);
+
+      return String(node?.props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    it("sets the five group labels at 600 / 0.1em", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      for (const label of ["Appearance", "App", "Your data", "Help", "Account"]) {
+        const classes = eyebrowClasses(label, true);
+        expect(classes).toContain("font-semibold");
+        expect(classes).toContain("tracking-[0.1em]");
+      }
+    });
+
+    /**
+     * The page's heading outline as an ordered list of `[level, text]`.
+     *
+     * ⚠️ Two role names, one outline. `Text variant="h1"` sets ARIA's
+     * `role="heading"`, the group labels set RN's `accessibilityRole="header"`,
+     * and this jest matcher does not alias one to the other - on the web DOM
+     * both become heading elements. Read in tree order and across BOTH names, so
+     * "followed by" is what is actually asserted: two separate role queries could
+     * each be in order and still describe an outline that opens on an `h2`.
+     *
+     * ☠️ The LEVEL is what has to be asserted, not the count or the role: a
+     * level-less heading is not an `h2`, because `react-native-web` swaps in a
+     * literal `<h1>` when `aria-level` is absent. Jest never renders that DOM
+     * element, so the level prop is the only place the mistake is visible here.
+     */
+    function readOutline(): [string, unknown][] {
+      return screen.UNSAFE_root.findAll(
+        (node) =>
+          typeof node.type === "string" &&
+          (node.props.role === "heading" || node.props.accessibilityRole === "header"),
+      ).map((node) => [String(node.props["aria-level"]), node.props.children]);
+    }
+
+    /** The outline the group's name joins: the hero's `h1`, then five `h2`s. */
+    it("registers one h1 and five h2s, in that order", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(readOutline()).toEqual([
+        ["1", "Settings"],
+        ["2", "Appearance"],
+        ["2", "App"],
+        ["2", "Your data"],
+        ["2", "Help"],
+        ["2", "Account"],
+      ]);
+    });
+
+    /**
+     * #1801: the SAME outline with the guest card's title in it, which is the
+     * page's other rendering and the one nothing asserted. `CreateAccountCard`
+     * returns `null` for a registered user, so the test above walks a tree the
+     * callout is simply absent from - which is exactly how its `h3` survived.
+     *
+     * ☠️ The card is a sibling of the five groups, not a child of one: it sits
+     * outside every `SettingsRun`. So `CardTitle`'s default `aria-level={3}` both
+     * skipped a level after the `h1` and outranked every peer below it, and the
+     * override to 2 is what makes the guest outline the registered one plus one
+     * entry, in place, rather than a different shape.
+     */
+    it("keeps the outline flat for a guest, the callout a peer of the groups", async () => {
+      // `email: ""` is the live guest shape, not an absent key (#1829).
+      mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByTestId("create-account-card")).toBeTruthy());
+
+      expect(readOutline()).toEqual([
+        ["1", "Settings"],
+        ["2", "Create an account to protect your data"],
+        ["2", "Appearance"],
+        ["2", "App"],
+        ["2", "Your data"],
+        ["2", "Help"],
+        ["2", "Account"],
+      ]);
+    });
+
+    it("leaves the page eyebrow at the scale it already had", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const classes = eyebrowClasses("Account", false);
+      expect(classes).toContain("font-bold");
+      expect(classes).toContain("tracking-[0.14em]");
+    });
+
+    it("stores a scheme chosen here exactly as the header menu would", async () => {
+      useThemeStore.setState({ preference: "system", hydrated: true });
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      fireEvent.press(screen.getByRole("radio", { name: "Dark" }));
+
+      expect(useThemeStore.getState().preference).toBe("dark");
+    });
   });
 
   /**
@@ -192,7 +708,8 @@ describe("SettingsScreen structure", () => {
   // rest of the account run stays word-for-word: for a guest, "start fresh"
   // IS delete-account, and export works unchanged.
   it("hides the sign-out row for a guest, keeping delete-account and export", async () => {
-    mockSessionUser = { id: "guest-1", is_anonymous: true };
+    // `email: ""` is the live guest shape, not an absent key (#1829).
+    mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
     renderWithProviders(<SettingsScreen />);
 
     await waitFor(() => expect(screen.getByLabelText("Delete my account")).toBeTruthy());
@@ -211,7 +728,6 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByLabelText("Replay introduction").props.accessibilityState.disabled).toBe(
       true,
     );
-    expect(screen.getByLabelText("Show tips again").props.accessibilityState.disabled).toBe(true);
     // Nothing else waits.
     expect(screen.getByLabelText("Export my data").props.accessibilityState.disabled).toBe(false);
   });
@@ -277,6 +793,10 @@ describe("SettingsScreen structure", () => {
 describe("SettingsScreen profile disclosures", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Jest's own reported width, restored per test so a width set by one case
+    // cannot leak into the next. The factory above carries the same default for
+    // any describe that never calls this.
+    mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
@@ -348,14 +868,30 @@ describe("SettingsScreen onboarding actions", () => {
     });
   });
 
-  it("re-arms contextual tips without replaying the app introduction", async () => {
+  /**
+   * ☠️ `Show tips again` sat directly below Replay introduction, and its case stood
+   * here asserting it wrote `SHOW_TIPS_AGAIN_PREFERENCES` and nothing else. Both went
+   * with the home tour (#2109) - the tips it re-armed had no stops left to show.
+   *
+   * ☠️ Replaced by an EXACT set over the run that held it, not by a
+   * `queryByTestId("settings-row-show-tips-again")).toBeNull()`. An absence check on a
+   * row nothing renders passes for the rest of time and stops testing anything; an
+   * equality over the run fails both ways - the row creeping back, and a surviving
+   * row going missing.
+   */
+  it("holds exactly the App rows, with no tips row among them", async () => {
     renderWithProviders(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByText("Show tips again")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Replay introduction")).toBeTruthy());
 
-    fireEvent.press(screen.getByText("Show tips again"));
+    const rows = within(screen.getByTestId("settings-run-app"))
+      .getAllByTestId(/^settings-row-/)
+      .map((row) => String(row.props.testID));
 
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(SHOW_TIPS_AGAIN_PREFERENCES);
-    });
+    // Under jest's default iOS the native-only App lock row renders; on web it does not.
+    expect(rows).toEqual([
+      "settings-row-reminders",
+      "settings-row-app-lock",
+      "settings-row-replay-introduction",
+    ]);
   });
 });

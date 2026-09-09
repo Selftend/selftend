@@ -110,7 +110,7 @@ BLOCKER even if the average is high.
    with zero entries, insight cards must degrade gracefully, not error.)
 10. 🔒 Visit each primary first-touch surface with no data and judge the empty
     state: **Mood**, **Journal**, **Gratitude**, **Habits**, **CBT tools**,
-    **Meditation/Breathing**, **Insights**. For each: is there a one-line "what
+    **Meditation/Breathing**, **Looking back**. For each: is there a one-line "what
     this is" + a clear "add your first …" affordance?
 11. 🔒 Create your **first entry** in one module (e.g. a mood log). Confirm it
     saves, appears immediately, and the empty state is replaced by real content

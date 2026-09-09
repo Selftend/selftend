@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { SEED_USERS, createAnonClient, createServiceClient, signInAs } from "./helpers";
 
 // Verifies row-level security: users can only read and write their own rows
-// across thought_records, user_preferences, profiles, and web_push_subscriptions.
-// Also verifies anon users see nothing in those tables.
+// across thought_records, user_preferences, profiles, web_push_subscriptions and
+// favorites. Also verifies anon users see nothing in those tables.
 
 describe("RLS: thought_records", () => {
   let alice: SupabaseClient;
@@ -223,6 +223,92 @@ describe("RLS: web_push_subscriptions", () => {
     });
     expect(error).not.toBeNull();
     expect(error?.message ?? "").toMatch(/row-level security|policy|violates/i);
+  });
+});
+
+// ─── RLS: favorites ──────────────────────────────────────────────────────────
+// #1953: one policy, `for all to authenticated`, with BOTH `using` and `with check`
+// - the old widget_preferences policy has only `using`, and that asymmetry must not
+// be inherited. A silent zero-row delete is the shape RLS gives a cross-user delete,
+// so the delete leg asserts the row survived rather than that an error came back.
+
+describe("RLS: favorites", () => {
+  let alice: SupabaseClient;
+  let bob: SupabaseClient;
+
+  afterEach(async () => {
+    // alice's zero favourites are themselves a fixture (supabase/README.md), so
+    // every test leaves her the way it found her.
+    const admin = createServiceClient();
+    await admin.from("favorites").delete().eq("user_id", SEED_USERS.alice.id);
+  });
+
+  beforeAll(async () => {
+    [alice, bob] = await Promise.all([signInAs("alice"), signInAs("bob")]);
+  });
+
+  afterAll(async () => {
+    await Promise.all([alice.auth.signOut(), bob.auth.signOut()]);
+  });
+
+  it("alice can insert her own favourite", async () => {
+    const { error } = await alice
+      .from("favorites")
+      .insert({ user_id: SEED_USERS.alice.id, kind: "tool", key: "mood" });
+    expect(error).toBeNull();
+  });
+
+  it("bob cannot read alice's favourite", async () => {
+    await alice
+      .from("favorites")
+      .insert({ user_id: SEED_USERS.alice.id, kind: "module", key: "act" })
+      .throwOnError();
+
+    const { data, error } = await bob
+      .from("favorites")
+      .select("id")
+      .eq("user_id", SEED_USERS.alice.id);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it("bob cannot insert a favourite on behalf of alice (with check)", async () => {
+    const { error } = await bob
+      .from("favorites")
+      .insert({ user_id: SEED_USERS.alice.id, kind: "tool", key: "sleep" });
+    expect(error).not.toBeNull();
+    expect(error?.message ?? "").toMatch(/row-level security|policy|violates/i);
+  });
+
+  it("bob cannot delete alice's favourite (using)", async () => {
+    await alice
+      .from("favorites")
+      .insert({ user_id: SEED_USERS.alice.id, kind: "tool", key: "journal" })
+      .throwOnError();
+
+    const { error } = await bob
+      .from("favorites")
+      .delete()
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("kind", "tool")
+      .eq("key", "journal");
+    expect(error).toBeNull();
+
+    const admin = createServiceClient();
+    const { data } = await admin.from("favorites").select("key").eq("user_id", SEED_USERS.alice.id);
+    expect(data).toEqual([{ key: "journal" }]);
+  });
+
+  it("anon reads [] from favorites and cannot insert", async () => {
+    const anon = createAnonClient();
+    const read = await anon.from("favorites").select("id");
+    expect(read.error).toBeNull();
+    expect(read.data).toEqual([]);
+
+    const write = await anon
+      .from("favorites")
+      .insert({ user_id: SEED_USERS.alice.id, kind: "tool", key: "mood" });
+    expect(write.error).not.toBeNull();
   });
 });
 

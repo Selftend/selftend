@@ -11,6 +11,7 @@ import {
   sendVerificationCode,
   verifyEmailCode,
 } from "@/src/features/auth/api";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -76,10 +77,17 @@ export function VerifyEmailBanner() {
   // (#1442). The email/identity checks already exclude today's guests - no
   // email, no identities - but the banner's contract is "never while the
   // session is a guest", so the guard is the claim itself, not its side
-  // effects. A CONVERTED guest is not anonymous any more and still gets the
-  // banner through the identity check above.
+  // effects.
+  //
+  // ☠️ This guard read `user?.is_anonymous` until #1896, and the claim that
+  // used to sit here - that a CONVERTED guest still gets the banner - was FALSE
+  // for the length of the stale-flag window: the live JWT keeps claiming
+  // `is_anonymous: true` after conversion, so the banner was suppressed for
+  // exactly the person who had just attached an email and needed to verify it.
+  // `isGuestAccount` is absence-driven and goes false the moment the email
+  // lands, so the claim is true now.
   if (
-    user?.is_anonymous ||
+    isGuestAccount(user) ||
     !email ||
     !hasSelfAttachedEmail ||
     !preferences ||

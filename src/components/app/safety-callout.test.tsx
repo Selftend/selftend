@@ -21,8 +21,13 @@ beforeEach(() => {
 /**
  * ⚠️ The component is `CrisisSupportCallout`; `safety-callout.tsx` is only the
  * file name, so a sweep grepping for `<SafetyCallout` finds nothing. It is the
- * loud destructive-red twin of `CrisisSupportBar`, and renders on the two module
- * homes that carry one - ACT's and DBT's.
+ * loud destructive-red twin of `CrisisSupportBar`.
+ *
+ * ☠️ It has **five** call sites, not the two this docblock claimed until #2137:
+ * the ACT, CBT and DBT module homes, `/support`, and `/faq`. The count mattered
+ * the moment the heading level became a per-caller decision - a reader trusting
+ * "two module homes" would have reasoned about the blast radius of that change
+ * from a number less than half the real one.
  */
 describe("CrisisSupportCallout", () => {
   it("opens the crisis page", () => {
@@ -31,6 +36,37 @@ describe("CrisisSupportCallout", () => {
     fireEvent.press(screen.getByText("Open crisis guidance"));
 
     expect(router.push).toHaveBeenCalledWith("/crisis");
+  });
+
+  /**
+   * ☠️ **The heading level, both halves (#2137, #2167).**
+   *
+   * ☠️ **The DEFAULT is the one that matters now** - all five call sites pass
+   * nothing, so this assertion is the only thing standing between them and a
+   * silent outline change on five screens at once. It carries more weight than
+   * the override case below, which no shipped caller exercises.
+   *
+   * The override is still pinned, because a prop that is never proven to work is
+   * a prop that quietly stops working. `3` is used as the sample precisely
+   * because it is the value the callout used to ship at.
+   *
+   * ☠️ Levels through `Number(...)`: `text.tsx`'s `ARIA_LEVEL` map yields the
+   * STRING `"2"` while `CardTitle` passes a number, so a bare `toBe(2)` fails on a
+   * correct tree. Host nodes only - `role="heading"` on our `Text` is visible on
+   * the composite and on the host, which is two nodes for one heading.
+   */
+  it.each([
+    [undefined, 2],
+    [3 as const, 3],
+  ])("renders its title at level %s -> %s", (level, expected) => {
+    renderWithProviders(<CrisisSupportCallout level={level} />);
+
+    const headings = screen
+      .UNSAFE_getAllByProps({ role: "heading" })
+      .filter((node) => typeof node.type === "string");
+
+    expect(headings).toHaveLength(1);
+    expect(Number(headings[0].props["aria-level"])).toBe(expected);
   });
 
   /**

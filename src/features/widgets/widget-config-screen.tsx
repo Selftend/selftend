@@ -8,8 +8,8 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
-import { tintClasses } from "@/src/features/home/widget-tint";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
+import { tintClasses } from "@/src/features/widgets/widget-tint";
 import { CARD_IDS } from "@/src/features/widgets/snapshot-types";
 import {
   readConfig,

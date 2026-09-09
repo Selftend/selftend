@@ -32,7 +32,7 @@ const ROOT = join(__dirname, "..");
  */
 const ALLOWED: { file: string; evidence: string }[] = [
   {
-    file: "src/features/home/widget-tint.ts",
+    file: "src/features/widgets/widget-tint.ts",
     evidence:
       "The destructive tint keeps its red /10 chip and its red GLYPH - a mark, " +
       "which owes 3:1 and measures 3.96 at worst across the eight palettes. Its " +
@@ -162,7 +162,7 @@ describe("no surface pairs destructive text with a wash of its own red", () => {
   // exemption that was granted for its glyph.
   it("the destructive widget tint labels in foreground, not in the red", () => {
     const source = stripComments(
-      readFileSync(join(ROOT, "src/features/home/widget-tint.ts"), "utf8"),
+      readFileSync(join(ROOT, "src/features/widgets/widget-tint.ts"), "utf8"),
     );
     const block = source.slice(source.indexOf("const DESTRUCTIVE"));
     const ink = block.slice(0, block.indexOf("};")).match(/ink:([^,]+)/)?.[1];

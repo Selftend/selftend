@@ -20,6 +20,17 @@ interface FocusableNode {
 }
 
 /**
+ * What `getItemProps` hands one item: everything optional, because on native it
+ * is `{}`. Exported so a shared item component (`SelectableChip` as a radio) can
+ * take the caller's set and spread it in place of its own key handling.
+ */
+export interface RovingItemProps {
+  ref?: (node: FocusableNode | null) => void;
+  tabIndex?: 0 | -1;
+  onKeyDown?: (event: WebRovingKeyEvent) => void;
+}
+
+/**
  * Roving-tabindex keyboard support for composite widgets (radiogroups,
  * tablists): only the active item is tabbable, and Arrow/Home/End keys move
  * focus between items, activating on move (the radiogroup pattern).
@@ -34,7 +45,7 @@ export function useRovingFocus({ count, activeIndex, onActivate }: UseRovingFocu
   const itemRefs = useRef<(FocusableNode | null)[]>([]);
 
   const getItemProps = useCallback(
-    (index: number, onPress?: () => void) => {
+    (index: number, onPress?: () => void): RovingItemProps => {
       if (Platform.OS !== "web") {
         return {};
       }

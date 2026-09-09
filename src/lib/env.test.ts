@@ -101,9 +101,24 @@ describe("hasSupabaseConfig", () => {
 // ---------------------------------------------------------------------------
 
 describe("store and community links", () => {
-  it("defaults playStoreUrl and appStoreUrl to empty strings (not released)", () => {
+  it("defaults playStoreUrl and appStoreUrl to the live listings", () => {
     delete process.env.EXPO_PUBLIC_PLAY_STORE_URL;
     delete process.env.EXPO_PUBLIC_APP_STORE_URL;
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.playStoreUrl).toBe(
+      "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
+    );
+    expect(appEnv.appStoreUrl).toBe("https://apps.apple.com/app/selftend/id6796318929");
+  });
+
+  // A fork opting out is the only build left with no store, so the empty string
+  // has to survive as a real value rather than falling back to our listings.
+  it("keeps an explicitly empty store URL empty", () => {
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL = "";
+    process.env.EXPO_PUBLIC_APP_STORE_URL = "";
 
     jest.resetModules();
     const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
@@ -164,6 +179,93 @@ describe("store and community links", () => {
 
     expect(appEnv.redditUrl).toBe("");
     expect(appEnv.youtubeUrl).toBe("");
+  });
+
+  // The Donate row (#1711) has the same shape: defaults to the maintainer's page,
+  // blank hides it - a fork must never ship a link to someone else's Sponsors page.
+  it("defaults EXPO_PUBLIC_SPONSORS_URL to the maintainer's page and lets it be blanked", () => {
+    delete process.env.EXPO_PUBLIC_SPONSORS_URL;
+    jest.resetModules();
+    const withDefault = require("@/src/lib/env") as typeof import("@/src/lib/env");
+    expect(withDefault.appEnv.sponsorsUrl).toBe("https://github.com/sponsors/vasilyoshev");
+
+    process.env.EXPO_PUBLIC_SPONSORS_URL = "";
+    jest.resetModules();
+    const blanked = require("@/src/lib/env") as typeof import("@/src/lib/env");
+    expect(blanked.appEnv.sponsorsUrl).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// contactEmails - the addresses published prose names (#2131)
+// ---------------------------------------------------------------------------
+
+describe("contactEmails", () => {
+  it("uses the configured addresses when the build set them", () => {
+    process.env.EXPO_PUBLIC_PRIVACY_EMAIL = "privacy@fork.example";
+    process.env.EXPO_PUBLIC_SECURITY_EMAIL = "security@fork.example";
+    process.env.EXPO_PUBLIC_SUPPORT_EMAIL = "support@fork.example";
+
+    jest.resetModules();
+    const { contactEmails } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(contactEmails()).toEqual({
+      privacyEmail: "privacy@fork.example",
+      securityEmail: "security@fork.example",
+      supportEmail: "support@fork.example",
+    });
+  });
+
+  it("falls back to this project's addresses when the build set none", () => {
+    delete process.env.EXPO_PUBLIC_PRIVACY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SECURITY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SUPPORT_EMAIL;
+
+    jest.resetModules();
+    const { contactEmails, projectContactEmails } =
+      require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(contactEmails()).toEqual({
+      privacyEmail: projectContactEmails.privacy,
+      securityEmail: projectContactEmails.security,
+      supportEmail: projectContactEmails.support,
+    });
+  });
+
+  /**
+   * ☠️ The one case that separates this from the store URLs beside it, and the
+   * reason it is `||` rather than `??`. A blank store URL is a fork saying "this
+   * build has no store", and the surface disappears. A blank contact address
+   * cannot mean "this policy has no contact" - prose has no way to drop a clause,
+   * and "write to  with what you can tell us" is not a document. So empty resolves
+   * the same way unset does, and `/support` keeps its own hide-the-row rule by
+   * reading `appEnv` directly instead of coming through here.
+   */
+  it("treats an explicitly empty address as unset, unlike a store URL", () => {
+    process.env.EXPO_PUBLIC_PRIVACY_EMAIL = "";
+    process.env.EXPO_PUBLIC_SECURITY_EMAIL = "";
+    process.env.EXPO_PUBLIC_SUPPORT_EMAIL = "";
+
+    jest.resetModules();
+    const { appEnv, contactEmails, projectContactEmails } =
+      require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.supportEmail).toBe("");
+    expect(contactEmails().supportEmail).toBe(projectContactEmails.support);
+  });
+
+  /** `appEnv` is mutable and tests assign to it, so this must not bake in at import. */
+  it("re-reads appEnv on every call", () => {
+    delete process.env.EXPO_PUBLIC_SUPPORT_EMAIL;
+
+    jest.resetModules();
+    const { appEnv, contactEmails, projectContactEmails } =
+      require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(contactEmails().supportEmail).toBe(projectContactEmails.support);
+
+    appEnv.supportEmail = "later@fork.example";
+    expect(contactEmails().supportEmail).toBe("later@fork.example");
   });
 });
 
@@ -274,6 +376,121 @@ describe("validateRequiredEnv", () => {
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining("EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY"),
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // The fork warning (#2131). `contactEmails()` keeps published prose honest by
+  // falling back to this project's addresses; this is the half that stops that
+  // being silent, because a fork otherwise learns nothing until a stranger's
+  // deletion request arrives in the wrong inbox.
+  // -------------------------------------------------------------------------
+
+  function productionBuildWithSupabase() {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
+    process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "https://app.example.com";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+  }
+
+  function contactWarning(): string | undefined {
+    return (console.warn as jest.Mock).mock.calls
+      .map((call) => call[0] as string)
+      .find((message) => message.includes("EXPO_PUBLIC_PRIVACY_EMAIL"));
+  }
+
+  it("warns a production build that ships this project's contact addresses", () => {
+    productionBuildWithSupabase();
+    delete process.env.EXPO_PUBLIC_PRIVACY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SECURITY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SUPPORT_EMAIL;
+
+    jest.resetModules();
+    const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    validateRequiredEnv();
+
+    const message = contactWarning();
+    expect(message).toContain("EXPO_PUBLIC_SECURITY_EMAIL");
+    expect(message).toContain("EXPO_PUBLIC_SUPPORT_EMAIL");
+    // It has to say what the consequence IS. "not set" alone reads as a missing
+    // nice-to-have rather than as someone else's inbox on your privacy policy.
+    expect(message).toContain("support@selftend.org");
+  });
+
+  it("names only the addresses that are actually unset", () => {
+    productionBuildWithSupabase();
+    delete process.env.EXPO_PUBLIC_PRIVACY_EMAIL;
+    process.env.EXPO_PUBLIC_SECURITY_EMAIL = "security@fork.example";
+    process.env.EXPO_PUBLIC_SUPPORT_EMAIL = "support@fork.example";
+
+    jest.resetModules();
+    const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    validateRequiredEnv();
+
+    const message = contactWarning();
+    expect(message).toContain("EXPO_PUBLIC_PRIVACY_EMAIL");
+    expect(message).not.toContain("EXPO_PUBLIC_SECURITY_EMAIL");
+    expect(message).not.toContain("EXPO_PUBLIC_SUPPORT_EMAIL");
+  });
+
+  it("stays quiet when the build configured all three", () => {
+    productionBuildWithSupabase();
+    process.env.EXPO_PUBLIC_PRIVACY_EMAIL = "privacy@fork.example";
+    process.env.EXPO_PUBLIC_SECURITY_EMAIL = "security@fork.example";
+    process.env.EXPO_PUBLIC_SUPPORT_EMAIL = "support@fork.example";
+
+    jest.resetModules();
+    const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    validateRequiredEnv();
+
+    expect(contactWarning()).toBeUndefined();
+  });
+
+  /**
+   * ☠️ The reason this check sits ABOVE the `publicAppUrl` block rather than
+   * beside the VAPID one below it. That block `return`s on a production web
+   * build, so anything after it is unreachable in exactly the configuration a
+   * fork is most likely to be in - a first deploy with neither the app URL nor
+   * the contact addresses set. Ordered wrongly, the warning would be missing
+   * precisely when it is needed, and every other test here would still pass.
+   */
+  it("is not swallowed by the publicAppUrl early return on a production web build", () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
+    delete process.env.EXPO_PUBLIC_PUBLIC_APP_URL;
+    delete process.env.EXPO_PUBLIC_PRIVACY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SECURITY_EMAIL;
+    delete process.env.EXPO_PUBLIC_SUPPORT_EMAIL;
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+
+    jest.resetModules();
+    const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+    const { Platform: freshPlatform } = require("react-native") as typeof import("react-native");
+    Object.defineProperty(freshPlatform, "OS", { configurable: true, value: "web" });
+
+    validateRequiredEnv();
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("EXPO_PUBLIC_PUBLIC_APP_URL"),
+    );
+    expect(contactWarning()).toBeDefined();
+  });
+
+  it("stays quiet outside a production build, however the addresses are set", () => {
+    process.env.EXPO_PUBLIC_SUPABASE_URL = "https://proj.supabase.co";
+    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "pk";
+    process.env.EXPO_PUBLIC_PUBLIC_APP_URL = "https://app.example.com";
+    delete process.env.EXPO_PUBLIC_PRIVACY_EMAIL;
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
+
+    jest.resetModules();
+    const { validateRequiredEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    validateRequiredEnv();
+
+    expect(contactWarning()).toBeUndefined();
   });
 
   it("emits no errors or warnings when all required env vars are present on native", () => {

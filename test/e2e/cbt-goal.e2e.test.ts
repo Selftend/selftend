@@ -558,9 +558,20 @@ test.describe("CBT goal: the target-date calendar under a keyboard (#1305)", () 
       .getByRole("button", { name: dayName(chosen), exact: true });
     await expect(chosenCell).toHaveAttribute("aria-pressed", "true");
     // And the selection MOVED rather than accumulating — it is one day, not a set.
-    await expect(
-      page.getByTestId("days").getByRole("button", { name: dayName(viaSpace), exact: true }),
-    ).toHaveAttribute("aria-pressed", "false");
+    //
+    // ☠️ COUNTED, NOT NAMED, AND THE DIFFERENCE IS A CALENDAR BUG. This used to
+    // assert `aria-pressed="false"` on `viaSpace` by name, which silently assumed
+    // both picks live in the same grid. They do not when `today + 1` and
+    // `today + 2` straddle a month: selecting the later day pages the calendar
+    // forward, the earlier day's cell stops being rendered at all, and the
+    // assertion fails with "element(s) not found" rather than a wrong value.
+    //
+    // It fires on exactly one day a month — the second-to-last — which is why it
+    // ran green on Sat 2026-08-29 and red on Sun 2026-08-30 against the same
+    // commit, with nothing merged in between (#1570). Counting the pressed cells
+    // states the real invariant ("one day, not a set") and cannot care which
+    // month is on screen.
+    await expect(page.getByTestId("days").getByRole("button", { pressed: true })).toHaveCount(1);
 
     await page.getByRole("button", { name: "Done", exact: true }).click();
 

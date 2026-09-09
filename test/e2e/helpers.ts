@@ -14,7 +14,7 @@ import {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
-  deleteAllWidgetPreferencesForUser,
+  deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
@@ -34,6 +34,7 @@ export {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
+  deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
@@ -46,19 +47,39 @@ export {
 // (test/toast-signal.test.ts) - `test/e2e/` is in jest's testPathIgnorePatterns.
 export { SAVE_FAILED_TOAST_TITLE, expectSuccessToast } from "./toast-signal";
 
-// Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
-export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
-  await deleteAllWidgetPreferencesForUser(userId);
+/**
+ * Replace the user's favourites with exactly these rows (#1956): what Home's Favourites
+ * section renders, in catalogue order whatever order they are given here.
+ */
+export async function seedFavoritesForUser(
+  userId: string,
+  rows: { kind: "tool" | "module"; key: string }[],
+): Promise<void> {
+  await deleteAllFavoritesForUser(userId);
+  if (rows.length === 0) return;
+  const admin = createServiceClient();
+  const { error } = await admin
+    .from("favorites")
+    .insert(rows.map((row) => ({ user_id: userId, ...row })));
+  if (error) throw new Error(`seedFavoritesForUser failed: ${error.message}`);
 }
+
+/** The heading that proves Home rendered: unique to Home, and drawn before its query settles. */
+export const HOME_HEADING = { name: "Favourites", level: 2 } as const;
 
 // Sign in via the actual UI form using a seeded user. Asserts redirect to the
 // authenticated tabs.
 export async function signInAsViaUi(page: Page, name: SeedUserName) {
   const user = SEED_USERS[name];
+  await signInWithPasswordViaUi(page, user.email, user.password);
+}
+
+// The same form, for an account the spec created itself (a throwaway).
+export async function signInWithPasswordViaUi(page: Page, email: string, password: string) {
   await page.goto("/sign-in");
   await dismissCookieBanner(page);
-  await page.getByPlaceholder("m@example.com").fill(user.email);
-  await page.locator('input[type="password"]').fill(user.password);
+  await page.getByPlaceholder("m@example.com").fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   // After sign-in, the app routes to /(app). The most stable post-auth
   // signal is that the sign-in form (CardTitle "Sign in to your account") is gone.
@@ -86,6 +107,43 @@ export async function navigateViaPanel(page: Page, linkName: string) {
     .click();
 }
 
+/**
+ * Home -> the Check-in tool, without touching the panel's catalogue (#2105).
+ *
+ * The panel is about to stop listing tools and modules (#2106); its `Home` row survives
+ * that, its `Check-in` row does not. So the two journeys that log a mood take the route a
+ * person will still have: open Home from the panel, then tap Check-in in Home's Tools
+ * section. It is green against the panel exactly as it stands today, and green after.
+ *
+ * In-app throughout, and deliberately so: a `page.goto` would skip the navigation these
+ * journeys exist to exercise, and would re-arm the consent-gate deep-link hijack their
+ * boot sequence dismisses.
+ *
+ * ☠️ The card lookup is scoped to `home-tools` rather than taken bare. A favourited item
+ * renders TWICE on Home - once in Favourites, once in the catalogue below (#1956) - so a
+ * bare `card-tool-mood` is a strict-mode violation the moment the worker's user has
+ * starred Check-in. The Tools section holds the whole catalogue whatever the favourites
+ * hold, which makes this deterministic either way.
+ *
+ * The testID is `card-tool-mood` and the tool is called Check-in: `mood` is the
+ * catalogue KEY (`src/features/favorites/items.ts`), which kept its original name when
+ * the tool's copy did not.
+ *
+ * ☠️ This used to dismiss the home tour between the two steps, because routing a journey
+ * through Home ARMED it: the tour queued only on `pathname === "/"`, so a spec booting on
+ * `/routines` had `dismissPostSignInModals` no-op, reached Home first HERE, and met a
+ * scrim that covered the screen - a card tap then either won a 150ms measure race or
+ * timed out, depending on runner load. #2109 retired the tour outright, so the hazard is
+ * gone at the source rather than worked around; nothing arms on arriving at Home now.
+ *
+ * The destination assertion stays with the callers: each journey says for itself where it
+ * expects to land.
+ */
+export async function navigateToCheckInViaHome(page: Page) {
+  await navigateViaPanel(page, "Home");
+  await page.getByTestId("home-tools").getByTestId("card-tool-mood").click();
+}
+
 // The cookie consent banner overlays the bottom of the screen on first load.
 // We dismiss it with "Essential only" so no analytics consent is implied.
 // Best-effort: if it isn't there or has already animated out, do nothing.
@@ -96,14 +154,97 @@ export async function dismissCookieBanner(page: Page) {
     .catch(() => undefined);
 }
 
+/**
+ * Clear the age gate (#1764) if it is standing.
+ *
+ * ☠️ It appears for an account created at or after `AGE_GATE_INTRODUCED_AT`
+ * with no age verdict on file (#2227) - a fresh sign-up, a guest minted by the
+ * landing CTA, or one made through the admin API with no preferences row. It
+ * used to be scoped on `policy_version_accepted === null` instead, which a
+ * shipped client could forge into a permanent bypass; every e2e account is
+ * seconds old, so under the corrected scope the whole suite is that cohort.
+ * Pooled and injected users skip the gate because `NORMALIZED_GATE_PREFS`
+ * records an attestation for them, the way a real person in that cohort has
+ * one - NOT because anything exempts them. That is why this is a no-op in most
+ * specs and why it must exist anyway for the ones that use a genuinely new
+ * account.
+ *
+ * It answers rather than bypasses: the gate is the app's, and a spec that
+ * poked its state instead would stop covering the one screen every new user
+ * meets first.
+ */
+export async function clearAgeGate(page: Page) {
+  const day = page.getByTestId("age-gate-day");
+  const standing = await day
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!standing) {
+    return;
+  }
+
+  // Born 1990: over every floor in the table, so the country is free to be any
+  // country and the date never ages into a different verdict.
+  await day.fill("1");
+  await page.getByTestId("age-gate-month").fill("1");
+  await page.getByTestId("age-gate-year").fill("1990");
+  // The code is an exact match, so it ranks first in the suggestions.
+  await page.getByTestId("age-gate-country").fill("GB");
+  await page.getByTestId("age-gate-country-option-GB").click();
+
+  const submit = page.getByTestId("age-gate-submit");
+  await expect(submit).toBeEnabled({ timeout: 5_000 });
+  await submit.click();
+  await expect(day).toBeHidden({ timeout: 10_000 });
+}
+
+/**
+ * Answer the consent gate that is already standing, and submit it.
+ *
+ * ☠️ TWO controls since #1766, and both have to be given: the contractual
+ * acceptance, and the separately-worded explicit Art. 9(2)(a) consent to
+ * processing the entries. A `.first()` click - what all three call sites did
+ * before - now leaves the submit disabled, and the `toBeEnabled` below is what
+ * reports it.
+ *
+ * Both are named by testID rather than swept up with `getByRole("checkbox")`.
+ * A sweep would tick whatever the gate grows next, including a control that is
+ * meant to stay unticked, and would do it silently - which is the opposite of
+ * what a gate whose whole point is a deliberate act should be tested with.
+ *
+ * Shared rather than inlined because it was inlined: `landing-guest-entry` and
+ * `sign-up-onboarding` each carried their own copy, so teaching only the
+ * helper about the second control would have left both red.
+ *
+ * Callers decide whether the gate is standing - `dismissPostSignInModals`
+ * probes for it, `landing-guest-entry` asserts it - so this does not probe
+ * again.
+ */
+export async function answerConsentGate(page: Page) {
+  await page.getByTestId("consent-accept-checkbox").click();
+  await page.getByTestId("consent-health-data-checkbox").click();
+
+  const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
+  await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
+  await acceptButton.click();
+}
+
 // After signing in, gates and modals can appear depending on user state:
-//   1. ConsentGate - when seeded policy_version_accepted differs from the
+//   1. AgeGate - when the account was created after the gate shipped and has no
+//      age verdict on file (#1764, #2227). Sits ABOVE the consent gate, so it
+//      goes first.
+//   2. ConsentGate - when seeded policy_version_accepted differs from the
 //      current app policyVersion ("Quick policy check"). Affects all seed users.
-//   2. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
+//   3. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
 // Each is dismissed by clicking its primary button so subsequent UI is interactable.
 export async function dismissPostSignInModals(page: Page) {
   // Cookie banner can re-appear post-navigation; always re-dismiss.
   await dismissCookieBanner(page);
+
+  // Ordered first because the app orders it first: while the age gate stands,
+  // the consent gate has not rendered and waiting for it would burn its full
+  // timeout before failing on a screen that was never going to appear.
+  await clearAgeGate(page);
 
   // The modal is gated by prefs loading after sign-in - wait for it to render
   // (or time out if the user is already past consent).
@@ -113,15 +254,11 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (consentVisible) {
-    // The first checkbox in the gate is the agreement checkbox.
-    await page.getByRole("checkbox").first().click();
-    const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
-    await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
-    await acceptButton.click();
+    await answerConsentGate(page);
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  // First-run wizard: "Skip for now" completes onboarding from any panel.
+  // First-run introduction (one panel since #1958): "Skip for now" completes onboarding.
   const wizardTitle = page.getByText(/Welcome to Selftend/i);
   const wizardVisible = await wizardTitle
     .waitFor({ state: "visible", timeout: 2_000 })
@@ -132,28 +269,6 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(skipButton).toBeEnabled({ timeout: 5_000 });
     await skipButton.click();
     await expect(wizardTitle).toBeHidden({ timeout: 10_000 });
-  }
-
-  await dismissHomeTour(page);
-}
-
-/**
- * Home tour spotlight: one "Skip all tips" dismisses all four home stops.
- *
- * Waits rather than sampling `isVisible()` once - the tour arms a beat after the screen
- * settles, so a single sample sees nothing and the tour then appears mid-test. Its scrim
- * sits ABOVE an open nav panel, so an undismissed tour blocks the panel's links, not just
- * the header it points at.
- */
-export async function dismissHomeTour(page: Page) {
-  const skipAllTips = page.getByRole("button", { name: "Skip all tips", exact: true });
-  const tourVisible = await skipAllTips
-    .waitFor({ state: "visible", timeout: 3_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (tourVisible) {
-    await skipAllTips.click();
-    await expect(skipAllTips).toBeHidden({ timeout: 10_000 });
   }
 }
 

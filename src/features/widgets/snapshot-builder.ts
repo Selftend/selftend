@@ -1,3 +1,17 @@
+// ☠️ The launcher's copy lives under `home.widgets.*` (and `today.dashboard.*`,
+// `home.programWidget.*`, `plan.wizard.tool*`, `today.plan.open`,
+// `home.categories.routines`) in `navigation.json`, plus `module.label` from the
+// `act` and `cbt` namespaces - although no Home surface has rendered any of it
+// since #1959. The name is stale on purpose: every namespace is Weblate-tracked, so
+// renaming the block to the honest `widgets.*` would present ~100 keys per locale
+// as new source strings and orphan the Bulgarian. Leave the path alone;
+// `widget-meta.test.ts` resolves every dotted key literal this file names - all of
+// those families, not only `home.widgets` (#2208) - in both locales, because the
+// static key guard cannot see a `t` that arrives as a parameter.
+//
+// ☠️ The routes are guarded the same way: `widget-routes.test.ts` resolves every
+// `"/…"` literal here against the real `app/` tree (#2207). A path the router does
+// not serve lands a home-screen tap on `+not-found`, and nothing else would notice.
 import {
   averageDurationMinutes,
   averageQuality,
@@ -229,7 +243,9 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   // Scheduled CBT behavioural-activation activities, not habits - the id stays
-  // `habits-today` only because it is a storage key in widget_preferences (#330).
+  // `habits-today` only because placed launcher widgets persist it as their
+  // `cardId` (widget-config-store.ts; #330). It used to be a storage key in
+  // widget_preferences too; #1953 spent that mapping.
   "habits-today": (data, { t, dateKey }) => {
     // Activities carry a captured scheduledDayKey - the civil day the user planned
     // for - so compare directly and never re-bucket by the viewer's day (#330).

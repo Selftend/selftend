@@ -75,7 +75,6 @@ export default function GratitudeHomeScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              addWidgetCategory="gratitude"
               title={t("home.title")}
               tourScope="gratitude"
               description={t("tagline")}

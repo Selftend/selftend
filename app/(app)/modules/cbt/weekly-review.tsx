@@ -22,13 +22,6 @@ import { useSession } from "@/src/providers/session-provider";
 import { toLocalDateKey } from "@/src/stores/selected-date-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
-const REFLECTION_PROMPTS = [
-  "weeklyReview.reflection.prompt1",
-  "weeklyReview.reflection.prompt2",
-  "weeklyReview.reflection.prompt3",
-  "weeklyReview.reflection.prompt4",
-] as const;
-
 function getDayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 3);
@@ -119,11 +112,6 @@ export default function WeeklyReviewScreen() {
     return thoughtRecords.filter((r) => toLocalDateKey(r.createdAt) >= weekStart);
   })();
 
-  // Derive the prompt from the week-start key already in scope rather than a second
-  // wall-clock read, so it is deterministic for a given week and unit-testable.
-  const weekStartKey = weekDates[0];
-  const promptKey =
-    REFLECTION_PROMPTS[(Number(weekStartKey.slice(8, 10)) || 0) % REFLECTION_PROMPTS.length];
   const isLoading = moodLoading || activitiesLoading || goalsLoading || recordsLoading;
 
   const chartWidth = Math.min(width - 48, 400);
@@ -215,13 +203,24 @@ export default function WeeklyReviewScreen() {
             </CardContent>
           </Card>
 
+          {/*
+            One pinned prompt (#1689). Four questions used to rotate by the
+            week-start day of month modulo four - deterministic for a given
+            week, but the card's only sentence still changed on a calendar rule
+            nobody could see, which is a schedule, not a library (the same
+            mechanism #1665 pinned on Progress and #765 removed from habits
+            home). Content may vary only in a fixed order the user advances
+            themselves.
+          */}
           <Card>
             <CardHeader>
               <CardTitle>{t("weeklyReview.reflection.title")}</CardTitle>
               <CardDescription>{t("weeklyReview.reflection.description")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Text className="italic text-muted-foreground">{t(promptKey)}</Text>
+              <Text className="italic text-muted-foreground">
+                {t("weeklyReview.reflection.prompt")}
+              </Text>
             </CardContent>
           </Card>
         </View>

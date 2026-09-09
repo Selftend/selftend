@@ -1,10 +1,10 @@
 export const HELP_KEYS = [
   "program",
   "actProgram",
+  "dbtProgram",
   "thoughtRecords",
   "beliefs",
   "worry",
-  "distortions",
   "goals",
   "values",
   "activities",

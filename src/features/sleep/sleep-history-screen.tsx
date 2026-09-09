@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from "react";
-import { ActivityIndicator, SectionList, View } from "react-native";
+import { useMemo } from "react";
+import { SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { LoadMoreFooter } from "@/src/components/app/load-more-footer";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -19,6 +20,7 @@ import {
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { parseLocalNoon } from "@/src/utils/date";
+import { useLoadMore } from "@/src/lib/use-load-more";
 
 /**
  * The `when` column, sleep-flavoured: any date or weekday it shows must come
@@ -54,16 +56,25 @@ export default function SleepHistoryScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useSleepHistoryPages(userId);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPending,
+    refetch,
+  } = useSleepHistoryPages(userId);
 
   const sections = useMemo(() => groupHistorySections(data?.pages.flat() ?? []), [data]);
 
-  const loadMore = useCallback(() => {
-    // `hasNextPage` alone isn't enough: onEndReached fires repeatedly while the
-    // user keeps dragging, and each call would queue another page fetch.
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const loadMore = useLoadMore({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -115,12 +126,15 @@ export default function SleepHistoryScreen() {
             />
           )
         }
+        // A later page's failure has nowhere else to show: `ListEmptyComponent` is
+        // unrendered once rows exist, and the load-more latch (#2255) only clears
+        // through this Retry (#2187).
         ListFooterComponent={
-          isFetchingNextPage ? (
-            <View className="py-6">
-              <ActivityIndicator />
-            </View>
-          ) : null
+          <LoadMoreFooter
+            failed={isFetchNextPageError}
+            isFetchingNextPage={isFetchingNextPage}
+            onRetry={() => void fetchNextPage()}
+          />
         }
         renderSectionHeader={({ section }) => (
           <View className="mb-0.5 mt-5 flex-row items-center gap-3">

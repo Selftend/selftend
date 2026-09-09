@@ -47,19 +47,26 @@ const TOKENS_FILE = "src/lib/design-tokens.ts";
 
 const ACT_DIR = "src/features/act";
 const HOME_DIR = "src/features/home";
+/**
+ * The Android launcher, which owns `widget-tint.ts` since #1952 - the file this
+ * gate's `src/features/home` block was written about. It moved; the scan follows
+ * it, so a hue returning to the tint map is still classified rather than merely
+ * caught by the everywhere-else sweep at the bottom.
+ */
+const WIDGETS_DIR = "src/features/widgets";
 
 /**
  * The areas whose survivors are fully enumerated below. `app` is the whole
- * route tree; the four do not overlap, so no file is scanned twice.
+ * route tree; the five do not overlap, so no file is scanned twice.
  */
-const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as const;
+const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, WIDGETS_DIR, "src/components/app", "app"] as const;
 
 /**
  * The areas the room-ink sweep covers file-by-file. Historically "the subset
  * that contained no room"; with rooms deleted (#1292) that is every area, and
  * the name survives only to keep the sweep's scoping readable.
  */
-const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
+const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR, WIDGETS_DIR] as const;
 
 /**
  * Files exempt from the room-ink sweeps. Always empty since #1292 deleted the
@@ -407,7 +414,13 @@ const TAIL_DIRS = [
   "src/features/security",
   "src/features/settings",
   "src/features/sleep",
-  "src/features/tools",
+  // NOT `src/features/tools`: #2114 deleted the tools hub screen and its test,
+  // which were the directory's entire contents, so the directory itself is gone.
+  // The walker `readdirSync`s every entry here with no existence check, so a
+  // stale name throws and takes the whole suite down - and only on a fresh
+  // checkout, since git does not track the empty directory left behind locally.
+  // `src/features/modules` above stays: it still holds `program-types.ts` and
+  // `types.ts`.
 ];
 
 /**
@@ -421,7 +434,8 @@ const ROOMLESS_TAIL_DIRS = [
   "src/features/modules",
   "src/features/security",
   "src/features/settings",
-  "src/features/tools",
+  // `src/features/tools` is absent here for the same reason as above: #2114
+  // deleted the directory along with the hub screen it existed for.
 ];
 
 /**

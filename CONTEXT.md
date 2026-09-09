@@ -1,8 +1,85 @@
 # Selftend
 
-The shared glossary for Selftend, a free guided self-help app. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
+The shared glossary for Selftend, a set of free, private mental health tools. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
 
 ## Language
+
+### The product
+
+**mental health tools**:
+What Selftend is, in the words it says so in — the category noun, a bare plural with no article and no qualifier, spelled the same way everywhere ([#2004](https://github.com/Selftend/selftend/issues/2004)). _A set of_ may stand in front of it in the frame sentence and nowhere else. The method — a **CBT programme**, _cognitive behavioural therapy_ spelled out on first use on a surface, then **CBT** — is **not** inside the noun: it is the second beat of the frame sentence, run by the person using it with no practitioner involved, and it is what makes the eight everyday tools the everyday end of a named approach rather than a flat inventory of utilities. The noun alone is that inventory, which is why no surface may carry it without the method somewhere on it. (The previous noun, _CBT self-help app_, carried the method inside itself — [#1814](https://github.com/Selftend/selftend/issues/1814); that move was surrendered on #2004.)
+
+The frame binds **copy only**, never what the product contains or what it offers first. The eight everyday tools, ACT and DBT are all unaffected by it. (The six onboarding concerns this line once listed are gone: since [#1958](https://github.com/Selftend/selftend/issues/1958) the first-run introduction is one panel and asks no concern.)
+
+_Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. Telehealth or therapy-matching, likewise — Apple files the noun beside prescribers, and Selftend has nobody else in the loop. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ The noun no longer owns half of that compound, but _self-help_ stays live vocabulary elsewhere, so the ban and its one-word gap stay. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
+
+**programme**:
+The noun of a module's own staged progression — authored, phased, and graduated from once: the CBT programme (five phases), the ACT programme (four), and the DBT programme (four, decided in [docs/modules/dbt-mckay-skills-workbook.md](docs/modules/dbt-mckay-skills-workbook.md) §4 and built on map [#1980](https://github.com/Selftend/selftend/issues/1980)). The frame sentence names only the CBT one, because that is the method the category is paired with; the word itself belongs to every module that has one ([#1991](https://github.com/Selftend/selftend/issues/1991)). ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above, and [#2004](https://github.com/Selftend/selftend/issues/2004) kept it there when the category moved again.
+
+> Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
+
+### DBT
+
+The module's vocabulary, decided on map [#1980](https://github.com/Selftend/selftend/issues/1980) and held in full by [docs/modules/dbt-mckay-skills-workbook.md](docs/modules/dbt-mckay-skills-workbook.md) §12; the terms below are the ones other parts of the app meet.
+
+**Skill group**:
+One of DBT's four — distress tolerance, mindfulness, emotion regulation, interpersonal effectiveness — in the book's order. The same four are the DBT programme's phases. In Bulgarian, distress tolerance is _Устойчивост на стрес_ ([#1991](https://github.com/Selftend/selftend/issues/1991)).
+_Avoid_: pillar (CBT's word), module (the group is inside one), phase (that is the programme's view of it)
+
+**Coping plan**:
+One per person: three sections of app-written picks and the person's own lines, plus an ordered fallback list of three to six, read as a **card** in a hard moment. It is a document with a _touched_ time, never a record with history, and the card carries no crisis bar and no completion affordance. Never counted.
+_Avoid_: emergency plan, crisis plan, safety plan (all reserved or banned vocabulary), plan history
+
+**Pause and choose**:
+A four-step flow between the urge and the next act, ending on the person's coping plan. It **records nothing** — no row, no count, no signal — and its first step is a static line pointing at the crisis bar, identical for everyone.
+_Avoid_: interrupt log, a record of moments, any per-use count
+
+**Session** _(in DBT's sense)_:
+A timed, text-guided practice that records **on completion only**. Its **Stop** ends it at once, saves nothing and asks nothing — the opposite of the everyday tools' _Finish early_, which saves a partial row and answers the back gesture with a dialog. Muscle relaxation is the first; the rest are the second slice.
+_Avoid_: finish early, partial session, `stepsCompleted`
+
+**Wise mind**:
+Deciding by feeling and by facts together; _emotion mind_ and _reason_ are its halves. The **wise mind check-in** is a guided pause ending in a typed decision note: one row, no timer, no outcome field, no draft.
+_Avoid_: intuition, gut, the right answer
+
+**Judgement record**:
+A judgement, a Negative/Positive mark, and an optional plain restatement of what was actually there; the time is captured, not asked. No _where_, no counts. Spelled with the _e_ in every string the gate reads.
+_Avoid_: judgment (gated spelling), judgement log, a tally
+
+**Emotion record**:
+Six parts from what happened to what came after — the meaning kept as the person's own, feelings from the check-in's editable list — with no rating of any kind. Its one door hands the event and the built-in emotions to the CBT thought record through the seed store.
+_Avoid_: emotion log (the check-in's job), intensity, portrait fields
+
+**Opposite action**:
+The move a feeling would not choose. The **opposite-action plan** is an open record closed from its detail with a done-day and an optional _what shifted_; the done-day is the fact, the plan's existence never is. Nothing asks the person to close it.
+_Avoid_: overdue, age on an open plan, a count of plans, _should_
+
+**Script**:
+The four lines — I think, I feel, I want, what I'll do for myself — written before a conversation and reopened as a card. _Ask for what you want_ is the door and the room; _script_ is the record noun. Nothing is stored about the other person.
+_Avoid_: who, assertiveness training, hierarchy, rehearsal record
+
+**Ladder** _(DBT)_:
+The script list ordered easiest-first by the optional 0–100 difficulty, done scripts falling away. An ordering, never an entity, and never the CBT exposure ladder.
+_Avoid_: hierarchy, rung numbers, a gate between rungs
+
+**Learn page**:
+A static primer or skill-group page — DBT is the only module with a learn route, and every learn page opens with the crisis bar. It carries every learn-only skill, the cautions and the referral lines, and it records nothing and varies by nothing.
+_Avoid_: onboarding, info modal (the siblings' primer shape), lesson
+
+**Favourite**:
+A tool or a module the person has starred to keep on Home — one of the eight everyday tools or one of the three modules, and nothing finer-grained than that ([#1885](https://github.com/Selftend/selftend/issues/1885)). Home lists the favourites first, then the complete catalogue of eleven, through the same card; a favourited item therefore appears twice, plainly. The star is a toggle with an immediately visible consequence, so there is no cap and no "full" state. Favourites is the catalogue **filtered**, never sorted — nothing stores an order — and the modules section beneath it renders unconditionally, because a Home that shows the tools without the method is the inventory `docs/positioning.md` forbids.
+
+> Note: the star means "keep this handy", not "I do this" — a routine composes from what the person has records in, never from their favourites. The word collides on purpose with gratitude's own starred **entries**, one tap deeper; the two are different kinds of object and the Home copy names its kinds (_a tool or a module_) rather than disclaiming the other. _Avoid_: **widget** for this — that is the Android launcher's word, and the in-app dashboard it also used to name is gone.
+
+### Practice
+
+**Practice**:
+A person's repeated use of a Selftend skill in their life. Its success measure is the skill becoming automatic — never opens, sessions, or frequency. A user who needs Selftend less is a practice succeeding. (User copy may still call a meditation sit a "practice" — that is the ordinary word, not this term.)
+_Avoid_: engagement, usage, stickiness, habit loop
+
+**Return**:
+Came back at all within a window — the only sense in which Selftend counts retention ([#1598](https://github.com/Selftend/selftend/issues/1598)). Never duration, frequency, or depth. The product may deserve a return; it must not prescribe one.
+_Avoid_: retention-as-frequency, re-engagement, win-back, DAU/WAU
 
 ### Routines
 
@@ -33,7 +110,7 @@ An optional, single, user-chosen daily time at which the app nudges the user tow
 _Avoid_: notification, alarm, schedule
 
 **Anchor**:
-The everyday behavior a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
+The everyday behaviour a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
 _Avoid_: trigger, cue-field, hook
 
 **Day**:
@@ -43,9 +120,9 @@ The calendar day an entry belongs to. Which calendar depends on whether the tool
 - **CBT activities** carry two such days, for two different reasons: `completedDayKey` is the ordinary occurrence — the day the activity was done — and `scheduledDayKey` freezes the civil day a _future_ plan was meant for, so "Tuesday 7pm" stays Tuesday after travel. Behavioural activation asks whether you did the thing you planned for that day, so the day is the unit of the intervention. The stored instant is unchanged and still does the ordering and the time-of-day display; the offset only records which day was meant. An edit that leaves the schedule field alone carries the stored pair through rather than re-deriving it, so editing the notes after travel cannot move the plan's day.
 - **Habits** reach the same answer by a shorter route, and a stronger model: `habit_logs.logged_on` stores the resolved civil date itself, and a unique index on `(habit_id, logged_on)` makes that date the tick's identity. Nothing is converted at read time, so unlike an offset this model has no "unknown" case to fall back from.
 - **Routines are viewer-local by decision, and stay that way.** A routine has no dated record to freeze — there is no run object — and its job is "today, where you are standing"; freezing the axis would hand someone who has travelled a checklist for a day they have not lived, or mark one complete before they wake. Steps still read each tool's own day model, so the two models coexist on purpose rather than by omission. Routine status resets at local midnight.
-- **ACT is deliberately deferred, not pending**, and is the only module left with no captured offset. Nine tables and roughly 60% of the workstream's remaining cost, against a symptom of a single wrong day, visible only around travel and self-correcting the next day. The deferral holds on a **single-frame invariant**, not on an absence of history: ACT does ship cross-day surfaces — home's recent defusion, urge surf's last five, bull's-eye snapshots — so a mis-filed entry does stay visible. What ACT does not do is name a day twice from two frames. The five today-only list filters, the programme's `didOnDate`, and the ACT legs of `program_widget_task_status` all resolve the day from the viewer's _current_ device timezone, the last of those scanning a client-passed `created_at` window where the CBT legs beside it read `occurrence_day_key`. `useSelectedDate()` returning today, with deliberately no global selected-date state, is part of what holds that single frame. So ACT's surfaces can be wrong together after travel but can never contradict each other, and self-contradiction is the harm the captured day exists to prevent. The offset returns the moment an ACT surface names a day from a **second** frame — a day-grouped heading, a date control, a `formatRelativeDayKey` label, or a server-resolved day. A flat, newest-first list does not, however far back it reaches.
+- **ACT is deliberately deferred, not pending**, and is the only module left with no captured offset. Nine tables and roughly 60% of the workstream's remaining cost, against a symptom of a single wrong day, visible only around travel and self-correcting the next day. The deferral holds on a **single-frame invariant**, not on an absence of history: **every ACT tool now ships a full, cross-day archive** (#1517) — the five list screens, urge surf, bull's-eye and the finished half of committed actions (one archive per finished status, so a page of completions cannot hide the abandoned section) are all flat, newest-first and keyset-paged — so a mis-filed entry stays visible for as long as the user scrolls. What ACT does not do is name a day twice from two frames. Those archives introduce no second frame: they order on the plaintext `created_at` (`reviewed_at` for bull's-eye) and carry no day heading, no date control and no `formatRelativeDayKey` label. Their rows still name a day — since #1539 a **compact** label (`formatCompactAtOffset`: a time today, a weekday and a time inside a week, then a date), or a bare date on bull's-eye, where one check-in writes up to four rows milliseconds apart and a time would stack four near-identical labels — but every one of those is resolved read-time from the viewer's current device timezone, which is the one frame ACT keeps. ACT's **detail** screens keep the absolute form (`formatAtOffset`), the same row-compact/detail-absolute split the detail screens of journal, meditation, sleep, mood and CBT activities already ship. A compact weekday label is **not** the `formatRelativeDayKey` label named below: that one reads a **captured** `dayKey` and measures it against the viewer's today, which is two frames and is exactly why it is closed to ACT, whereas `formatCompactAtOffset(value, null)` derives both the entry's day and today's in the _same_ viewer frame — so it names a day relatively without ever naming it twice. The day-namers that remain — the programme's `didOnDate` and the ACT legs of `program_widget_task_status` — both resolve the day from the viewer's _current_ device timezone, the latter scanning a client-passed `created_at` window where the CBT legs beside it read `occurrence_day_key`. `useSelectedDate()`, with deliberately no global selected-date state, still returns today, and after #1517 it survives on ACT's **write** path only (`loggedAtForSelectedDate`); the five list screens that used to filter reads through it no longer do. So ACT's surfaces can be wrong together after travel but can never contradict each other, and self-contradiction is the harm the captured day exists to prevent. The offset returns the moment an ACT surface names a day from a **second** frame — a day-grouped heading, a date control, a `formatRelativeDayKey` label, or a server-resolved day. A flat, newest-first list does not, however far back it reaches. The invariant is no longer prose alone: `test/act-captured-offset-gate.test.ts` (#1533) fails if any `act_*` table declares an `*_offset_minutes` column or any ACT source file declares an `*OffsetMinutes` field, because the breach that ends the invariant is **partial** graduation — one ACT table capturing an offset while its siblings do not, leaving one module naming days in two frames. Graduation is therefore module-wide or not at all, and it deletes that gate rather than exempting a file. ☠️ The obvious-looking guard is backwards: adding `src/features/act/` to `eslint.config.js`'s `CAPTURED_FRAME_FILES` would ban the viewer-local helpers ACT is _required_ to use.
 - Both of those are owner decisions of 2026-07-28, recorded on [#330](https://github.com/Selftend/selftend/issues/330#issuecomment-5100789560).
-- The **CBT programme checklist** exists twice — once client-side in `src/features/cbt/program-definition.ts` and once in the `program_widget_task_status` RPC — because the programme screen and the **Android launcher widget** answer "is today's practice done" from different places (home's own card stopped asking in #977 - it shows an ordinal phase badge and no task list). Every CBT leg now reads the captured day on both sides (#425 moved the last three, `thoughtRecordDaily`, `activityDaily` and `calmingDaily`, in one change). A module that graduates on one side only makes the two surfaces contradict each other, so the two copies move together, per module. There is a **third, non-rendering copy**: `scripts/seed-demo-data.mjs` re-derives the seeded phase's legs to assert that the demo account's stored phase index does not contradict the rows behind it (#1282). It cannot make two surfaces disagree, because nothing renders from it — but a leg whose rule changes in the two copies above and not there leaves the seed asserting a rule the app no longer uses, and passing. The **ACT programme checklist** is duplicated the same three ways, and the seed's copy of it is now complete: #1284 places the ACT practice logs so `openUp`'s `unhookOnce` reads done and its `makeRoomOnce` and daily practice stay open, and #1286 persists the anchor those margins were placed against and re-derives all three legs out of the database to check them. #1286 anchors from `ACT_PHASE_STARTED_DAY`, the constant #1284 declares, rather than naming a second day — nothing else persists that phase, so two different days would leave the margins and the anchor silently measuring different phases. #1286 also re-derives the two boundary invariants at both edges of the supported timezone band (UTC−11:00 and UTC+12:45), because both are claims about a civil day and no ACT table stores a captured offset. **Routine status is duplicated the same non-rendering way** (#1290): the seed's `ROUTINE_STEP_SOURCES` and `statusOn` restate `stepDoneOnDate` and `deriveRoutine` — which tool a step reads, which timestamp that tool dates a row by, and which rows do not count at all — so it can re-derive each seeded routine's status and seven-day strip out of the database and refuse to finish on a picture a reviewer would not see. The mapping is the app's, not the schema's: a change to which column a tool derives "done today" from, or to a filter like `listThoughtRecords`' `archived_at is null`, has to move here too, or the seed goes on asserting a rule the app has stopped using.
+- The **CBT programme checklist** exists twice — once client-side in `src/features/cbt/program-definition.ts` and once in the `program_widget_task_status` RPC — because the programme screen and the **Android launcher widget** answer "is today's practice done" from different places (home's own card stopped asking in #977 - it shows an ordinal phase badge and no task list). Every CBT leg now reads the captured day on both sides (#425 moved the last three, `thoughtRecordDaily`, `activityDaily` and `calmingDaily`, in one change). A module that graduates on one side only makes the two surfaces contradict each other, so the two copies move together, per module. There is a **third, non-rendering copy**: `scripts/seed-demo-data.mjs` re-derives the seeded phase's legs to assert that the demo account's stored phase index does not contradict the rows behind it (#1282). It cannot make two surfaces disagree, because nothing renders from it — but a leg whose rule changes in the two copies above and not there leaves the seed asserting a rule the app no longer uses, and passing. The **ACT programme checklist** is duplicated the same three ways, and the seed's copy of it is now complete: #1284 places the ACT practice logs so `openUp`'s `unhookOnce` reads done and its `makeRoomOnce` and daily practice stay open, and #1286 persists the anchor those margins were placed against and re-derives all three legs out of the database to check them. #1286 anchors from `ACT_PHASE_STARTED_DAY`, the constant #1284 declares, rather than naming a second day — nothing else persists that phase, so two different days would leave the margins and the anchor silently measuring different phases. #1286 also re-derives the two boundary invariants at both edges of the supported timezone band (UTC−11:00 and UTC+12:45), because both are claims about a civil day and no ACT table stores a captured offset. **Routine status is duplicated the same non-rendering way** (#1290): the seed's `ROUTINE_STEP_SOURCES` and `statusOn` restate `stepDoneOnDate` and `deriveRoutine` — which tool a step reads, which timestamp that tool dates a row by, and which rows do not count at all — so it can re-derive each seeded routine's status and seven-day strip out of the database and refuse to finish on a picture a reviewer would not see. The mapping is the app's, not the schema's: a change to which column a tool derives "done today" from, or to a filter like `listThoughtRecords`' `archived_at is null`, has to move here too, or the seed goes on asserting a rule the app has stopped using. **The seeded favourites are a fourth such copy, and the only one that cannot rot** (#1352, #1953, #1959): demo's ten and bob's four `favorites` rows are restated as literals because one seeder is `.mjs` and the other is SQL and neither can import the catalogue — but `test/seed-favorites.test.ts` parses both seed files and checks every key against the real `CATALOGUE` in `src/features/favorites/items.ts` on every run, and the demo seeder reads all three accounts' rows back out of the database as its last step. That is the pattern the three copies above lack: where they need a human to carry a rule change into the seed, this one fails in CI if nobody does. (Until #1959 the seeds also wrote the old `widget_preferences` layouts, defined as "what `buildWidgetRecommendations` emits for these onboarding answers" and compared against the real builder by `test/seed-widget-layouts.test.ts`; no seed writes that table now, so that comparison retired with the dashboard. Until #1954 the same test also composed bob's starter routine from his rows through `buildStarterSteps`; the starter now composes from the tools a person has records in.) `test/integration/favorites.integration.test.ts` still replays the #1953 migration's own SQL rather than a retyped mapping.
 - Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the **viewer's current local day**. That is a fallback for unknown, never a claim the entry was logged at UTC.
 - This holds server-side too: `public.occurrence_day_key` is the SQL twin of `entryDayKey`, so an RPC that answers "done today" resolves the same day the screens do rather than range-scanning the viewer's window (#414).
 
@@ -62,6 +139,16 @@ _Avoid_: subscription (only half the channel), per-reminder permission
 **Re-arm**:
 Restoring a lost reminder channel for a user who has already said yes, without asking again. A re-arm never prompts; when consent cannot be presumed, what happens instead is a fresh request, not a re-arm.
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
+
+**Reminder consent**:
+Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces. Its three states are named because two of them are indistinguishable unless you also know whether the question was ever put:
+
+- **Never asked** — no answer recorded. The one-time post-completion prompt is offered.
+- **Declined** — asked, and the answer was no. The prompt is permanently withheld. It **has no positive rendering**: nothing draws differently for declined than for never asked, so declined is only ever the _absence_ of the prompt.
+- **Consented** — asked, and the answer was yes. The prompt is offered for any tool not already armed.
+
+Invariant: an account cannot hold an enabled reminder without consent.
+_Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (does not distinguish never asked from declined)
 
 ### Design language ("Color field")
 
@@ -192,6 +279,24 @@ action reporting that a task is finished, not a way out of a screen, so neither 
 its enforcement gate governs it. A screen may carry both.
 _Avoid_: calling Done an escape hatch; a screen is not exempt from an Escape because it has a Done.
 
+**Panel** (not a way out):
+The navigation drawer behind the hamburger (`SidebarNav`, opened as an overlay), and the app's only
+navigation chrome on every platform — there is no desktop rail (#667). Not a way _out_ of a screen
+but a way _across_ to a peer, which is why it navigates `dangerouslySingular` rather than pushing.
+
+What it is for: **Home is the doing; the panel is everything around the doing** — the record
+(Looking back), the plans (Routines), the reminders, and the account, plus the outbound Donate row.
+Seven rows, no group headings, nothing per-person and nothing contextual (#2085/#2106).
+
+It is **not an index of the app**. Home carries the whole catalogue of tools and modules, drawn from
+the one catalogue constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
+mirror a collection** ([ADR-0006](docs/adr/0006-panel-duplicates-a-door-never-mirrors-a-collection.md)).
+A hand-maintained second copy of a list is free to drift from the first, and — with no card to star
+— is a lesser copy besides. Home, Settings and Support are the permitted kind: each has a second
+door elsewhere, but a fixed row cannot drift, and duplicating one costs nothing.
+_Avoid_: calling it an index or a map of the app; a "you are here" row (the breadcrumb in the shared
+chrome already says where the user is, without anything being opened)
+
 ### Accounts ("optional registration")
 
 The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
@@ -203,6 +308,15 @@ owns its data like any other — whose only key is the session held on that devi
 the session, lose the account. "Guest" is the word in copy, docs and code alike; the platform's
 mechanism word is "anonymous", which stays out of the UI because the data is not anonymous — it is
 the person's own, just unlabelled by an email.
+
+**How the code answers it** (#1896): `isGuestAccount(user)` in `src/features/profile/guest.ts`,
+which reads the **absence of an email**, never `is_anonymous`. The flag is a lie for the length of
+one window — `convertGuestWithPassword` flips it server-side while the live JWT keeps claiming
+`is_anonymous: true` until the token is minted again — so a just-registered person carries a true
+flag and an email at the same time. Until #1896 that person was hidden from Sign Out, still shown
+the "create an account" card, and denied the verify-email banner they had just earned. The one
+deliberate exception is `SignUpForm`'s `isConversion`, which asks whether a submit is an upgrade of
+an anonymous row rather than whether the person is a guest, and is documented in place.
 _Avoid_: anonymous account (mechanism word, and wrong as a privacy claim), local account, device
 account, trial account
 
@@ -221,7 +335,11 @@ _Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
 Knowingly leaving a guest account behind by signing in to a registered account from a device that
 holds guest data. Always preceded by a warning when the guest account holds any user-created
 content — never silent — and the warning offers export in place (#1430). A guest account with
-nothing in it is abandoned without ceremony.
+nothing in it is abandoned without ceremony. The warning is a confirm at submit; `/sign-in` also
+carries a quiet line saying the same thing on arrival, so the fact reaches the person before they
+have typed anything rather than after (#1865). The line is a foreshadow, not a second gate: it
+appears on exactly the confirm's own preconditions, and it stays silent when the content check
+cannot be reached, where the confirm warns.
 _Avoid_: logout, switch (both hide that data is being left behind)
 
 **Orphaned guest account**:

@@ -13,6 +13,7 @@ import { BarChart } from "@/src/components/charts/bar-chart";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { enterKeyActivationProps } from "@/src/lib/accessibility";
 import { formatRelativeActivity } from "@/src/utils/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
@@ -40,6 +41,7 @@ import { formatInstantAtOffset } from "@/src/utils/date";
 
 export default function JournalListScreen() {
   const pushWithOrigin = usePushWithOrigin();
+  const openAllEntries = () => pushWithOrigin("/tools/journal/entries");
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -53,6 +55,21 @@ export default function JournalListScreen() {
   const [writingRange, setWritingRange] = useState<JournalWritingRange>(30);
   const writingQuery = useJournalWritingBuckets(userId, writingRange);
   const writingBuckets = writingQuery.data;
+  /**
+   * A read that DID NOT HAPPEN - failed, or never started at all - as opposed to
+   * one still on its way. The conjunct is #2237's, from the coping-plan screen:
+   * queries keep `networkMode: "online"`, so an offline arrival never fires this
+   * read, never errors, and sits at `isPending` true / `isPaused` true. Branching
+   * on "no data and no error" alone parked that arrival on a spinner forever,
+   * with the retry beside it in a branch that never rendered - on a screen whose
+   * other content loads from the cache, so the section read as broken.
+   *
+   * ☠️ Pending AND paused, never `isPaused` alone, and always `&& !writingBuckets`:
+   * a refetch that pauses (or fails) over a drawn chart takes nothing away, and
+   * the bars stay.
+   */
+  const writingUnread =
+    !writingBuckets && (writingQuery.isError || (writingQuery.isPending && writingQuery.isPaused));
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
@@ -126,7 +143,6 @@ export default function JournalListScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
-              addWidgetCategory="journal"
               title={t("title")}
               tourScope="journal"
               description={t("tagline")}
@@ -178,11 +194,20 @@ export default function JournalListScreen() {
                     ]}
                   />
                 </View>
-                {!writingBuckets && !writingQuery.isError ? (
-                  <View className="items-center py-8">
-                    <ActivityIndicator />
-                  </View>
-                ) : writingQuery.isError ? (
+                {/*
+                    ☠️ The unread test comes FIRST, and the spinner answers only for
+                    what is left: a read genuinely in flight. The other order is
+                    what parked an offline arrival on a spinner it could not leave.
+
+                    ☠️ `&& !writingBuckets`, never bare `isError`: query-core sets
+                    the query's error status on ANY failed fetch, held buckets or
+                    not (TanStack's own `isRefetchError`). `journalKeys.all` is
+                    invalidated on every entry save, so a failed post-save re-read
+                    - or an ordinary refetch past the 60s staleTime - replaced a
+                    drawn chart with this line about data still in the cache. The
+                    error answers for the blank; loaded bars stay drawn.
+                  */}
+                {writingUnread ? (
                   <View className="items-start gap-2 py-4">
                     <Text variant="muted" className="text-[13px]">
                       {t("writing.error")}
@@ -190,6 +215,10 @@ export default function JournalListScreen() {
                     <Button variant="outline" size="sm" onPress={() => void writingQuery.refetch()}>
                       <Text>{t("errors:fallback.retry")}</Text>
                     </Button>
+                  </View>
+                ) : !writingBuckets ? (
+                  <View className="items-center py-8">
+                    <ActivityIndicator testID="journal-writing-loading" />
                   </View>
                 ) : hasWritingInRange ? (
                   <>
@@ -244,8 +273,10 @@ export default function JournalListScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={8}
-                    onPress={() => pushWithOrigin("/tools/journal/entries")}
+                    onPress={openAllEntries}
                     className="flex-row items-center gap-1 active:opacity-80"
+                    role="link"
+                    {...enterKeyActivationProps(openAllEntries)}
                   >
                     <Text className="text-[13px] font-medium text-primary">
                       {t("list.showAll")}

@@ -90,6 +90,33 @@ export const COOKIE_CONSENT_VALUE = JSON.stringify({
 export const NORMALIZED_GATE_PREFS = {
   app_onboarding_completed: true,
   policy_version_accepted: policyVersion,
+  // The age gate's answer (#1764, #2227). Injected sessions belong to accounts
+  // minted seconds ago, so they sit ABOVE `AGE_GATE_INTRODUCED_AT` and the
+  // gate's exemption for the pre-gate install base does not - and must not -
+  // reach them. What separates them from the cohort the gate exists to stop is
+  // the same thing that separates a real user: an attestation on file.
+  //
+  // ☠️ This makes the fixture TRUTHFUL, it does not weaken the gate. A person
+  // in this cohort answers the age question and the app writes exactly these
+  // three columns (`recordAgeAttestation`, src/features/settings/repository.ts);
+  // the fixture now says the same thing rather than presenting an account that
+  // reached the authenticated shell without ever being asked. Nothing here is
+  // read by the app as a bypass - `age_floor_met` is the ordinary column the
+  // gate reads for everybody. The specs that exist to SEE the gate
+  // (landing-guest-entry, sign-up-onboarding) never come through here: they
+  // create their account through the UI and answer the form.
+  //
+  // All three columns, not just the verdict: a row carrying a pass with no
+  // country and no timestamp is a shape no user path produces, and a fixture
+  // that models an impossible row is the next bug's hiding place. GB is what
+  // `clearAgeGate` (helpers.ts) types into the form, so an account that came
+  // through the UI and one normalized here tell the same story. The instant is
+  // fixed rather than `now()` for the same reason `reminder_consent_updated_at`
+  // below is: nothing reads it, and a moving value in a shared constant is a
+  // needless source of run-to-run difference.
+  age_floor_met: true,
+  age_attested_country: "GB",
+  age_attested_at: "2026-01-01T00:00:00.000Z",
   reminder_consent: false,
   reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
   // Pooled users count as verified or the #489 banner pins itself to the top
@@ -97,4 +124,12 @@ export const NORMALIZED_GATE_PREFS = {
   // (plain @playwright/test, fresh user), which the normalization never
   // touches.
   email_verified: true,
+  // The once-ever starter-routine offer (#1677) counts as already shown.
+  // With reminder consent declined above, the reminder prompt never wins a
+  // save here, so a pooled user at zero routines (bob, by design - see
+  // supabase/seed.sql) whose specs save into a second steppable tool would
+  // otherwise pop the offer after that save and block unrelated specs'
+  // buttons. (Bob's own seed is one tool - five thought records - so it is
+  // the specs' saves, not the seed, that reach the second action.)
+  starter_routine_offered: true,
 } as const;

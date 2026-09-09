@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
+import { ActivityIndicator } from "react-native";
 
 import ActCommittedActionDetailScreen from "@/src/features/act/act-committed-action-detail-screen";
-import { useCommittedActions } from "@/src/features/act/queries";
+import { useCommittedAction, useListedCommittedActions } from "@/src/features/act/queries";
 import type { CommittedAction } from "@/src/features/act/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -27,7 +28,9 @@ jest.mock("@/src/stores/toast-store", () => ({
 jest.mock("@/src/features/act/queries", () => {
   const idle = () => ({ mutateAsync: jest.fn(), isPending: false });
   return {
-    useCommittedActions: jest.fn(),
+    // The detail probes the list screen's own cache entries (#2190), never the plain
+    // status-less list read — that one is absent here on purpose, so a probe of it throws.
+    useListedCommittedActions: jest.fn(),
     useCommittedAction: jest.fn(() => ({ data: null, isLoading: false })),
     useActionSteps: jest.fn(() => ({ data: [] })),
     useSaveActionStep: idle,
@@ -38,9 +41,14 @@ jest.mock("@/src/features/act/queries", () => {
   };
 });
 
-const mockUseCommittedActions = useCommittedActions as jest.MockedFunction<
-  typeof useCommittedActions
+const mockUseListedCommittedActions = useListedCommittedActions as jest.MockedFunction<
+  typeof useListedCommittedActions
 >;
+const mockUseCommittedAction = useCommittedAction as jest.MockedFunction<typeof useCommittedAction>;
+
+/** The two fields `useCachedItem` reads, in the shape the mocked hook must return. */
+const idleItem = (result: { data: CommittedAction | null | undefined; isLoading: boolean }) =>
+  result as unknown as ReturnType<typeof useCommittedAction>;
 
 const ACTION: CommittedAction = {
   id: "a1",
@@ -56,9 +64,7 @@ const ACTION: CommittedAction = {
 };
 
 function renderDetail(action: CommittedAction) {
-  mockUseCommittedActions.mockReturnValue({ data: [action] } as unknown as ReturnType<
-    typeof useCommittedActions
-  >);
+  mockUseListedCommittedActions.mockReturnValue({ data: [action] });
   renderWithProviders(<ActCommittedActionDetailScreen />);
 }
 
@@ -76,5 +82,38 @@ describe("the committed action detail's target date", () => {
     renderDetail({ ...ACTION, targetDate: null });
 
     expect(screen.queryByText("Target date (optional)")).toBeNull();
+  });
+});
+
+/**
+ * ☠️ A status change is the one edit on this screen that MOVES the row between the three
+ * entries its probe unions (#2257). The mutation invalidates all three; they refetch
+ * concurrently, and when the old entry's response lands before the new entry's, the row
+ * is in none of them — the single-row read flips on with nothing cached yet. That instant
+ * used to replace the whole detail with the loading scaffold, on the screen's primary
+ * action. Deterministically so for an action older than the twenty newest at its new
+ * status, which never re-enters page one.
+ */
+describe("a status change from the detail", () => {
+  beforeEach(() => jest.clearAllMocks());
+  afterEach(() =>
+    mockUseCommittedAction.mockReturnValue(idleItem({ data: null, isLoading: false })),
+  );
+
+  it("keeps the detail painted while the row is between the list's entries", () => {
+    mockUseListedCommittedActions.mockReturnValue({ data: [ACTION] });
+    const view = renderWithProviders(<ActCommittedActionDetailScreen />);
+    expect(screen.getByText("Walk three times this week")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Mark complete"));
+
+    // The union has lost the row; the single-row read is on and has not answered.
+    mockUseListedCommittedActions.mockReturnValue({ data: [] });
+    mockUseCommittedAction.mockReturnValue(idleItem({ data: undefined, isLoading: true }));
+    view.rerender(<ActCommittedActionDetailScreen />);
+
+    expect(screen.getByText("Walk three times this week")).toBeTruthy();
+    expect(screen.getByText("Mark complete")).toBeTruthy();
+    expect(screen.UNSAFE_queryAllByType(ActivityIndicator)).toEqual([]);
   });
 });

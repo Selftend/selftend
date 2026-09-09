@@ -63,15 +63,9 @@ test.describe("guest conversion", () => {
     await page.getByRole("button", { name: "Create account", exact: true }).click();
 
     // Straight into the app (autoconfirm: no email, no interstitial).
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
-
-    // The optional Home tour may pop for this fresh account; dismiss it so the
-    // banner and gratitude assertions below run against a settled page (same
-    // handling as sign-up-onboarding).
-    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
-    if (await skipTour.isVisible()) await skipTour.click();
 
     // The attached email is unverified - the existing banner layer takes over.
     await expect(page.getByText("Verify your email to secure your account.")).toBeVisible({

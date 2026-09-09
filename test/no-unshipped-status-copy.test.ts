@@ -9,12 +9,15 @@
 // roadmap". A copy change could not reach the build under review, so the reply
 // pre-empted it and this guard keeps the next one clean.
 //
-// SCOPE IS DERIVED, NOT SUPPRESSED. `getTheApp.comingSoon` is a legitimate
-// "coming soon" string - it marks a store link the app does not have yet - and
-// it is excluded because it is not one of these surfaces, not because it earned
-// an exemption. `GetTheAppSection` returns null on `Platform.OS !== "web"`, so
-// it never renders in a store binary at all. Adding a suppression list here
-// instead of narrowing the scope would have exempted every future sibling too.
+// SCOPE IS DERIVED, NOT SUPPRESSED. This guard walks the surfaces above and
+// nothing else, so a sibling namespace is out of range by construction rather
+// than by exemption - a suppression list here would have exempted every future
+// sibling too.
+//
+// The one string that used to need explaining, `getTheApp.comingSoon`, is gone:
+// both apps are published, the store URLs default to the live listings, and a
+// build with no store URL now drops the surface instead of promising it. The
+// store surfaces keep their own `queryByText(/coming soon/i)` assertions.
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -28,20 +31,23 @@ function readNamespace(language: string, namespace: string): Record<string, unkn
 
 /**
  * The surfaces that tell a user - or a reviewer - what the app contains: the
- * nav rows, the `/modules` index and its tiles, and the DBT overview screen.
+ * nav rows, Home's module tiles, and the DBT module's own namespace (which
+ * absorbed the overview screen's copy under #1980). The `/modules` index was a
+ * fourth until #2114 deleted it; the tiles it carried live on Home alone now.
  */
 function surfaceStrings(language: string): { key: string; value: string }[] {
   const navigation = readNamespace(language, "navigation") as {
     sidebar: unknown;
-    modulesPage: unknown;
     today: { modules: unknown };
   };
 
   const roots: Record<string, unknown> = {
     "navigation.sidebar": navigation.sidebar,
-    "navigation.modulesPage": navigation.modulesPage,
+    // `navigation.modulesPage` was a fourth root until #2114 deleted the `/modules`
+    // page it headed. It is removed rather than left in place: `walk(undefined, …)`
+    // contributes nothing silently, which reads as coverage and provides none.
     "navigation.today.modules": navigation.today.modules,
-    modules: readNamespace(language, "modules"),
+    dbt: readNamespace(language, "dbt"),
   };
 
   const out: { key: string; value: string }[] = [];
@@ -80,20 +86,30 @@ describe("module and navigation copy promises nothing the build does not ship", 
 
   // A guard that only reads copy would pass if someone re-added the chip with
   // fresh wording. These are the two key sets the chips were driven by: the
-  // sidebar's badge keys are gone outright, and `modulesPage.stats` now holds
-  // exactly one value, the one the DBT tile uses to say what it is.
+  // sidebar's badge keys, gone outright, and the module tile's `stats` block,
+  // asserted absent below where the tile now lives.
   it.each(LANGUAGES)("%s has no sidebar status-badge keys left", (language) => {
     const sidebar = readNamespace(language, "navigation").sidebar as Record<string, unknown>;
 
     expect(Object.keys(sidebar).filter((key) => key.startsWith("badge"))).toEqual([]);
   });
 
-  it.each(LANGUAGES)("%s offers exactly one module-tile status, and it is neutral", (language) => {
-    const modulesPage = readNamespace(language, "navigation").modulesPage as {
-      stats: Record<string, string>;
-    };
+  // The module tile's footer went with #1887's one card (#1955): its sole occupant was
+  // the neutral "Overview", and a status has no slot to come back to. So the key set is
+  // asserted absent as a whole — a `stats` object reappearing here, under any wording,
+  // is the chip's slot being rebuilt.
+  //
+  // The subject MOVED with #2114 rather than dying: the tile's copy lived under
+  // `navigation.modulesPage` while `/modules` was a page, and now lives only under
+  // `navigation.today.modules`, Home's own. Reading the deleted block would have
+  // thrown here rather than rotted, which is how the move was noticed.
+  it.each(LANGUAGES)("%s offers no module-tile status at all", (language) => {
+    const navigation = readNamespace(language, "navigation") as { today: Record<string, unknown> };
+    const modules = navigation.today.modules as Record<string, unknown>;
 
-    expect(Object.keys(modulesPage.stats)).toEqual(["overview"]);
+    // The tiles themselves are still here, so the assertion below has a subject.
+    expect(modules.cbtName).toEqual(expect.any(String));
+    expect(modules.stats).toBeUndefined();
   });
 
   it("both locales carry the same module-surface keys", () => {

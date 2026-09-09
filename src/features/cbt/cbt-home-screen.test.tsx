@@ -12,11 +12,7 @@ import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { useGoals } from "@/src/features/goals/queries";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
-import {
-  useUpdateShownButtonTours,
-  useUpdateUserPreferences,
-  useUserPreferences,
-} from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -38,7 +34,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -66,9 +61,6 @@ jest.mock("@/src/features/cbt/use-cbt-program", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -95,10 +87,6 @@ function setupDefaultMocks() {
     mutate: jest.fn(),
     mutateAsync,
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-  mockUseUpdateShownButtonTours.mockReturnValue({
-    isPending: false,
-    mutateAsync: jest.fn(),
-  } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
   mockUseGoals.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useGoals>);
   mockUseThoughtRecords.mockReturnValue({
     data: [],
@@ -174,7 +162,7 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
     expect(screen.queryByText("Today check-in")).toBeNull();
     expect(screen.queryByText("Today")).toBeNull();
     expect(screen.queryByText("Mood summaries")).toBeNull();
@@ -217,8 +205,8 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.queryByText("Start program")).toBeNull();
-    fireEvent.press(screen.getByLabelText("Show the CBT program invitation"));
+    expect(screen.queryByText("Start programme")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Show the CBT programme invitation"));
     expect(showProgramPrompt).toHaveBeenCalled();
   });
 
@@ -325,9 +313,9 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    fireEvent.press(screen.getByLabelText("Program options"));
-    fireEvent.press(screen.getByText("Abandon program"));
-    expect(screen.getByText("Abandon this program?")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Programme options"));
+    fireEvent.press(screen.getByText("Abandon programme"));
+    expect(screen.getByText("Abandon this programme?")).toBeTruthy();
 
     fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
     expect(abandonProgram).toHaveBeenCalled();
@@ -440,7 +428,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
     const positions = orderOf(
       "Cognitive Behavioural Therapy",
       "New thought record",
-      "Start program",
+      "Start programme",
       "Your slogan",
       "Active goals",
       "Recent thought records",
@@ -509,7 +497,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
 
     expect(screen.getByText('"one step at a time"')).toBeTruthy();
     expect(screen.getByText("goal g1")).toBeTruthy();
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
   });
 
   it("gives every section heading a real level-3 heading role", () => {
@@ -531,6 +519,29 @@ describe("CbtHomeScreen layout (#1386)", () => {
    * than being one. Flattening it would leave the page with no outline. Pinned
    * so the exception cannot be quietly flattened, nor quietly lose its role.
    */
+  /**
+   * ☠️ **The crisis callout is a level-2 block, not a child of the framework**
+   * (#2167). It renders last, after *The Think · Act · Be framework*'s `h2`, so at
+   * level 3 it read as one of that section's parts - urgent support filed inside
+   * the CBT framework. It belongs to no framework.
+   *
+   * Asserted HERE and not only on `safety-callout.test.tsx` because the component
+   * takes the level from a default, and before #2167 nothing on this screen
+   * noticed the callout's level at all.
+   *
+   * ⚠️ *Review* is still level 3 under that same `h2` and is still wrong; that
+   * half of #2167 needs a per-screen ruling.
+   */
+  it("keeps the crisis callout out of the framework section, at level 2", () => {
+    fillTheScreen();
+    renderWithProviders(<CbtHomeScreen />);
+
+    const callout = screen.getByText("Use urgent support for urgent risk");
+
+    expect(callout.props.role ?? callout.props.accessibilityRole).toBe("heading");
+    expect(Number(callout.props["aria-level"])).toBe(2);
+  });
+
   it("keeps the framework heading a real heading, one level above the sections", () => {
     fillTheScreen();
     renderWithProviders(<CbtHomeScreen />);
@@ -550,7 +561,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
 
     expect(screen.getByText("Cognitive Behavioural Therapy")).toBeTruthy();
     expect(screen.getByText("New thought record")).toBeTruthy();
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
     expect(screen.getByText(/framework/)).toBeTruthy();
     expect(screen.getByText("Think")).toBeTruthy();
     expect(screen.getByText("Review")).toBeTruthy();

@@ -37,6 +37,12 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     void updateMutation.mutateAsync(p).catch(() => undefined);
   };
 
+  // Both ids arrive already resolved: the repository maps a stored id the catalog lacks
+  // to `none` on read (#1745), so each lane's summary and its picker's `selectedId`
+  // name the same row. The sheet used to resolve the breath lane itself and the
+  // ambient lane not at all - an unknown bed read "None" while the picker highlighted
+  // nothing. The `?? [0]` fallbacks below are null-guards for a caller that bypasses
+  // the repository; they land on the same `none` row the repository would.
   const breathSound =
     BREATH_SOUNDS.find((s) => s.id === effective.breathSoundId) ?? BREATH_SOUNDS[0];
   const ambientSound =
@@ -72,7 +78,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
               <Picker
                 label={t("breathing.sounds.breathLabel")}
                 items={BREATH_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
-                selectedId={effective.breathSoundId}
+                selectedId={breathSound.id}
                 onSelect={(id) => patch({ breathSoundId: id })}
               />
             ) : null}
@@ -87,7 +93,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
               <Picker
                 label={t("breathing.sounds.ambientLabel")}
                 items={AMBIENT_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
-                selectedId={effective.ambientSoundId}
+                selectedId={ambientSound.id}
                 onSelect={(id) => patch({ ambientSoundId: id })}
               />
             ) : null}

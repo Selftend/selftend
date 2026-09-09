@@ -83,13 +83,32 @@ describe("the manifest CLI", () => {
 
   const out = () => join(dir, "record.json");
 
+  it("☠️ has no default target, and says where the record went instead (#1702)", async () => {
+    // The committed `round-B.manifest.json` was written once before anything was
+    // picked, never rewritten, and nothing on a clean checkout could contradict
+    // it. A quiet default path is how it would come back, so a bare `write` — in
+    // either mode — must fail before it reads a byte, and the failure must name
+    // the record that replaced the file.
+    await expect(write("B")).rejects.toThrow(/#1210/);
+    await expect(write("B", { check: true })).rejects.toThrow(/#1159/);
+    await expect(write("B", { out: null, check: true })).rejects.toThrow(/--out/);
+  });
+
   it("refuses to call an untouched round finished", async () => {
     // Nothing rendered, nothing picked, nothing archived. `write` still emits the
     // record — a partial record is worth having — but must not exit 0 over it.
     await expect(write("B", { out: out() })).resolves.toBe(false);
     const doc = JSON.parse(await readFile(out(), "utf8"));
     expect(doc.complete).toBe(false);
-    expect(doc.totals.units).toBe(19);
+    // 11 since #1130: three generated beds (`rain`, `forest`, `night`) plus the
+    // eight voice slots (4 cues x 2 voices). The breath textures were retired, and
+    // six beds moved to `synth-noise.mjs` — three noise beds, then
+    // `ocean`/`stream`/`fire` once the API failed all 36 of their takes.
+    expect(doc.totals.units).toBe(11);
+    // ☠️ Tied back to the join, so this number cannot drift from the one the render
+    // will actually bill for. Written out as well, because a bare `toBe` next to a
+    // derived expression is how a stale literal survives.
+    expect(doc.totals.units).toBe(clipsForRound("B").length + voiceSlotSpec("B").slots.length);
   });
 
   it("☠️ does not green-light an unfinished pass through --check either", async () => {

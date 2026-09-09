@@ -78,19 +78,19 @@ describe("GratitudeEntryCard", () => {
     mockStar.mockReturnValue({ mutateAsync, isPending: false } as never);
     renderWithProviders(<GratitudeEntryCard entry={makeEntry()} />);
 
-    fireEvent(screen.getByLabelText("Favorite"), "press", { stopPropagation: jest.fn() });
+    fireEvent(screen.getByLabelText("Favourite"), "press", { stopPropagation: jest.fn() });
 
     expect(mutateAsync).toHaveBeenCalledWith({ id: "g-1", starred: true });
     expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
-  it("a starred entry exposes the Favorited action label", () => {
+  it("a starred entry exposes the Favourited action label", () => {
     renderWithProviders(
       <GratitudeEntryCard
         entry={makeEntry({ items: ["only one", "", "", "", ""], starred: true })}
       />,
     );
 
-    expect(screen.getByLabelText("Favorited")).toBeTruthy();
+    expect(screen.getByLabelText("Favourited")).toBeTruthy();
   });
 });

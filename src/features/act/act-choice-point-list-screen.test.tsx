@@ -1,7 +1,7 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActChoicePointListScreen from "@/src/features/act/act-choice-point-list-screen";
-import { useChoicePoints } from "@/src/features/act/queries";
+import { useChoicePointPages } from "@/src/features/act/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -14,50 +14,152 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: () => ({ selectedDate: "2026-05-24" }),
-  toLocalDateKey: (iso: string) => iso.slice(0, 10),
-}));
-
 jest.mock("@/src/features/act/queries", () => ({
-  useChoicePoints: jest.fn(),
+  useChoicePointPages: jest.fn(),
 }));
 
-const mockUseChoicePoints = useChoicePoints as jest.MockedFunction<typeof useChoicePoints>;
+const mockPages = useChoicePointPages as jest.MockedFunction<typeof useChoicePointPages>;
+
+function pages(over: Record<string, unknown> = {}) {
+  mockPages.mockReturnValue({
+    data: undefined,
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isError: false,
+    isFetchingNextPage: false,
+    isFetchNextPageError: false,
+    isPending: false,
+    refetch: jest.fn(),
+    ...over,
+  } as unknown as ReturnType<typeof useChoicePointPages>);
+}
+
+const choicePoint = (over: Record<string, unknown> = {}) => ({
+  id: "cp-1",
+  userId: "user-1",
+  hooks: ["a hook"],
+  awayMoves: [],
+  towardMoves: [],
+  notes: "",
+  createdAt: "2026-05-24T09:00:00.000Z",
+  updatedAt: "2026-05-24T09:00:00.000Z",
+  ...over,
+});
 
 describe("ActChoicePointListScreen", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    pages();
+  });
 
-  it("shows only choice points whose createdAt is the selected day", () => {
-    mockUseChoicePoints.mockReturnValue({
-      data: [
-        {
-          id: "today",
-          userId: "user-1",
-          hooks: ["today hook"],
-          awayMoves: [],
-          towardMoves: [],
-          notes: "",
-          createdAt: "2026-05-24T09:00:00.000Z",
-          updatedAt: "2026-05-24T09:00:00.000Z",
-        },
-        {
-          id: "old",
-          userId: "user-1",
-          hooks: ["old hook"],
-          awayMoves: [],
-          towardMoves: [],
-          notes: "",
-          createdAt: "2026-05-20T09:00:00.000Z",
-          updatedAt: "2026-05-20T09:00:00.000Z",
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useChoicePoints>);
+  /**
+   * ☠️ **The inverse of the test it replaces.** The old assertion pinned the day filter
+   * #1517 removes — see the defusion screen's test for the full reasoning.
+   */
+  it("renders choice points mapped on other days, not just today's", () => {
+    pages({
+      data: {
+        pages: [
+          [
+            choicePoint({ id: "today", hooks: ["today hook"] }),
+            choicePoint({
+              id: "old",
+              hooks: ["old hook"],
+              createdAt: "2026-05-20T09:00:00.000Z",
+            }),
+          ],
+        ],
+        pageParams: [null],
+      },
+    });
 
     renderWithProviders(<ActChoicePointListScreen />);
 
     expect(screen.getByText("today hook")).toBeTruthy();
-    expect(screen.queryByText("old hook")).toBeNull();
+    expect(screen.getByText("old hook")).toBeTruthy();
+  });
+
+  it("flattens every loaded page", () => {
+    pages({
+      data: {
+        pages: [
+          [choicePoint({ id: "p1", hooks: ["page one hook"] })],
+          [choicePoint({ id: "p2", hooks: ["page two hook"] })],
+        ],
+        pageParams: [null, { timestamp: "2026-05-24T09:00:00.000Z", id: "p1" }],
+      },
+    });
+
+    renderWithProviders(<ActChoicePointListScreen />);
+
+    expect(screen.getByText("page one hook")).toBeTruthy();
+    expect(screen.getByText("page two hook")).toBeTruthy();
+  });
+
+  /** ☠️ A failed read must not read as an empty history — see the defusion screen's test. */
+  it("tells a failed read apart from an empty one", () => {
+    pages({ isError: true });
+
+    renderWithProviders(<ActChoicePointListScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(
+      screen.queryByText(
+        "Map your first choice point to see what hooks you and where you want to go.",
+      ),
+    ).toBeNull();
+  });
+
+  /**
+   * ☠️ A later page's failure must not read as the end of the history (#2187).
+   * `ListEmptyComponent` renders only while the list is empty, so the `ErrorState` there
+   * covers page one alone; TanStack keeps the loaded pages across a failed
+   * `fetchNextPage` and flips `isError`, and before this the footer went back to `null` —
+   * the list stopped at the last good page with no error and nothing to press. The retry
+   * goes through `fetchNextPage`, not a full `refetch`: the loaded pages are fine.
+   */
+  it("says so and offers a retry when a later page fails, instead of going quiet", () => {
+    const fetchNextPage = jest.fn();
+    pages({
+      data: { pages: [[choicePoint({ hooks: ["page one hook"] })]], pageParams: [null] },
+      hasNextPage: true,
+      isError: true,
+      isFetchNextPageError: true,
+      fetchNextPage,
+    });
+
+    renderWithProviders(<ActChoicePointListScreen />);
+
+    // The rows already loaded stay, and the page-one error card does not take over.
+    expect(screen.getByText("page one hook")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+
+    expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️ `isError` alone is the wrong predicate for that footer (#2253). It is also true
+   * after a failed REFETCH of the pages already loaded — a focus, reconnect or post-save
+   * invalidation re-read that fails while online — where nothing "more" was being
+   * loaded. Keyed on it, a complete list said "Couldn't load more entries." and its Retry
+   * called `fetchNextPage` with no next page, which resolves the old data without a
+   * request and stamps the list fresh. Only `isFetchNextPageError` names a failed page.
+   */
+  it("keeps the load-more error out of a failed refresh of the loaded pages", () => {
+    pages({
+      data: { pages: [[choicePoint({ hooks: ["a loaded hook"] })]], pageParams: [null] },
+      hasNextPage: false,
+      isError: true,
+      isFetchNextPageError: false,
+    });
+
+    renderWithProviders(<ActChoicePointListScreen />);
+
+    expect(screen.getByText("a loaded hook")).toBeTruthy();
+    expect(screen.queryByText("Couldn't load more entries.")).toBeNull();
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
   });
 });

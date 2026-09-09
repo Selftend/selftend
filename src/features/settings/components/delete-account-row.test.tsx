@@ -8,6 +8,29 @@ import { renderWithProviders } from "@/test/render-with-providers";
 jest.mock("@/src/features/auth/api", () => ({ signOut: jest.fn() }));
 jest.mock("@/src/features/settings/queries", () => ({ useDeleteUserAccount: jest.fn() }));
 
+/**
+ * ☠️ **Jest's 5 s default is not enough for these two under load (#1900).**
+ *
+ * Both tests render the row, open its confirmation modal, type into it and then
+ * await a post-deletion `signOut`. Idle that is fast — the sign-out case runs in
+ * **631 ms**. Under CPU contention it is not: sampling this file while a full
+ * suite occupied the machine gave **687 ms, 1683 ms, 1922 ms**, and one run
+ * **exceeded the 5000 ms test timeout outright**, which is the failure #1900
+ * reports. 20 s leaves roughly 10× headroom over the worst passing sample.
+ *
+ * ☠️ **This is NOT #1932's fix, and the difference matters.** That one raised
+ * RNTL's `asyncUtilTimeout`, because its `waitFor` gave up at its own 1 s budget.
+ * Here the thrown error is `Exceeded timeout of 5000 ms for a test` — Jest's
+ * TEST timeout — so `asyncUtilTimeout` would change nothing. The two knobs are
+ * independent and each is invisible to the other.
+ *
+ * ⚠️ File-scoped rather than per-test: both cases share the same render-plus-
+ * modal path, so singling out the one that has been seen to fail would leave its
+ * sibling to fail later for the same reason. Not global, for the reason #1932
+ * gives — a global bump also hides a test that genuinely never settles.
+ */
+jest.setTimeout(20_000);
+
 const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
 const mockUseDeleteUserAccount = useDeleteUserAccount as jest.MockedFunction<
   typeof useDeleteUserAccount

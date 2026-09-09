@@ -1,0 +1,116 @@
+import { fireEvent, screen } from "@testing-library/react-native";
+import type { ReactElement } from "react";
+
+import { PreferencesUnavailableScreen } from "./preferences-unavailable-screen";
+import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("expo-router", () => {
+  const React = require("react");
+  return {
+    // Mirror Link asChild: forward the href onto the wrapped pressable so the
+    // real link target can be asserted (the shape under-floor-screen.test uses).
+    Link: ({
+      href,
+      asChild: _asChild,
+      dangerouslySingular: _dangerouslySingular,
+      children,
+    }: {
+      href: string;
+      asChild?: boolean;
+      dangerouslySingular?: boolean;
+      children: ReactElement;
+    }) => React.cloneElement(React.Children.only(children), { href }),
+  };
+});
+
+jest.mock("@/src/lib/linking", () => ({
+  openExternalUrl: jest.fn(),
+}));
+
+/**
+ * The screen that stands where the app would be while neither legal verdict can
+ * be read (#2200 for the errored face, #2229 for the in-flight one, and the
+ * offline one since the age floor stopped being fenced by a failure count the
+ * library resets on every dispatch).
+ *
+ * `protected-layout.test.tsx` owns WHEN it renders. What this file owns is what
+ * it offers once it has: the three faces say different things, only one of them
+ * carries a retry, and ALL of them have to leave crisis guidance reachable.
+ */
+describe("PreferencesUnavailableScreen", () => {
+  it("offers a retry on the errored half, and runs it", () => {
+    const onRetry = jest.fn();
+    renderWithProviders(<PreferencesUnavailableScreen onRetry={onRetry} state="error" />);
+
+    expect(screen.getByText("We can't open the app just yet")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
+    expect(onRetry).toHaveBeenCalled();
+  });
+
+  it("says the read is still running on the in-flight half, and offers no retry", () => {
+    // ⚠️ A retry for a fetch that has not finished is a control that does
+    // nothing. The state clears itself when the row lands or when the query
+    // finally errors into the half above.
+    //
+    // ☠️ Which is only safe because the layout hands this half to a fetch that
+    // has NEVER failed (#2238): a retry in flight after a failure keeps the
+    // errored half above, Retry included. `protected-layout.test.tsx` pins the
+    // choice of half; this file pins only what each half offers.
+    renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="loading" />);
+
+    expect(screen.getByText("Getting your account ready")).toBeTruthy();
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  /**
+   * ☠️ The offline face, and why it says something of its own rather than
+   * borrowing one of the other two. A paused read is not running, so the
+   * in-flight copy ("Getting your account ready", under a spinner) would be a
+   * promise about a request that does not exist; and a Retry cannot win it,
+   * because a refetch with no connection pauses again where it stands. What is
+   * true is that there is no connection and that the query resumes by itself,
+   * so that is what this face says - and it carries no control.
+   */
+  it("names the missing connection on the offline face, and offers no retry", () => {
+    renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="offline" />);
+
+    expect(screen.getByText("You're offline")).toBeTruthy();
+    expect(screen.queryByText("Retry")).toBeNull();
+    expect(screen.queryByText("Getting your account ready")).toBeNull();
+    expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ Gate test A2 (#2228). This screen replaces the WHOLE protected tree,
+   * and the state it replaces it in reached the app shell on shipped 0.17.0 -
+   * from which Support -> Crisis was about two taps away. A guest is the case
+   * that decides it: guests have no sign-out, so without this card there is no
+   * route to crisis guidance at all while the block holds.
+   *
+   * `/crisis` is a ROOT route, a sibling of the `(app)` group, so it renders
+   * outside the layout that is blocking - which is the whole reason the link can
+   * work from here.
+   */
+  it.each(["error", "loading", "offline"] as const)(
+    "routes to crisis guidance on the %s face",
+    (state) => {
+      renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state={state} />);
+
+      expect(screen.getByText("If you need support right now")).toBeTruthy();
+      expect(screen.getByText("Open crisis guidance")).toBeTruthy();
+      expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+      // Not "/(app)/crisis": inside the group it would render under the very
+      // layout that is refusing to render, and lead nowhere.
+      expect(screen.queryAllByRole("link").map((node) => String(node.props.href))).not.toContain(
+        "(app)",
+      );
+    },
+  );
+
+  it("offers Find A Helpline beside it, which needs no account either", () => {
+    renderWithProviders(<PreferencesUnavailableScreen onRetry={jest.fn()} state="error" />);
+
+    expect(screen.getByText("Open Find A Helpline")).toBeTruthy();
+  });
+});

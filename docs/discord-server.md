@@ -240,6 +240,9 @@ The token itself must never be committed, pasted into the repo, or put in
 3. Someone appears to be in crisis: reply once, warmly, pointing to the
    crisis resources pinned in `#rules-and-safety`; do not attempt to
    counsel. If they describe immediate danger, encourage contacting local
-   emergency services. Discuss follow-up in `#moderators`.
+   emergency services. Discuss follow-up in `#moderators`. This is the
+   shared posture in
+   [community.md § Community crisis posture](community.md#community-crisis-posture),
+   which also holds the reference reply in both languages.
 4. Do not diagnose, do not give medical advice, do not argue about either —
    these are removable under rule 2.

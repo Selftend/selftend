@@ -1,17 +1,22 @@
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient, expectSuccessToast, resetWidgetPreferencesForUser } from "./helpers";
+import { createServiceClient } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
-// Home dashboard's two surviving first-run tips, in HOME_TOUR_STOPS order
-// (src/features/tours/home-tour.tsx). The day-strip "dates" tip and every
-// per-page module-header ("button tour") tip were removed - see
-// .superpowers/sdd/task-4-brief.md. This spec now covers:
-//   1. Module screens (e.g. check-in): action buttons render and fire,
-//      with no coach-mark overlay ever appearing.
-//   2. The home dashboard: exactly the 2 remaining tips still show and can be
-//      dismissed individually or all at once.
-const HOME_TOUR_KEYS = ["home:edit", "home:navigation"] as const;
+// ☠️ There are no tours left anywhere in the app, and this spec is what proves it
+// from a browser. The day-strip "dates" tip and every per-page module-header
+// ("button tour") tip were removed - see .superpowers/sdd/task-4-brief.md - then
+// `home:edit` went with the dashboard's Arrange / Add tool cluster (#1956), and
+// #2109 retired the last one, `home:navigation`, along with the whole tour
+// machinery: once the panel held neither a tool row nor a module row (#2106), the
+// tip pointing at it had nothing left to say.
+//
+// What survives here is the negative half, which is the half that can regress:
+// module screens' action buttons render and fire with NO coach-mark overlay ever
+// appearing. The positive cases went with their subject.
+//
+// `shown_button_tours` rows are still written and read by nothing - the column
+// stays (the export function bakes it in), and stored values are inert.
 
 // Set from the worker's pool user in beforeAll (worker-scoped fixtures are
 // available to beforeAll). Module scope is per-worker-process, so this is safe.
@@ -50,11 +55,6 @@ async function setTourState(shownButtonTours: readonly string[]) {
   if (error) {
     throw new Error(`Could not set tour state: ${error.message}`);
   }
-}
-
-async function getShownButtonTours() {
-  const row = await getPreferenceRow();
-  return (row.shown_button_tours ?? []) as string[];
 }
 
 async function restoreOriginalPreferences() {
@@ -151,109 +151,5 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
     await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Skip all tips", exact: true })).toHaveCount(0);
-  });
-});
-
-test.describe("home dashboard tips (2 remaining stops)", () => {
-  test.beforeAll(async ({ user }) => {
-    USER_ID = user.id;
-    originalPreferences = await getPreferenceRow();
-  });
-
-  /**
-   * The `home:edit` stop points at home's header cluster, and since #979 that cluster
-   * mounts only when the TOOL tier is non-empty. Pool users start with no widget
-   * preferences and other specs clear them, so a tip test that does not own a tool row is
-   * asserting against a target that was never registered. Seeding one makes these tests
-   * say what they mean instead of depending on what ran before them.
-   */
-  async function ownOneToolRow() {
-    const admin = createServiceClient();
-    await resetWidgetPreferencesForUser(USER_ID);
-    const { error } = await admin
-      .from("widget_preferences")
-      .insert([{ user_id: USER_ID, widget_id: "mood-checkin", position: 0 }]);
-    if (error) throw new Error(`Could not seed a widget preference: ${error.message}`);
-  }
-
-  test.afterEach(async () => {
-    await restoreOriginalPreferences();
-    await resetWidgetPreferencesForUser(USER_ID);
-  });
-
-  test("skips the edit tip on an empty dashboard without marking it shown", async ({ page }) => {
-    // Skipping is not dismissing. With no tool row the cluster is unmounted, so the stop
-    // must fall out of the queue and stay unwritten - otherwise the tip burns itself on
-    // the one screen where it has nothing to point at.
-    await resetWidgetPreferencesForUser(USER_ID);
-    await setTourState([]);
-
-    await page.goto("/");
-
-    // The navigation stop takes its place; the edit copy never appears.
-    await expect(page.getByText(/Find all Modules and Tools here\./i)).toBeVisible();
-    await expect(
-      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
-    ).toHaveCount(0);
-
-    await page.getByRole("button", { name: "Got it", exact: true }).click();
-
-    await expect.poll(getShownButtonTours).toEqual(["home:navigation"]);
-  });
-
-  test("shows the edit (dashboard) tip and Got it dismisses only that stop", async ({ page }) => {
-    await ownOneToolRow();
-    await setTourState([]);
-
-    await page.goto("/");
-    await expect(
-      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Got it", exact: true }).click();
-
-    await expect.poll(getShownButtonTours).toEqual(["home:edit"]);
-  });
-
-  test("Skip all tips dismisses both remaining home stops (no check-in or day-strip tip)", async ({
-    page,
-  }) => {
-    await ownOneToolRow();
-    await setTourState([]);
-
-    await page.goto("/");
-    await expect(
-      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
-
-    await expect.poll(getShownButtonTours).toEqual([...HOME_TOUR_KEYS]);
-  });
-
-  test("no additional tip appears once the 2 remaining stops are dismissed", async ({ page }) => {
-    await setTourState([...HOME_TOUR_KEYS]);
-
-    await page.goto("/");
-
-    // If the removed "dates" stop still existed, it would show now (its key was never
-    // added to shown_button_tours). Asserting nothing shows proves it's gone.
-    await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0, {
-      timeout: 10_000,
-    });
-    await expect(page.getByText(/Browse previous days to see what you logged\./i)).toHaveCount(0);
-  });
-
-  test("Show tips again makes home tips eligible again", async ({ page }) => {
-    await setTourState([...HOME_TOUR_KEYS]);
-
-    await page.goto("/settings");
-    // `Show tips again` survives #982 verbatim as a button name; only the `Onboarding`
-    // card heading around it disappeared, and this spec never asserted that heading.
-    await page.getByRole("button", { name: "Show tips again", exact: true }).click();
-
-    // Toast-only now that the shared feedback banner is gone.
-    await expectSuccessToast(page, /button tips.*can appear again/i);
-    await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

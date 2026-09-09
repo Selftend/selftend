@@ -5,9 +5,12 @@ import type { ReactNode } from "react";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { STEPPABLE_TOOL_IDS } from "@/src/features/routines/derive";
 import {
+  OFFERABLE_STEP_TOOL_GROUPS,
   RoutineEditorScreen,
   STEP_TOOL_GROUPS,
 } from "@/src/features/routines/routine-editor-screen";
+import { WITHHELD_STEP_TOOL_IDS } from "@/src/features/routines/step-tool-rollout";
+import enRoutines from "@/src/i18n/locales/en/routines.json";
 import {
   useAddStep,
   useCreateRoutine,
@@ -306,7 +309,7 @@ describe("RoutineEditorScreen", () => {
     expect(new Set(grouped).size).toBe(grouped.length);
   });
 
-  it("renders the five group headers over the add-step chips", () => {
+  it("renders a header over the add-step chips for every picker group", () => {
     renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
 
     expect(screen.getByText("Check-ins & logs")).toBeTruthy();
@@ -315,6 +318,28 @@ describe("RoutineEditorScreen", () => {
     expect(screen.getByText("ACT")).toBeTruthy();
     // "Habits" is both the group header and its only chip's label.
     expect(screen.getAllByText("Habits").length).toBeGreaterThanOrEqual(2);
+
+    // ☠️ Pinned to the group list itself, so a seventh group cannot ship
+    // with no header while the four hand-written assertions above still
+    // pass. The count is derived; the names are spot checks.
+    expect(STEP_TOOL_GROUPS).toHaveLength(6);
+    expect(OFFERABLE_STEP_TOOL_GROUPS).toHaveLength(5);
+  });
+
+  it("offers no chip for a tool withheld from writing (#2203)", () => {
+    // ☠️ DBT is in the read vocabulary but not the write one until the native
+    // rollout catches up: a step the shipped client cannot read can never be
+    // ticked there, never lets its routine complete, and throws from the
+    // globally mounted FAB's "Do next step". So the picker must not compose
+    // one - the whole DBT group is absent, header included, rather than shown
+    // disabled.
+    renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
+
+    expect(screen.queryByText("DBT")).toBeNull();
+    for (const toolId of WITHHELD_STEP_TOOL_IDS) {
+      const label = enRoutines.tools[toolId as keyof typeof enRoutines.tools];
+      expect(screen.queryByLabelText(`Add ${label}`)).toBeNull();
+    }
   });
 
   it("adds a newly admitted ACT tool as a step and saves it like any other", async () => {

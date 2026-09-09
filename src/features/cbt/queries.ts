@@ -10,6 +10,7 @@ import {
   saveThoughtRecord,
 } from "@/src/features/cbt/repository";
 import type { ThoughtRecordInput } from "@/src/features/cbt/types";
+import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const cbtKeys = {
@@ -97,6 +98,7 @@ export function useSaveThoughtRecord(userId: string | null) {
         // and Home's `N records` clause stayed stale until a remount (found in #990).
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
+        invalidateRecordDays(queryClient),
       ]);
     },
   });
@@ -117,6 +119,9 @@ export function useArchiveThoughtRecord(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: cbtKeys.records(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
+        // Archiving IS this tool's delete, and `record_days` filters on it - so
+        // the mark has to go with the record.
+        invalidateRecordDays(queryClient),
       ]);
     },
   });

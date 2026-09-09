@@ -47,7 +47,7 @@ Google currently lists a one-time developer registration fee of `US$25`. Verify 
 
 Current status: the Google Play developer account and Selftend app record exist, required Play policy forms are completed, and the first production AAB has been uploaded. Next work is service-account setup for repeatable uploads, store-asset polish, and real-device closed-test verification.
 
-Launch audience: Google Play and the app policy text should stay aligned as **18+ / adults only** until under-18 support receives legal and safety review.
+Launch audience: the app policy text moved to a **per-country floor of 13 or higher** on 2026-09-04 ([#1767](https://github.com/Selftend/selftend/issues/1767), [age-floor.md](age-floor.md)). Play Console still declares **18 and over** — that declaration is edited in the owner's rollout pass ([#1771](https://github.com/Selftend/selftend/issues/1771)), on the same day as the release that publishes the text, and adds the 13-15 and 16-17 groups. The values recorded below are the live Play state until then; do not edit them here ahead of the Console.
 
 Required owner inputs:
 
@@ -72,7 +72,7 @@ Completed for the current Play app:
 
 - Health apps declaration in Play Console
 - Data safety form for closed testing
-- Target audience set to 18+ / adults only in Play Console
+- Target audience declared in Play Console (live value: 18 and over; moves to 13-15 / 16-17 in [#1771](https://github.com/Selftend/selftend/issues/1771))
 - app access instructions for account-required testing
 - first production AAB upload
 
@@ -85,7 +85,7 @@ Before widening testing:
 - verify reminders are optional, local, and off by default
 - verify the resolved Android prebuild config does not request camera or microphone/audio permissions
 - verify no ads, social feeds, or AI mental-health coach features were added (note: the Sentry SDK is present as an approved Phase 2 exception per `docs/analytics.md`; it is classified essential/Art. 6(1)(f) and disabled without `EXPO_PUBLIC_SENTRY_DSN`)
-- confirm the Play Console target audience is 18+ and the app is not marked as child-directed
+- confirm the Play Console target audience matches the published floor and the app is not marked as child-directed (both halves change together in [#1771](https://github.com/Selftend/selftend/issues/1771); a mismatch in either direction is a policy problem)
 
 ## Build commands
 
@@ -204,7 +204,7 @@ The first manual upload requirement is now satisfied. Do not set `GOOGLE_PLAY_SE
 
 The app exists in Play Console under the confirmed public app name and package name, with the required content forms completed (privacy policy URL, data safety, health apps declaration, target audience and content, ads declaration, app access instructions for the account-required tester flow). The first production AAB was built with `npm run build:android:production` and uploaded manually.
 
-Remaining work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md) under P2: local Android verification including the permission check, store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup so closed-testing builds can ship through the manual GitHub Actions release workflow or EAS Submit.
+That list of remaining work — store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup — is now complete. The app is live on [Google Play](https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend), and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is wired into [android-release.yml](../.github/workflows/android-release.yml), so builds ship through the release workflow. Anything still outstanding is tracked in [GitHub Issues](https://github.com/Selftend/selftend/issues), not in the repo.
 
 ## Closed-test acceptance checklist
 
@@ -225,34 +225,9 @@ Use a real Android device, not only an emulator.
 - crisis guidance opens
 - account deletion page opens and has a real deletion contact
 
-## Draft store listing copy
+## Store listing copy
 
-Short description:
-
-```text
-Guided self-help and private CBT thought records for calm reflection.
-```
-
-Full description:
-
-```text
-Selftend is a free, nonprofit-oriented wellness app for guided self-help and reflection.
-
-The first section focuses on private CBT thought records. You can notice a situation, name emotions, identify common thinking patterns, and write a more balanced response.
-
-The app uses an account so your records can sync across web and mobile builds. Reminders are optional and off by default. The project does not include ads, subscriptions, public posting, or AI coaching in the MVP.
-
-Important: this app is not therapy, diagnosis, treatment, crisis support, or emergency support. If you need urgent help, contact local emergency services or a crisis support service available where you are.
-```
-
-What to avoid in store copy:
-
-- "therapy app"
-- "AI therapist"
-- "treats anxiety/depression"
-- "emergency support"
-- guaranteed outcomes
-- pressure-based streak or habit claims
+The listing text is owner-edited in Play Console and mirrored, verbatim and dated, in [store/play-listing.md](../store/play-listing.md); the words it may and may not use are in [docs/positioning.md](positioning.md). The draft that used to sit here predates both and was retired on 2026-09-02 so the copy lives in one place.
 
 ## Initial Data safety inputs
 

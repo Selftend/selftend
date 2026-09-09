@@ -3,6 +3,12 @@ import { join } from "node:path";
 import { render } from "@testing-library/react-native";
 
 import { isAllowedReminderRoute } from "@/src/lib/notifications";
+import {
+  CONFIGURED_TARGETS,
+  HELD_OUT_TARGETS,
+  TARGET_CONFIGS,
+  TARGETS,
+} from "@/supabase/functions/_shared/web-reminders";
 import { sourceFiles, stripComments } from "./source-scan";
 
 // The gate for #732 (decided on #704): the check-in route moved to
@@ -84,6 +90,31 @@ describe("the reminder edge function never flips to the new path (#732)", () => 
 
   it("mints a route that a redirect stub still answers", () => {
     expect(existsSync(join(ROOT, `app/(app)${MINTED_MOOD_URL}/index.tsx`))).toBe(true);
+  });
+});
+
+// The pairing above was pinned for `mood` alone - one of eleven targets - and a
+// target added later inherited nothing from it (#2213). So the same rule, for
+// every url the function can mint: the allowlist in THIS tree must accept it.
+//
+// ☠️ What this cannot see is the SHIPPED tree's allowlist, and that is the one
+// the tap is gated by for the length of a store review. The hold-out list is
+// the mechanism for that gap - a target whose url only this build allowlists
+// stays out of the cron until the native build is live - and its contents are
+// pinned in `supabase/functions/_shared/web-reminders.test.ts`. Here it is
+// asserted that a held-out target is still configured and still allowlisted, so
+// lifting it later is a one-line change with nothing left to wire.
+describe("every reminder url the edge function mints is allowlisted by the client (#2213)", () => {
+  it.each(CONFIGURED_TARGETS.map((target) => [target, TARGET_CONFIGS[target].url] as const))(
+    "%s -> %s",
+    (_target, url) => {
+      expect(isAllowedReminderRoute(url)).toBe(true);
+    },
+  );
+
+  it("walks a non-vacuous set, and the live set is the configured set minus the hold-outs", () => {
+    expect(CONFIGURED_TARGETS.length).toBeGreaterThan(1);
+    expect([...TARGETS, ...HELD_OUT_TARGETS].sort()).toEqual([...CONFIGURED_TARGETS].sort());
   });
 });
 

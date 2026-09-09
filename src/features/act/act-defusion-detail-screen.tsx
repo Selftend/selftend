@@ -17,22 +17,27 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
-import { useDefusionLog, useDefusionLogs, useDeleteDefusionLog } from "@/src/features/act/queries";
+import {
+  useDefusionLog,
+  useDeleteDefusionLog,
+  useListedDefusionLogs,
+} from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActDefusionDetailScreen() {
   const { t } = useTranslation("act");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
+  // Both entries a hop into this screen can have filled — the archive's pages from the
+  // list, the plain recent list from ACT home (#2256).
   const { item: log, isLoading } = useCachedItem(
-    useDefusionLogs,
+    useListedDefusionLogs,
     useDefusionLog,
     user?.id ?? null,
     logId,
@@ -68,7 +73,7 @@ export default function ActDefusionDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={log.fusedThought} />
-            <Text variant="muted">{formatDateTime(log.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(log.createdAt, null)}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
                 <Icon name="delete-outline" className="size-4 text-destructive" />

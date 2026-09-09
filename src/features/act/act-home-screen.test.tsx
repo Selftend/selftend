@@ -10,7 +10,7 @@ import {
   useDefusionLogs,
 } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
-import { useUpdateShownButtonTours, useUserPreferences } from "@/src/features/settings/queries";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -31,7 +31,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -48,9 +47,6 @@ jest.mock("@/src/features/act/use-act-program", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
 const mockUseDefusionLogs = useDefusionLogs as jest.MockedFunction<typeof useDefusionLogs>;
 const mockUseActProgram = useActProgram as jest.MockedFunction<typeof useActProgram>;
 const mockUseChoicePointCount = useChoicePointCount as jest.MockedFunction<
@@ -101,12 +97,14 @@ const defaultActProgram = {
 };
 
 describe("ActHomeScreen", () => {
+  // Unconditional, so a failure inside the frozen-clock test below cannot leave fake
+  // timers switched on for every test after it.
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseUpdateShownButtonTours.mockReturnValue({
-      isPending: false,
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
     mockUseUserPreferences.mockReturnValue({
       data: null,
       isLoading: false,
@@ -214,7 +212,7 @@ describe("ActHomeScreen", () => {
       renderWithProviders(<ActHomeScreen />);
 
       expect(screen.getByText("Musical thoughts")).toBeTruthy();
-      expect(screen.queryByText("Self-judgment")).toBeNull();
+      expect(screen.queryByText("Self-judgement")).toBeNull();
     });
 
     it("shows the door as a 'Show all logs' link to the full list", () => {
@@ -223,6 +221,26 @@ describe("ActHomeScreen", () => {
       fireEvent.press(screen.getByRole("link", { name: "Show all logs" }));
 
       expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/defusion");
+    });
+
+    /**
+     * ☠️ Home's timestamp shape is #1388's whole point, and #1539 is where it moved.
+     * The shared row is the mechanism, but this asserts the consequence AT the home
+     * surface: a future home screen that stopped using `DefusionLogRow` and inlined
+     * its own row would keep every other test here green while silently restoring the
+     * mid-journey shape change #1388 exists to prevent.
+     */
+    it("reads the recent row's timestamp compact, exactly as the list does (#1539)", () => {
+      // Frozen because the compact form is relative to today; 09:00Z reads 2:30 PM in
+      // the runner's pinned Asia/Kolkata frame, which is the viewer frame ACT resolves
+      // a null offset into (#1513).
+      jest.useFakeTimers({ doNotFake: ["nextTick"] });
+      jest.setSystemTime(new Date("2026-05-24T12:00:00.000Z"));
+
+      renderWithProviders(<ActHomeScreen />);
+
+      expect(screen.getByText("2:30 PM")).toBeTruthy();
+      expect(screen.queryByText("May 24, 2026, 2:30 PM")).toBeNull();
     });
   });
 
@@ -311,6 +329,30 @@ describe("ActHomeScreen", () => {
     expect(Number(heading.props["aria-level"])).toBe(3);
   });
 
+  /**
+   * ☠️ **The crisis callout is a level-2 block, not a child of the framework**
+   * (#2167). It renders last, after *The framework*'s `h2`, so at level 3 it read
+   * as one of that section's parts - a reader navigating by heading found urgent
+   * support filed inside the ACT framework. It belongs to no framework.
+   *
+   * Asserted HERE and not only on `safety-callout.test.tsx` because the component
+   * takes the level from a default: before #2167 nothing on this screen noticed
+   * the callout's level at all, and a change to that default moved three module
+   * homes with only one central test to catch it.
+   *
+   * ⚠️ *Recent defusion logs* is still level 3 under that same `h2` and is still
+   * wrong; that half of #2167 needs a per-screen ruling on what the framework
+   * actually owns. Not asserted as correct here - just not this test's subject.
+   */
+  it("keeps the crisis callout out of the framework section, at level 2", () => {
+    renderWithProviders(<ActHomeScreen />);
+
+    const callout = screen.getByText("Use urgent support for urgent risk");
+
+    expect(callout.props.role ?? callout.props.accessibilityRole).toBe("heading");
+    expect(Number(callout.props["aria-level"])).toBe(2);
+  });
+
   it("keeps the framework block's own heading above it in the outline", () => {
     renderWithProviders(<ActHomeScreen />);
 
@@ -338,7 +380,106 @@ describe("ActHomeScreen", () => {
     renderWithProviders(<ActHomeScreen />);
 
     // Collapsed: the full graduation hero title is hidden; the replay row shows.
-    expect(screen.queryByText("You finished the ACT program")).toBeNull();
-    expect(screen.getByText("Replay the ACT program")).toBeTruthy();
+    expect(screen.queryByText("You finished the ACT programme")).toBeNull();
+    expect(screen.getByText("Replay the ACT programme")).toBeTruthy();
+  });
+
+  /**
+   * The graduation surface states the record and stops (`docs/product-principles.md` §12,
+   * ADR-0004), so the stat list is filtered to non-zero counts exactly as
+   * `cbt-program-section.tsx` does, and the body no longer closes with "Keep using them."
+   * (#2013). "0 feelings made room for" is not a record of what the person did.
+   *
+   * ☠️ The `queryByText("0 …")` assertions below are only meaningful because the first test
+   * proves the "<n> thoughts unhooked" template is what actually renders - a negative query
+   * against a string the screen never produces passes for the wrong reason, so a rename of
+   * this copy must break the first test rather than silently gutting the rest.
+   *
+   * ☠️ The header's stat run collides with these queries. `act:home.stat*` values carry no
+   * `{{count}}` ("thoughts unhooked"), but `ModuleHomeHeader` renders `{value}` + `" "` +
+   * `{label}` inside ONE `<Text>`, so with the suite's default counts of 0 the header itself
+   * renders the exact string "0 thoughts unhooked" and every assertion below matched the
+   * header rather than the graduation list. The head counts are therefore set to distinct
+   * non-zero values here, so a "0 …" string can only have come from the graduation.
+   */
+  describe("graduation stat lines (#2013)", () => {
+    const renderGraduatedWith = (summaryStats: {
+      choicePoints: number;
+      defusionLogs: number;
+      expansionLogs: number;
+      committedActions: number;
+    }) => {
+      setCounts({ choicePoints: 7, defusionLogs: 9, committedActions: 5 });
+      mockUseActProgram.mockReturnValue({
+        program: { ...defaultActProgram, status: "graduated", summaryStats },
+        isLoading: false,
+        isUpdating: false,
+        abandonProgram: jest.fn(),
+        advancePhase: jest.fn(),
+        dismissProgramPrompt: jest.fn(),
+        dismissGraduation: jest.fn(),
+        promptDismissedAt: null,
+        graduationDismissedAt: null,
+        startProgram: jest.fn(),
+        showProgramPrompt: jest.fn(),
+        replayProgram: jest.fn(),
+      } as unknown as ReturnType<typeof useActProgram>);
+
+      renderWithProviders(<ActHomeScreen />);
+    };
+
+    it("renders each stat the person logged, and closes without a prescription", () => {
+      renderGraduatedWith({
+        choicePoints: 2,
+        defusionLogs: 3,
+        expansionLogs: 1,
+        committedActions: 4,
+      });
+
+      expect(
+        screen.getByText("You built skills to be present, open up, and do what matters."),
+      ).toBeTruthy();
+      expect(screen.getByText("2 choice points mapped")).toBeTruthy();
+      expect(screen.getByText("3 thoughts unhooked")).toBeTruthy();
+      expect(screen.getByText("1 feeling made room for")).toBeTruthy();
+      expect(screen.getByText("4 committed actions")).toBeTruthy();
+      expect(screen.queryByText(/Keep using them/)).toBeNull();
+    });
+
+    it("omits a stat the person never logged instead of printing a zero line", () => {
+      renderGraduatedWith({
+        choicePoints: 2,
+        defusionLogs: 0,
+        expansionLogs: 1,
+        committedActions: 4,
+      });
+
+      expect(screen.queryByText("0 thoughts unhooked")).toBeNull();
+      // The surviving lines still render, so the filter narrowed the list rather than emptying it.
+      expect(screen.getByText("2 choice points mapped")).toBeTruthy();
+      expect(screen.getByText("1 feeling made room for")).toBeTruthy();
+    });
+
+    it("falls back to the empty body when every stat is zero", () => {
+      renderGraduatedWith({
+        choicePoints: 0,
+        defusionLogs: 0,
+        expansionLogs: 0,
+        committedActions: 0,
+      });
+
+      expect(
+        screen.getByText(
+          "You reached the end at your own pace. Your tools are here whenever you need them.",
+        ),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("You built skills to be present, open up, and do what matters."),
+      ).toBeNull();
+      expect(screen.queryByText("0 choice points mapped")).toBeNull();
+      expect(screen.queryByText("0 thoughts unhooked")).toBeNull();
+      expect(screen.queryByText("0 feelings made room for")).toBeNull();
+      expect(screen.queryByText("0 committed actions")).toBeNull();
+    });
   });
 });

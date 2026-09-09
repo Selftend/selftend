@@ -56,6 +56,7 @@ These settings live outside the repo (Supabase Dashboard). Apply per environment
 - **Authentication → Sign In / Providers → Email → Minimum password length:** `12` (production). Required-characters field left empty (NIST-modern stance - length over class rules). Also mirrored in `supabase/config.toml` as `minimum_password_length = 12` for local dev parity.
 - **Authentication → Settings → Email confirmations:** ON (already configured via `[auth.email]` in `config.toml` - verify the Dashboard view matches).
 - **Authentication → Multi-Factor → TOTP (App Authenticator):** Enabled. UI for end-users to enroll ships in a future phase; the factor type is enabled in advance so it's ready when that UI lands.
+- **Authentication → Sign In / Providers → User Signups:** "Allow anonymous sign-ins" ON and "Allow manual linking" ON (both hosted projects: production since 2026-09-02, #1674 - guest entry live; staging since 2026-09-02, #1453; manual linking is required by the guest→registered OAuth conversion, `linkIdentity`, #1445). Mirrored in `supabase/config.toml` as `enable_anonymous_sign_ins` / `enable_manual_linking`. The anonymous rate cap stays at the Supabase default 30 guest creations/hour/IP (Authentication → Rate Limits; #1432 ruling, confirmed live 2026-09-02). Turning "Allow anonymous sign-ins" OFF is the guest-entry kill switch - the client degrades the landing CTA to the sign-up form on `anonymous_provider_disabled`.
 
 ### Not currently enabled (paid-plan gated)
 
@@ -177,7 +178,7 @@ retains the `code` branch, which is also still used by web Google OAuth).
 
 - Check `support@selftend.org` at least weekly during testing and more often during public launch windows.
 - Do not ask users to send detailed mental-health, crisis, therapy, or other sensitive self-help content by email.
-- For urgent distress or self-harm messages, reply once with calm crisis guidance and direct the person to local emergency or crisis resources. Do not provide counseling or ongoing crisis support by email.
+- For urgent distress or self-harm messages, reply once with calm crisis guidance and direct the person to local emergency or crisis resources. Do not provide counseling or ongoing crisis support by email. The reference reply and the rule it follows are in [community.md § Community crisis posture](community.md#community-crisis-posture).
 - For product bugs, ask only for the minimum needed: platform, browser/app version, steps, expected result, actual result, and screenshots only if they do not reveal private content.
 - Move reproducible non-private bugs into GitHub issues. Keep private account, health, security, or deletion details out of public issues.
 - Keep a private support log outside the repo with date received, sender email, category, status, and date closed.
@@ -204,6 +205,37 @@ retains the `code` branch, which is also still used by web Google OAuth).
 - Feedback content lives outside the database, in **two** places that self-service deletion never touches: the support mailbox and the private `#feedback-inbox` Discord channel (a mirror of each in-app submission's category + message text). Neither copy is linked to an account, so on an erasure request search **both** manually by content and delete what matches.
 - Keep a private request log outside the repo with received date, request type, verification state, action taken, response date, and closure date.
 - Do not store private request logs, user exports, identity documents, or support inbox exports in this repository.
+
+## Delete On Knowledge (under-floor accounts)
+
+Selftend admits people from 13, or their country's higher floor - the table is in [age-floor.md](age-floor.md). This section is what to do on the day someone tells us an account belongs to a person below it.
+
+**Knowledge only ever arrives from outside, and that is by design.** Nothing stored distinguishes a teen from an adult: there is no minor flag, because the protections are universal rather than age-targeted (spec [#227](https://github.com/Selftend/selftend/issues/227) §4, argued in [dpia-minors-assessment.md](dpia-minors-assessment.md) §5 — [#1768](https://github.com/Selftend/selftend/issues/1768)). The one column that touches age, `age_floor_met`, is only ever written `true` - an under-floor verdict at the gate writes nothing at all, because the account it would be written against is deleted on the spot ([#1765](https://github.com/Selftend/selftend/issues/1765)). So the column holds `true` or `null`, and **no query finds an under-floor account**. ⚠️ That is writer behaviour, not a schema fact: `age_floor_met` is a plain nullable boolean, nothing constrains it, and a future write of `false` would not be rejected. What the column guarantees is only that `null` means _never asked_ rather than _failed_. Do not go hunting for a report that cannot exist, and do not add the field that would make one possible.
+
+Reports reach us through `support@selftend.org` or `privacy@selftend.org`, the private `#feedback-inbox` Discord channel, a store review or store report, or the person themselves.
+
+**Act on credible knowledge, not on suspicion.** Credible means a specific, first-hand claim about an identifiable account - the person saying so, or a parent or guardian naming the address the account uses. Someone's writing style is not evidence, and a hunch is not knowledge.
+
+⚠️ **Data minimisation applies to the investigation too.** Ask at most which country the person is in. Never ask for a date of birth, never ask for a document or an ID, and never read the person's records to age them. Building an age dossier in the course of enforcing an age floor would create exactly the special-category record the gate exists to discard.
+
+### Steps
+
+1. **Acknowledge within 7 days**, on the same clock as every other privacy request, and act without undue delay - days, not weeks.
+2. **Establish which account it is.** For a registered account, find it by email against the production database: `select id, email, created_at from auth.users where lower(email) = lower('…');`
+   ☠️ **A guest account cannot be found from a report.** The silent guest is the primary entry path, it carries no email, and nothing outside the device names the row - so there is no lookup, and searching records content for a match is never an acceptable substitute. Reply with the in-app route instead: Settings → Delete account, on the device holding the session, which runs the same purge as step 5. If the device is out of reach, say so plainly rather than implying the row is gone: it still holds whatever that person wrote, nothing in it identifies them to us, and it is eventually collected by the guest dormancy job (`20260826010000_guest_dormancy_cleanup.sql`, twelve months).
+3. **Verify the connection proportionately.** Prefer a message from the account's own address. When a parent or guardian reports, confirm only that the report is handled - do not disclose the account's existence, contents, or activity to them (§ [Privacy And GDPR Requests](#privacy-and-gdpr-requests), identity before disclosure).
+   **The report cannot be corroborated, because the limits above forbid asking for proof. Decide anyway, with this rule:**
+   - The account holder reports themselves → act. Nothing more to establish.
+   - A parent or guardian reports, first-hand and specifically, with a plausible connection to the account → **write to the account holder once**, saying what has been reported and that the account will be removed, and give them a few days to reply. Act on their answer. **If nobody replies, act on the report** - an unanswered credible report is not a reason to keep processing someone's self-help entries under a floor they may not meet.
+   - The reporter has no plausible connection to the account - an anonymous tip, a stranger, someone in an argument with the account holder → **that is not knowledge.** Do not delete. A deletion anyone can trigger against anyone is a harassment tool, and the person who loses their entries is the one being harassed.
+     Record which of the three applied (step 8). Erring is possible in both directions and neither is free, so the record is what makes the next call better rather than merely faster.
+4. **Decide which floor applies.** Read it for the person's country from [age-floor.md](age-floor.md); `FLOOR_BY_COUNTRY` in `src/features/auth/age-floor.ts` is the same table in machine form. Use where the person actually is, not `age_attested_country` - that column records what was attested, which is the thing in doubt. If no country can be established, apply the absolute minimum floor of **13** and record that you did.
+5. **Delete the account.** As `service_role` - the Supabase SQL editor or the Management API - run `select public.purge_user_account('<uuid>'::uuid);` That helper is the single source of truth for what deletion removes: objects under the person's folder in the private `profile-pics` bucket, then every explicit per-table delete, then the `auth.users` row (`20260826000000_account_purge_helper.sql`). Two things it is not. `delete_user_account()` is the **self-service** RPC and derives its target from `auth.uid()`, so it cannot erase anyone but its caller. And a raw `delete from auth.users` strands storage objects and skips the per-table deletes, which is why that migration rules it out in its own words.
+6. **Sweep the two copies deletion never touches** - the support mailbox and the private `#feedback-inbox` Discord channel. Neither is linked to an account, so search both by content and delete what matches, exactly as on an erasure request.
+7. **Tell the person, once, calmly.** Say what was removed, that it is not a punishment, and the age at which they are welcome back. Point to `/crisis` and Find A Helpline, which work without an account - the same two links the under-floor exit screen carries, and for the same reason. Do not lecture, do not ask anyone to prove an age, and do not offer an appeal that could only be settled by collecting the data we refuse to collect. Reply to the address that wrote to us, as ordinary mail; never trigger an auth or transactional email to it.
+8. **Record it in the private log outside the repo**: the date the knowledge arrived, how it arrived, the country and the floor applied, that the connection was verified (not the evidence itself), the account id or "guest - not identifiable", the deletion timestamp, and the date the person was told. **Do not record an age or a date of birth**, do not keep the report body, and do not copy any of it into a GitHub issue.
+
+**The limit this has, stated rather than implied.** A server-side deletion writes no device block: `selftend:age-floor:blocked-until` is written on the device by the under-floor exit itself (`src/features/auth/use-under-floor-exit.ts`), and there is no ops-side way to set it. The next launch therefore mints a fresh guest and meets the age gate again, where the answer may differ. The floor is an attestation, not a verification, and Selftend deliberately builds no age-verification infrastructure (spec [#227](https://github.com/Selftend/selftend/issues/227) §10). Deleting on knowledge is what can actually be done, and it is worth doing; it is not a control that keeps someone out.
 
 ## Sensitive Self-Help Content
 
@@ -236,9 +268,12 @@ A personal data breach means a security incident that affects confidentiality, a
 4. If the breach is likely to risk individuals' rights and freedoms, notify the relevant supervisory authority without undue delay and no later than 72 hours after becoming aware of it.
 5. If the breach is likely to create high risk for affected users, notify those users directly unless effective measures make the risk unlikely to materialize.
 6. If Selftend receives a processor breach notice from Supabase, Cloudflare, Google, Expo, or another provider, assess whether Selftend must notify authorities or users.
-7. After closure, add prevention tasks to [.github/ROADMAP.md](../.github/ROADMAP.md) without exposing private incident details.
+7. After closure, open a [GitHub issue](https://github.com/Selftend/selftend/issues) for each prevention task, without exposing private incident details.
 
 ## DPIA Screening
+
+> [!IMPORTANT]
+> **Superseded on 2026-09-04.** A full DPIA now exists, combined with the minors' data-protection assessment: [dpia-minors-assessment.md](dpia-minors-assessment.md) ([#1768](https://github.com/Selftend/selftend/issues/1768)). Read that document, not this section, for the current position. This screening is kept because a decision that was overtaken is part of the accountability record, and because its own last bullet — _revisit before adding under-18 support_ — is what fired.
 
 Decision on 2026-05-12: a full Data Protection Impact Assessment is not required for the current MVP scope, but the decision must be revisited before public scale, new high-risk processing, or major product changes.
 
@@ -247,7 +282,7 @@ Reasons:
 - No automated decision-making, profiling, diagnosis, treatment recommendation, or therapist-replacement feature.
 - No systematic monitoring of public areas.
 - No advertising, behavioral analytics, social feed, or tracking pixels.
-- Processing is user-initiated, account-based, and scoped to guided self-help records and preferences.
+- Processing is user-initiated, account-based, and scoped to self-help records and preferences.
 - Sensitive content risk exists because users may enter wellness or mental-health reflections, but current processing is not intended to be large scale and is limited to storing and showing the user's own records.
 
 Revisit the DPIA decision before:
@@ -256,6 +291,23 @@ Revisit the DPIA decision before:
 - Adding AI, analytics, research use, social/community features, clinician/third-party sharing, child-directed features, under-18 support, or broader health-data integrations.
 - Adding new processors or new cross-border transfer mechanisms.
 - Changing from voluntary self-help records to medical, diagnostic, or treatment claims.
+
+## Annual Legal-Landscape Check (minors)
+
+Once a year, every **September** - anchored to the month the per-country age floor shipped (2026-09) - re-read the six areas below, and re-read any one of them immediately if it moves in the meantime. First due **September 2027**.
+
+Each check updates the combined DPIA and minors' data-protection assessment, [dpia-minors-assessment.md](dpia-minors-assessment.md) ([#1768](https://github.com/Selftend/selftend/issues/1768)) — §6 for what a legal item moves, §8 for what re-opens the whole document. If a floor changes, the check also updates [age-floor.md](age-floor.md), `FLOOR_BY_COUNTRY` in `src/features/auth/age-floor.ts`, and the published table in `src/i18n/locales/{en,bg}/policies.json`. ⚠️ That last one is a disclosure change: it bumps `policyVersion` and moves the consent digest, which re-gates every existing user. A real cost, worth knowing before the edit rather than after — and **not the whole cost**: for the length of the rollout, anyone whose phone is still on the previous build meets that build's consent gate on every cold start, because web goes live at the release while Android and iOS trail. See [the shared-column skew rule](./releasing.md#the-same-rule-between-two-clients-shared-column-skew).
+
+**Record the date checked on every line below, even when nothing changed.** "Checked, no change" is what makes the next year's check cheap.
+
+- **Colorado - CPA minors amendments.** SB 24-041 took effect 2025-10-01, and the Attorney General's amended minors rules were **adopted 2025-10-08** - so the "final rules" this check was created to wait for have landed. What remains open is the notice-and-60-day-cure period for minors' violations, which ends **2026-12-31**. Review whether the adopted rules reach a free non-profit wellness app that runs no ads, sells nothing, and profiles nobody. https://coag.gov/resources/colorado-privacy-act/ (checked 2026-09-04)
+- **US federal - KOSA, COPPA 2.0, and the KIDS Act.** Neither KOSA nor COPPA 2.0 is enacted. Both were folded into the **KIDS Act (H.R. 7757)**, which the House passed on 2026-06-29 **without KOSA's duty of care**; Senate sponsors rejected that version, so enactment is unsettled. Check what passed, and whether a duty of care survived - the duty of care is the half that would reach product design rather than data handling. https://www.congress.gov/crs-product/LSB11465 (checked 2026-09-04)
+- **Vermont Age-Appropriate Design Code (S.69).** Signed 2025-06-12, effective **2027-01-01** - the one item here with a date already on it. The Vermont AG is making the rules, including which age-assurance methods count. Review them as they issue, and whether the Act's "reasonably likely to be accessed by minors" test and its minimum duty of care reach Selftend. https://ago.vermont.gov/vermont-age-appropriate-design-code-rulemaking (checked 2026-09-04)
+- **Play Age Signals API.** Google does not mandate it; it returns age bands (0-12, 13-15, 16-17, 18+) to apps that ask, and it is rolling out by country - Brazil from 2026-03-17, Texas for accounts created after 2026-05-28, Australia and Canada from mid-August 2026, wider rollout expected through 2026. Check whether Play has made it a requirement for the audience Selftend declares, and whether the TX/UT/LA app-store age statutes now reach a free non-profit app - spec [#227](https://github.com/Selftend/selftend/issues/227) §9's first parked counsel question. https://developer.android.com/google/play/age-signals/overview (checked 2026-09-04)
+- **EU DSA Article 28(1).** The Commission's guidelines on the protection of minors were finalised on 2025-07-14 and exclude micro and small enterprises. Following them is voluntary, but the Commission uses them to assess Art. 28(1) compliance and national regulators may follow. Check whether Selftend still falls inside the micro/small exception, and whether any national coordinator has acted on them. https://digital-strategy.ec.europa.eu/en/library/commission-publishes-guidelines-protection-minors (checked 2026-09-04)
+- **UK Online Safety Act.** Ofcom's protection-of-children duties and codes, and any updates to them. Check scope first: those duties attach to user-to-user and search services, and Selftend hosts nothing user-to-user - nothing a person writes is visible to anyone else. If that ever changes, this line stops being a scope check and becomes a compliance one. https://www.ofcom.org.uk/online-safety/protecting-children/protection-of-children-duties-under-the-online-safety-act (checked 2026-09-04)
+
+Alongside those, re-read the per-country statute checks in [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)) — every floor's source and the date it was last read are there, and Denmark is the proof that a floor goes stale silently — and the parked counsel questions in spec [#227](https://github.com/Selftend/selftend/issues/227) §9. Escalate to external counsel only if one of them goes live.
 
 ## Transfer Impact Assessment
 
@@ -347,6 +399,7 @@ re-evaluation trigger.
 
 Before broad public launch:
 
-- Final human/legal review of privacy policy, terms, crisis guidance, and the adults-only 18+ launch posture.
+- Final human/legal review of privacy policy, terms, crisis guidance, and the per-country age floor ([age-floor.md](age-floor.md)) — including the teen-readable summary, the parents-and-guardians section, and the Art. 9 consent wording, in `en` and `bg`. Tracked as [#1771](https://github.com/Selftend/selftend/issues/1771).
+  - Explicitly in that review's scope and **deliberately not changed by the copy rewrite**: **terms §12, _Limitation of liability_**. Spec [#227](https://github.com/Selftend/selftend/issues/227) §6 marks its minor-related wording "(owner-review scope)". It names no minor today, and its third clause already preserves liability that cannot be excluded by law — which is where minority would bite — so the rewrite left it alone rather than guess at contract language. It needs a lawyer's read now that under-18s are admitted, not an editor's.
 - Confirm support, privacy, security, and deletion aliases are monitored.
-- Keep this runbook, [gdpr-compliance.md](gdpr-compliance.md), and [.github/ROADMAP.md](../.github/ROADMAP.md) in sync.
+- Keep this runbook and [gdpr-compliance.md](gdpr-compliance.md) in sync.

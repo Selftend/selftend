@@ -2,6 +2,7 @@ import type {
   ACTLifeDomain,
   ActionStatus,
   CommittedAction,
+  CommittedActionArchiveStatus,
   CommittedActionInput,
   CommittedActionPatch,
 } from "@/src/features/act/types";
@@ -12,6 +13,7 @@ import { isValidDayKey } from "@/src/utils/date";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 import { countRows, selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface CommittedActionRow {
   id: string;
@@ -93,6 +95,25 @@ export async function countCommittedActions(
   });
 }
 
+/**
+ * Deliberately unbounded, and #1516 kept it that way rather than reaching for a cap.
+ *
+ * This is the one ACT read whose cost grows without bound (ADR-0001: `rows returned ×
+ * encrypted columns`), so a `.limit()` is the obvious reflex - but committed actions are a
+ * task list, not a history feed, and its callers need completeness for different reasons:
+ * the widget's `"active"` read, the routines engine and the programme all treat a missing
+ * row as a row that does not exist. A cap there would silently drop an active commitment a
+ * user is still working on, which is a worse failure than an expensive read.
+ *
+ * ☠️ #1517 resolved that coverage call, and NOT the way the paragraph above expected. The
+ * list screen could not simply "take the keyset shape": it renders three status sections
+ * from one fetch, and a flat `created_at desc` page cuts across all three — page 1 can
+ * legitimately hold zero active rows, and the sections would fill raggedly as the user
+ * scrolls. So the read is SPLIT by status instead. This function stays unbounded and keeps
+ * serving `status: "active"` and the non-list callers, whole; the finished half moved to
+ * `listCommittedActionArchivePage`, which is what joins the contract test. Status sectioning
+ * names no day, so this is not a #1513 second-frame problem.
+ */
 export async function listCommittedActions(userId: string, status?: ActionStatus) {
   return selectList<CommittedActionRow, CommittedAction>((c) => {
     let query = c
@@ -104,6 +125,43 @@ export async function listCommittedActions(userId: string, status?: ActionStatus
     if (status) query = query.eq("status", status);
 
     return query;
+  }, mapCommittedAction);
+}
+
+/**
+ * One page of the finished committed actions at ONE status, newest first (#1517).
+ *
+ * This is the half of the committed-action list that grows without bound: a user only ever
+ * adds to what they have completed or abandoned, while the active set stays a working list
+ * they keep short themselves. Bounding the growing half is what makes the unbounded read
+ * above safe to keep — see its docblock for why a cap on `active` is the worse failure.
+ *
+ * ☠️ One status per page, never both (#2186). The screen renders Completed and Abandoned as
+ * separate sections, and a page that took both statuses together was split client-side:
+ * whenever the 20 newest finished rows were all one status, the other section rendered
+ * nothing — no heading, no rows — while a generic "Show more" below named no section. The
+ * status is a required argument rather than an optional filter so that a caller cannot
+ * quietly re-widen the read.
+ *
+ * Keyset on the plaintext `created_at`, never `.range()`, for ADR-0001's reason: an offset
+ * page re-reads and re-decrypts every row it skips.
+ */
+export async function listCommittedActionArchivePage(
+  userId: string,
+  status: CommittedActionArchiveStatus,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  return selectList<CommittedActionRow, CommittedAction>((c) => {
+    let query = c
+      .from("act_committed_actions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", status)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));
+    return query.limit(limit);
   }, mapCommittedAction);
 }
 

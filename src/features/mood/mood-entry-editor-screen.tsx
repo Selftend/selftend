@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   announceMessage,
   DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
   politeLiveRegionProps,
   spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
@@ -640,7 +641,7 @@ export function MoodEntryEditorScreen({
                   accessibilityRole="link"
                   onPress={openThoughtRecord}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  {...spaceKeyActivationProps(openThoughtRecord)}
+                  {...enterKeyActivationProps(openThoughtRecord)}
                 >
                   <Text className="text-[13px] font-semibold text-primary-ink">
                     {t("mood.goDeeperLink")} →

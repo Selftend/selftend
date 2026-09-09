@@ -57,7 +57,7 @@ Useful work:
 - safety boundaries around diagnosis, treatment, crisis support, minors, and future modules
 - review of proposed mood, journaling, ACT, gratitude, meditation, or similar content before shipping
 
-Start with [product-principles.md](product-principles.md), [modules/cbt.md](modules/cbt.md), [policies.md](policies.md), and [.github/ROADMAP.md](../.github/ROADMAP.md). Use a Content or safety-labeled issue for public review, or email `support@selftend.org` if the concern is sensitive.
+Start with [product-principles.md](product-principles.md), [modules/cbt.md](modules/cbt.md), and [policies.md](policies.md). Open work is tracked in [GitHub Issues](https://github.com/Selftend/selftend/issues), not in the repo. Use a Content or safety-labeled issue for public review, or email `support@selftend.org` if the concern is sensitive.
 
 Selftend does not currently claim formal clinical review. Credentials are useful context but not required; say how you want to be credited if you want public recognition.
 

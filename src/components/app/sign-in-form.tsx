@@ -28,6 +28,7 @@ import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { consumeSignInPrefill } from "@/src/features/auth/sign-in-prefill";
 import { useGuestAbandonGuard } from "@/src/features/auth/use-guest-abandon-guard";
+import { useGuestContentNotice } from "@/src/features/auth/use-guest-content-notice";
 import { GuestAbandonDialog } from "@/src/components/app/guest-abandon-dialog";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
@@ -51,6 +52,11 @@ export function SignInForm() {
   // straight through.
   const { guardSignIn, isChecking, isProceeding, warningVisible, proceed, cancel } =
     useGuestAbandonGuard();
+  // The same two preconditions, asked on mount instead of at submit (#1865), so
+  // a guest holding content reads the line BEFORE typing anything. See the
+  // hook for why this one fails toward silence while the guard above fails
+  // toward the warning.
+  const showGuestContentNotice = useGuestContentNotice();
   const [submitError, setSubmitError] = useState("");
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -164,6 +170,28 @@ export function SignInForm() {
         <CardDescription>{t("signIn.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
+        {/*
+          The foreshadow of the warn-and-abandon confirm (#1865), above every
+          control rather than after the password: the guard below wraps the
+          SUBMIT actions, so without this the first mention that this device's
+          data stays behind arrived once the effort was already spent.
+
+          Quiet, and not `text-destructive`: it is a fact about what signing in
+          does, not an error and not a deterrent - `docs/product-principles.md`
+          §12 removes steps toward the practice, never toward the account. The
+          sentence carries the export offer with it so the fact arrives already
+          answered, and the confirm still delivers that offer as a button.
+
+          ☠️ Neither `switch` nor `logout` (`CONTEXT.md` §Abandonment): both hide
+          that data is being left behind, which is the one thing this line exists
+          to say.
+        */}
+        {showGuestContentNotice ? (
+          <Text testID="sign-in-guest-notice" className="text-sm text-muted-foreground">
+            {t("signIn.guestContentNotice")}
+          </Text>
+        ) : null}
+
         <Button
           disabled={!hasSupabaseConfig || isGoogleSubmitting || isChecking || isProceeding}
           onPress={() => void onGoogleSubmit()}

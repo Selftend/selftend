@@ -50,15 +50,23 @@ app/
 ├── cookies.tsx            public
 ├── crisis.tsx             public
 ├── account-deletion.tsx   public
-├── (auth)/                sign-up, verify-email, reset-password, update-password, auth-callback
+├── faq.tsx                public
+├── security.tsx           public
+├── (auth)/                sign-in, sign-up, verify-email, reset-password, update-password, auth-callback
 └── (app)/                 protected app shell
-    ├── index.tsx          home (Today)
+    ├── index.tsx          home
     ├── settings.tsx       settings
-    ├── cbt/               index, learn, new, [id], history
-    ├── tools/             check-in, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
+    ├── progress.tsx       looking back
+    ├── notifications.tsx  reminders
     ├── legal.tsx
-    └── support.tsx
+    ├── support.tsx
+    ├── routines/          index, new, [id], [id]/edit
+    ├── modules/           act, cbt, dbt  (index.tsx redirects to home)
+    └── tools/             check-in, journal, breathing, grounding, gratitude-log,
+                           meditation, sleep, habits  (index.tsx redirects to home)
 ```
+
+The tree names the screens, not every route file. Ten route files render only a `<Redirect>` and are deliberately absent above — among them `tools/act.tsx` (to `/modules/act`), the whole of `tools/mood-tracker/` (to `/tools/check-in`, kept forever because the path is frozen in `ALLOWED_REMINDER_ROUTES` and there is no OTA channel), and the two `index.tsx` files noted in the tree. `test/escape-coverage.test.ts` pins that set by name, and the router remains the source of truth for routing — this listing is orientation, not an inventory.
 
 Public routes stay reachable without sign-in. The `(app)` group is gated by [src/providers/session-provider.tsx](../src/providers/session-provider.tsx).
 
@@ -198,9 +206,12 @@ opacity configuration. The app builds a pre-localized snapshot from the same Rea
 Home reads, then the native widget layer renders the selected card with
 `react-native-android-widget` primitives.
 
-The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home's
-tool entries render as rows rather than cards, so the launcher replica is the only card form
-some IDs still have; `card-registry.test.tsx` pins the two sets equal so neither can drift.
+The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home no
+longer draws the catalogue at all (#1956): it renders its own eleven-item list — the eight tool
+hubs and the three modules, with the person's starred ones repeated in a Favourites section on
+top — through one card, read from the `favorites` table rather than `widget_preferences`. So for
+most catalogue IDs the launcher replica is the only in-app rendering left; `card-registry.test.tsx`
+pins the launcher's set equal to the catalogue so neither can drift.
 
 The CBT and ACT programme replicas preserve the three states their Home cards have: review
 before enrollment, current programme goals with deep links while enrolled, and completion

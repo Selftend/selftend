@@ -1,6 +1,8 @@
 # Product Principles
 
-Selftend is a free guided self-help product. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+Selftend is a set of free, private mental health tools - everyday tools for right now, and a CBT programme (cognitive behavioural therapy) to work through when you want one - run by the person using it. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+
+☠️ **This file has two ranks, and reading it as one rank runs the hierarchy backwards.** The paragraph above is a **description** — it says what Selftend is, so it is copy, and [positioning.md](positioning.md) governs it. Everything below it **binds** positioning: the twelve principles and the Audience Note outrank the frame, and a positioning change may never edit one in order to fit. The corroboration is countable — the category noun appears in this file exactly once, in that paragraph, and none of the twelve principles depends on it ([#1820](https://github.com/Selftend/selftend/issues/1820)).
 
 ## Principles
 
@@ -28,6 +30,8 @@ Use minimal notifications, few enabled modules, simple language, and low-frictio
 
 Support reflection and self-help. Do not diagnose, prescribe, claim treatment outcomes, provide emergency support, or replace professional care.
 
+☠️ **This reaches what a phrase _means in the clinic_, not only what it _asserts about the product_.** A term of art carries its clinical sense even when the sentence containing it makes no claim — and it can carry an assumption about the reader as well as about Selftend. [positioning.md](positioning.md) § _Words never to use_ holds the resulting list; this principle is why that list exists.
+
 ### 7. Privacy And Dignity
 
 Collect only what is needed. Respect the sensitivity of the data. Avoid surveillance-style analytics.
@@ -48,6 +52,22 @@ Growth should come from usefulness, trust, and clarity, not fear-of-loss tactics
 
 The MVP must not present itself as an AI therapist, counselor, or mental-health coach.
 
+### 12. Fulfilling, And Done
+
+Selftend wants people to return, and refuses to engineer the wanting. Every completion moment satisfies and ends; the skill becomes automatic, never the app — a user who needs Selftend less is a success.
+
+- **Trigger**: every nudge opt-in, off by default, traced to one explicit choice; nothing on any channel is triggered by non-use.
+- **Action**: remove steps toward the practice, never toward the account.
+  - **Registration invitations live on exactly two surfaces**: the settings card, and one line on the onboarding wizard's final panel. A third is not added by finding a calmer place for it — every surface is a step. This governs invitations to _register_ only; reaching an account you already have is navigation, and `CONTEXT.md` §Accounts governs that.
+- **Reward**: completion copy states the record and stops; nothing varies by date or visit; no levels, badges, or run-lengths.
+- **Investment**: what a user builds is theirs — user-authored commitments welcome, everything exportable, nothing that cannot leave.
+
 ## Audience Note
 
-The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan. Minors, user-generated content, or peer-to-peer communication require higher review before implementation.
+Selftend is for people aged 13 and over, or the higher minimum age at which a person may consent to this kind of data processing in their own country — 14, 15 or 16 in much of Europe. The full table is in [age-floor.md](age-floor.md); the app asks before it opens, and the floor is never below 13 anywhere.
+
+The floor is set by GDPR Art. 9(2)(a) explicit consent rather than by contract, because thought records are special-category data. There is **no parental-consent path and no age verification**: where a law would require one, the floor rises instead.
+
+There is **no minor flag**. Nothing in storage distinguishes a 14-year-old from a 40-year-old, because the protections are universal rather than conditional — nothing counts days or run-lengths, reminders are opt-in only, and there are no ads, no sale of data, no profiling, and no behavioural nudges. A product whose defaults are already safe for a thirteen-year-old needs no second, quieter mode for one.
+
+User-generated content and peer-to-peer communication still require higher review before implementation, and now more so.

@@ -6,12 +6,49 @@ import {
   readHour,
   readMinute,
 } from "@/src/features/notifications/registry";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { CATALOGUE } from "@/src/features/favorites/items";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 
-const ALL_KEYS: NotificationTargetKey[] = [
+/**
+ * ☠️☠️ **EVERY NOTIFICATION TARGET IS A PRACTICE TARGET - something the
+ * person DOES - and never an announcement, update, news or promotion channel**
+ * (#1928, from #1852).
+ *
+ * Push is **the only channel Selftend owns that can send with no project
+ * event.** Every other way we reach someone - GitHub release watchers, YouTube,
+ * Weblate, r/Selftend, Discord - fires only when the project ships something,
+ * so ADR-0004's *nothing on any channel is triggered by non-use* is enforced
+ * there by the channel's own shape. This registry is not: it sends whenever we
+ * tell it to.
+ *
+ * ☠️ **The refusal is not that a clean in-app announcement is impossible.**
+ * ADR-0003 proves one is. It is that **a marketing document which can reach the
+ * app's surfaces routes around product review** - so this door may only ever be
+ * opened deliberately, by product review, and never by a growth argument.
+ *
+ * ⚠️ **`notificationsEnabledGlobal` defaults to `true`.** A new key would
+ * inherit a master switch that is already on, so the per-target opt-in is the
+ * ONLY thing standing between it and a send. That is why the gate is here, on
+ * what a target may BE, rather than on how it is delivered.
+ *
+ * ☠️ **Why the order test above was not enough.** It pins the registry to the
+ * dashboard catalogue, so a target cannot be added to the registry alone. It
+ * says nothing about what a target is allowed to *be*: an `announcements` key
+ * added to BOTH the catalogue and the registry passed every assertion in this
+ * file, and nothing anywhere stated why that is forbidden. #1852 closed with
+ * the boundary in prose only, and ADR-0004 faced the same prose-vs-guard choice
+ * and rejected prose - *"a fresh audit of a product this careful still filed
+ * four issues; the vocabulary regrows."*
+ *
+ * **Adding a real tool reminder is one line here, and that conscious moment is
+ * the point.** Adding a broadcast target means editing a rule that explains why
+ * you should not.
+ */
+const PRACTICE_TARGETS: NotificationTargetKey[] = [
   "cbt",
   "act",
+  "dbt",
   "meditation",
   "gratitude",
   "mood",
@@ -26,7 +63,7 @@ describe("NOTIFICATION_TARGETS", () => {
   it("contains all expected keys exactly once", () => {
     const keys = NOTIFICATION_TARGETS.map((t) => t.key);
     expect(new Set(keys).size).toBe(keys.length);
-    for (const k of ALL_KEYS) {
+    for (const k of PRACTICE_TARGETS) {
       expect(keys).toContain(k);
     }
   });
@@ -36,34 +73,146 @@ describe("NOTIFICATION_TARGETS", () => {
   });
 
   /**
-   * DERIVED, not restated (#981): the expected order is computed from the dashboard
+   * DERIVED, not restated (#981): the expected order is computed from the widget
    * catalogue, so adding a widget id ahead of another reorders this screen too rather than
-   * quietly disagreeing with home. A hand-written expected array would pass forever while the
-   * two screens drifted, which is the failure shape #807 recorded.
+   * quietly disagreeing with it. A hand-written expected array would pass forever while the
+   * two drifted, which is the failure shape #807 recorded.
+   *
+   * ⚠️ That catalogue is the Android launcher's since #1952 (`WIDGET_META`), and Home
+   * stopped rendering it at #1956: Home's Favourites follow `CATALOGUE` in
+   * src/features/favorites/items.ts, whose tool order differs (journal second, grounding
+   * fifth). So "home and reminders agree" no longer holds as a fact about screens - the
+   * registry still follows the widget order it was built against, and re-sequencing the
+   * reminders screen onto the Favourites order is a product decision this test does not
+   * take. The first `toolKey` occurrence wins, which is what the old `tier === "tool"`
+   * filter amounted to: the two programme ids sit behind their module's tool rows.
    */
-  it("is ordered by the dashboard catalogue, so home and reminders agree", () => {
-    const reminderKeys = new Set<string>(ALL_KEYS);
+  it("is ordered by the widget catalogue", () => {
+    const reminderKeys = new Set<string>(PRACTICE_TARGETS);
     const seen = new Set<string>();
     const catalogueOrder: string[] = [];
     for (const meta of Object.values(WIDGET_META)) {
-      if (meta.tier !== "tool") continue;
       if (!reminderKeys.has(meta.toolKey) || seen.has(meta.toolKey)) continue;
       seen.add(meta.toolKey);
       catalogueOrder.push(meta.toolKey);
     }
 
-    // Every reminder target is a dashboard tool, so the catalogue names all ten.
-    expect(catalogueOrder).toHaveLength(ALL_KEYS.length);
-    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual(catalogueOrder);
+    // ⚠️ NOT every reminder target is a launcher widget any more. DBT ships a
+    // reminder and no widget (#1980, decision 13 excludes the launcher), so the
+    // catalogue cannot order it - and a target the catalogue does not name sits
+    // after the ones it does. Derived either way: adding a widget id ahead of
+    // another still reorders this screen.
+    const withoutWidget = PRACTICE_TARGETS.filter((key) => !seen.has(key));
+    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length - withoutWidget.length);
+    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual([...catalogueOrder, ...withoutWidget]);
   });
 
-  it.each(ALL_KEYS)("%s names all four preference columns", (key) => {
+  it.each(PRACTICE_TARGETS)("%s names all four preference columns", (key) => {
     const target = getNotificationTarget(key);
     expect(target.enabledField).toBe(`${key}RemindersEnabled`);
     expect(target.hourField).toBe(`${key}ReminderHour`);
     expect(target.minuteField).toBe(`${key}ReminderMinute`);
     expect(target.timezoneField).toBe(`${key}ReminderTimezone`);
   });
+
+  /**
+   * The gate itself (#1928). Set equality, so it fails in BOTH directions: a
+   * broadcast key added to the registry is caught, and a practice target
+   * quietly dropped from the registry is caught too.
+   */
+  it("carries only practice targets - nothing that could broadcast", () => {
+    expect([...NOTIFICATION_TARGETS.map((t) => t.key)].sort()).toEqual(
+      [...PRACTICE_TARGETS].sort(),
+    );
+  });
+
+  /**
+   * The second lock, and the one the allowlist alone cannot provide: every
+   * target names a **catalogue item with somewhere to go** - a tool hub or a
+   * module on Home's Favourites catalogue, each of which carries its `href`.
+   * The allowlist is deliberately a one-line edit, so padding it is the obvious
+   * lazy fix; this is what makes padding insufficient, because a fake entry
+   * would have to invent a catalogue item and a destination too. Mutation-tested
+   * in exactly that shape.
+   *
+   * ☠️ **It asserts a destination EXISTS, not where it points, and the
+   * difference matters.** An earlier draft required `/tools/` or `/modules/`,
+   * which would have blocked the most plausible next target of all - a routine
+   * reminder, whose home is the top-level `/routines` - with a guard whose
+   * docblock says tripping it means you are doing something forbidden. A false
+   * alarm on a legitimate practice teaches people to edit the rule, which is the
+   * one thing this file must not teach. (Until #1959 this read `route` off the
+   * widget catalogue; that field died with the dashboard, and the favourites
+   * catalogue is the surface Home actually renders.)
+   *
+   * ⚠️ Derived from `CATALOGUE`, so it follows the catalogue rather than
+   * pinning destinations that go stale.
+   */
+  it.each(PRACTICE_TARGETS)("%s is a catalogue item with somewhere to go", (key) => {
+    const items = CATALOGUE.filter((item) => item.key === key);
+
+    expect(items).toHaveLength(1);
+    expect(typeof items[0].href).toBe("string");
+    expect(String(items[0].href).length).toBeGreaterThan(1);
+  });
+
+  /**
+   * The third lock: the vocabulary. Even a broadcast target that faked a widget
+   * and a destination has to name itself something, and these are the names it
+   * would reach for.
+   *
+   * ☠️ **EVERY stem carries its OWN probe**, the `positioning-copy.test.ts`
+   * mechanism. The first draft had eleven stems and four probes - six of them
+   * (`offer`, `promo`, `marketing`, `campaign`, `digest`, `survey`) were
+   * matched by no probe at all, so a typo in any one would have passed forever
+   * while the docblock cited the very convention it was breaking.
+   *
+   * ⚠️ **The stems are narrowed to compound forms on purpose.** Bare
+   * `release`, `update` and `survey` are ordinary practice words - progressive
+   * muscle RELEASE is a standard relaxation exercise, and CBT is largely about
+   * UPDATING a belief. A guard that blocks `progressiveRelease` while trying to
+   * block `releaseNotes` is the over-sweep `restraint-copy` keeps bare
+   * "pressure" legal to avoid.
+   */
+  const BROADCAST: { stem: RegExp; probe: string }[] = [
+    { stem: /announce/i, probe: "announcements" },
+    { stem: /\bnews\b|newsletter/i, probe: "newsletter" },
+    { stem: /productUpdate/i, probe: "productUpdates" },
+    { stem: /releaseNote/i, probe: "releaseNotes" },
+    { stem: /promo/i, probe: "promotions" },
+    { stem: /marketing/i, probe: "marketingTips" },
+    { stem: /campaign/i, probe: "campaignPush" },
+    { stem: /digest/i, probe: "weeklyDigest" },
+    { stem: /specialOffer/i, probe: "specialOffers" },
+  ];
+
+  it.each(BROADCAST)("the $stem rule matches its own probe", ({ stem, probe }) => {
+    expect(stem.test(probe)).toBe(true);
+  });
+
+  it("refuses broadcast vocabulary in a target key", () => {
+    for (const target of NOTIFICATION_TARGETS) {
+      const hit = BROADCAST.find((rule) => rule.stem.test(target.key));
+      expect({ key: target.key, matched: hit?.stem.source ?? null }).toEqual({
+        key: target.key,
+        matched: null,
+      });
+    }
+  });
+
+  /**
+   * The mirror, and the reason the stems are narrow: a plausible FUTURE
+   * practice must stay sayable. `routines` is the likeliest next target;
+   * progressive muscle release and belief-updating are real techniques whose
+   * keys would trip a looser list.
+   */
+  it.each(["routines", "progressiveRelease", "beliefUpdate", "bodyScan", "selfCare"])(
+    "leaves the plausible practice key %s alone",
+    (key) => {
+      const hit = BROADCAST.find((rule) => rule.stem.test(key));
+      expect({ key, matched: hit?.stem.source ?? null }).toEqual({ key, matched: null });
+    },
+  );
 
   it("carries no placeholder status and no description key", () => {
     for (const target of NOTIFICATION_TARGETS) {

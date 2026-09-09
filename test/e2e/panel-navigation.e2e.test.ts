@@ -15,7 +15,7 @@ import type { Page } from "@playwright/test";
 
 import { test, expect } from "./fixtures";
 
-import { dismissHomeTour, dismissPostSignInModals, navigateViaPanel } from "./helpers";
+import { dismissPostSignInModals, navigateViaPanel } from "./helpers";
 
 /** Counts hidden roots too, which is the whole point — the stale copy is invisible. */
 const homeRoots = (page: Page) => page.getByTestId("home-layout").count();
@@ -24,7 +24,7 @@ test("returning to Home through the panel does not mount a second Home", async (
   // `/`, not `/(app)`: that is how a signed-in user actually arrives (the root route
   // redirects), and it is the entry the rest of the suite uses.
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
     timeout: 15_000,
   });
   await dismissPostSignInModals(page);
@@ -38,10 +38,9 @@ test("returning to Home through the panel does not mount a second Home", async (
 
     await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
-    await dismissHomeTour(page);
 
     expect(await homeRoots(page)).toBe(1);
   }
@@ -60,7 +59,7 @@ test("returning to Home through the panel does not mount a second Home", async (
   // replaced, so Back left the app from any destination. One absorbed Back press is the
   // cheapest of the three. What must NOT happen is Back resurrecting a second root.
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
     timeout: 15_000,
   });
   expect(await homeRoots(page)).toBe(1);

@@ -262,8 +262,8 @@ describe("ManageEmotionsModal", () => {
      * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
      * `accessibilityHint` at all, so the string reaches ONLY native AT - where the rotor
      * actions are the path and there are no arrow keys to press. This one states the
-     * outcome instead; `home.arrange.handleHint` was brought to the same shape in #1047,
-     * and `arrange-screen.test.tsx` holds the matching assertion.
+     * outcome instead; the old Home arrange handle's hint was brought to the same shape in
+     * #1047 (both went with the dashboard in #1959, so this is the one assertion left).
      */
     it("hints at the outcome, not at keys the platform reading it does not have", () => {
       open();
@@ -276,7 +276,7 @@ describe("ManageEmotionsModal", () => {
     /**
      * The arrow keys are the WEB half of the same two moves, and jest runs the native
      * platform - so what is asserted here is that the fork exists and native carries no
-     * `onKeyDown`. Same shape `arrange-screen.test.tsx` uses for the shared helper.
+     * `onKeyDown`. Same shape the old arrange screen's test used for the shared helper.
      */
     it("carries no web key handler on native", () => {
       open();
@@ -314,7 +314,7 @@ describe("ManageEmotionsModal", () => {
      * `focusable: false` hid the whole handle from the keyboard, which is why this reached
      * native AT only. The hint goes with them: it is read AFTER the label, and native AT is
      * the only listener that hears it, so an outcome nothing can produce is worse than
-     * silence. `arrange-screen.test.tsx` holds the matching assertions for home's handle.
+     * silence. (The old Home arrange handle carried the matching assertions until #1959.)
      */
     it("offers a one-emotion list's handle no move, and no hint either", () => {
       mockEmotionList = [mockFullEmotionList[0]];
@@ -341,8 +341,8 @@ describe("ManageEmotionsModal", () => {
     /**
      * ☠️ A tripwire, not a proof - and the reason is worth more than the assertion.
      *
-     * `arrange-screen` passes `sortEnabled={!mutationPending}` and it is the obvious thing
-     * to mirror here, so a reviewer will ask for it. MEASURED: adding it makes the SECOND
+     * The old Home arrange screen passed `sortEnabled={!mutationPending}` and it is the
+     * obvious thing to mirror here, so a reviewer will ask for it. MEASURED: adding it makes the SECOND
      * keyboard move stop writing. `manage-emotions-reorder.e2e` fails on exactly the "and
      * AGAIN, without re-focusing" press and passes with the prop removed and nothing else
      * changed - binding it to a flag that flips on every write re-renders the grid mid-move

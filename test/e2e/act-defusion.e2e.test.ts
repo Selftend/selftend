@@ -27,7 +27,7 @@ import { deleteAllActLogsForUser, expectSuccessToast } from "./helpers";
  *   delete "Delete"
  *   deleteConfirm "Delete this log?"
  *
- * Categories (chips): "Self-judgment" | "Worry" | "Past regret" | "Negative prediction" | "Should / must rule" | "Other"
+ * Categories (chips): "Self-judgement" | "Worry" | "Past regret" | "Negative prediction" | "Should / must rule" | "Other"
  * Techniques (cards): "I'm having the thought that..." | ...
  *
  * Fusion rating (NumberRating min=0 max=100 step=10): buttons "0","10","20",...,"100".

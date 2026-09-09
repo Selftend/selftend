@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor } from "@testing-library/react-native";
 import { Platform, Text } from "react-native";
@@ -7,6 +8,7 @@ import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { SessionProvider, useSession } from "@/src/providers/session-provider";
 import { useFreshStartNoticeStore } from "@/src/stores/fresh-start-notice-store";
 import { setPlatformOS } from "@/test/modal-marker-mock";
+import { UNDER_FLOOR_BLOCK_MS, writeUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 
 jest.mock("@/src/lib/sentry", () => ({
   captureError: jest.fn(),
@@ -50,9 +52,12 @@ beforeEach(() => {
   mockSignInAnonymously.mockResolvedValue({ data: { session: null, user: null }, error: null });
 });
 
-afterEach(() => {
+afterEach(async () => {
   jest.clearAllMocks();
   setPlatformOS(ORIGINAL_OS as "web" | "ios" | "android");
+  // The under-floor block is real storage here, not a mock: clear it so a
+  // blocked-device test cannot silently suppress the guest mint in the next one.
+  await AsyncStorage.clear();
 });
 
 jest.mock("@/src/stores/draft-store-registry", () => ({
@@ -211,6 +216,34 @@ describe("SessionProvider guest entry (#1440)", () => {
 
     await waitForProbe("ready:signed-out");
     expect(mockSignInAnonymously).not.toHaveBeenCalled();
+  });
+
+  it("an under-floor device is not handed a guest it would only have deleted", async () => {
+    // #1765: the block already holds without this - ProtectedLayout consults
+    // the same flag - but every launch inside the window would otherwise mint
+    // an anonymous user purely so the exit screen could delete it again.
+    await writeUnderFloorBlock(new Date());
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    renderProvider();
+
+    await waitForProbe("ready:signed-out");
+    expect(mockSignInAnonymously).not.toHaveBeenCalled();
+  });
+
+  it("mints a guest again once the block window has lapsed", async () => {
+    // The flag is a speed bump with an expiry, not a ban on the device.
+    await writeUnderFloorBlock(new Date(Date.now() - UNDER_FLOOR_BLOCK_MS - 1));
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockSignInAnonymously.mockResolvedValue({
+      data: { session: { user: { id: "guest-1" } }, user: { id: "guest-1" } },
+      error: null,
+    });
+
+    renderProvider();
+
+    await waitForProbe("ready:guest-1");
+    expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
   });
 
   it("a stored session never attempts a guest", async () => {

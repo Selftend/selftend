@@ -5,13 +5,15 @@
     "goHome": "Go to home",
     "appName": "Selftend",
     "joinDiscord": "Join our Discord",
+    "joinReddit": "Join r/Selftend",
     "openReddit": "Open the Selftend subreddit",
+    "watchYoutube": "Watch on YouTube",
     "openYoutube": "Open the Selftend YouTube channel",
     "viewGithub": "View the source code on GitHub"
   },
   "sidebar": {
     "home": "Home",
-    "progress": "Insights",
+    "progress": "Looking back",
     "routines": "Routines",
     "notifications": "Reminders",
     "settings": "Settings",
@@ -26,21 +28,19 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
-    "cbtA11y": "CBT module - Cognitive Behavioural Therapy",
-    "actA11y": "ACT module - Acceptance and Commitment Therapy",
-    "dbtA11y": "DBT overview - Dialectical Behavior Therapy",
-    "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
     "habits": "Habit tracking",
-    "tools": "Tools"
+    "donate": "Donate",
+    "donateA11y": "Donate to Selftend on GitHub Sponsors - opens in your browser"
   },
   "userMenu": {
-    "account": "Account",
+    "guest": "Guest",
     "avatarAlt": "User avatar",
     "openMenu": "Open account menu",
     "settings": "Settings",
     "sendFeedback": "Send feedback",
+    "signIn": "Sign in",
     "signOut": "Sign Out"
   },
   "getTheApp": {
@@ -48,8 +48,7 @@
     "android": "Android",
     "ios": "iOS",
     "androidAccessibility": "Get the Android app on Google Play",
-    "iosAccessibility": "Get the iOS app on the App Store",
-    "comingSoon": "Coming soon"
+    "iosAccessibility": "Get the iOS app on the App Store"
   },
   "languageToggle": {
     "toggle": "Switch language",
@@ -72,22 +71,16 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "emptyTitle": "Add tools you want to check in with each day",
-    "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
-    "unsupportedTitle": "Some of your dashboard needs a newer version",
-    "unsupportedDescription": "You added things this version of the app can't show yet. Update when you can, or add something else in the meantime.",
-    "addManually": "Add manually",
-    "getSuggestions": "Get suggestions",
     "plan": {
       "open": "Open"
     },
     "modules": {
-      "cbtName": "Cognitive behavioral therapy",
-      "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
+      "cbtName": "Cognitive behavioural therapy",
+      "cbtSub": "Think · Act · Be",
       "actName": "Acceptance & commitment",
-      "actDescription": "Skills for handling difficult feelings and acting on what matters to you (Acceptance and Commitment Therapy).",
-      "dbtName": "Dialectical behavior therapy",
-      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness. An overview of the approach."
+      "actSub": "Act on what matters",
+      "dbtName": "Dialectical behaviour therapy",
+      "dbtSub": "For when feelings run high"
     },
     "tools": {
       "moodTracker": "Check-in",
@@ -108,10 +101,6 @@
       "habitsSub": "Build consistent daily habits"
     },
     "dashboard": {
-      "removeWidget": "Remove {{title}}",
-      "undo": "Undo",
-      "moveEarlier": "Move {{title}} earlier",
-      "moveLater": "Move {{title}} later",
       "doneToday": "Done today",
       "startBreathing": "Start breathing",
       "write": "Write",
@@ -127,31 +116,19 @@
       "habitsAllDone": "All done for today!",
       "newHabit": "New habit",
       "done": "Done"
+    },
+    "sections": {
+      "favorites": "Favourites",
+      "tools": "Tools",
+      "modules": "Modules"
+    },
+    "favorites": {
+      "empty": "Star a tool or a module to keep it here.",
+      "add": "Favourite {{name}}",
+      "remove": "Remove {{name}} from favourites"
     }
   },
   "home": {
-    "doneLabel": "Done",
-    "arrangeLabel": "Arrange",
-    "addToolLabel": "Add tool",
-    "arrange": {
-      "hint": "Drag to reorder, or remove what you don't check in with.",
-      "handle": "Reorder {{title}}",
-      "handleHint": "Moves this tool up or down in the list.",
-      "addHeading": "Add to your home screen",
-      "addChip": "Add {{title}}",
-      "addChipTagged": "Add {{title}}, {{module}}",
-      "moduleTag": {
-        "cbt": "CBT",
-        "act": "ACT",
-        "cbtA11y": "CBT - Cognitive Behavioural Therapy",
-        "actA11y": "ACT - Acceptance and Commitment Therapy"
-      },
-      "allAdded": "Everything is already on your home screen."
-    },
-    "addToHome": {
-      "button": "Add to home",
-      "title": "Add to home"
-    },
     "categories": {
       "mood": "Check-in",
       "journal": "Journal",
@@ -173,22 +150,6 @@
       "moreGoals_one": "+{{count}} more goal",
       "moreGoals_other": "+{{count}} more goals"
     },
-    "tiers": {
-      "tools": "Your tools",
-      "programmes": "Guided programmes"
-    },
-    "programme": {
-      "phase": "Phase {{current}} of {{total}}",
-      "complete": "Complete"
-    },
-    "rightNow": {
-      "heading": "Right now",
-      "moodTitle": "How are you?",
-      "sleepTitle": "Sleep",
-      "sleepNothing": "Nothing captured since yesterday",
-      "habitsTitle": "Today's habits",
-      "sleepNothingWithAverage": "Nothing captured since yesterday — {{value}} average this week"
-    },
     "rows": {
       "empty": "Nothing yet",
       "nothingScheduled": "Nothing scheduled today",
@@ -207,13 +168,7 @@
       "minutes_one": "{{count}} minute",
       "minutes_other": "{{count}} minutes",
       "sits_one": "{{count}} sit",
-      "sits_other": "{{count}} sits",
-      "records_one": "{{count}} record",
-      "records_other": "{{count}} records",
-      "activeGoals_one": "{{count}} active goal",
-      "activeGoals_other": "{{count}} active goals",
-      "active_one": "{{count}} active",
-      "active_other": "{{count}} active"
+      "sits_other": "{{count}} sits"
     },
     "widgets": {
       "moodCheckin": {
@@ -235,7 +190,7 @@
         "itemsLabel": "Items"
       },
       "meditationPick": {
-        "title": "Today's pick",
+        "title": "Meditation",
         "desc": "A short sit chosen for the time of day.",
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes"
@@ -303,7 +258,7 @@
         "shortcutCta": "New belief"
       },
       "cbtActivities": {
-        "title": "Behavioral activation",
+        "title": "Behavioural activation",
         "metaDesc": "Plan small, mood-lifting activities.",
         "shortcutCta": "Plan activity"
       },
@@ -371,70 +326,30 @@
     }
   },
   "progress": {
-    "title": "Insights",
-    "description": "A quiet place to notice mood patterns and reflect on what may be helping.",
-    "moodTrend": "Mood trend",
-    "moodTrendDescription": "Daily average over the last 30 days.",
-    "noMoodData": "Log a mood to start your trend.",
+    "title": "Looking back",
+    "description": "Your record over time, and a question to sit with.",
+    "timelineTitle": "Your days",
+    "timelineDescription": "One mark for each day with a record.",
+    "timelineEmpty": "Days you record anything will appear here.",
+    "timelineSingleDay": "Your record starts here.",
+    "timelineError": "Your days could not be loaded just now.",
+    "timelineA11y": "Record timeline, {{from}} to {{to}}.",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
-    "prompt1": "What felt manageable this month that felt hard before?",
-    "prompt2": "Where did you show up for yourself, even in a small way?",
-    "prompt3": "What would you tell a friend who had a month like yours?",
-    "prompt4": "What is one thing you noticed about your mood or energy?"
-  },
-  "tools": {
-    "title": "Tools",
-    "description": "Standalone trackers any module can call into. Use them on their own, too.",
-    "stats": {
-      "moodLogs_one": "{{count}} log",
-      "moodLogs_other": "{{count}} logs",
-      "moodLast7": "{{average}} avg this week",
-      "moodNoData": "No logs yet",
-      "journalEntries_one": "{{count}} entry",
-      "journalEntries_other": "{{count}} entries",
-      "journalNoData": "No entries yet",
-      "breathingSessions_one": "{{count}} session",
-      "breathingSessions_other": "{{count}} sessions",
-      "breathingNoData": "No sessions yet",
-      "gratitudeEntries_one": "{{count}} gratitude entry",
-      "gratitudeEntries_other": "{{count}} gratitude entries",
-      "gratitudeNoData": "No gratitude entries yet",
-      "groundingSessions_one": "{{count}} session",
-      "groundingSessions_other": "{{count}} sessions",
-      "groundingNoData": "No sessions yet",
-      "meditationSessions_one": "{{count}} session",
-      "meditationSessions_other": "{{count}} sessions",
-      "meditationNoData": "No sessions yet",
-      "sleepLogs_one": "{{count}} log",
-      "sleepLogs_other": "{{count}} logs",
-      "sleepNoData": "No logs yet",
-      "habits_one": "{{count}} habit",
-      "habits_other": "{{count}} habits",
-      "habitsNoData": "No habits yet"
-    }
+    "prompt": "Looking back over this stretch, what stands out to you?",
+    "recoveryTitle": "Your recovery plan",
+    "recoveryDescription": "What you wrote about what helps."
   },
   "headerButton": {
     "tune": "Customise",
     "notifications": "Reminders",
-    "program": "CBT program",
+    "program": "CBT programme",
     "info": "About this module"
-  },
-  "homeTour": {
-    "skipAll": "Skip all tips",
-    "edit": {
-      "description": "Arrange your home screen - add, remove and reorder your tools.",
-      "dismiss": "Got it"
-    },
-    "navigation": {
-      "description": "Find all Modules and Tools here.",
-      "dismiss": "Got it"
-    }
   },
   "breadcrumb": {
     "session": "Session",
     "history": "History",
-    "progress": "Reflect",
+    "progress": "Looking back",
     "legal": "Legal",
     "entry": "Entry",
     "entries": "Entries",
@@ -462,9 +377,17 @@
     "observingSelf": "Observing self",
     "dailyLife": "Daily life",
     "learn": "Learn",
+    "copingPlan": "Coping plan",
+    "pause": "Pause and choose",
+    "muscleRelaxation": "Muscle relaxation",
+    "emotions": "Emotion records",
+    "wiseMind": "Wise mind",
+    "judgements": "Judgements",
+    "oppositeAction": "Opposite action",
+    "scripts": "Scripts",
     "edit": "Edit",
     "log": "Log",
-    "favorites": "Favorites",
+    "favorites": "Favourites",
     "back": "Go back",
     "backTo": "Back to {{name}}",
     "signIn": "Sign in",
@@ -472,14 +395,6 @@
     "resetPassword": "Reset password",
     "updatePassword": "Update password",
     "verifyEmail": "Verify email"
-  },
-  "modulesPage": {
-    "title": "Modules",
-    "description": "Structured therapeutic programs you can work through over time. Each draws on the shared tools.",
-    "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine.",
-    "stats": {
-      "overview": "Overview"
-    }
   },
   "plan": {
     "wizard": {
@@ -496,6 +411,7 @@
   },
   "styleToggle": {
     "toggle": "Palette",
-    "default": "Default"
+    "default": "Default",
+    "back": "Back"
   }
 }

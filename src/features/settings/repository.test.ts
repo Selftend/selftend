@@ -1,20 +1,22 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import {
-  REPLAY_INTRODUCTION_PREFERENCES,
-  SHOW_TIPS_AGAIN_PREFERENCES,
-} from "@/src/features/settings/onboarding-reset";
+import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   deleteDevicePushToken,
   deleteUserAccount,
   deleteWebPushSubscription,
   getUserPreferences,
+  PREFERENCES_READ_TIMEOUT_MS,
+  recordAgeAttestation,
+  recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
   upsertDevicePushToken,
   upsertWebPushSubscription,
 } from "@/src/features/settings/repository";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
+// The real filter, not a stand-in: what this file pins is that the two abort
+// causes land on OPPOSITE sides of it.
+import { isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/features/profile/repository", () => ({
@@ -30,13 +32,14 @@ const mockRemoveAvatar = jest.mocked(removeCurrentUserUploadedAvatar);
 
 function mockPreferenceSelect(data: unknown) {
   const maybeSingle = jest.fn().mockResolvedValue({ data, error: null });
-  const eq = jest.fn(() => ({ maybeSingle }));
+  const abortSignal = jest.fn(() => ({ maybeSingle }));
+  const eq = jest.fn(() => ({ abortSignal }));
   const select = jest.fn(() => ({ eq }));
   const from = jest.fn(() => ({ select }));
 
   mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-  return { eq, from, maybeSingle, select };
+  return { abortSignal, eq, from, maybeSingle, select };
 }
 
 function mockPreferenceUpdate(data: unknown) {
@@ -90,6 +93,133 @@ describe("deleteUserAccount", () => {
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(deleteUserAccount()).rejects.toThrow("rpc failed");
+  });
+});
+
+/**
+ * ☠️☠️ #2251. The read decides both legal gates, and the whole app sits behind
+ * `PreferencesUnavailableScreen` while it is unknown - so a request that
+ * black-holes has to END. Android's OkHttp ships with zero timeouts and a
+ * browser `fetch` has none, and TanStack's `retry: 1` retries a rejection, not
+ * a hang. Two things close it: the caller's signal reaches PostgREST (so a
+ * cancelled query stops on the wire rather than only in the cache), and the
+ * read gives up on its own after `PREFERENCES_READ_TIMEOUT_MS`.
+ */
+describe("getUserPreferences on the wire", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  /** A PostgREST read that only ever returns the way an aborted fetch does. */
+  function mockHungPreferenceSelect() {
+    let handed: AbortSignal | undefined;
+    const maybeSingle = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          handed?.addEventListener("abort", () =>
+            resolve({
+              data: null,
+              error: { message: "AbortError: The user aborted a request.", code: "" },
+            }),
+          );
+        }),
+    );
+    const abortSignal = jest.fn((signal: AbortSignal) => {
+      handed = signal;
+      return { maybeSingle };
+    });
+    const eq = jest.fn(() => ({ abortSignal }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+    return { abortSignal, signal: () => handed };
+  }
+
+  it("hands PostgREST a signal, and aborts it when the caller's signal aborts", async () => {
+    const wire = mockHungPreferenceSelect();
+    const caller = new AbortController();
+
+    const read = getUserPreferences("user-1", { signal: caller.signal });
+    expect(wire.abortSignal).toHaveBeenCalledTimes(1);
+    expect(wire.signal()?.aborted).toBe(false);
+
+    caller.abort();
+
+    expect(wire.signal()?.aborted).toBe(true);
+    await expect(read).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("gives up on a read that has hung for PREFERENCES_READ_TIMEOUT_MS", async () => {
+    const wire = mockHungPreferenceSelect();
+
+    const read = getUserPreferences("user-1");
+    jest.advanceTimersByTime(PREFERENCES_READ_TIMEOUT_MS - 1);
+    expect(wire.signal()?.aborted).toBe(false);
+
+    jest.advanceTimersByTime(1);
+
+    expect(wire.signal()?.aborted).toBe(true);
+    // ☠️☠️ This assertion used to read `{ name: "AbortError" }`, with a comment
+    // saying the name was chosen so the Sentry filter would read the timeout as
+    // an aborted fetch. It ENCODED the defect: `isReportableError` drops every
+    // `AbortError`, so the deadline this release put in front of the whole app
+    // could expire on a real population and produce no signal anywhere. The
+    // timeout now has a name of its own; the assertion says so.
+    await expect(read).rejects.toMatchObject({ name: "PreferencesReadTimeoutError" });
+  });
+
+  /**
+   * ☠️☠️ The two abort causes report DIFFERENTLY, and this is the coupling that
+   * says so. `PREFERENCES_READ_TIMEOUT_MS` is a threshold this project picked
+   * for the read that gates both legal gates, and it cannot be validated or
+   * corrected after release without an event when it fires - the app has no
+   * other channel for it (no crash, and Play vitals reports nothing here).
+   *
+   * ⚠️ The other direction is the one #1548's narrowing bought and must keep:
+   * a cancellation the app asked for, and an ordinary offline failure, stay
+   * filtered. Reporting a timeout must not drag those back in.
+   */
+  it("makes the timeout reportable while a cancellation and an offline read stay filtered", async () => {
+    const wire = mockHungPreferenceSelect();
+
+    const timedOut = getUserPreferences("user-1");
+    jest.advanceTimersByTime(PREFERENCES_READ_TIMEOUT_MS);
+    await expect(timedOut.then(() => null).catch(isReportableError)).resolves.toBe(true);
+
+    const cancelledWire = mockHungPreferenceSelect();
+    const caller = new AbortController();
+    const cancelled = getUserPreferences("user-1", { signal: caller.signal });
+    caller.abort();
+    expect(cancelledWire.signal()?.aborted).toBe(true);
+    await expect(cancelled.then(() => null).catch(isReportableError)).resolves.toBe(false);
+
+    // And the plain offline shape PostgREST rejects with, unchanged by any of this.
+    expect(isReportableError(new TypeError("Network request failed"))).toBe(false);
+    expect(wire.signal()?.aborted).toBe(true);
+  });
+
+  it("does not fire the timeout on a read that has already answered", async () => {
+    mockPreferenceSelect({ user_id: "user-1" });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({ ageFloorMet: null });
+
+    // Nothing left on the clock: a resolved read has cleared its own timer.
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it("throws the PostgREST error unchanged when the read failed on its own", async () => {
+    const { maybeSingle } = mockPreferenceSelect(null);
+    maybeSingle.mockResolvedValue({ data: null, error: { message: "boom", code: "PGRST000" } });
+
+    await expect(getUserPreferences("user-1")).rejects.toEqual({
+      message: "boom",
+      code: "PGRST000",
+    });
   });
 });
 
@@ -405,32 +535,11 @@ describe("settings repository", () => {
     expect(upsert.mock.calls.at(-1)?.[1]).toEqual({ onConflict: "user_id" });
   });
 
-  it("updates shown button tours without sending unrelated preference columns", async () => {
-    const updatedRow = {
-      enabled_modules: ["cbt"],
-      shown_button_tours: ["program"],
-      user_id: "user-1",
-    };
-    const { upsert } = mockPreferenceUpdate(updatedRow);
-
-    await expect(updateShownButtonTours("user-1", ["program"])).resolves.toMatchObject({
-      shownButtonTours: ["program"],
-    });
-
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        shown_button_tours: ["program"],
-        user_id: "user-1",
-      },
-      { onConflict: "user_id" },
-    );
-  });
-
   it("updates onboarding state without sending unrelated preference columns", async () => {
     const updatedRow = {
       app_onboarding_completed: false,
+      app_onboarding_completed_via: "skip",
       enabled_modules: ["cbt"],
-      shown_button_tours: [],
       user_id: "user-1",
     };
     const { upsert } = mockPreferenceUpdate(updatedRow);
@@ -438,17 +547,17 @@ describe("settings repository", () => {
     await expect(
       updateOnboardingPreferences("user-1", {
         appOnboardingCompleted: false,
-        shownButtonTours: [],
+        appOnboardingCompletedVia: "skip",
       }),
     ).resolves.toMatchObject({
       appOnboardingCompleted: false,
-      shownButtonTours: [],
+      appOnboardingCompletedVia: "skip",
     });
 
     expect(upsert).toHaveBeenCalledWith(
       {
         app_onboarding_completed: false,
-        shown_button_tours: [],
+        app_onboarding_completed_via: "skip",
         user_id: "user-1",
       },
       { onConflict: "user_id" },
@@ -477,17 +586,15 @@ describe("settings repository", () => {
     expect(result.languageExplicit).toBe(true);
   });
 
-  it("maps start_here_dismissed_at and selected_concerns from the row", async () => {
+  it("maps start_here_dismissed_at from the row", async () => {
     mockPreferenceSelect({
       user_id: "user-1",
       enabled_modules: ["cbt"],
       start_here_dismissed_at: "2026-07-02T10:00:00Z",
-      selected_concerns: ["sleep"],
     });
 
     const result = await getUserPreferences("user-1");
     expect(result.startHereDismissedAt).toBe("2026-07-02T10:00:00Z");
-    expect(result.selectedConcerns).toEqual(["sleep"]);
   });
 
   it("defaults startHereDismissedAt to null when column absent from row", async () => {
@@ -547,22 +654,19 @@ describe("settings repository", () => {
     );
   });
 
-  it("updateOnboardingPreferences writes selected_concerns and start_here_dismissed_at", async () => {
+  it("updateOnboardingPreferences writes start_here_dismissed_at", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",
       enabled_modules: ["cbt"],
-      selected_concerns: ["sleep", "habits"],
       start_here_dismissed_at: "2026-07-02T10:00:00Z",
     });
 
     await updateOnboardingPreferences("user-1", {
-      selectedConcerns: ["sleep", "habits"],
       startHereDismissedAt: "2026-07-02T10:00:00Z",
     } as Parameters<typeof updateOnboardingPreferences>[1]);
 
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        selected_concerns: ["sleep", "habits"],
         start_here_dismissed_at: "2026-07-02T10:00:00Z",
         user_id: "user-1",
       }),
@@ -570,14 +674,13 @@ describe("settings repository", () => {
     );
   });
 
-  it("carries both Settings onboarding actions through to their columns", async () => {
+  it("carries the Settings onboarding action through to its column", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",
       enabled_modules: ["cbt"],
     });
 
     await updateOnboardingPreferences("user-1", REPLAY_INTRODUCTION_PREFERENCES);
-    await updateOnboardingPreferences("user-1", SHOW_TIPS_AGAIN_PREFERENCES);
 
     expect(upsert).toHaveBeenNthCalledWith(
       1,
@@ -587,15 +690,7 @@ describe("settings repository", () => {
       },
       { onConflict: "user_id" },
     );
-    expect(upsert).toHaveBeenNthCalledWith(
-      2,
-      {
-        shown_button_tours: [],
-        start_here_dismissed_at: null,
-        user_id: "user-1",
-      },
-      { onConflict: "user_id" },
-    );
+    expect(upsert).toHaveBeenCalledTimes(1);
   });
 
   it("upserts web push subscriptions for the current user", async () => {
@@ -658,5 +753,207 @@ describe("settings repository", () => {
 
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqEndpoint).toHaveBeenCalledWith("expo_push_token", "ExponentPushToken[abc]");
+  });
+});
+
+describe("age attestation preferences (#1762)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("maps the three age-attestation columns from the user_preferences row", async () => {
+    mockPreferenceSelect({
+      age_attested_at: "2026-09-03T10:00:00.000Z",
+      age_attested_country: "DE",
+      age_floor_met: true,
+      user_id: "user-1",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      ageAttestedAt: "2026-09-03T10:00:00.000Z",
+      ageAttestedCountry: "DE",
+      ageFloorMet: true,
+    });
+  });
+
+  it("leaves an account that predates the gate at null, NOT at false", async () => {
+    // The whole point of the nullable column. Every account that exists today
+    // has never been asked, and §7 never asks them: `false` would assert they
+    // FAILED their floor, and a gate reading `=== true` would lock out the
+    // install base. A Boolean() coercion in the mapper - the shape hapticCues
+    // and the other flags use - is exactly the bug this catches.
+    mockPreferenceSelect({ user_id: "user-1" });
+
+    const prefs = await getUserPreferences("user-1");
+
+    expect(prefs.ageFloorMet).toBeNull();
+    expect(prefs.ageAttestedCountry).toBeNull();
+    expect(prefs.ageAttestedAt).toBeNull();
+  });
+
+  it("keeps an explicit false distinct from never-asked", async () => {
+    mockPreferenceSelect({ age_floor_met: false, user_id: "user-1" });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({ ageFloorMet: false });
+  });
+
+  it("defaults to never-asked", () => {
+    expect(defaultUserPreferences.ageFloorMet).toBeNull();
+    expect(defaultUserPreferences.ageAttestedCountry).toBeNull();
+    expect(defaultUserPreferences.ageAttestedAt).toBeNull();
+  });
+
+  it("writes the attestation columns when the gate records a verdict", async () => {
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
+
+    await updateUserPreferences("user-1", {
+      ageAttestedAt: "2026-09-03T10:00:00.000Z",
+      ageAttestedCountry: "BG",
+      ageFloorMet: true,
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        age_attested_at: "2026-09-03T10:00:00.000Z",
+        age_attested_country: "BG",
+        age_floor_met: true,
+        user_id: "user-1",
+      },
+      expect.anything(),
+    );
+  });
+});
+
+describe("recordAgeAttestation", () => {
+  function mockAttestationUpsert(error: unknown = null) {
+    const upsert = jest.fn().mockResolvedValue({ error });
+    const from = jest.fn(() => ({ upsert }));
+
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    return { from, upsert };
+  }
+
+  it("writes the verdict, the country and the moment - and nothing else", async () => {
+    const { from, upsert } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", "DE");
+
+    expect(from).toHaveBeenCalledWith("user_preferences");
+    const [payload] = upsert.mock.calls[0];
+    expect(payload).toEqual({
+      user_id: "user-1",
+      age_floor_met: true,
+      age_attested_country: "DE",
+      age_attested_at: expect.any(String),
+    });
+    // ☠️ The whole payload is asserted, not just its known keys: the date of
+    // birth reaching the database is the one failure §3 rules out outright, and
+    // a `toMatchObject` here would not notice it arriving.
+    expect(Object.keys(payload)).toHaveLength(4);
+  });
+
+  it("normalises the country rather than letting the column check reject it", async () => {
+    const { upsert } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", " bg ");
+
+    expect(upsert.mock.calls[0][0]).toMatchObject({ age_attested_country: "BG" });
+  });
+
+  it("throws rather than reporting a write that did not happen", async () => {
+    // Deliberately not `updateUserPreferences`, whose missing-column retry
+    // would drop `age_floor_met` and resolve - which a caller would read as
+    // "attested" against a row that says nothing of the kind.
+    mockAttestationUpsert({ message: "column does not exist" });
+
+    await expect(recordAgeAttestation("user-1", "DE")).rejects.toEqual({
+      message: "column does not exist",
+    });
+  });
+});
+
+describe("explicit Art. 9 consent (#1766)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function mockConsentUpsert(error: unknown = null) {
+    const upsert = jest.fn().mockResolvedValue({ error });
+    const from = jest.fn(() => ({ upsert }));
+
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    return { from, upsert };
+  }
+
+  it("records the health-data consent alongside the contractual acceptance", async () => {
+    const { from, upsert } = mockConsentUpsert();
+
+    await recordPolicyConsent("user-1", "2026-09-02-donations");
+
+    expect(from).toHaveBeenCalledWith("user_preferences");
+    const [payload] = upsert.mock.calls[0];
+    expect(payload).toEqual({
+      user_id: "user-1",
+      privacy_policy_accepted_at: expect.any(String),
+      terms_accepted_at: expect.any(String),
+      policy_version_accepted: "2026-09-02-donations",
+      health_data_consent_at: expect.any(String),
+    });
+  });
+
+  it("stamps both acts with the same moment", () => {
+    // One submit, one payload: the Art. 9 act and the contractual acceptance
+    // are given together even though they are worded and ticked separately, so
+    // a reader comparing the two timestamps should not have to wonder whether
+    // a difference means something.
+    const { upsert } = mockConsentUpsert();
+
+    return recordPolicyConsent("user-1", "v9").then(() => {
+      const [payload] = upsert.mock.calls[0] as [Record<string, string>];
+      expect(payload.health_data_consent_at).toBe(payload.privacy_policy_accepted_at);
+    });
+  });
+
+  it("maps the consent timestamp from the user_preferences row", async () => {
+    mockPreferenceSelect({
+      health_data_consent_at: "2026-09-04T10:00:00.000Z",
+      user_id: "user-1",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      healthDataConsentAt: "2026-09-04T10:00:00.000Z",
+    });
+  });
+
+  it("leaves an account that has not performed the act at null", async () => {
+    // Never inferred from privacy_policy_accepted_at. Every existing account
+    // ticked the OLD bundled checkbox, and the reason this column exists is
+    // that a bundled tick is not the explicit act Art. 9(2)(a) asks for - so
+    // "accepted a policy" must never read as "gave explicit consent".
+    mockPreferenceSelect({
+      privacy_policy_accepted_at: "2026-08-01T10:00:00.000Z",
+      terms_accepted_at: "2026-08-01T10:00:00.000Z",
+      policy_version_accepted: "2026-09-02-donations",
+      user_id: "user-1",
+    });
+
+    const prefs = await getUserPreferences("user-1");
+
+    expect(prefs.healthDataConsentAt).toBeNull();
+    expect(prefs.policyVersionAccepted).toBe("2026-09-02-donations");
+  });
+
+  it("defaults to no consent recorded", () => {
+    expect(defaultUserPreferences.healthDataConsentAt).toBeNull();
+  });
+
+  it("propagates a write failure rather than reporting consent that was not stored", async () => {
+    mockConsentUpsert({ message: "column does not exist" });
+
+    await expect(recordPolicyConsent("user-1", "v9")).rejects.toEqual({
+      message: "column does not exist",
+    });
   });
 });

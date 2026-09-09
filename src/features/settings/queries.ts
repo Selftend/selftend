@@ -1,17 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  mergeUserPreferences,
-  type ButtonTourKey,
-  type UserPreferences,
-} from "@/src/features/modules/types";
+import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import {
   deleteUserAccount,
   exportUserData,
   getUserPreferences,
+  recordAgeAttestation,
   recordPolicyConsent,
   updateOnboardingPreferences,
-  updateShownButtonTours,
   updateUserPreferences,
 } from "@/src/features/settings/repository";
 
@@ -19,10 +15,18 @@ export const preferenceKeys = {
   detail: (userId: string) => ["preferences", userId] as const,
 };
 
+/** The key `useUserPreferences` reads under, for callers that cancel or refetch it by hand. */
+export function preferencesQueryKey(userId: string | null) {
+  return userId ? preferenceKeys.detail(userId) : (["preferences", "anonymous"] as const);
+}
+
 export function useUserPreferences(userId: string | null) {
   return useQuery({
-    queryKey: userId ? preferenceKeys.detail(userId) : ["preferences", "anonymous"],
-    queryFn: () => getUserPreferences(userId!),
+    queryKey: preferencesQueryKey(userId),
+    // ☠️ The signal is passed on, not dropped (#2251): it is how a cancelled
+    // query reaches the socket underneath, and the block screen's Retry relies
+    // on that to restart a hung read rather than de-duplicate into it.
+    queryFn: ({ signal }) => getUserPreferences(userId!, { signal }),
     enabled: Boolean(userId),
   });
 }
@@ -68,24 +72,6 @@ export function useUpdateUserPreferences(userId: string | null) {
   });
 }
 
-export function useUpdateShownButtonTours(userId: string | null) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (shownButtonTours: ButtonTourKey[]) =>
-      updateShownButtonTours(userId!, shownButtonTours),
-    // Both callers treat tour-seen writes as best-effort; a failure must stay invisible.
-    meta: { suppressGlobalErrorToast: true },
-    onSuccess: async () => {
-      if (!userId) {
-        return;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
-    },
-  });
-}
-
 export function useUpdateOnboardingPreferences(userId: string | null) {
   const queryClient = useQueryClient();
 
@@ -108,6 +94,31 @@ export function useRecordPolicyConsent(userId: string | null) {
 
   return useMutation({
     mutationFn: (policyVersion: string) => recordPolicyConsent(userId!, policyVersion),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+/**
+ * Persist a passing age attestation and let the gate fall away (#1764).
+ *
+ * The invalidate is what actually dismisses the gate: `ProtectedLayout` reads
+ * `ageFloorMet === true` off the preferences query, so a refetch is the
+ * dismissal. No local "dismissed" flag, unlike the consent gate beside it -
+ * there is nothing here a person can decline, so there is no state to hold
+ * that the server does not already have.
+ */
+export function useRecordAgeAttestation(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (country: string) => recordAgeAttestation(userId!, country),
+    meta: { suppressGlobalErrorToast: true }, // the gate shows its own error
     onSuccess: async () => {
       if (!userId) {
         return;

@@ -20,6 +20,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
+import { enterKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -62,6 +63,11 @@ export default function SelfCareScreen() {
   const upsertMutation = useUpsertSelfCareLog(user?.id ?? null);
 
   const [form, setForm] = useState<FormState>(emptyForm);
+
+  // One callback per door, shared between the pointer press and the web Enter
+  // handler below, so the two paths cannot drift apart.
+  const openSleep = () => pushWithOrigin("/tools/sleep");
+  const openGratitude = () => pushWithOrigin("/tools/gratitude-log");
 
   // Re-seed the form whenever the loaded log changes (render-time adjustment).
   const [prevExisting, setPrevExisting] = useState(existing);
@@ -132,8 +138,10 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.sleepLinkTitle")}
           accessibilityHint={t("selfCare.sleepLinkDesc")}
-          onPress={() => pushWithOrigin("/tools/sleep")}
+          onPress={openSleep}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+          role="link"
+          {...enterKeyActivationProps(openSleep)}
         >
           <Icon name="bedtime" className="size-6 text-foreground" />
           <View className="flex-1">
@@ -149,8 +157,10 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
           accessibilityHint={t("selfCare.gratitudeLinkDesc")}
-          onPress={() => pushWithOrigin("/tools/gratitude-log")}
+          onPress={openGratitude}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
+          role="link"
+          {...enterKeyActivationProps(openGratitude)}
         >
           <Icon name="favorite" className="size-6 text-foreground" />
           <View className="flex-1">

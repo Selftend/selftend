@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { SignUpForm } from "@/src/components/app/sign-up-form";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignUpScreen() {
@@ -11,9 +12,14 @@ export default function SignUpScreen() {
 
   // Conversion (#1443): only a REGISTERED session redirects. A guest reaching
   // sign-up is exactly who this screen now serves - the unconditional redirect
-  // would make registration unreachable for them - so an `is_anonymous`
-  // session falls through to the form, which renders its conversion mode.
-  if (session && !user?.is_anonymous) {
+  // would make registration unreachable for them - so a guest session falls
+  // through to the form, which renders its conversion mode.
+  //
+  // ⚠️ `isGuestAccount` since #1896, so a JUST-CONVERTED user - whose JWT still
+  // claims `is_anonymous` - is redirected away rather than shown the conversion
+  // form a second time. `SignUpForm`'s own `isConversion` stays on the flag, and
+  // this redirect is what keeps it unreachable where it would be wrong.
+  if (session && !isGuestAccount(user)) {
     return <Redirect href="/(app)" />;
   }
 

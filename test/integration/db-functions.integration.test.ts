@@ -73,7 +73,6 @@ describe("export_user_data() (integration)", () => {
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
         language: "en",
-        selected_concerns: expect.any(Array),
         active_strategies: expect.any(Array),
       },
     });
@@ -122,6 +121,8 @@ describe("export_user_data() (integration)", () => {
     // plan_items was retired in 20260715_routines; the export must not carry it.
     expect("planItems" in data).toBe(false);
     expect(Array.isArray(data.widgetPreferences)).toBe(true);
+    // Favourites sit beside the old dashboard rows they were copied from (#1953).
+    expect(Array.isArray(data.favorites)).toBe(true);
     expect(Array.isArray(data.devicePushTokens)).toBe(true);
     // Reminder preferences for every notification target (20260582 - GDPR completeness:
     // the base 'preferences' block only carried CBT reminders before this).
@@ -658,9 +659,10 @@ describe("schedule_send_web_reminders_cron() - access control + idempotency (int
 // and is its own base table. Kept as logical names so this list reads like the
 // module inventory rather than like the storage layer.
 //
-// `routines` and `routine_steps` are here because the seed's two routines are
-// composed of CBT and ACT practices and are wiped by the same parents-only
-// contract (#1290) - the sixth chain, and the last one to join this guard.
+// `routines` and `routine_steps` are here because the seed's four routines are
+// composed of CBT, ACT and shared-tool practices and are wiped by the same
+// parents-only contract (#1290/#1271) - the sixth chain, and the last one to join
+// this guard.
 const DEMO_SEED_TABLES = [
   // ACT
   "act_action_steps",
@@ -691,6 +693,14 @@ const DEMO_SEED_TABLES = [
   "thought_records",
   "values_profile",
   "worry_entries",
+  // DBT
+  "dbt_coping_plans",
+  "dbt_emotion_records",
+  "dbt_judgements",
+  "dbt_opposite_action_plans",
+  "dbt_scripts",
+  "dbt_sessions",
+  "dbt_wise_mind_checkins",
   // Routines
   "routine_steps",
   "routines",

@@ -8,6 +8,7 @@ import {
   useJournalEntry,
 } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -153,5 +154,49 @@ describe("JournalDetailScreen", () => {
     renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("We couldn't find that journal entry.")).toBeTruthy();
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and this href-less Pressable is a `<div role="link">` the browser
+   * does nothing with, so Tab reached the all-entries link and Enter opened nothing (#1735).
+   * The link brings its own Enter handler: once per press, never on auto-repeat,
+   * never on Space (a link does not activate on Space) - and never on a button,
+   * which react-native-web activates itself; a second handler there would fire
+   * the press twice.
+   *
+   * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+   * on a real `<div role="link">` - is proven once for the helper itself, on the
+   * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+   */
+  describe("the all-entries link on web", () => {
+    beforeEach(() => {
+      setPlatformOS("web");
+    });
+
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("activates on Enter, once, and not on a held key or on Space; no button brings a handler", () => {
+      renderWithProviders(<JournalDetailScreen />);
+
+      const door = screen.getByRole("link", { name: "Show all entries" });
+      const preventDefault = jest.fn();
+      door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
+      expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal/entries");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
+
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const button of buttons) {
+        expect(button.props.onKeyDown).toBeUndefined();
+      }
+    });
   });
 });

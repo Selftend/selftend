@@ -58,6 +58,23 @@ Examples:
 
 **What it is:** Clear, compelling goals transform dissatisfaction into determination. Goals must be specific, measurable, and anchored to personal values - not vague statements like "feel better."
 
+> [!IMPORTANT]
+> **The user-visible noun is "ladder", not "hierarchy", and `SUDS` is never shown
+> to a user.** The child-safety content review
+> ([#1770](https://github.com/Selftend/selftend/issues/1770),
+> [child-safety-review.md](../child-safety-review.md)) found the exposure tool
+> speaking as a therapist-run protocol and unified its copy on the plain word the
+> help content and the programme task already used. The clinical vocabulary below
+> is deliberate and stays: this document is the design record and follows the
+> book, and the data model keeps `ExposureHierarchy` / `hierarchyId` because
+> identifiers are not copy. `test/child-safety-copy.test.ts` fails the build if
+> either word reaches a translated string.
+>
+> ⚠️ One line below is proposed user copy that the review would reject as
+> written: _"Your SUDS went from X to Y. That's your brain learning it's safe."_
+> It shows a raw clinical score and makes a claim about the user's brain. If that
+> screen is built, it needs new copy.
+
 **Key concepts from the book:**
 
 - Find the "right gear" - moderately challenging goals you can sustain (not too easy, not overwhelming)

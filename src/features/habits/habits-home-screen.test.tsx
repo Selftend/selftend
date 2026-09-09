@@ -8,12 +8,9 @@ import { useHabitLogs, useHabits, useToggleHabitLog } from "@/src/features/habit
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { addDays, currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
 import type { HabitLog } from "@/src/features/habits/types";
-import {
-  useUpdateShownButtonTours,
-  useUpdateUserPreferences,
-  useUserPreferences,
-} from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 jest.mock("expo-router", () => ({
@@ -49,7 +46,6 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
-  useUpdateShownButtonTours: jest.fn(),
   useUpdateUserPreferences: jest.fn(),
   useUserPreferences: jest.fn(),
 }));
@@ -65,9 +61,6 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFunction<
-  typeof useUpdateShownButtonTours
->;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -105,10 +98,6 @@ function mockDefaults() {
     isPending: false,
     mutateAsync: jest.fn(),
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-  mockUseUpdateShownButtonTours.mockReturnValue({
-    isPending: false,
-    mutateAsync: jest.fn(),
-  } as unknown as ReturnType<typeof useUpdateShownButtonTours>);
 
   mockUseHabits.mockReturnValue({
     data: [
@@ -759,5 +748,51 @@ describe("HabitsHomeScreen ticked-state contrast", () => {
     // (test/chip-contrast.test.ts), not the decorative `border`.
     expect(style.borderColor).toBe(chip.ink);
     expect(style.borderColor).not.toBe(chip.border);
+  });
+});
+
+/**
+ * react-native-web hands a `link`'s Enter to the browser, expecting a native
+ * anchor - and this href-less Pressable is a `<div role="link">` the browser
+ * does nothing with, so Tab reached the history link and Enter opened nothing (#1735).
+ * The link brings its own Enter handler: once per press, never on auto-repeat,
+ * never on Space (a link does not activate on Space) - and never on a button,
+ * which react-native-web activates itself; a second handler there would fire
+ * the press twice.
+ *
+ * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+ * on a real `<div role="link">` - is proven once for the helper itself, on the
+ * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+ */
+describe("HabitsHomeScreen history link on web", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    setPlatformOS("web");
+  });
+
+  afterEach(() => {
+    setPlatformOS("ios");
+  });
+
+  it("activates on Enter, once, and not on a held key or on Space; no button brings a handler", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const door = await screen.findByRole("link", { name: /View history/i });
+    const preventDefault = jest.fn();
+    door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+    expect(jest.mocked(router).push).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(router).push).toHaveBeenCalledWith("/tools/habits/history");
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+    door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+    expect(jest.mocked(router).push).toHaveBeenCalledTimes(1);
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.props.onKeyDown).toBeUndefined();
+    }
   });
 });

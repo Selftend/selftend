@@ -27,6 +27,7 @@ import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner"
 import { FreshStartNotice } from "@/src/components/app/fresh-start-notice";
 import { KeyboardInsetPublisher } from "@/src/components/app/keyboard-inset-publisher";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
+import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleDriver, useStyleName } from "@/src/lib/style";
 import { useDocumentThemeColor } from "@/src/lib/use-document-theme-color";
@@ -105,6 +106,10 @@ export default Sentry.wrap(function RootLayout() {
               <AppShell />
               <CookieConsentBanner />
               <ReminderPromptCard />
+              {/* After ReminderPromptCard in the tree so its effects run first:
+                  the starter offer reads the reminder card's published
+                  visibility and yields the shared bottom slot (#1677). */}
+              <StarterOfferCard />
               <AppToast />
             </AppErrorBoundary>
             <PortalHost />

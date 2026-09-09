@@ -24,6 +24,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - AI is not part of the MVP user-facing product.
 - The product should remain free to users.
 - Do not propose ad-based monetization or subscription paywalls.
+- Copy that says what Selftend _is_ follows `docs/positioning.md`, and that doc's "Words never to use" table is binding. Read the frame there rather than from a copy here - a cached category noun in this file goes stale the next time positioning moves, and it has. These guardrails outrank it: where positioning and a guardrail conflict, the guardrail wins.
 
 ## Technical defaults
 
@@ -38,6 +39,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - State: TanStack Query for server state, Zustand for local state
 - Forms and validation: React Hook Form + Zod
 - Notifications: Expo Notifications
+- Haptics: Expo Haptics (`expo-haptics`), native-only through `src/lib/native-haptics.ts` — never called on web
 - Secure local secrets: Expo SecureStore
 - Local storage: @react-native-async-storage/async-storage
 - Animation: react-native-reanimated
@@ -74,7 +76,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Require explicit review before adding tracking, analytics, ads, social feeds, or behavioral nudges.
 - Do not write product copy that implies medical outcomes, diagnosis, or emergency support.
 - Safety and crisis guidance should be visible, calm, and clearly separate from the app's self-help features.
-- The product currently targets all ages, so call out any child-safety, moderation, or legal-review burden you notice.
+- Selftend is for people aged 13 and over, or their country's higher floor (14-16 across much of Europe), per `docs/age-floor.md` and `docs/product-principles.md`. The floor is asked before the app opens and is never below 13. There is no minor flag and no parental-consent path: protections are universal, so teen-grade defaults apply to everyone. Call out any child-safety, moderation, or legal-review burden you notice — the bar is higher now, not lower.
 
 ## Email deliverability rule
 
@@ -121,7 +123,7 @@ https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 ## Product discipline
 
 - Do not add task checklists to docs in `docs/`, `supabase/`, or anywhere else - task tracking lives outside the repo.
-- MVP should stay focused on guided self-help.
+- MVP should stay focused on self-help the person runs themselves - the everyday tools and the programmes behind them, with no practitioner in the loop.
 - Community operations can start early outside the app, but community product features should not crowd out MVP utility.
 - Expansion beyond CBT is allowed, but the product should avoid becoming a vague "everything app."
 - Favor depth in a few useful tools over shallow breadth.
@@ -142,7 +144,7 @@ These guide automated PR reviewers (e.g. Codex) and human reviewers alike. Flag 
 
 - **Privacy & safety (highest priority):** personal or health data logged, sent to a third party, or added as a new field without feature-level justification; new tracking/analytics/ads/behavioral nudges without explicit review; product copy implying diagnosis, medical outcomes, or "AI therapist/counselor" framing; crisis/safety guidance made less visible or blended into self-help features.
 - **Security:** secrets, tokens, or keys committed or hardcoded; Supabase changes with missing/incorrect RLS, queries that bypass row ownership, or service-role usage reachable from the client; untrusted input reaching SQL, file paths, or HTML sinks without validation; Zod validation removed or weakened on external input.
-- **Retention & product guardrails:** default-on streaks, reminders, or notifications; punitive "missed day" mechanics; manipulative retention; notifications that aren't explicit, quiet-by-default, and easy to disable. Unprompted modals are permitted only when triggered by a fact about the app (never the user's behaviour or absence), at most once per fact, dismissible by every close path, and the irreversible action is never the default (`docs/adr/0003-update-offer-is-a-modal.md`).
+- **Retention & product guardrails:** default-on streaks, reminders, or notifications; punitive "missed day" mechanics; manipulative retention; notifications that aren't explicit, quiet-by-default, and easy to disable. Unprompted modals are permitted only when triggered by a fact about the app (never the user's behaviour or absence), at most once per fact, dismissible by every close path, and the irreversible action is never the default (`docs/adr/0003-update-offer-is-a-modal.md`). Also: surfaces engineered to be reopened rather than finished — copy prescribing a return ("come back tomorrow"), content varying by date or visit on an unchanged surface, loss-framed progress, or any non-use-triggered contact; the bar is "fulfilling, and done" (`docs/product-principles.md` §12, `docs/adr/0004-retention-by-return-not-engagement.md`).
 - **i18n:** user-visible strings hardcoded in components instead of translation files; new screens/features missing keys in the relevant namespace for supported languages.
 - **Correctness & tests:** tests weakened or assertions rewritten to match broken behavior (call this out explicitly); a feature or bugfix landing without corresponding test coverage; TanStack Query / Zustand misuse (stale cache keys, mutations that don't invalidate) and violations of the Reanimated / React hooks rules.
 - **Dependencies:** a new third-party dependency where an Expo built-in or approved dependency would do, or with unclear maintenance/privacy cost; code or text copied from the reference repos (`../ifme`, `../quirk`, `../awesome-mental-health`) without license tracking.

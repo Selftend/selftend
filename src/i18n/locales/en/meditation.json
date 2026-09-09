@@ -130,7 +130,7 @@
     },
     "insights": {
       "title": "Reflect",
-      "subtitle": "The last {{count}} days of practice - no scores.",
+      "subtitle": "A look back over the last {{count}} days of practice.",
       "totalSessions": "Sessions",
       "totalMinutes": "Total time",
       "sessionCount_one": "{{count}} sit",
@@ -285,7 +285,7 @@
     "welcome": {
       "title": "The path to awakening",
       "subtitle": "Ten stages, four milestones - a practice, not a finish line.",
-      "body": "The training is organized as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
+      "body": "The training is organised as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
       "continue": "Begin"
     },
     "attention": {
@@ -348,7 +348,7 @@
       "goal": "Develop a regular, consistent meditation practice.",
       "obstacles": "Resistance, procrastination, fatigue, impatience, boredom, lack of motivation.",
       "skills": "Building routines and setting specific practice goals. The Six-Point Preparation primes each sit; the Four-Step Transition gently narrows attention into the breath.",
-      "mastery": "Never missing a daily practice session except when truly unavoidable.",
+      "mastery": "A daily practice is established - sitting happens even on the days you don't feel like it.",
       "prompts": {
         "didSit": "Did you sit today?",
         "duration": "How long was the sit?",
@@ -394,7 +394,7 @@
     "s5": {
       "short": "Overcoming subtle dullness",
       "goal": "Overcome subtle dullness and increase the power of mindfulness.",
-      "obstacles": "Subtle dullness is hard to recognize, creates an illusion of stability, and is seductively pleasant.",
+      "obstacles": "Subtle dullness is hard to recognise, creates an illusion of stability, and is seductively pleasant.",
       "skills": "Vigilant introspective awareness to detect subtle dullness. The body-scanning technique refreshes mindfulness without sacrificing stability.",
       "mastery": "Mindfulness can be sustained or even increased through the course of each sit.",
       "prompts": {

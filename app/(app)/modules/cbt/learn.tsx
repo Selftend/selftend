@@ -31,6 +31,21 @@ export default function LearnScreen() {
             </CardHeader>
           </Card>
 
+          {/*
+           * Pace and mode, in the framework's voice: the one place the over-use
+           * answer is taught, static by ruling, with the professional door as the
+           * last sentence and nothing behind it. Why static, and why here:
+           * ADR-0004 § "The over-use obligation" (#1659 → #1671).
+           */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("learn.pacing.title")}</CardTitle>
+              <CardDescription>{t("learn.pacing.rhythm")}</CardDescription>
+              <CardDescription>{t("learn.pacing.mode")}</CardDescription>
+              <CardDescription>{t("learn.pacing.signs")}</CardDescription>
+            </CardHeader>
+          </Card>
+
           {distortionDefinitions.map((distortion) => (
             <Card key={distortion.key}>
               <CardHeader>

@@ -16,32 +16,32 @@
     "statBeliefShift_other": "points mean belief shift"
   },
   "program": {
-    "startTitle": "Your CBT program",
+    "startTitle": "Your CBT programme",
     "startDescription": "A guided journey through the CBT process - from assessment to lasting resilience - using the tools in this module. Go at your own pace.",
-    "startCta": "Start program",
-    "dismissStartLabel": "Hide the program invitation",
-    "showPromptLabel": "Show the CBT program invitation",
-    "heroTitle": "Your Program",
-    "graduationTitle": "Program complete",
-    "graduationBody": "You built real momentum. Here's what you did:",
+    "startCta": "Start programme",
+    "dismissStartLabel": "Hide the programme invitation",
+    "showPromptLabel": "Show the CBT programme invitation",
+    "heroTitle": "Your Programme",
+    "graduationTitle": "Programme complete",
+    "graduationBody": "You built real skills. Here's what you did:",
     "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "statThoughtRecords": "{{count}} thought records",
     "statActivities": "{{count}} activities completed",
     "statGoals": "{{count}} goals set",
     "statBeliefs": "{{count}} beliefs examined",
-    "graduationDismiss": "Continue with my tools",
-    "replay": "Replay the program",
-    "abandon": "Abandon program",
-    "manageLabel": "Program options",
-    "abandonTitle": "Abandon this program?",
-    "abandonDescription": "This only stops the program tracking. Your saved thought records, activities, goals, and logs stay in place.",
-    "abandonConfirm": "Abandon program",
+    "graduationDismiss": "Done",
+    "replay": "Replay the programme",
+    "abandon": "Abandon programme",
+    "manageLabel": "Programme options",
+    "abandonTitle": "Abandon this programme?",
+    "abandonDescription": "This only stops the programme tracking. Your saved thought records, activities, goals, and logs stay in place.",
+    "abandonConfirm": "Abandon programme",
     "abandonCancel": "Keep going",
     "weeks": {
       "assessment": {
         "title": "Understand where you are",
         "sub": "Assessment",
-        "description": "Map the problem, set goals, clarify your values, and start noticing how you think, feel and act day to day."
+        "description": "Start noticing how you think, feel and act day to day, and alongside that map the problem, set goals and clarify your values."
       },
       "formulation": {
         "title": "See how the problem works",
@@ -87,7 +87,7 @@
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
     "noDailyPractice": "No daily task this phase - take your time with the step above.",
-    "graduateCta": "Finish the program"
+    "graduateCta": "Finish the programme"
   },
   "dashboard": {
     "activeGoals": "Active goals",
@@ -119,7 +119,7 @@
     "strategies": {
       "title": "Strategies",
       "goals": "Goal Setting",
-      "activities": "Behavioral Activation",
+      "activities": "Behavioural Activation",
       "thoughts": "Thought Records",
       "values": "Values",
       "beliefs": "Core Beliefs",
@@ -146,7 +146,7 @@
       "letter": "A",
       "title": "Act",
       "sub": "Behavioural",
-      "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
+      "description": "Action precedes motivation. Schedule meaningful behaviour, expose yourself gradually to what you avoid, and watch mood follow."
     },
     "be": {
       "letter": "B",
@@ -193,10 +193,7 @@
     "reflection": {
       "title": "Reflection prompt",
       "description": "One question to sit with before the next week begins.",
-      "prompt1": "What is one thing that went better than expected this week?",
-      "prompt2": "Where did you notice yourself being hardest on yourself? What would you say to a friend in the same situation?",
-      "prompt3": "Which activity gave you the most energy or sense of accomplishment?",
-      "prompt4": "What is one small thing you would like to do differently next week?"
+      "prompt": "What is one thing that went better than expected this week?"
     }
   },
   "beliefs": {
@@ -266,38 +263,38 @@
     "title": "Anxiety & exposure",
     "description": "Build a step-by-step plan to face anxiety, one manageable step at a time.",
     "loading": "Loading...",
-    "empty": "No hierarchies yet",
-    "emptyDescription": "Build your first exposure hierarchy when you're ready to start.",
-    "new": "New hierarchy",
-    "newTitle": "Build an exposure hierarchy",
+    "empty": "No ladders yet",
+    "emptyDescription": "Build your first exposure ladder when you're ready to start.",
+    "new": "New ladder",
+    "newTitle": "Build an exposure ladder",
     "newDescription": "Name the anxiety, then list steps from easier to harder.",
-    "save": "Save hierarchy",
+    "save": "Save ladder",
     "saving": "Saving...",
-    "saveError": "Unable to save the hierarchy.",
+    "saveError": "Unable to save the ladder.",
     "back": "Back",
     "continue": "Continue",
-    "notFound": "Hierarchy not found",
+    "notFound": "Ladder not found",
     "noItems": "No steps logged yet.",
     "step1": "1. About",
     "step2": "2. Steps",
     "hierarchyTitle": "Title",
     "hierarchyTitlePlaceholder": "Example: Driving on the highway",
     "anxietyType": "Type of anxiety",
-    "anxietyTypeHint": "Helps you find the hierarchy later. Free-text.",
+    "anxietyTypeHint": "Helps you find the ladder later. Free-text.",
     "anxietyTypePlaceholder": "Example: Driving, social, specific phobia",
-    "itemsLabel": "Hierarchy steps",
-    "itemsHint": "Add at least one step. Rate each by anticipated anxiety (SUDS, 0-100).",
+    "itemsLabel": "Ladder steps",
+    "itemsHint": "Add at least one step. Rate each by how anxious you expect to feel, from 0 to 100.",
     "itemNumber": "Step {{n}}",
     "itemDescription": "Step description",
     "itemDescriptionPlaceholder": "Describe what you would do.",
-    "itemSuds": "Anticipated SUDS (0-100)",
+    "itemSuds": "Expected anxiety (0-100)",
     "itemSudsHint": "0 = no anxiety, 100 = maximum.",
     "addItem": "Add step",
     "removeItem": "Remove",
     "worryLink": "Worry journal",
     "worryLinkDescription": "Work through worries by writing them down and testing their grip.",
     "item": {
-      "sudsLabel": "Estimated SUDS: {{value}}",
+      "sudsLabel": "Expected anxiety: {{value}}",
       "completed": "completed",
       "recentSessions": "Recent sessions",
       "sessionSummary": "Pre {{pre}} → Post {{post}} · {{duration}} min",
@@ -306,25 +303,25 @@
     },
     "session": {
       "title": "Exposure session",
-      "preSuds": "Pre-exposure SUDS (0-100)",
+      "preSuds": "Anxiety before (0-100)",
       "preSudsHint": "How anxious you felt before starting.",
-      "postSuds": "Post-exposure SUDS (0-100)",
+      "postSuds": "Anxiety after (0-100)",
       "postSudsHint": "How anxious you felt after.",
       "duration": "Duration (minutes)",
-      "safetyBehaviorsUsed": "I used safety behaviors",
-      "safetyBehaviorDescription": "Which safety behaviors?",
+      "safetyBehaviorsUsed": "I used safety behaviours",
+      "safetyBehaviorDescription": "Which safety behaviours?",
       "safetyBehaviorPlaceholder": "Example: Stayed near the exit, looked at my phone.",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Anything worth remembering for next time.",
       "save": "Save session",
       "saveError": "Unable to save the session. Try again."
     },
-    "deleteHierarchy": "Delete hierarchy",
-    "deleteTitle": "Delete this hierarchy?",
-    "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone.",
-    "deleteError": "Unable to delete the hierarchy. Try again.",
+    "deleteHierarchy": "Delete ladder",
+    "deleteTitle": "Delete this ladder?",
+    "deleteMessage": "This permanently removes the ladder and all of its steps and session history. This can't be undone.",
+    "deleteError": "Unable to delete the ladder. Try again.",
     "validation": {
-      "title": "Give the hierarchy a title.",
+      "title": "Give the ladder a title.",
       "anxietyType": "Name the type of anxiety.",
       "itemDescription": "Describe the exposure step.",
       "items": "Add at least one step."
@@ -453,7 +450,7 @@
     "emptyDescription": "Try another date, or log an episode to start spotting patterns.",
     "new": "New entry",
     "newTitle": "New anger log",
-    "newDescription": "Walk through the cycle: trigger, interpretation, urge, behavior, consequence.",
+    "newDescription": "Walk through the cycle: trigger, interpretation, urge, behaviour, consequence.",
     "save": "Save entry",
     "saving": "Saving...",
     "saveError": "Unable to save the entry.",
@@ -468,7 +465,7 @@
     "triggerHint": "Be specific about the event.",
     "triggerPlaceholder": "Example: My partner left dishes in the sink again.",
     "interpretation": "What did you tell yourself about it?",
-    "interpretationHint": "The interpretation that fueled the anger.",
+    "interpretationHint": "The interpretation that fuelled the anger.",
     "interpretationPlaceholder": "Example: They don't respect my time.",
     "arousalLevel": "Arousal level (1-10)",
     "arousalLevelHint": "How intense did the anger feel?",
@@ -502,7 +499,7 @@
   },
   "selfCare": {
     "title": "Self-care today",
-    "description": "A quick check-in for {{date}}. Save now and come back tomorrow.",
+    "description": "A quick daily check-in for {{date}}.",
     "loading": "Loading today's log...",
     "save": "Save log",
     "update": "Update log",
@@ -576,7 +573,7 @@
     "removeKey": "Remove",
     "keyPlaceholder": "Example: Take a walk before deciding what the day means.",
     "personalSlogan": "Personal slogan",
-    "personalSloganHint": "A short phrase that captures the way you want to keep practicing.",
+    "personalSloganHint": "A short phrase that captures the way you want to keep practising.",
     "personalSloganPlaceholder": "Example: Notice, choose, begin again.",
     "strategyNotes": "Strategy integration notes",
     "strategyNotesHint": "Write how each active strategy connects with the rest of your toolkit.",
@@ -595,7 +592,7 @@
     "removeCopingStep": "Remove",
     "copingStepPlaceholder": "Example: Text one trusted person before isolating.",
     "maintenanceCommitments": "Maintenance commitments",
-    "maintenanceCommitmentsHint": "Small practices you want to keep, without pressure or punishment.",
+    "maintenanceCommitmentsHint": "Small practices you want to keep, in whatever form fits your week.",
     "addCommitment": "Add commitment",
     "removeCommitment": "Remove",
     "commitmentPlaceholder": "Example: Do a weekly review on Sunday.",
@@ -617,39 +614,41 @@
   },
   "learn": {
     "title": "Thinking patterns",
-    "description": "Short explanations of the common thinking patterns to watch for. Sometimes called cognitive distortions.",
+    "description": "Short explanations of the common thinking patterns to watch for. Sometimes called cognitive distortions. Naming the pattern makes an automatic thought easier to challenge and let go.",
     "useGently": "Use gently",
-    "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself."
+    "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself.",
+    "pacing": {
+      "title": "How much, and how",
+      "rhythm": "CBT works between sessions, in the life the records are about. More records in a day is not more progress. The programme's own rhythm is the pace: check-ins, a thought record when a feeling shifts, a review once a week.",
+      "mode": "A record helps when it moves from \"why am I like this\" toward \"what is the evidence\". Concrete beats abstract, and naming the thought alongside the feeling beats sitting in the feeling alone.",
+      "signs": "The signs it has stopped helping: re-opening the same thought to feel certain, or challenging that has become checking. Either of those, or reflection that consistently leaves you worse, is a pattern worth bringing to a professional."
+    }
   },
   "onboarding": {
     "intro": {
-      "title": "The CBT Toolkit: Think, Act, and Be Your Way to Better Mental Health",
-      "subtitle": "CBT is a solution-focused therapy based on the connection between thoughts, feelings and behaviours. This section breaks down the core Think, Act, Be pillars and the essential self-care habits required to retrain the brain for lasting emotional well-being.",
+      "title": "CBT: Think, Act, Be",
+      "subtitle": "CBT is a solution-focused therapy based on the connection between thoughts, feelings and behaviours. This section covers the three pillars - Think, Act, Be - and the everyday self-care habits that sit alongside them.",
       "actTitle": "ACT: Lead with Action",
       "actBody": "Gradually re-engage in rewarding activities to build 'pleasure and mastery,' even when motivation is low.",
       "thinkTitle": "THINK: Challenge Negative Patterns",
       "thinkBody": "Identify negative automatic thoughts and test them against objective facts to find more accurate perspectives.",
       "beTitle": "BE: Practice Mindful Presence",
-      "beBody": "Cultivate non-judgmental awareness of the present moment to disengage from rumination and future-oriented worries.",
+      "beBody": "Cultivate non-judgemental awareness of the present moment to disengage from rumination and future-oriented worries.",
       "toolsTitle": "Tools for Lasting Change",
       "beliefsTitle": "Core Beliefs (Schemas)",
       "beliefsBody": "Uncover the deep-rooted mental 'maps' that act as filters, often causing us to ignore positive data.",
       "exposureTitle": "The Power of Exposure",
       "exposureBody": "Systematically face fears to teach the brain that the perceived danger is exaggerated and manageable.",
       "sleepTitle": "The 7-9 Hour Sleep Target",
-      "sleepBody": "Prioritise restorative sleep to regulate the limbic system and improve daytime emotional resilience.",
-      "tableIntro": "The table below describes what CBT is clinically used for. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
+      "sleepBody": "Protect your sleep. Rest is what most of the rest of this leans on, and short nights make everything else harder.",
+      "tableIntro": "The table below shows what CBT is most often used for, and what it focuses on in each. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
       "tableCondition": "Condition",
-      "tableCoreFeature": "Core Feature",
       "tableCbtFocus": "CBT Focus",
-      "tableRow1Condition": "GAD",
-      "tableRow1Feature": "Chronic Worry",
+      "tableRow1Condition": "Generalised Anxiety Disorder",
       "tableRow1Focus": "Embracing uncertainty and present-moment focus",
       "tableRow2Condition": "Panic Disorder",
-      "tableRow2Feature": "Fear of Sensations",
       "tableRow2Focus": "Controlling breath and facing physical symptoms",
       "tableRow3Condition": "Depression",
-      "tableRow3Feature": "Negative Filter",
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
       "continue": "Got it"
     }
@@ -937,7 +936,7 @@
     },
     "orderly": {
       "label": "Orderly",
-      "description": "Planning, prioritising and being organized in my life."
+      "description": "Planning, prioritising and being organised in my life."
     },
     "patient": {
       "label": "Patient",
@@ -1330,6 +1329,10 @@
           "Wrists first, if splashing your face feels like too much.",
           "Count slowly if it helps — the sharpness fades as you stay with it.",
           "No rush. Let drying off be part of the exercise."
+        ],
+        "caution": [
+          "Cool tap water, not ice on skin. Keep breathing normally, and stop if it hurts — four minutes is the most, and this exercise asks thirty seconds. Not while driving.",
+          "If you have a heart or blood-pressure condition or are pregnant, check with a doctor first."
         ]
       },
       "feet-floor": {
@@ -1357,7 +1360,7 @@
       },
       "when": {
         "title": "When to use grounding",
-        "body": "Anxiety spirals, overwhelm, racing thoughts, dissociation, or any moment when the present feels hard to reach. Grounding is not a cure - it's a circuit breaker."
+        "body": "Anxiety spirals, overwhelm, racing thoughts, feeling unreal or far away, or any moment when the present feels hard to reach. Grounding is not a cure - it's a circuit breaker."
       },
       "how": {
         "title": "How it works",
@@ -1447,7 +1450,7 @@
       "patternLabel": "Breathing pattern",
       "suggestedLabel": "Suggested patterns",
       "cyclesLabel": "Breath cycles & duration",
-      "colorLabel": "Exercise card color",
+      "colorLabel": "Exercise card colour",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving...",
@@ -1484,13 +1487,13 @@
       },
       "4-7-8": {
         "title": "4-7-8 breathing",
-        "shortDescription": "A longer exhale that down-regulates the nervous system quickly.",
+        "shortDescription": "A longer exhale out than in, which settles the body quickly.",
         "benefit": "The extended hold and slow exhale trigger the relaxation response."
       },
       "coherent-breathing": {
         "title": "Coherent breathing",
         "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
-        "benefit": "Maximises heart rate variability and reduces anxiety over time."
+        "benefit": "A slow, even rhythm that most people find steadying after a few minutes."
       }
     },
     "sounds": {
@@ -1500,20 +1503,25 @@
       "ambientLabel": "Ambient",
       "breathVolume": "Breath volume",
       "ambientVolume": "Ambient volume",
+      "hapticLabel": "Vibration",
+      "hapticHint": "A tap for each bell and each breath phase, alongside the sound or instead of it.",
       "pickBreath": "Choose a breath sound",
       "pickAmbient": "Choose an ambient sound",
       "none": "None",
       "breath": {
-        "guided": "Guided voice",
-        "soft": "Soft breath",
-        "ocean": "Ocean swell",
-        "wind": "Wind"
+        "guided": "Guided voice (female)",
+        "guidedMale": "Guided voice (male)"
       },
       "ambient": {
         "rain": "Rain",
+        "ocean": "Ocean",
+        "stream": "Stream",
         "forest": "Forest",
         "night": "Night",
-        "brown": "Brown noise"
+        "fire": "Fireplace",
+        "brown": "Brown noise",
+        "pink": "Pink noise",
+        "white": "White noise"
       }
     },
     "overview": {

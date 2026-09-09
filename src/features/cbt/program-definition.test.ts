@@ -40,6 +40,11 @@ describe("CBT_PROGRAM", () => {
     expect(withoutPractice).toEqual(["formulation"]);
   });
 
+  it("marks assessment, and only assessment, to lead with its daily practice (#1676)", () => {
+    const leading = CBT_PROGRAM.filter((p) => p.leadsWithDailyPractice === true).map((p) => p.key);
+    expect(leading).toEqual(["assessment"]);
+  });
+
   it("has all unique task keys across milestones and dailyPractice", () => {
     const keys = new Set<string>();
     for (const phase of CBT_PROGRAM) {

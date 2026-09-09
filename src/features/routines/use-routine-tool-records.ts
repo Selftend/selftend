@@ -20,6 +20,14 @@ import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import {
+  useDbtSessions,
+  useEmotionRecords,
+  useJudgements,
+  useOppositeActionPlans,
+  useScripts,
+  useWiseMindCheckins,
+} from "@/src/features/dbt/queries";
 import { lastNDayKeys } from "@/src/utils/date";
 
 // The 7-day strip (#49) derives status for the last 7 local days, so every
@@ -112,6 +120,19 @@ export function useRoutineToolRecords(
   const { data: committedActions } = useCommittedActions(wants("committedAction"));
   const { data: actionSteps } = useAllActionSteps(wants("committedAction"));
 
+  // DBT (#1980). Every DBT list key includes its limit, so this wide window
+  // cannot collide with the 30/50-row list screens or the programme's own
+  // reads - the same property the ACT hooks above rely on.
+  const { data: dbtSessions } = useDbtSessions(wants("muscleRelaxation"), RECENT_LIST_LIMIT);
+  const { data: dbtWiseMindCheckins } = useWiseMindCheckins(wants("wiseMind"), RECENT_LIST_LIMIT);
+  const { data: dbtJudgements } = useJudgements(wants("judgement"), RECENT_LIST_LIMIT);
+  const { data: dbtEmotionRecords } = useEmotionRecords(wants("emotionRecord"), RECENT_LIST_LIMIT);
+  const { data: dbtOppositeActionPlans } = useOppositeActionPlans(
+    wants("oppositeAction"),
+    RECENT_LIST_LIMIT,
+  );
+  const { data: dbtScripts } = useScripts(wants("script"), RECENT_LIST_LIMIT);
+
   return {
     moodLogs,
     journalEntries,
@@ -132,5 +153,11 @@ export function useRoutineToolRecords(
     choicePoints,
     committedActions,
     actionSteps,
+    dbtSessions,
+    dbtWiseMindCheckins,
+    dbtJudgements,
+    dbtEmotionRecords,
+    dbtOppositeActionPlans,
+    dbtScripts,
   };
 }

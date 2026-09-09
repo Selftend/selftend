@@ -120,7 +120,6 @@ describe("ScreenEscape - an off-trail Origin", () => {
   it("still shows Up when the Origin is already on this screen's trail", () => {
     mockUsePathname.mockReturnValue("/modules/cbt/history");
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Modules", href: "/modules" },
       { label: "CBT", href: "/modules/cbt" },
       { label: "History" },
     ]);
@@ -173,7 +172,6 @@ describe("ScreenEscape - an off-trail Origin", () => {
   it("withholds the name under the close glyph but still leads to the Origin", () => {
     mockUsePathname.mockReturnValue("/tools/journal/new");
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Journal", href: "/tools/journal" },
       { label: "New" },
     ]);

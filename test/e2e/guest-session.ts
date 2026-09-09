@@ -55,11 +55,32 @@ export async function mintGuestSession() {
  * Mint a guest, normalize its gate prefs, and plant the session in the page
  * before any app code runs. Returns the guest's user id for cleanup.
  *
- * The consent/onboarding gates would otherwise fire first thing inside the
+ * The age/consent/onboarding gates would otherwise fire first thing inside the
  * shell. email_verified deliberately stays at its false default: for the
  * conversion journey the post-conversion verify banner is part of the
  * assertions, and for the chrome journey a false flag is exactly what would
  * expose a broken guest guard on the banner.
+ *
+ * ☠️ A GUEST MEETS THE AGE GATE, and that is the product's intent, not a bug
+ * (#1764: the gate sits above the consent gate precisely so it covers all four
+ * entry paths, the silent `signInAnonymously` guest included). So the choice
+ * of who answers it is made per spec rather than once:
+ *
+ * - `landing-guest-entry` presses the landing CTA, mints its guest through the
+ *   app, and ANSWERS the form. It is the only place in the suite that proves
+ *   the gate covers the guest path, so it must keep seeing the gate and nothing
+ *   here may pre-empt it - which nothing does, because it never calls this.
+ * - The specs that come through here (guest-chrome, guest-conversion,
+ *   guest-signin-abandon) start PRE-ATTESTED, via `NORMALIZED_GATE_PREFS`.
+ *   Their subject is what a guest can and cannot do once inside - the header
+ *   chrome, the conversion journey, the abandoned sign-in - and every one of
+ *   those journeys begins after the gate a real guest already answered. Making
+ *   each re-answer the form would add six identical interactions of setup to
+ *   assertions about a different screen, and would duplicate the one spec that
+ *   owns the gate rather than strengthen it.
+ *
+ * Either way the guest is an account that HAS answered; neither path is a
+ * bypass, and no spec reaches the shell as an unattested new account.
  */
 export async function startGuestSession(page: Page): Promise<string> {
   const minted = await mintGuestSession();

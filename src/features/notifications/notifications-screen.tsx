@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -20,14 +21,14 @@ import {
 } from "@/src/features/notifications/notification-target-row";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
-import { cancelAllReminders } from "@/src/lib/notifications";
+import { cancelAllReminders, reminderChannelUnsupportedReason } from "@/src/lib/notifications";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 /** Which control owns the open permission prompt, if any. */
-type PendingControl = "master" | NotificationTargetKey | null;
+type PendingControl = "master" | "channel" | NotificationTargetKey | null;
 
 /**
  * The three nested offsets that add up to the arrived-at row's position in the scroll
@@ -145,6 +146,58 @@ export default function NotificationsScreen() {
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
   const masterPending = pendingControl === "master";
 
+  /**
+   * Reminders switched on, and a browser that was never asked (#2263).
+   *
+   * ☠️ The cohort the missing VAPID key created. With an empty key the channel
+   * read `unsupported`, so `NotificationTargetRow` took its "pure column write"
+   * branch: the switch went on, `ensure()` was never called, the browser was
+   * never prompted, and no `web_push_subscriptions` row was ever made. Shipping
+   * the key moves exactly those people to `prompt-needed` - out of the one
+   * status the page speaks on - with every switch still on and nothing arriving,
+   * indefinitely. `reconcileWebReminderChannel` cannot reach them either: it is
+   * gated on `granted`, by design, so it repairs rather than asks.
+   *
+   * ⚠️ WEB ONLY. On native `prompt-needed` is also the conservative value
+   * `peekReminderChannelStatus` returns before the async read lands, so this
+   * card would flash on every visit for someone whose permission is granted.
+   *
+   * ☠️ ITS TITLE NAMES THIS BROWSER, and that is a correctness constraint on
+   * the copy rather than a preference. Every input here except `channel.status`
+   * is ACCOUNT-WIDE - `notifications_enabled_global` and the per-target
+   * `*_reminders_enabled` columns all live on `user_preferences` and are shared
+   * across devices - while `channel.status` is per-browser. So this card also
+   * renders for somebody whose reminders arrive perfectly well on their phone
+   * and who has just opened a laptop that was never asked. The title used to
+   * read "Your reminders aren't arriving", which is false for that person in
+   * the one line a scanner reads, and pushed them at a browser permission they
+   * may deliberately not want. The body already said "this browser"; the title
+   * says it too.
+   */
+  const needsChannelRepair =
+    Platform.OS === "web" &&
+    globalEnabled &&
+    channel.status === "prompt-needed" &&
+    Boolean(preferences) &&
+    NOTIFICATION_TARGETS.some((target) => readEnabled(preferences!, target));
+  const channelPending = pendingControl === "channel";
+
+  async function handleArmChannel() {
+    if (!userId || pendingControl) return;
+    setPendingControl("channel");
+    try {
+      // A repair, not a save: the columns already say what the person asked for,
+      // so nothing here writes a preference.
+      const result = await channel.ensure();
+      if (!result.enabled) {
+        const message = t(reminderChannelErrorKey(result.reason));
+        showToast({ title: t("common:feedback.wentWrong"), description: message, tone: "error" });
+      }
+    } finally {
+      setPendingControl(null);
+    }
+  }
+
   async function writeMaster(next: boolean) {
     try {
       await updatePreferences.mutateAsync({ notificationsEnabledGlobal: next });
@@ -212,12 +265,76 @@ export default function NotificationsScreen() {
             </Text>
           </View>
 
+          {/* ☠️ ITS TITLE NAMES THIS BROWSER OR DEVICE, for the reason the
+              `prompt-needed` card below spells out (#2263): `channel.status` is
+              the one per-browser/per-device input on a screen whose every other
+              input is account-wide, so this card also renders for somebody whose
+              reminders are arriving perfectly well on their phone. "Notifications
+              are turned off" told that person, in the one line a scanner reads,
+              that their notifications were off - directly above a master switch
+              labelled "Notifications enabled" that is ON, and above its own body,
+              which named the browser correctly all along. Split per platform like
+              the body it sits over (`reminderChannelErrorKey`), and written as
+              two literal keys rather than one computed one so the i18n coverage
+              gate can still see both. */}
           {channel.status === "blocked" ? (
-            <View className="gap-1 rounded-xl border border-border bg-card p-4">
-              <Text className="text-[15px] font-semibold">{t("channel.blockedTitle")}</Text>
+            <View
+              testID="notification-channel-blocked"
+              className="gap-1 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">
+                {Platform.OS === "web"
+                  ? t("channel.blockedTitleWeb")
+                  : t("channel.blockedTitleNative")}
+              </Text>
               <Text variant="muted" className="text-[13px]">
                 {t(reminderChannelErrorKey("permission-denied"))}
               </Text>
+            </View>
+          ) : null}
+
+          {/* `unsupported` writes the columns just like `blocked` does, and for the same
+              reason - but it used to say nothing at page level (#2263), so a web build with
+              no VAPID key let every switch go on and delivered none of them. The sentence
+              names the actual reason: the build's missing key, or this browser/device. */}
+          {channel.status === "unsupported" ? (
+            <View
+              testID="notification-channel-unsupported"
+              className="gap-1 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">{t("channel.unsupportedTitle")}</Text>
+              <Text variant="muted" className="text-[13px]">
+                {t(reminderChannelErrorKey(reminderChannelUnsupportedReason()))}
+              </Text>
+            </View>
+          ) : null}
+
+          {needsChannelRepair ? (
+            <View
+              testID="notification-channel-needs-permission"
+              className="gap-2 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">{t("channel.needsPermissionTitle")}</Text>
+              <Text variant="muted" className="max-w-[64ch] text-[13px]">
+                {t("channel.needsPermissionBody")}
+              </Text>
+              {channelPending ? (
+                <ActivityIndicator
+                  testID="notification-channel-pending"
+                  accessibilityLabel={t("channel.requesting")}
+                />
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  accessibilityLabel={t("channel.needsPermissionAction")}
+                  disabled={Boolean(pendingControl)}
+                  onPress={() => void handleArmChannel()}
+                >
+                  <Text>{t("channel.needsPermissionAction")}</Text>
+                </Button>
+              )}
             </View>
           ) : null}
 
@@ -297,7 +414,7 @@ export default function NotificationsScreen() {
                       key={`skeleton-${target.key}`}
                       className={cn(index > 0 && "border-t border-border")}
                     >
-                      <NotificationRowSkeleton targetKey={target.key} />
+                      <NotificationRowSkeleton target={target} />
                     </View>
                   ))}
             </View>

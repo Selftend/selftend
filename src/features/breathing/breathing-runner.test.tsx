@@ -1,6 +1,7 @@
-import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
+import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -54,17 +55,60 @@ jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }
 
 // breathSoundId "none" => no spoken intro, so Start goes straight to the active
 // screen. A test that needs the preroll swaps in "guided" (which has an intro).
-const mockPrefs = { breathSoundId: "none", ambientSoundId: "none" };
-jest.mock("@/src/features/settings/queries", () => ({
-  useUserPreferences: () => ({ data: mockPrefs }),
-  useUpdateUserPreferences: () => ({
-    mutateAsync: jest.fn().mockResolvedValue(undefined),
-    isPending: false,
+const mockPrefs: { breathSoundId: string; ambientSoundId: string; breathVolume?: number } = {
+  breathSoundId: "none",
+  ambientSoundId: "none",
+};
+// Set a `user_preferences` row here to bypass `mockPrefs` and read through the REAL
+// repository and query hook instead (mocked database -> mapper -> query -> screen),
+// for a test about what the mapper does to a stored id (#1745). Null = `mockPrefs`.
+let mockStoredRow: Record<string, unknown> | null = null;
+jest.mock("@/src/lib/supabase", () => ({
+  requireSupabase: () => ({
+    from: () => ({
+      select: () => ({
+        // `.abortSignal()` since #2251: the preferences read carries the
+        // query's signal so a cancelled read stops on the wire.
+        eq: () => ({
+          abortSignal: () => ({
+            maybeSingle: async () => ({ data: mockStoredRow, error: null }),
+          }),
+        }),
+      }),
+    }),
   }),
 }));
+jest.mock("@/src/features/settings/queries", () => {
+  const actual = jest.requireActual<typeof import("@/src/features/settings/queries")>(
+    "@/src/features/settings/queries",
+  );
+  return {
+    useUserPreferences: () => {
+      // Called unconditionally (hooks rule); a null user id disables the query.
+      const real = actual.useUserPreferences(mockStoredRow ? "user-1" : null);
+      return mockStoredRow ? real : { data: mockPrefs };
+    },
+    useUpdateUserPreferences: () => ({
+      mutateAsync: jest.fn().mockResolvedValue(undefined),
+      isPending: false,
+    }),
+  };
+});
 jest.mock("@/src/features/breathing/use-breathing-audio", () => ({
   useBreathingAudio: () => {},
-  playIntroCue: () => {},
+}));
+
+// The spoken intro is loaded while setup shows and only played at Start (#1744).
+// One fake per preparation, so a test can tell "loaded ahead" from "played" and
+// count what was let go.
+const mockPrepareOneShot = jest.fn();
+const mockIntroPlay = jest.fn();
+const mockIntroRelease = jest.fn();
+jest.mock("@/src/lib/native-audio", () => ({
+  prepareOneShot: (asset: number) => {
+    mockPrepareOneShot(asset);
+    return { play: mockIntroPlay, release: mockIntroRelease };
+  },
 }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -89,6 +133,11 @@ beforeEach(() => {
   mockSaveMutateAsync.mockClear();
   beforeRemoveListeners.length = 0;
   mockPrefs.breathSoundId = "none";
+  delete mockPrefs.breathVolume;
+  mockStoredRow = null;
+  mockPrepareOneShot.mockClear();
+  mockIntroPlay.mockClear();
+  mockIntroRelease.mockClear();
 });
 
 const startSession = () => {
@@ -293,6 +342,85 @@ describe("Breathing session (4c)", () => {
     }
   });
 
+  it("loads the guided intro while setup shows, so Start only plays it", () => {
+    // The spoken intro used to be built at the tap and arrived late by the asset
+    // load (#1744). Now setup loads it as soon as a guided voice is selected, and
+    // the tap plays what is already there - at the slider's live value.
+    jest.useFakeTimers();
+    try {
+      mockPrefs.breathSoundId = "guided";
+      renderWithProviders(<BreathingExerciseScreen />);
+      expect(mockPrepareOneShot).toHaveBeenCalledTimes(1);
+      expect(mockPrepareOneShot).toHaveBeenCalledWith(breathSoundLookup.guided!.introAsset);
+      expect(mockIntroPlay).not.toHaveBeenCalled();
+
+      fireEvent.press(screen.getByText("Start"));
+      expect(mockIntroPlay).toHaveBeenCalledTimes(1);
+      expect(mockIntroPlay).toHaveBeenCalledWith(0.7);
+      // The tap built nothing.
+      expect(mockPrepareOneShot).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("builds no intro at volume 0, so a muted voice never configures the audio session", () => {
+    // The #1188 rule, on the breathing side: nothing is prepared - and so nothing
+    // reaches ensureNativeAudioMode - for a sound nobody would hear. Start still
+    // runs the silent preroll; it just has nothing to play.
+    jest.useFakeTimers();
+    try {
+      mockPrefs.breathSoundId = "guided";
+      mockPrefs.breathVolume = 0;
+      startSession();
+      expect(screen.getByText("Get ready...")).toBeTruthy();
+      expect(mockPrepareOneShot).not.toHaveBeenCalled();
+      expect(mockIntroPlay).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("loads no intro for a voice without one, and lets go of a loaded intro on leaving setup", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    expect(mockPrepareOneShot).not.toHaveBeenCalled();
+
+    mockPrefs.breathSoundId = "guided";
+    const { unmount } = renderWithProviders(<BreathingExerciseScreen />);
+    expect(mockPrepareOneShot).toHaveBeenCalledTimes(1);
+    expect(mockIntroRelease).not.toHaveBeenCalled();
+    unmount();
+    expect(mockIntroRelease).toHaveBeenCalledTimes(1);
+    expect(mockIntroPlay).not.toHaveBeenCalled();
+  });
+
+  it("plays no intro and reads None on the Sounds row for a stored, retired breath id", async () => {
+    // ☠️ `wind` is still in `user_preferences.breath_sound_id` on any account that
+    // picked it before 2026-08-30. The screen does not resolve it - the repository
+    // does, once, when the row is read (#1745) - so the row goes in RAW and travels
+    // the real path (mocked database -> mapper -> query -> screen). Asserted: the
+    // two things the raw lookups used to decide on their own - no spoken intro, and
+    // a Sounds row that reads "None" rather than a raw key or a blank.
+    //
+    // ⚠️ Pre-load the screen shows the DEFAULT voice (guided, one "None" for the
+    // bed); the second "None" is what proves the row was read and resolved.
+    mockStoredRow = { user_id: "user-1", breath_sound_id: "wind", ambient_sound_id: "none" };
+    renderWithProviders(<BreathingExerciseScreen />);
+    expect(screen.getByText("Voice guidance")).toBeTruthy();
+    // ☠️ `findAllByText` would resolve on the FIRST match - the pre-load bed's "None"
+    // - so wait for the count instead.
+    await waitFor(() => expect(screen.getAllByText("None")).toHaveLength(2));
+    expect(screen.queryByText(/^breathing\./)).toBeNull();
+    fireEvent.press(screen.getByText("Start"));
+    // Straight to the active screen: no preroll, no cue. The default voice's intro
+    // WAS loaded ahead while the row was still in flight (#1744) - and let go once
+    // the row resolved to none, so nothing prepared is left holding a player.
+    expect(screen.queryByText("Get ready...")).toBeNull();
+    expect(mockIntroPlay).not.toHaveBeenCalled();
+    expect(mockIntroRelease).toHaveBeenCalledTimes(mockPrepareOneShot.mock.calls.length);
+    expect(screen.getByText("Inhale")).toBeTruthy();
+  });
+
   it("animates the pacer with withTiming when motion is allowed", () => {
     startSession();
     expect(withTimingSpy).toHaveBeenCalled();
@@ -305,5 +433,25 @@ describe("Breathing session (4c)", () => {
     expect(screen.getByText("Inhale")).toBeTruthy();
     expect(screen.getByText("4s · then Hold")).toBeTruthy();
     expect(withTimingSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("Breathing session haptic switch (#1741)", () => {
+  it("offers the tap beside the volume rails, off by default, and flips at once", () => {
+    // One preference, also toggled from the sit setup, so the copy is the same
+    // in both places. Native only: this suite runs as iOS.
+    jest.useFakeTimers();
+    try {
+      startSession();
+      const row = within(screen.getByTestId("breathing-haptic-cues"));
+      const toggle = row.getByLabelText("Vibration");
+      expect(toggle.props.accessibilityState.checked).toBe(false);
+      expect(row.getByText(/A tap for each bell/)).toBeTruthy();
+
+      fireEvent(toggle, "checkedChange", true);
+      expect(toggle.props.accessibilityState.checked).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

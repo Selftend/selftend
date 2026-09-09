@@ -51,6 +51,7 @@ import {
   zeroCrossingsPerSecond,
 } from "./loop-probe.mjs";
 import {
+  CLIPPED_DBTP,
   MAX_ATTEMPTS,
   SILENT_DBTP,
   USABLE_DBTP,
@@ -62,7 +63,6 @@ import {
 } from "./take-gate.mjs";
 import {
   BELLS,
-  SFX_CLIPS,
   SFX_MASTER_PCM,
   SFX_MODEL,
   SFX_OUTPUT_FORMAT,
@@ -76,10 +76,20 @@ import {
   clipsForRound,
   composePrompt,
   creditEstimate,
+  outputSpecFor,
   resolveVoices,
+  voiceSlotSpec,
+  SHIPPED_SFX_CLIPS,
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
+
+/**
+ * The round the voice cues belong to, named once. Same reason `ship-plan.mjs` does
+ * it: "which round has the voice half" is `voiceSlotSpec`'s answer, and re-deciding
+ * it here would make this a second opinion on round membership.
+ */
+const VOICE_ROUND = "B";
 /**
  * Where masters land. Overridable only so `test/audio-render-reroll.test.ts` can
  * drive the real spending loop into a scratch directory — the re-roll and the
@@ -96,13 +106,30 @@ const OUT_DIR =
   process.env.AUDIO_MASTERS_DIR ??
   join(dirname(fileURLToPath(import.meta.url)), "../../audio-masters");
 
+/**
+ * ☠️☠️ THIS MESSAGE USED TO PRINT `ELEVENLABS_API_KEY=... node …`, AND TWO KEYS HAVE
+ * BEEN BURNED ON THAT EXACT PATTERN. An inline prefix puts the key into shell
+ * history, into any terminal transcript, and — when an agent is driving — straight
+ * into a conversation log that outlives the run. The hygiene rule for this lives in
+ * a spec, and a rule in a spec loses every time to the program's own help text,
+ * because the help text is what someone is reading at the moment they need it.
+ *
+ * So the instruction the tool gives is the safe one: set it once, in a session
+ * whose transcript nobody keeps, then run with no key on the command line at all.
+ */
 function apiKey() {
   const key = process.env.ELEVENLABS_API_KEY;
   if (!key) {
     console.error(
       "ELEVENLABS_API_KEY is not set.\n" +
-        "Per #1141 it lives in the password manager and is passed in for the run:\n" +
-        "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe",
+        "Per #1141 it lives in the password manager. Set it once in your OWN terminal,\n" +
+        "then open a NEW terminal (setx only affects future sessions) and re-run:\n" +
+        '  setx ELEVENLABS_API_KEY "<paste it here>"      # Windows\n' +
+        "  export ELEVENLABS_API_KEY='<paste it here>'     # macOS/Linux, in your shell rc\n" +
+        "  node scripts/audio/render.mjs probe\n" +
+        "\n" +
+        "☠️ Never put the key on the command line — not as ELEVENLABS_API_KEY=... node ...,\n" +
+        "   and not behind an agent's `!` prefix. Both land it in a transcript verbatim.",
     );
     process.exit(1);
   }
@@ -514,7 +541,10 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       }
 
       const measured = await measure(path);
-      const verdict = classifyTake(measured.dbtp);
+      // The clip's own loudness target, so a peaky take is rejected here rather
+      // than surviving to `postprocess` and stopping there as `ceilingBound`
+      // with no re-roll left to spend (#1130).
+      const verdict = takeGraderFor(outputSpecFor(clip.id))(measured);
       const { channels, ratio } = derivePcmChannels(buffer.length, clip.durationSeconds, 48000);
 
       // Appended per take, not written at the end: a crash mid-pass must not lose
@@ -602,18 +632,26 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       "unreproducible as a chosen one.",
   );
 
-  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters
-  // SFX_CLIPS, so the eight voice cues are not in it and never were — Round B
-  // is 11 clips here and 8 more from `render-voices`. Saying so out loud is the
-  // point: a silent 11 reads as a finished 19.
+  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters SFX_CLIPS,
+  // so the voice cues are not in it and never were — Round B is 11 clips here and
+  // 16 voice slots from `render-voices`. Saying so out loud is the point: a silent
+  // 11 reads as a finished 27.
+  //
+  // ☠️ The counts are DERIVED, not typed. This comment said "8 more … a finished
+  // 19" and the string beneath it said the same, and both were a language behind
+  // within one change — which is the half-fix `SHIP_FILE_COUNT`'s own docblock is
+  // a warning about.
   if (round === "B") {
     const missing = VOICES.filter((voice) => !voice.voiceId).map((voice) => voice.id);
+    const { slots } = voiceSlotSpec(VOICE_ROUND);
     console.log(
-      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The 8 voice cues are separate:\n` +
-        (missing.length
-          ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` +
-            "  then:  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"
-          : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
+      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The ${slots.length} voice ` +
+        "slots are separate:\n" +
+        (missing.length ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` : "") +
+        // ☠️ NO INLINE KEY HERE. This footer is where a render operator lands after
+        // `render --round B`, so it is exactly the moment the burned
+        // `ELEVENLABS_API_KEY=... node ...` form would get copied — see `apiKey()`.
+        "  node scripts/audio/render.mjs render-voices --go",
     );
   }
 
@@ -654,6 +692,30 @@ const PREFLIGHT_TAKES = 2;
 // against them too (#1320) — a prompt that clears preflight faces the same bar.
 
 /**
+ * The one grader both `render` and `preflight` apply to a measured take, built
+ * from the clip's output spec (#2219).
+ *
+ * ☠️ ONE FUNCTION, NOT TWO CALL SITES. The spec carries two things the gate
+ * needs: the loudness target and whether the class is limited before the gain.
+ * `preflight` used to read `.lufs` off the spec and drop `.limit` at the same
+ * line, so a bed at -28 was graded on a 25 dB crest budget there and a 37 dB one
+ * in `render` - the two-bar split both banners promise never to have, pointing
+ * the harsher way: a healthy bed reported BROKEN before an irreversible spend,
+ * and the operator was told to rewrite a prompt that was already right. Deriving
+ * the grader from the spec in one place means a spec field the gate reads
+ * cannot be forgotten by one caller and remembered by the other.
+ *
+ * @param {{ lufs: number, limit?: boolean }} spec an `outputSpecFor()` result
+ * @returns {(measured: { dbtp: number, lufs: number }) => ReturnType<typeof classifyTake>}
+ */
+export function takeGraderFor(spec) {
+  const targetLufs = spec.lufs;
+  // Beds are limited before the gain, so their crest budget is wider.
+  const limited = Boolean(spec.limit);
+  return (measured) => classifyTake(measured.dbtp, { lufs: measured.lufs, targetLufs, limited });
+}
+
+/**
  * ☠️ One take proves nothing, and finding that out was the whole point.
  *
  * The first preflight scored `night` at -3.79 dBTP and `ocean` at -7.44 — both
@@ -683,15 +745,21 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       )} credits).\n`,
   );
   console.log(
-    `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP} — the same bar ` +
-      "`render` applies to every take.\n",
+    `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP}, clipped at ` +
+      `>= ${CLIPPED_DBTP}, and rejected when the crest (dBTP - LUFS) cannot reach the ` +
+      "clip's target under the -3 dBTP ceiling — the same bar `render` applies to every take.\n",
   );
   console.log("clip                          dBTP per take        verdict");
 
   const broken = [];
   const flaky = [];
   for (const clip of clips) {
-    const peaks = [];
+    // ☠️ Full measurements, not just peaks: since #1130 the gate also weighs
+    // loudness against the clip's target, and a probe that kept only `dbtp`
+    // would grade on a strictly easier bar than `render` — the two-bar split
+    // this function's own banner promises never to have.
+    const measured = [];
+    const grade = takeGraderFor(outputSpecFor(clip.id));
     for (let take = 1; take <= takes; take += 1) {
       const path = join(dir, `${clip.id}-t${take}.pcm`);
       if (!(await exists(path))) {
@@ -703,23 +771,38 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
         });
         await writeFile(path, buffer);
       }
-      peaks.push((await measure(path)).dbtp);
+      measured.push(await measure(path));
     }
 
-    const usable = peaks.filter((p) => classifyTake(p).accepted).length;
-    const anySilent = peaks.some((p) => classifyTake(p).rejectedFor === "silent");
+    const peaks = measured.map((m) => m.dbtp);
+    const usable = measured.filter((m) => grade(m).accepted).length;
+    const anySilent = measured.some((m) => grade(m).rejectedFor === "silent");
+    // Named separately because the cure differs: a silent or quiet prompt wants
+    // new words, while a ceiling-bound or clipped one is producing the wrong
+    // SHAPE of sound and re-rolling it just buys the same shape again.
+    const shapeFailures = [
+      ...new Set(
+        measured
+          .map((m) => grade(m).rejectedFor)
+          .filter((r) => r === "ceiling-bound" || r === "clipped"),
+      ),
+    ];
     let verdict;
     if (usable === 0) {
       verdict = "BROKEN";
-      broken.push({ id: clip.id, peaks });
-    } else if (usable < peaks.length) {
+      broken.push({ id: clip.id, peaks, shapeFailures });
+    } else if (usable < measured.length) {
       verdict = anySilent ? "FLAKY (a take was silent)" : "FLAKY";
-      flaky.push({ id: clip.id, peaks });
+      flaky.push({ id: clip.id, peaks, shapeFailures });
     } else {
       verdict = "ok";
     }
     console.log(
-      clip.id.padEnd(26) + peaks.map((p) => String(p).padStart(8)).join("") + "   " + verdict,
+      clip.id.padEnd(26) +
+        peaks.map((p) => String(p).padStart(8)).join("") +
+        "   " +
+        verdict +
+        (shapeFailures.length ? ` [${shapeFailures.join(", ")}]` : ""),
     );
   }
 
@@ -736,9 +819,20 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
   if (broken.length) {
     console.error(
       `${broken.length} prompt(s) produced NO usable take:\n` +
-        broken.map((b) => `  ${b.id} - ${b.peaks.join(", ")} dBTP`).join("\n") +
+        broken
+          .map(
+            (b) =>
+              `  ${b.id} - ${b.peaks.join(", ")} dBTP` +
+              (b.shapeFailures.length ? ` (${b.shapeFailures.join(", ")})` : ""),
+          )
+          .join("\n") +
         "\n\nFix these before spending on the full pass. Negation is the usual cause\n" +
-        "- describe what the sound IS, not what it is not (#1316).",
+        "- describe what the sound IS, not what it is not (#1316).\n" +
+        "☠️ A `ceiling-bound` or `clipped` prompt is a DIFFERENT fault: the model is\n" +
+        "producing the wrong shape, not the wrong level. Ceiling-bound means sparse\n" +
+        "discrete events where a continuous wash was asked for (#1130: `rain` at a\n" +
+        "24.6 dB crest against `forest`'s 12.7), and re-rolling buys the same shape\n" +
+        "again - ask for density, not for volume.",
     );
     process.exit(1);
   }
@@ -751,7 +845,9 @@ function formatExtension(format) {
 }
 
 /**
- * The eight voice cues: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ * The eight voice slots: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ * Derived from the slot join, so a second language would be a data change here and
+ * nothing else — #1573 proved that end to end before its voices were rejected.
  *
  * Separate from `render` because the voice PICK is Round B's own first task and
  * needs a human ear, while the thirteen sound effects do not — so the sound
@@ -779,20 +875,30 @@ async function renderVoices(go, voiceIdOverrides = []) {
         (missingVoice.length
           ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
             "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
-            "  a matched female/male pair, auditioned on the shipping words.\n" +
+            "  a matched female/male pair per language, auditioned on the shipping words.\n" +
             "  To hear a shortlist without deciding anything yet:\n" +
-            "    render-voices --voice-id guided=<id> --voice-id guided-male=<id> --go\n"
+            `    render-voices ${voices.map((v) => `--voice-id ${v.id}=<id>`).join(" ")} --go\n`
           : "") +
         (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
     );
     process.exit(1);
   }
 
-  const total = voices.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  // ☠️☠️ THE QUOTE AND THE LOOP READ THE SAME SLOT LIST, AND THAT IS A BILLING
+  // GUARD, NOT TIDINESS. Both used to be `voices x cues` — which on #1573's
+  // two-language set quoted 64 generations, then ISSUED 64, of which 32 were a
+  // voice reading another language's words: billed, saved under plausible names,
+  // and caught by nothing downstream because every filename is unique. #1320's
+  // rule is that the
+  // worst case is on screen BEFORE the irreversible spend; a quote derived
+  // differently from the loop it precedes is not that quote.
+  const { slots, candidates } = voiceSlotSpec(VOICE_ROUND, voices);
+  const total = slots.length * candidates;
   if (!go) {
     console.error(
-      `Refusing to spend. ${total} generations (${voices.length} voices x ` +
-        `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
+      `Refusing to spend. ${total} generations (${slots.length} voice slots x ` +
+        `${candidates} candidates, from ${voices.length} voices paired with ` +
+        `${VOICE_CUES.length} cues by language).\n` +
         "Re-run with --go.",
     );
     process.exit(1);
@@ -813,63 +919,61 @@ async function renderVoices(go, voiceIdOverrides = []) {
   await mkdir(classDir, { recursive: true });
   const manifestPath = join(runDir, "manifest.jsonl");
 
-  for (const voice of voices) {
-    for (const cue of VOICE_CUES) {
-      for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
-        const candidate = index + 1;
-        const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
+  for (const { cue, voice } of slots) {
+    for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
+      const candidate = index + 1;
+      const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
 
-        // The format is asked, not assumed: try lossless, fall back on rejection.
-        let rendered = null;
-        let usedFormat = null;
-        let lastError = null;
-        for (const format of TTS_OUTPUT_FORMATS) {
-          const path = join(classDir, `${stem}.${formatExtension(format)}`);
-          if (await exists(path)) {
-            console.log(`skip ${stem} — already exists`);
-            rendered = "skipped";
-            break;
-          }
-          try {
-            rendered = await textToSpeech(key, {
-              voiceId: voice.voiceId,
-              text: cue.text,
-              outputFormat: format,
-              seed,
-            });
-            usedFormat = format;
-            break;
-          } catch (error) {
-            lastError = error;
-          }
+      // The format is asked, not assumed: try lossless, fall back on rejection.
+      let rendered = null;
+      let usedFormat = null;
+      let lastError = null;
+      for (const format of TTS_OUTPUT_FORMATS) {
+        const path = join(classDir, `${stem}.${formatExtension(format)}`);
+        if (await exists(path)) {
+          console.log(`skip ${stem} — already exists`);
+          rendered = "skipped";
+          break;
         }
-        if (rendered === "skipped") continue;
-        if (!usedFormat) throw lastError;
-
-        const name = `${stem}.${formatExtension(usedFormat)}`;
-        await writeFile(join(classDir, name), rendered.buffer);
-        await appendFile(
-          manifestPath,
-          `${JSON.stringify({
-            clip: cue.id,
-            klass: "voice",
-            voice: voice.id,
-            axis: voice.axis,
+        try {
+          rendered = await textToSpeech(key, {
             voiceId: voice.voiceId,
-            candidate,
-            file: name,
             text: cue.text,
-            model: TTS_MODEL,
-            voiceSettings: TTS_VOICE_SETTINGS,
-            outputFormat: usedFormat,
-            // TTS has one, which is why this class alone is re-renderable.
+            outputFormat: format,
             seed,
-            bytes: rendered.buffer.length,
-            contentType: rendered.contentType,
-          })}\n`,
-        );
-        console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
+          });
+          usedFormat = format;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
       }
+      if (rendered === "skipped") continue;
+      if (!usedFormat) throw lastError;
+
+      const name = `${stem}.${formatExtension(usedFormat)}`;
+      await writeFile(join(classDir, name), rendered.buffer);
+      await appendFile(
+        manifestPath,
+        `${JSON.stringify({
+          clip: cue.id,
+          klass: "voice",
+          voice: voice.id,
+          axis: voice.axis,
+          voiceId: voice.voiceId,
+          candidate,
+          file: name,
+          text: cue.text,
+          model: TTS_MODEL,
+          voiceSettings: TTS_VOICE_SETTINGS,
+          outputFormat: usedFormat,
+          // TTS has one, which is why this class alone is re-renderable.
+          seed,
+          bytes: rendered.buffer.length,
+          contentType: rendered.contentType,
+        })}\n`,
+      );
+      console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
     }
   }
 
@@ -950,10 +1054,24 @@ async function analyseTake({ pcmPath, wavStem, bytes, requestedSeconds }) {
  * because `CREDITS_PER_SECOND` carried the web composer's 3.3.
  */
 async function loopProbe({ clipId, seconds, go, withControl }) {
-  const clip = SFX_CLIPS.find((candidate) => candidate.id === clipId);
+  // ☠️ Looked up in the SHIP set, not the render set. `brown-noise` — this
+  // probe's own canonical subject, and the clip #1347's ruling was measured on —
+  // left `SFX_CLIPS` when the noise beds became synthesised (#1130). Searching the
+  // render list would answer "unknown clip: brown-noise", which is both false and
+  // the least useful thing it could say.
+  const clip = SHIPPED_SFX_CLIPS.find((candidate) => candidate.id === clipId);
   if (!clip) {
     console.error(
-      `unknown clip "${clipId}" — expected one of: ${SFX_CLIPS.map((c) => c.id).join(", ")}`,
+      `unknown clip "${clipId}" — expected one of: ${SHIPPED_SFX_CLIPS.map((c) => c.id).join(", ")}`,
+    );
+    process.exit(1);
+  }
+  if (clip.source === "synth") {
+    console.error(
+      `"${clipId}" is computed by synth-noise.mjs, not generated, so there is no draw to\n` +
+        "probe. Its loop is periodic BY CONSTRUCTION — the noise is filtered circularly,\n" +
+        "so the wrap is a sample transition like any other and no seam question arises.\n" +
+        "test/audio-synth-noise.test.ts asserts that directly, for free.",
     );
     process.exit(1);
   }
@@ -1081,11 +1199,10 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
     console.log(`   level     ${take.level.lufs} LUFS-I · ${take.level.dbtp} dBTP`);
     console.log(
       `   seam      wrap step ${take.seam.wrapStepRatio.toFixed(2)}x median · ` +
-        `head/tail ${take.seam.energyDeltaRatio.toFixed(2)}x natural · ` +
-        (take.seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio &&
-        take.seam.energyDeltaRatio <= SEAM_LIMITS.energyDeltaRatio
-          ? "PASS"
-          : "FAIL"),
+        // ⚠️ Printed, not judged (#1571) — the head/tail ratio cannot separate a
+        // clean bed from a defective one, so only the wrap step decides here.
+        `head/tail ${take.seam.energyDeltaRatio.toFixed(2)}x (reported) · ` +
+        (take.seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio ? "PASS" : "FAIL"),
     );
     console.log(
       `   edges     lead ${take.edges.leadMs.toFixed(1)} ms · tail ${take.edges.tailMs.toFixed(1)} ms`,

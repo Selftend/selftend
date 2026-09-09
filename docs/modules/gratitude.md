@@ -139,7 +139,7 @@ Indexes: `(user_id, logged_at desc)` and `(user_id, starred, logged_at desc)` fo
 This module follows the contract in `tools.md`:
 
 - `ModuleKey`: `"gratitude"` - added to the union in `src/features/modules/types.ts`.
-- Default `enabledModules` stays `["cbt"]`; gratitude is opt-in via the modules discovery screen.
+- Default `enabledModules` stays `["cbt"]`, and the array gates nothing: gratitude is reachable from the tools grid without enabling anything (#1672).
 - i18n namespace: `gratitude:*`.
 - Route group: `/modules/gratitude/*` (see §6). Existing `/tools/gratitude-log/*` routes become compatibility redirects.
 - New `user_preferences` fields:

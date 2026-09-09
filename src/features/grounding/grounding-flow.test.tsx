@@ -61,6 +61,25 @@ describe("GroundingFlow", () => {
     expect(getByText("Prepare · 1 of 4")).toBeTruthy();
   });
 
+  // #1996: cold water is the one technique with a medical caution, and it has
+  // to be on screen before every run — inline on the step the session opens
+  // on, never a modal or a one-time flag. Pinned on the live copy so a later
+  // cleanup cannot drop it silently.
+  it("shows the cold-water caution on the opening step, stop rule first", () => {
+    const { getByText, getByTestId } = renderWithProviders(<GroundingFlow slug="cold-water" />);
+    expect(getByText("Prepare · 1 of 4")).toBeTruthy();
+    const block = getByTestId("technique-caution");
+    expect(block).toBeTruthy();
+    expect(getByText(/^Cool tap water, not ice on skin\./)).toBeTruthy();
+    expect(getByText(/check with a doctor first\.$/)).toBeTruthy();
+  });
+
+  it("carries no caution on a technique that has none", () => {
+    const { queryByTestId, getByText } = renderWithProviders(<GroundingFlow slug="54321" />);
+    expect(getByText("Sight · 1 of 5")).toBeTruthy();
+    expect(queryByTestId("technique-caution")).toBeNull();
+  });
+
   // Confirming an uninvited exit saves, then actually leaves the route the way
   // breathing and meditation do (#928 — it used to strand on the done screen).
   it("saves neutral partial progress and leaves when a back exit is confirmed", async () => {

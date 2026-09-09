@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 import i18n from "@/src/i18n";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
@@ -31,18 +32,18 @@ describe("ScreenBreadcrumb", () => {
 
   it("renders the trail and pushes to a parent crumb on press", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
-      { label: "Mindfulness" },
+      { label: "Meditation", href: "/tools/meditation" },
+      { label: "Practices" },
     ]);
     const { getByText, getByRole, queryByRole } = render(<ScreenBreadcrumb />);
-    expect(getByText("Mindfulness")).toBeTruthy();
+    expect(getByText("Practices")).toBeTruthy();
     // The current (last) crumb is not a link.
-    expect(queryByRole("link", { name: "Mindfulness" })).toBeNull();
-    fireEvent.press(getByRole("link", { name: "Tools" }));
+    expect(queryByRole("link", { name: "Practices" })).toBeNull();
+    fireEvent.press(getByRole("link", { name: "Meditation" }));
     // `dangerouslySingular` is part of what a crumb press IS (#1027): a crumb targets an
     // ancestor, so without it the press mounts a SECOND copy of a screen already in the
     // stack. Asserted with the option, not just the href.
-    expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
+    expect(router.push).toHaveBeenCalledWith("/tools/meditation", { dangerouslySingular: true });
   });
 
   // R7 (#1250): this component is the trail and nothing else. The leading
@@ -50,7 +51,6 @@ describe("ScreenBreadcrumb", () => {
   // it vanish on every one-crumb screen - so it must not creep back in.
   it("renders links only - the leading affordance is not its to draw", () => {
     mockUseBreadcrumbs.mockReturnValue([
-      { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
@@ -65,5 +65,39 @@ describe("ScreenBreadcrumb", () => {
     expect(queryByLabelText(/^Back to /)).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
     expect(queryByLabelText("Close")).toBeNull();
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and an href-less crumb is a `<div role="link">` the browser does
+   * nothing with, so Tab reached the crumb and Enter went nowhere (#1730). A
+   * crumb brings its own Enter handler: once per press, never on auto-repeat,
+   * never on Space - and the press it fires is the singular push a pointer
+   * press makes, not a second, plain one.
+   */
+  describe("on web", () => {
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("a parent crumb activates on Enter, once, with the same singular push a pointer makes", () => {
+      setPlatformOS("web");
+      mockUseBreadcrumbs.mockReturnValue([
+        { label: "Meditation", href: "/tools/meditation" },
+        { label: "Practices" },
+      ]);
+      const { getByRole } = render(<ScreenBreadcrumb />);
+
+      const crumb = getByRole("link", { name: "Meditation" });
+      const preventDefault = jest.fn();
+      crumb.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+      expect(router.push).toHaveBeenCalledWith("/tools/meditation", { dangerouslySingular: true });
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      crumb.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      crumb.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+    });
   });
 });

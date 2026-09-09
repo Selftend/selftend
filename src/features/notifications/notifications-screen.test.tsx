@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Dimensions } from "react-native";
+import { Dimensions, Platform } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
@@ -7,7 +7,7 @@ import NotificationsScreen from "@/src/features/notifications/notifications-scre
 import { NOTIFICATION_TARGETS } from "@/src/features/notifications/registry";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { cancelAllReminders } from "@/src/lib/notifications";
+import { cancelAllReminders, reminderChannelUnsupportedReason } from "@/src/lib/notifications";
 import type { ReminderChannelStatus, ReminderScheduleResult } from "@/src/lib/notifications";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -74,6 +74,7 @@ jest.mock("@/src/features/notifications/use-reminder-channel", () => ({
 jest.mock("@/src/lib/notifications", () => ({
   cancelAllReminders: jest.fn().mockResolvedValue(undefined),
   getReminderTimeZone: () => "Europe/Sofia",
+  reminderChannelUnsupportedReason: jest.fn().mockReturnValue("unsupported"),
 }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -86,6 +87,7 @@ const mockUseUserPreferences = jest.mocked(useUserPreferences);
 const mockUseUpdatePreferences = jest.mocked(useUpdateUserPreferences);
 const mockUseReminderChannel = jest.mocked(useReminderChannel);
 const mockCancelAllReminders = jest.mocked(cancelAllReminders);
+const mockUnsupportedReason = jest.mocked(reminderChannelUnsupportedReason);
 const mockMutateAsync = jest.fn();
 const mockEnsure = jest.fn<Promise<ReminderScheduleResult>, []>();
 
@@ -139,7 +141,7 @@ describe("NotificationsScreen", () => {
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
-  it("renders ten rows in the registry's order, each switch named for its target", () => {
+  it("renders a row per registry target, in the registry's order, each switch named", () => {
     renderWithProviders(<NotificationsScreen />);
 
     // The registry order IS the dashboard order (asserted in registry.test.ts), so this
@@ -147,16 +149,18 @@ describe("NotificationsScreen", () => {
     const rendered = NOTIFICATION_TARGETS.map((target) =>
       screen.getByTestId(`notification-row-${target.key}`),
     );
-    expect(rendered).toHaveLength(10);
+    // Derived from the registry rather than pinned at a number: the count is
+    // that registry's business, and this screen's job is to read it whole.
+    expect(rendered).toHaveLength(NOTIFICATION_TARGETS.length);
     for (const target of NOTIFICATION_TARGETS) {
       expect(screen.getByLabelText(i18n.t(`notifications:${target.labelKey}`))).toBeTruthy();
     }
   });
 
   it.each([
-    [390, "h-[88px]"],
-    [1280, "h-16"],
-  ])("renders ten skeleton rows at the real %ipx row height while loading", (width, height) => {
+    [390, "items-start gap-1"],
+    [1280, "flex-row items-center gap-3"],
+  ])("renders ten skeleton rows in the real %ipx row box while loading", (width, layout) => {
     const spy = jest
       .spyOn(Dimensions, "get")
       .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
@@ -167,12 +171,18 @@ describe("NotificationsScreen", () => {
       for (const target of NOTIFICATION_TARGETS) {
         // `includeHiddenElements` because the skeletons are deliberately hidden from
         // assistive tech - ten empty rows are worth nothing to announce.
-        const skeleton = screen.getByTestId(`notification-row-skeleton-${target.key}`, {
+        const body = screen.getByTestId(`notification-row-skeleton-body-${target.key}`, {
           includeHiddenElements: true,
         });
-        // The REAL height for this width, so nothing jumps when the data lands: the desktop
-        // row is one line at 64px against the phone's stacked 88px.
-        expect(skeleton.props.className).toContain(height);
+        // The row's own box at this width rather than a copied pixel height: the name may
+        // now take a second line (#1248), so the height is content-derived, and each
+        // skeleton reserves ITS OWN target's name so nothing jumps when data lands (#981).
+        expect(body.props.className).toContain(layout);
+        expect(
+          screen.queryAllByText(i18n.t(`notifications:${target.labelKey}`), {
+            includeHiddenElements: true,
+          }),
+        ).toHaveLength(1);
       }
       // A loading surface claims nothing: no control is offered yet.
       expect(screen.queryByLabelText("Sleep")).toBeNull();
@@ -197,14 +207,178 @@ describe("NotificationsScreen", () => {
     expect(screen.getByText("Reminders")).toBeTruthy();
   });
 
+  /**
+   * ☠️☠️ **The title names the device, because everything else on this screen is
+   * ACCOUNT-WIDE.** `channel.status` is the one per-browser/per-device input
+   * here, so this card also renders for somebody whose reminders are arriving
+   * fine on their phone. It used to be titled "Notifications are turned off" - a
+   * flat account-wide claim, sitting above a master switch labelled
+   * "Notifications enabled" that is on, and above its own body, which named the
+   * device correctly all along. The assertion is REPLACED rather than relaxed:
+   * the old string was the defect. Same rule #2263 applied to the
+   * `prompt-needed` card 25 lines below it.
+   */
   it("shows a page-level notice when the channel is blocked, and leaves rows interactive", () => {
     setChannel("blocked");
     renderWithProviders(<NotificationsScreen />);
 
-    expect(screen.getByText("Notifications are turned off")).toBeTruthy();
+    expect(screen.getByText("This device is blocking notifications")).toBeTruthy();
+    // The body named the device all along; the title agrees with it now.
+    expect(
+      screen.getByText("Notifications are turned off for Selftend in your device settings."),
+    ).toBeTruthy();
+    // ☠️ Never the account-wide claim, which contradicts the master switch below it.
+    expect(screen.queryByText("Notifications are turned off")).toBeNull();
     // The columns are what the server reads the moment a channel returns, so the rows keep
     // working even with no channel to deliver through.
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
+  });
+
+  it("names the BROWSER on the blocked card when this is a browser", () => {
+    // The card has no `Platform.OS` guard - it renders on both - and its body is
+    // already resolved per platform by `reminderChannelErrorKey`. The title
+    // follows the body rather than out-scoping it.
+    const originalOs = Platform.OS;
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    try {
+      setChannel("blocked");
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.getByText("This browser is blocking notifications")).toBeTruthy();
+      expect(screen.queryByText("This device is blocking notifications")).toBeNull();
+    } finally {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: originalOs });
+    }
+  });
+
+  it("shows a page-level notice when the channel is unsupported, in this platform's words (#2263)", () => {
+    // `unsupported` writes the columns like `blocked` does - and used to say nothing at
+    // page level, so a person could switch every reminder on and never be told none of
+    // them can arrive.
+    mockUnsupportedReason.mockReturnValue("unsupported");
+    setChannel("unsupported");
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getByTestId("notification-channel-unsupported")).toBeTruthy();
+    expect(screen.getByText("Reminders can't arrive here")).toBeTruthy();
+    expect(screen.getByText("This device can't deliver reminders.")).toBeTruthy();
+    // ⚠️ By testID, not by the blocked card's copy: a negative assertion keyed on
+    // a string is vacuous the day that string is reworded, and it was.
+    expect(screen.queryByTestId("notification-channel-blocked")).toBeNull();
+    expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+  });
+
+  it("names the build's missing VAPID key when that is why the channel is unsupported (#2263)", () => {
+    // The deployed web bundles inlined an empty key for months; "this browser doesn't
+    // support reminders" would have been a lie on every browser that does.
+    mockUnsupportedReason.mockReturnValue("missing-vapid-key");
+    setChannel("unsupported");
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getByText("Reminders can't arrive here")).toBeTruthy();
+    expect(screen.getByText("Reminders aren't configured for this app build.")).toBeTruthy();
+  });
+
+  it("shows no channel notice at all while the channel is granted or prompt-needed", () => {
+    for (const status of ["granted", "prompt-needed"] as const) {
+      setChannel(status);
+      const view = renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
+      expect(screen.queryByTestId("notification-channel-blocked")).toBeNull();
+      view.unmount();
+    }
+  });
+
+  /**
+   * ☠️☠️ **The cohort #2263 created, which fixing #2263 did not reach.** A web
+   * user who switched a reminder on while the bundle carried no VAPID key took
+   * the `channel.status !== "prompt-needed"` branch: the column was written
+   * directly, `ensure()` was never called, the browser was never asked, and no
+   * `web_push_subscriptions` row was ever made. With the key now shipped that
+   * same person reads `prompt-needed` - out of `unsupported`, so the notice
+   * added for them no longer speaks - with every switch ON, no subscription,
+   * and nothing arriving. `reconcileWebReminderChannel` cannot help: it is
+   * gated on `granted` by design, so it repairs rather than asks.
+   *
+   * The escape is the one the master toggle already has (`handleGlobalToggle`
+   * re-arms when the master goes on with targets enabled), offered on arrival
+   * instead of only on a toggle the person has no reason to touch. Web only:
+   * on native `prompt-needed` is also the conservative value `peekReminderChannelStatus`
+   * returns before the async read lands, so the card would flash on every visit.
+   */
+  describe("reminders on with a channel that was never asked (#2263)", () => {
+    const ORIGINAL_OS = Platform.OS;
+    beforeEach(() => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+      setChannel("prompt-needed");
+      setPreferences({ sleepRemindersEnabled: true });
+    });
+    afterEach(() => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: ORIGINAL_OS });
+    });
+
+    it("says so plainly, and offers the ask that was never made", async () => {
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.getByTestId("notification-channel-needs-permission")).toBeTruthy();
+      // ⚠️ The title names THIS BROWSER, and that is a correctness point rather
+      // than a wording preference. Every trigger except the channel status is
+      // account-wide (`notifications_enabled_global` and the per-target columns
+      // all live on `user_preferences`), while `channel.status` is per-browser -
+      // so this card renders for somebody whose reminders are arriving perfectly
+      // well on their phone and who has just opened a laptop that was never
+      // asked. "Your reminders aren't arriving" told that person something
+      // false, in the one line a scanner reads, to push them towards a browser
+      // permission they may not want.
+      expect(screen.getByText("This browser isn't showing your reminders")).toBeTruthy();
+      expect(screen.queryByText("Your reminders aren't arriving")).toBeNull();
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText("Allow notifications"));
+      });
+
+      expect(mockEnsure).toHaveBeenCalledTimes(1);
+      // A repair, not a save: no preference is rewritten - the columns are
+      // already what the person asked for, and the server reads them.
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+    });
+
+    it("reports a refused prompt rather than leaving the card looking done", async () => {
+      mockEnsure.mockResolvedValue({ enabled: false, reason: "permission-denied" });
+      renderWithProviders(<NotificationsScreen />);
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText("Allow notifications"));
+      });
+
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tone: "error",
+          description: "Notifications are blocked for this site in your browser settings.",
+        }),
+      );
+    });
+
+    it("stays quiet when no reminder is on, and when the master is off", () => {
+      // Nothing is switched on, so nothing is silently not arriving.
+      setPreferences();
+      const first = renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+      first.unmount();
+
+      // The master's own sentence already explains why nothing arrives.
+      setPreferences({ sleepRemindersEnabled: true, notificationsEnabledGlobal: false });
+      renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+    });
+
+    it("is web-only: native reads prompt-needed before its real status lands", () => {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.queryByTestId("notification-channel-needs-permission")).toBeNull();
+    });
   });
 
   it("master off writes the column and then tears the channel down", async () => {

@@ -191,11 +191,7 @@ describe("targetPathname", () => {
  */
 describe("isOffTrail", () => {
   const remindersCrumbs = [{ label: "Reminders" }];
-  const historyCrumbs = [
-    { label: "Modules", href: "/modules" },
-    { label: "CBT", href: "/modules/cbt" },
-    { label: "History" },
-  ];
+  const historyCrumbs = [{ label: "CBT", href: "/modules/cbt" }, { label: "History" }];
 
   it("is true for a module reached from outside its subtree", () => {
     expect(isOffTrail("/modules/cbt", "/notifications", remindersCrumbs, "/")).toBe(true);

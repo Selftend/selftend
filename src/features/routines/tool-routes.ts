@@ -42,6 +42,16 @@ export const TOOL_STEP_ROUTES: Record<SteppableToolId, Href> = {
   bullsEye: "/modules/act/values",
   choicePoint: "/modules/act/choice-point/new",
   committedAction: "/modules/act/committed-action",
+  // DBT (#1980). The session screen IS the start, as breathing's picker is.
+  muscleRelaxation: "/modules/dbt/sessions/muscle-relaxation",
+  wiseMind: "/modules/dbt/wise-mind/new",
+  judgement: "/modules/dbt/judgements/new",
+  emotionRecord: "/modules/dbt/emotions/new",
+  // ☠️ List-first, like activities and committed action: the qualifying fact
+  // is a plan marked DONE, and you mark one done from a plan you already
+  // have. `/new` would send the person to write a second plan instead.
+  oppositeAction: "/modules/dbt/opposite-action",
+  script: "/modules/dbt/scripts/new",
 };
 
 export function routeForTool(toolId: SteppableToolId): Href {

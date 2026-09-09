@@ -1,6 +1,6 @@
 import { CARD_REPLICAS } from "@/src/features/widgets/cards/card-registry";
 import { CARD_IDS } from "@/src/features/widgets/snapshot-types";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 
 describe("card replica registry", () => {
   // Asserted against WIDGET_META, not WIDGET_REGISTRY (#975). The Android launcher

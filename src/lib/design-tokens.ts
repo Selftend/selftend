@@ -85,7 +85,8 @@ export const HUE_INK_TRIPLES: Record<HueName, SchemeTriples> = Object.fromEntrie
 // the hues did, and on more screens than any of them: the "Beta" chip in the
 // sidebar is `text-primary` at 10px/600 on `bg-primary/15` over the sidebar's
 // card — 4.41:1 light, 4.22:1 dark — and the sidebar is on all 20 captured
-// screens. `/modules` paints "CBT" the same way at 14px/700 (4.41), and a chip
+// screens. The module card's mark paints "CBT" the same way at 14px/700 (4.41),
+// on Home since #2114 and on `/modules` before it, and a chip
 // nested in a primary-tinted card drops to 3.89 light / 3.54 dark (#421 §3).
 //
 // Light takes HUE_INK_LIGHTNESS unchanged: same recipe, same 28%, so violet ink

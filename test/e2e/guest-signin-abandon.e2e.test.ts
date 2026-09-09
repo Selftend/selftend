@@ -93,7 +93,7 @@ test.describe("guest sign-in warn-and-abandon", () => {
 
     await page.getByRole("button", { name: "Sign in without it", exact: true }).click();
 
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
 
@@ -125,7 +125,7 @@ test.describe("guest sign-in warn-and-abandon", () => {
     // Landing here WITHOUT touching any dialog is the proof of the skip: with
     // content, the journey above cannot reach the app until the confirm is
     // answered.
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText(WARNING_TITLE)).toHaveCount(0);

@@ -210,7 +210,6 @@ export default function ActHomeScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              addWidgetCategory="act"
               title={t("home.fullTitle")}
               tourScope="act"
               description={t("home.description")}
@@ -232,12 +231,20 @@ export default function ActHomeScreen() {
             {program.status === "graduated" ? (
               <ProgramGraduation
                 namespace="act"
+                // Zero counts are filtered out, exactly as `cbt-program-section.tsx` does.
+                // The graduation screen states the record and stops (`docs/product-principles.md`
+                // §12, ADR-0004); "0 feelings made room for" is not a record of what the person
+                // did, it names what they did not do on the one surface whose job is to satisfy
+                // and end. With every stat zero the list empties and `ProgramGraduation` falls
+                // back to `program.graduationBodyEmpty`.
                 lines={[
-                  t("program.statChoicePoints", { count: program.summaryStats.choicePoints }),
-                  t("program.statDefusion", { count: program.summaryStats.defusionLogs }),
-                  t("program.statExpansion", { count: program.summaryStats.expansionLogs }),
-                  t("program.statActions", { count: program.summaryStats.committedActions }),
-                ]}
+                  { n: program.summaryStats.choicePoints, key: "program.statChoicePoints" },
+                  { n: program.summaryStats.defusionLogs, key: "program.statDefusion" },
+                  { n: program.summaryStats.expansionLogs, key: "program.statExpansion" },
+                  { n: program.summaryStats.committedActions, key: "program.statActions" },
+                ]
+                  .filter((stat) => stat.n > 0)
+                  .map((stat) => t(stat.key, { count: stat.n }))}
                 dismissed={graduationDismissedAt != null}
                 onDismiss={dismissGraduation}
                 onReplay={replayProgram}

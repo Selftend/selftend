@@ -56,7 +56,7 @@ describe("ModuleHomeHeader action buttons", () => {
 
     expect(screen.getByLabelText("Customise")).toBeTruthy();
     expect(screen.getByLabelText("Reminders")).toBeTruthy();
-    expect(screen.getByLabelText("CBT program")).toBeTruthy();
+    expect(screen.getByLabelText("CBT programme")).toBeTruthy();
     expect(screen.getByLabelText("About this module")).toBeTruthy();
   });
 
@@ -112,24 +112,29 @@ describe("ModuleHomeHeader action buttons", () => {
   it("fires onPress for the program action button", () => {
     const { onPressProgram } = renderHeader({ includeProgram: true });
 
-    fireEvent.press(screen.getByLabelText("CBT program"));
+    fireEvent.press(screen.getByLabelText("CBT programme"));
 
     expect(onPressProgram).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * ☠️ Both strings this looked for were a TOUR's, and #2109 deleted the tour and
+   * `Skip all tips` with it - so that half can never match again and proves nothing
+   * on its own. `Got it` is the half that still bites: it is live copy, rendered by
+   * the meditation and mood onboarding modals, so this stays a real assertion that
+   * the module header does not grow a modal of its own on first render.
+   *
+   * A sibling that asserted `queryByText(/Tap here/i)` is null was removed for the
+   * same reason (#2215): that wording was the tour's too, nothing in `src`, `app` or
+   * either locale can render it, and a guard that cannot fail only inflates the
+   * pass count. The e2e half in `test/e2e/button-tours.e2e.test.ts` keeps the
+   * negative assertion on the full removed sentence, where it runs against a real
+   * page rather than this component's tree.
+   */
   it("renders no first-run coach-mark overlay for any action", () => {
     renderHeader({ includeProgram: true });
 
     expect(screen.queryByText("Got it")).toBeNull();
-    expect(screen.queryByText("Skip all tips")).toBeNull();
-  });
-
-  it("renders no tour even when actions were never dismissed", () => {
-    // No shownButtonTours mechanism remains - the module header never shows tips,
-    // regardless of any "dismissed" state (there's no dismissal to track).
-    renderHeader();
-
-    expect(screen.queryByText(/Tap here/i)).toBeNull();
   });
 });
 
@@ -158,13 +163,22 @@ describe("ModuleHomeHeader shell", () => {
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
-  it("renders breadcrumb, h1 and tagline", () => {
+  it("renders the escape, h1 and tagline", () => {
     renderWithProviders(
       <ModuleHomeHeader title="Check-in" description="Log how you're feeling." tourScope="mood" />,
     );
 
-    // The breadcrumb eyebrow, which the field header used to render in white ink.
-    expect(screen.getByLabelText("Back to Modules")).toBeTruthy();
+    // ☠️ This announced "Back to Modules" until #2096. `/modules/cbt` is its own
+    // top crumb now, so the trail is a lone crumb, the eyebrow stays hidden and
+    // the bare `←` goes Home - which is the whole of the decision, seen from the
+    // one header that renders it.
+    //
+    // Left on the real pathname rather than given a two-crumb one to keep the
+    // eyebrow in the picture: EVERY caller of this component is a tool or module
+    // home, so a fixture with a trail would depict a screen the app cannot
+    // produce. (That the eyebrow is now unreachable from here is worth a look of
+    // its own; it is not this ticket's to remove.)
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
   });

@@ -78,6 +78,11 @@ export default defineConfig({
       EXPO_PUBLIC_PLAY_STORE_URL:
         "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
       EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY: E2E_WEB_PUSH_VAPID_PUBLIC_KEY,
+      // The support page renders its message form only when a support address
+      // is configured (#1728). A `.test.local` address, so CI's bundle carries
+      // nothing real; a developer's .env.local can still win the bake, which is
+      // why the support spec intercepts every send rather than trusting this.
+      EXPO_PUBLIC_SUPPORT_EMAIL: "support-e2e@test.local",
     },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: process.env.E2E_REUSE_EXISTING_SERVER === "1",

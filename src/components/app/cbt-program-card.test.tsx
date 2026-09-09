@@ -23,6 +23,7 @@ const assessmentPhase: CurrentPhaseView = {
   themeLabelKey: "program.weeks.assessment.title",
   themeSubKey: "program.weeks.assessment.sub",
   themeDescKey: "program.weeks.assessment.description",
+  leadsWithDailyPractice: true,
   milestones: [
     {
       key: "setGoals",
@@ -76,6 +77,50 @@ function makeProgram(overrides: Partial<CbtProgramView>): CbtProgramView {
 describe("CbtProgramCard", () => {
   beforeEach(() => jest.clearAllMocks());
 
+  describe("section order (#1676)", () => {
+    it("renders the daily practice before the milestones when the phase leads with it", () => {
+      renderWithProviders(
+        <CbtProgramCard
+          program={makeProgram({ phaseReady: false, phase: assessmentPhaseNotReady })}
+          onStart={jest.fn()}
+          onAdvance={jest.fn()}
+        />,
+      );
+
+      const headings = screen.getAllByText(/^(This phase|Today's practice)$/);
+      expect(headings.map((node) => node.props.children)).toEqual([
+        "Today's practice",
+        "This phase",
+      ]);
+
+      // The rows follow their headings: the practice row renders above the
+      // first milestone row.
+      const rows = screen.getAllByText(
+        /^(Notice your thoughts, feelings & behaviours today|Set 1-2 goals)$/,
+      );
+      expect(rows[0].props.children).toBe("Notice your thoughts, feelings & behaviours today");
+    });
+
+    it("renders the milestones first when the phase does not lead with its practice", () => {
+      renderWithProviders(
+        <CbtProgramCard
+          program={makeProgram({
+            phaseReady: false,
+            phase: { ...assessmentPhaseNotReady, leadsWithDailyPractice: false },
+          })}
+          onStart={jest.fn()}
+          onAdvance={jest.fn()}
+        />,
+      );
+
+      const headings = screen.getAllByText(/^(This phase|Today's practice)$/);
+      expect(headings.map((node) => node.props.children)).toEqual([
+        "This phase",
+        "Today's practice",
+      ]);
+    });
+  });
+
   describe("in_progress with phaseReady=true", () => {
     it("shows the ready banner and advance CTA, pressing advance calls onAdvance directly", () => {
       const onAdvance = jest.fn();
@@ -99,7 +144,7 @@ describe("CbtProgramCard", () => {
       expect(onAdvance).toHaveBeenCalledTimes(1);
     });
 
-    it("shows 'Finish the program' as the advance label on the last phase", () => {
+    it("shows 'Finish the programme' as the advance label on the last phase", () => {
       const onAdvance = jest.fn();
       renderWithProviders(
         <CbtProgramCard
@@ -109,7 +154,7 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      const graduateBtn = screen.getByText("Finish the program");
+      const graduateBtn = screen.getByText("Finish the programme");
       expect(graduateBtn).toBeTruthy();
       fireEvent.press(graduateBtn);
       expect(onAdvance).toHaveBeenCalledTimes(1);
@@ -202,8 +247,9 @@ describe("CbtProgramCard", () => {
     /**
      * A programme task that leaves its own module (#1265, O3). CBT's daily
      * practice is the shared check-in, which lives under `/tools`, so its Up
-     * climbs to `/tools` and drops the user out of the programme they were
-     * working through.
+     * goes to Home and drops the user out of the programme they were working
+     * through. (It climbed to `/tools` until #2096; either way it was never
+     * back to CBT, which is the part this test is about.)
      *
      * On the store, not on `router.push`: the helper pushes through
      * `router.push`, so the assertion above holds identically whether or not
@@ -239,10 +285,10 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      expect(screen.getByText("Your CBT program")).toBeTruthy();
-      expect(screen.getByText("Start program")).toBeTruthy();
+      expect(screen.getByText("Your CBT programme")).toBeTruthy();
+      expect(screen.getByText("Start programme")).toBeTruthy();
 
-      fireEvent.press(screen.getByText("Start program"));
+      fireEvent.press(screen.getByText("Start programme"));
       expect(onStart).toHaveBeenCalledTimes(1);
     });
 
@@ -257,7 +303,7 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      fireEvent.press(screen.getByLabelText("Hide the program invitation"));
+      fireEvent.press(screen.getByLabelText("Hide the programme invitation"));
       expect(onDismissStart).toHaveBeenCalledTimes(1);
     });
   });

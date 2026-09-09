@@ -16,7 +16,6 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function ExposureScreen() {
@@ -31,15 +30,7 @@ export default function ExposureScreen() {
         <View className="gap-6">
           <View className="flex-row items-center justify-between gap-4">
             <View className="flex-1 gap-2">
-              <ScreenHeader
-                title={t("exposure.title")}
-                right={
-                  <View className="flex-row items-center gap-3">
-                    <AddToHomeButton widgetId="cbt-exposure" />
-                    <HelpButton helpKey="exposure" />
-                  </View>
-                }
-              />
+              <ScreenHeader title={t("exposure.title")} right={<HelpButton helpKey="exposure" />} />
               <Text variant="muted">{t("exposure.description")}</Text>
             </View>
             <Button onPress={() => pushWithOrigin("/modules/cbt/exposure/new")} size="sm">

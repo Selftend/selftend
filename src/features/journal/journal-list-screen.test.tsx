@@ -10,6 +10,7 @@ import {
 import type { JournalEntry } from "@/src/features/journal/types";
 import { lastNDayKeys } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -21,10 +22,8 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-jest.mock("@/src/components/app/add-to-home-button", () => ({ AddToHomeButton: () => null }));
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: undefined }),
-  useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -190,6 +189,99 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText("Custom")).toBeNull();
   });
 
+  /**
+   * The control for the pair below: with nothing read there is nothing to keep,
+   * and the error line plus its retry is the honest answer.
+   */
+  it("says the writing chart could not be read when nothing has been read", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("Couldn't load the writing chart.")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+  });
+
+  /**
+   * ☠️☠️ **A failed refetch is not a failed read.** `isError` is the query's
+   * status, and query-core sets it on any failed fetch whether or not `data` is
+   * already there - which is why TanStack derives `isRefetchError` from
+   * `isError && hasData` at all. `journalKeys.all` is invalidated on every entry
+   * save, so a failed post-save re-read, or an ordinary refetch past the 60s
+   * `staleTime`, replaced a drawn chart with an error line. The buckets are in
+   * the cache and on the server. Same predicate mistake as #2253's.
+   */
+  it("keeps the drawn writing chart when a refetch over it fails", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: [
+        {
+          startDayKey: "2026-05-28",
+          endDayKey: "2026-05-28",
+          wordCount: 120,
+          unit: "day" as const,
+          rangeStartDayKey: "2026-05-28",
+          rangeEndDayKey: "2026-05-28",
+        },
+      ],
+      isError: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getAllByTestId("bar-chart-bar")).toHaveLength(1);
+    expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **An offline arrival is a read that never started, not one still
+   * running.** `networkMode: "online"` means the query never fires, never errors
+   * and sits at `isPending` true / `isPaused` true, so "no data and no error"
+   * parked it on a spinner forever with the retry beside it in a branch that
+   * never rendered - on a screen whose other content comes from the cache, so
+   * the section read as broken rather than as offline. #2237's conjunct.
+   */
+  it("offers the retry instead of an endless spinner when the read never started", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPaused: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("Couldn't load the writing chart.")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByTestId("journal-writing-loading")).toBeNull();
+  });
+
+  /**
+   * The other side of the conjunct: an ordinary online first load is still a
+   * spinner, not an error about a connection that is fine.
+   */
+  it("still spins while a read that did start is in flight", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPaused: false,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByTestId("journal-writing-loading")).toBeTruthy();
+    expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
+  });
+
   it("keeps the writing section and its control when the selected range is empty", () => {
     mockEntries([journalEntry("old", "2025-01-01")]);
     mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<
@@ -212,5 +304,51 @@ describe("JournalListScreen", () => {
 
     fireEvent.press(screen.getByText("Show all entries"));
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal/entries");
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and this href-less Pressable is a `<div role="link">` the browser
+   * does nothing with, so Tab reached the all-entries link and Enter opened nothing (#1735).
+   * The link brings its own Enter handler: once per press, never on auto-repeat,
+   * never on Space (a link does not activate on Space) - and never on a button,
+   * which react-native-web activates itself; a second handler there would fire
+   * the press twice.
+   *
+   * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+   * on a real `<div role="link">` - is proven once for the helper itself, on the
+   * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+   */
+  describe("the all-entries link on web", () => {
+    beforeEach(() => {
+      setPlatformOS("web");
+    });
+
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("activates on Enter, once, and not on a held key or on Space; no button brings a handler", () => {
+      mockEntries([journalEntry("today", "2026-05-28")]);
+
+      renderWithProviders(<JournalListScreen />);
+
+      const door = screen.getByRole("link", { name: "Show all entries" });
+      const preventDefault = jest.fn();
+      door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
+      expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal/entries");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
+
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const button of buttons) {
+        expect(button.props.onKeyDown).toBeUndefined();
+      }
+    });
   });
 });

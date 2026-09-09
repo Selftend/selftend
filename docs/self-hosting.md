@@ -94,6 +94,35 @@ EXPO_PUBLIC_PRIVACY_EMAIL=privacy@example.org
 EXPO_PUBLIC_SECURITY_EMAIL=security@example.org
 ```
 
+The three addresses are required in a stronger sense than the store and community
+URLs below, which you can set to an empty string to drop their surfaces. These
+have no empty state: the copy that names a contact cannot drop the clause, and a
+policy naming no contact is a broken document rather than a configured one. So an
+empty value resolves the same way an unset one does — to Selftend's own address —
+and `validateRequiredEnv` logs a warning naming the missing variables when a
+production build starts.
+
+> ☠️ **These variables do not yet cover your whole deployment.** As of
+> [#2131](https://github.com/Selftend/selftend/issues/2131) the **FAQ** (including
+> the parents letter) and the **health-data consent gate** read them. The
+> `privacy`, `terms`, `cookies` and `accountDeletion` sections still carry
+> `privacy@selftend.org`, `support@selftend.org` and `security@selftend.org` as
+> hardcoded literals — **15 occurrences** — so setting these three variables
+> **does not change those four screens**. Until that tranche moves, a fork
+> publishing this app is publishing Selftend's address as its own controller
+> contact in its privacy policy, and must patch those strings itself. They are
+> held back because they are hashed by
+> `src/features/policies/policy-content.test.ts`: editing one character requires a
+> `policyVersion` bump, and a bump re-presents the consent gate to every existing
+> user — plus, for the length of the rollout, once per cold start to anyone
+> whose phone is still on the previous build ([the shared-column skew
+> rule](releasing.md#the-same-rule-between-two-clients-shared-column-skew)) — so
+> they ride the next bump that carries a real disclosure change.
+>
+> The warning above is a `console.warn` from a runtime provider, not a build-time
+> failure — on a shipped native release nothing reads it. Treat these three as
+> your own release checklist item rather than something the tooling will catch.
+
 Optional:
 
 ```bash
@@ -101,20 +130,27 @@ EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/Selftend/selftend
 EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<public-vapid-key>
 EXPO_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
-EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url>
-EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url>
+EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url-or-empty>
+EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url-or-empty>
 EXPO_PUBLIC_DISCORD_URL=<your-discord-invite-url>
 EXPO_PUBLIC_REDDIT_URL=<your-subreddit-url>
+EXPO_PUBLIC_SPONSORS_URL=<your-sponsors-url>
 EXPO_PUBLIC_YOUTUBE_URL=<your-youtube-channel-url>
 ```
 
+⚠️ In `.env.example` the store and community URL lines are **commented out on purpose**: a bare `KEY=` in a dotenv file is an empty string, not unset, and for those keys empty is the opt-out — so a copied template would hide the Donate row and every community link ([#2209](https://github.com/Selftend/selftend/issues/2209)). Uncomment a line only to set a value; `test/env-example-opt-outs.test.ts` keeps the template that way.
+
 Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
 
-Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. The Play URL additionally drives the Android mobile-web download bar. The Play URL also drives the **Android** in-app update offer, which asks Google Play whether it is serving a newer build to that device rather than reading `/version.json` (a web-deploy timestamp is not evidence a store build is installable). **iOS offers stay disabled** — nothing on the device can observe an App Store promotion. Each platform uses only its own store URL and never falls back to the other. Leave both empty on a self-hosted fork - your build is not on our listings. Empty means the "Coming soon" chip, no download bar, and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
+Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. Both **default in code to Selftend’s own live listings**, the same way the Discord, Reddit, YouTube and Sponsors links do — a build handed no store config still points somewhere real. **Set each to your own listing URL, or to an empty string, on a self-hosted fork: your build is not on our listings, and shipping a link to someone else’s is exactly what the empty string is for.** An empty store URL drops that store’s button entirely — it is _not_ a "coming soon" state, because a fork’s app is not coming to our listing. Empty also means no download bar and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
+
+The Play URL additionally drives the Android mobile-web download bar, and the **Android** in-app update offer, which asks Google Play whether it is serving a newer build to that device rather than reading `/version.json` (a web-deploy timestamp is not evidence a store build is installable). **iOS offers stay disabled** — nothing on the device can observe an App Store promotion. Each platform uses only its own store URL and never falls back to the other.
 
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
 
-Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide that link - each community link is independently removable by config. The GitHub source link is always shown.
+Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide every link to it - each community link is independently removable by config. Each drives three surfaces: the navigation panel's social row, the landing footer, and one row on the support page - the subreddit under "Other ways to reach us", because it reaches people who answer, and the channel under "The project", because it does not. The GitHub source link is always shown.
+
+Donations: `EXPO_PUBLIC_SPONSORS_URL` defaults in code to the maintainer's GitHub Sponsors page and drives exactly one surface, the Donate row at the end of the app sidebar. A fork must set it to its own page or to an empty string, which removes the row - never ship a build that sends your users to someone else's donation page. The repository's own Sponsor button comes from `.github/FUNDING.yml`, which a fork edits separately.
 
 Never put service-role keys, database passwords, SMTP passwords, OAuth secrets, JWT secrets, private API keys, or backup credentials in Expo public variables. They are bundled into the client app.
 
@@ -175,4 +211,4 @@ PikaPods is not supported yet. Future review should check whether it can run or 
 
 Document managed self-hosting as a possibility, not a launch promise.
 
-The app remains wellness and guided self-help, not therapy, diagnosis, or emergency support, regardless of who hosts it.
+The app remains wellness and self-help, not therapy, diagnosis, or emergency support, regardless of who hosts it.

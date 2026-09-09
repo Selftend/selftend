@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
-import type { AudioPlayer } from "expo-audio";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
-import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
+import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
-import { ensureNativeAudioMode, loadExpoAudio, playOneShot } from "@/src/lib/native-audio";
+import { createLanePlayer } from "@/src/lib/lane-player";
+import { phaseHaptic } from "@/src/lib/native-haptics";
+import { useAmbientLane } from "@/src/lib/use-ambient-lane";
 
 interface BreathingAudioOptions {
   active: boolean;
@@ -14,104 +14,28 @@ interface BreathingAudioOptions {
   ambientSoundId: string;
   breathVolume: number;
   ambientVolume: number;
-}
-
-// A tiny platform-abstracted player so the controller logic stays readable.
-interface LanePlayer {
-  play: (asset: number, volume: number, loop: boolean) => Promise<void>;
-  setVolume: (volume: number) => Promise<void>;
-  stop: () => Promise<void>;
-}
-
-function createLanePlayer(): LanePlayer {
-  if (Platform.OS === "web") {
-    let el: HTMLAudioElement | null = null;
-    return {
-      async play(asset, volume, loop) {
-        el?.pause();
-        el = new window.Audio(asset as unknown as string);
-        el.loop = loop;
-        el.volume = volume;
-        await el.play().catch(() => {});
-      },
-      async setVolume(volume) {
-        if (el) el.volume = volume;
-      },
-      async stop() {
-        el?.pause();
-        el = null;
-      },
-    };
-  }
-
-  let player: AudioPlayer | null = null;
-  // Bumped by every play()/stop(); a play() that resumes after awaiting the
-  // audio-mode setup only proceeds if it hasn't been superseded meanwhile.
-  let playGen = 0;
-  return {
-    async play(asset, volume, loop) {
-      const gen = ++playGen;
-      try {
-        const audio = loadExpoAudio();
-        await ensureNativeAudioMode(audio);
-        if (gen !== playGen) return;
-        player?.remove();
-        player = audio.createAudioPlayer(asset);
-        player.loop = loop;
-        player.volume = volume;
-        player.play();
-      } catch {
-        // Audio is best-effort; never crash a breathing session.
-      }
-    },
-    async setVolume(volume) {
-      try {
-        if (player) player.volume = volume;
-      } catch {
-        // ignore
-      }
-    },
-    async stop() {
-      playGen++;
-      try {
-        player?.remove();
-      } catch {
-        // ignore
-      }
-      player = null;
-    },
-  };
-}
-
-/** Fire-and-forget one-shot (used for the spoken intro before a session). Self-releases. */
-export function playIntroCue(asset: number, volume: number): void {
-  playOneShot(asset, volume);
+  /** A tap at each phase boundary (#1741), beside the sound or instead of it. Opt-in. */
+  hapticCues: boolean;
 }
 
 export function useBreathingAudio(opts: BreathingAudioOptions): void {
-  const { active, phaseLabel, breathSoundId, ambientSoundId, breathVolume, ambientVolume } = opts;
+  const {
+    active,
+    phaseLabel,
+    breathSoundId,
+    ambientSoundId,
+    breathVolume,
+    ambientVolume,
+    hapticCues,
+  } = opts;
   // Lazy useState instead of a render-written ref: same one-instance-per-mount
   // semantics, no ref access during render.
   const [breathLane] = useState(createLanePlayer);
-  const [ambientLane] = useState(createLanePlayer);
   const breathClipRef = useRef<number | null>(null);
 
-  // Ambient: start/stop with the session; restart when the chosen sound changes.
-  useEffect(() => {
-    const lane = ambientLane;
-    if (!active) {
-      void lane.stop();
-      return;
-    }
-    const asset = ambientSoundLookup[ambientSoundId]?.asset ?? null;
-    if (asset !== null) void lane.play(asset, ambientVolume, true);
-    else void lane.stop();
-    return () => {
-      void lane.stop();
-    };
-    // Volume changes are handled in the volume effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, ambientSoundId]);
+  // Ambient: the shared bed lane (#1742) - starts and stops with the session,
+  // fades on pause and at the end (#1743), swaps on a new sound, takes volume live.
+  useAmbientLane({ active, soundId: ambientSoundId, volume: ambientVolume });
 
   // Breath: on each phase (or sound) change, fire the phase's cue / swap the looped texture.
   useEffect(() => {
@@ -121,6 +45,9 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
       void lane.stop();
       return;
     }
+    // Already resolved: the repository maps a stored id the catalog lacks to `none`
+    // on read (#1745), so this lookup never sees a retired texture id. It used to
+    // resolve here as well, and the session screen did not - the gap this closes.
     const sound = breathSoundLookup[breathSoundId];
     const clip = breathClipFor(phaseLabel, sound);
     if (clip === breathClipRef.current) return;
@@ -135,14 +62,30 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
   useEffect(() => {
     void breathLane.setVolume(breathVolume);
   }, [breathLane, breathVolume]);
-  useEffect(() => {
-    void ambientLane.setVolume(ambientVolume);
-  }, [ambientLane, ambientVolume]);
 
+  // The phase's tap (#1741): its OWN effect, keyed on the phase and never on the
+  // clip. The sound effect above de-duplicates on the resolved clip, so a tap
+  // beside `lane.play` would never fire for the `none` sound, would skip every
+  // hold for a voice without a hold cue, and would fire on a mid-phase sound
+  // swap. The switch rides a ref so flipping it mid-phase waits for the next
+  // boundary rather than tapping at once. A resume taps once for the phase it
+  // returns to, exactly as the sound re-cues it.
+  const hapticCuesRef = useRef(hapticCues);
+  useEffect(() => {
+    hapticCuesRef.current = hapticCues;
+  }, [hapticCues]);
+  useEffect(() => {
+    if (!active || phaseLabel === null || !hapticCuesRef.current) return;
+    phaseHaptic();
+  }, [active, phaseLabel]);
+
+  // Unmount: stop() on a looping lane starts a fade-out that OUTLIVES this component -
+  // the ramp is a setInterval with no React owner, finishes within LOOP_FADE_MS and
+  // releases the player itself. Chosen over an immediate cut so that leaving the
+  // screen mid-session sounds like the session ending, not like a cable pulled.
   useEffect(() => {
     return () => {
       void breathLane.stop();
-      void ambientLane.stop();
     };
-  }, [breathLane, ambientLane]);
+  }, [breathLane]);
 }

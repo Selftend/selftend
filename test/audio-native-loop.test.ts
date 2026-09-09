@@ -19,7 +19,9 @@ import {
   BELLS,
   CLASS_LOOP,
   CREDITS_PER_SECOND,
+  LIBRARY_BEDS,
   SFX_CLIPS,
+  SYNTH_BEDS,
   TEXTURES,
   creditEstimate,
   outputSpecFor,
@@ -27,9 +29,30 @@ import {
 import { loopReturnedSeconds, requestSecondsFor } from "../scripts/audio/loop-probe.mjs";
 
 describe("only beds render loop: true", () => {
-  it("asks the API to loop every bed", () => {
-    expect(BEDS).toHaveLength(5);
+  it("makes every bed loop, whether the API or the DSP delivers it", () => {
+    // Nine since the 2026-08-29 bed request (#1130): six generated, plus the
+    // three computed noise beds. ⚠️ `loop: true` means two different things now
+    // and both land in the same place — for a generated bed it is a flag sent to
+    // the API, and for a synth bed it is a property the circular filtering makes
+    // true by construction. Either way `foldPlan` reads it and skips the fold.
+    expect(BEDS).toHaveLength(9);
     for (const bed of BEDS) expect(bed.loop).toBe(true);
+  });
+
+  it("keeps the computed beds out of the render list", () => {
+    // ☠️ The saving lives here: a synth bed inside `SFX_CLIPS` would be quoted
+    // and paid for. `BEDS` is the ship set; `SFX_CLIPS` is what the API renders.
+    //
+    // Three computed, and three more from the Explore LIBRARY. `ocean`,
+    // `stream` and `fire` were tried both other ways — 36 API takes rejected for
+    // 13,530 credits, then synthesised and rejected by ear — before a free
+    // library download settled all three.
+    expect(SYNTH_BEDS).toHaveLength(3);
+    expect(LIBRARY_BEDS).toHaveLength(3);
+    const rendered = SFX_CLIPS.map((clip: { id: string }) => clip.id);
+    for (const bed of [...SYNTH_BEDS, ...LIBRARY_BEDS]) {
+      expect(rendered).not.toContain(bed.id);
+    }
   });
 
   it("leaves the bells one-shots", () => {
@@ -37,9 +60,16 @@ describe("only beds render loop: true", () => {
     for (const bell of BELLS) expect(bell.loop).toBe(false);
   });
 
-  it("leaves the textures non-looping, as #1137 ruled", () => {
-    expect(TEXTURES).toHaveLength(6);
-    for (const texture of TEXTURES) expect(texture.loop).toBe(false);
+  it("has retired the texture lane entirely", () => {
+    // ☠️ Six until 2026-08-30. The owner auditioned the rendered set and asked for
+    // background beds only — "no inhale/exhale specific noises" — so `soft-breath`,
+    // `ocean-swell` and `wind` are gone as a lane, not as failed takes
+    // (`ocean-swell_inhale` was judged good). #1137's "textures never loop" ruling
+    // has nothing left to rule on.
+    //
+    // ⚠️ Also load-bearing for the bundle: nine beds only fit under the 4 MiB
+    // ceiling once these six stopped being counted.
+    expect(TEXTURES).toHaveLength(0);
   });
 
   it("has exactly one loop answer per class, and beds are the only true one", () => {
@@ -74,8 +104,10 @@ describe("a looping request is a duration loop mode will honour exactly", () => 
   });
 
   it("gives every looping clip the length it asked for", () => {
+    // Three: `rain`, `forest` and `night` — the only beds still generated. The
+    // other six loop too, but are computed rather than asked for.
     const looping = SFX_CLIPS.filter((clip) => clip.loop);
-    expect(looping).toHaveLength(5);
+    expect(looping).toHaveLength(3);
     for (const clip of looping) {
       expect(loopReturnedSeconds(clip.durationSeconds)).toBeCloseTo(clip.durationSeconds, 6);
     }
@@ -108,9 +140,11 @@ describe("preflight asks for a duration loop mode will honour", () => {
     expect(requestSecondsFor(BEDS[0], PREFLIGHT_SECONDS)).toBe(loopReturnedSeconds(4));
   });
 
-  it("leaves the non-looping classes at exactly 4s", () => {
-    expect(requestSecondsFor(TEXTURES[0], PREFLIGHT_SECONDS)).toBe(4);
+  it("leaves the non-looping class at exactly 4s", () => {
+    // Bells only since the texture lane was retired (2026-08-30) — they are now
+    // the sole class that does not loop, so they are the whole of this check.
     expect(requestSecondsFor(BELLS[0], PREFLIGHT_SECONDS)).toBe(4);
+    expect(BELLS.every((bell: { loop: boolean }) => !bell.loop)).toBe(true);
   });
 
   it("asks every clip for a length its own render mode returns unchanged", () => {
@@ -130,10 +164,17 @@ describe("a natively looping bed carries its render mode into the pipeline", () 
     expect(outputSpecFor("brown-noise").foldSeconds).toBeCloseTo(0.4, 6);
   });
 
-  it("gives a bell and a texture no fold length at all", () => {
+  it("gives a bell no fold length at all", () => {
     expect(outputSpecFor("meditation-bell").foldSeconds).toBeNull();
-    expect(outputSpecFor("soft-breath_inhale").foldSeconds).toBeNull();
     expect(outputSpecFor("meditation-bell").loop).toBe(false);
+  });
+
+  it("no longer knows the retired texture ids at all", () => {
+    // ☠️ The lane is gone from OUTPUT_CLIPS with it, so a spec lookup THROWS
+    // rather than quietly returning a bed's. The six .wav files are still in
+    // assets/ until the app change lands, but nothing re-processes them — and a
+    // loud throw is the right answer if anything tries.
+    expect(() => outputSpecFor("soft-breath_inhale")).toThrow(/unknown clip id/);
   });
 
   it("says a voice cue neither loops nor folds", () => {
@@ -156,9 +197,18 @@ describe("the credit rate is the API's, not the web composer's", () => {
   it("quotes Round B at the number the API would actually charge", () => {
     const roundB = SFX_CLIPS.filter((clip) => clip.round === "B");
     const { seconds, credits } = creditEstimate(roundB);
-    // 5 beds x 3 x 30s + 6 textures x 2 x 10s.
-    expect(seconds).toBe(570);
-    expect(credits).toBe(6270);
+    // 3 beds x 3 x 30s. Three, not the original five: the
+    // 2026-08-29 request added `stream` and `fire`, while `brown-noise` LEFT the
+    // render for `synth-noise.mjs` along with the two new noise beds.
+    //
+    // 📌 The three synth beds would have cost 3 x 3 x 30s x 11 = 2,970 credits.
+    // They cost nothing and are exact, seamless and reproducible instead.
+    //
+    // ⚠️ Three beds and nothing else: 3 x 3 x 30s. The breath textures were
+    // retired, and `ocean`/`stream`/`fire` moved to synthesis after the API
+    // failed all 36 of their takes.
+    expect(seconds).toBe(270);
+    expect(credits).toBe(2970);
   });
 
   it("quotes the two bells at what Round A really cost", () => {

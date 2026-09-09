@@ -1,3 +1,4 @@
+import { resolveAmbientSoundId, resolveBreathSoundId } from "@/src/constants/breathing-sounds";
 import {
   defaultUserPreferences,
   sanitizeEnabledModules,
@@ -65,23 +66,37 @@ interface UserPreferenceRow {
   habits_reminder_hour: number | null;
   habits_reminder_minute: number | null;
   habits_reminder_timezone: string | null;
+  dbt_reminders_enabled: boolean | null;
+  dbt_reminder_hour: number | null;
+  dbt_reminder_minute: number | null;
+  dbt_reminder_timezone: string | null;
   act_program_started_at: string | null;
   act_program_completed_at: string | null;
   act_program_prompt_dismissed_at: string | null;
   act_program_phase_index: number | null;
   act_program_phase_started_at: string | null;
   act_graduation_dismissed_at: string | null;
+  dbt_program_started_at: string | null;
+  dbt_program_completed_at: string | null;
+  dbt_program_prompt_dismissed_at: string | null;
+  dbt_program_phase_index: number | null;
+  dbt_program_phase_started_at: string | null;
+  dbt_graduation_dismissed_at: string | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
+  health_data_consent_at: string | null;
+  age_floor_met: boolean | null;
+  age_attested_country: string | null;
+  age_attested_at: string | null;
   cookie_consent: CookieConsent | null;
   language: string | null;
   theme: string | null;
-  selected_concerns: string[] | null;
   active_strategies: string[] | null;
   start_here_dismissed_at: string | null;
   shown_button_tours: string[] | null;
   reminder_prompted_tools: string[] | null;
+  starter_routine_offered: boolean | null;
   breath_sound_id: string | null;
   ambient_sound_id: string | null;
   breath_volume: number | null;
@@ -90,7 +105,10 @@ interface UserPreferenceRow {
   breathing_cycles: number | null;
   meditation_interval_bell_minutes: number | null;
   meditation_bell_at_half: boolean | null;
+  haptic_cues: boolean | null;
   bell_volume: number | null;
+  meditation_ambient_sound_id: string | null;
+  meditation_ambient_volume: number | null;
   email_verified: boolean | null;
 }
 
@@ -167,26 +185,54 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     habitsReminderHour: row.habits_reminder_hour ?? defaultUserPreferences.habitsReminderHour,
     habitsReminderMinute: row.habits_reminder_minute ?? defaultUserPreferences.habitsReminderMinute,
     habitsReminderTimezone: row.habits_reminder_timezone ?? null,
+    dbtRemindersEnabled: Boolean(row.dbt_reminders_enabled),
+    dbtReminderHour: row.dbt_reminder_hour ?? defaultUserPreferences.dbtReminderHour,
+    dbtReminderMinute: row.dbt_reminder_minute ?? defaultUserPreferences.dbtReminderMinute,
+    dbtReminderTimezone: row.dbt_reminder_timezone ?? null,
     actProgramStartedAt: row.act_program_started_at ?? null,
     actProgramCompletedAt: row.act_program_completed_at ?? null,
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
     actProgramPhaseIndex: row.act_program_phase_index ?? 0,
     actProgramPhaseStartedAt: row.act_program_phase_started_at ?? null,
     actGraduationDismissedAt: row.act_graduation_dismissed_at ?? null,
+    dbtProgramStartedAt: row.dbt_program_started_at ?? null,
+    dbtProgramCompletedAt: row.dbt_program_completed_at ?? null,
+    dbtProgramPromptDismissedAt: row.dbt_program_prompt_dismissed_at ?? null,
+    dbtProgramPhaseIndex: row.dbt_program_phase_index ?? 0,
+    dbtProgramPhaseStartedAt: row.dbt_program_phase_started_at ?? null,
+    dbtGraduationDismissedAt: row.dbt_graduation_dismissed_at ?? null,
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
+    // Never inferred from privacyPolicyAcceptedAt above: every row predating
+    // #1766 accepted a policy under one bundled checkbox, and the reason this
+    // field exists is that a bundled tick is not the explicit Art. 9(2)(a) act.
+    healthDataConsentAt: row.health_data_consent_at ?? null,
+    // `?? null` and deliberately NOT `Boolean(...)`, which is what the other
+    // flags on this row use. Coercing here would turn "never asked" into
+    // "failed the floor" for every account predating the gate (#1762).
+    ageFloorMet: row.age_floor_met ?? null,
+    ageAttestedCountry: row.age_attested_country ?? null,
+    ageAttestedAt: row.age_attested_at ?? null,
     cookieConsent: row.cookie_consent ?? null,
     language: row.language ?? defaultUserPreferences.language,
     languageExplicit: row.language !== null,
     theme: row.theme ?? null,
-    selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
     startHereDismissedAt: row.start_here_dismissed_at ?? null,
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
     reminderPromptedTools: (row.reminder_prompted_tools ?? []) as ReminderPromptedTool[],
-    breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
-    ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
+    starterRoutineOffered: Boolean(row.starter_routine_offered),
+    // Resolved HERE, once, for every consumer (#1745): both columns are plain text with
+    // no CHECK, shipped clients may still write a retired id, so the database can hold
+    // `wind` forever. Read-side only - the resolved value is never written back, and
+    // `updateUserPreferences` sends a patch through untouched.
+    breathSoundId: resolveBreathSoundId(
+      row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
+    ),
+    ambientSoundId: resolveAmbientSoundId(
+      row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
+    ),
     breathVolume: row.breath_volume ?? defaultUserPreferences.breathVolume,
     ambientVolume: row.ambient_volume ?? defaultUserPreferences.ambientVolume,
     lastBreathingPatternId: row.last_breathing_pattern_id ?? null,
@@ -195,6 +241,13 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
       row.meditation_interval_bell_minutes ?? defaultUserPreferences.meditationIntervalBellMinutes,
     bellVolume: row.bell_volume ?? defaultUserPreferences.bellVolume,
     meditationBellAtHalf: Boolean(row.meditation_bell_at_half),
+    hapticCues: Boolean(row.haptic_cues),
+    // The sit's bed resolves like the breathing one: same catalog, same `none`.
+    meditationAmbientSoundId: resolveAmbientSoundId(
+      row.meditation_ambient_sound_id ?? defaultUserPreferences.meditationAmbientSoundId,
+    ),
+    meditationAmbientVolume:
+      row.meditation_ambient_volume ?? defaultUserPreferences.meditationAmbientVolume,
     emailVerified: row.email_verified ?? defaultUserPreferences.emailVerified,
   };
 }
@@ -213,19 +266,121 @@ function missingPreferenceColumn(error: unknown): string | null {
   return match ? match[1] : null;
 }
 
-export async function getUserPreferences(userId: string) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+/**
+ * How long a preferences read may sit on the wire before it is abandoned
+ * (#2251). The row decides both legal gates, so while it is unknown the whole
+ * app is behind `PreferencesUnavailableScreen` - and a request that black-holes
+ * (a captive portal, dead air) never errors on its own: Android's OkHttp is
+ * built with zero connect/read/write timeouts and a browser `fetch` has none.
+ * Without this, TanStack's `retry: 1` never fires (it retries a rejection, not
+ * a hang) and the errored half with its Retry never appears.
+ */
+export const PREFERENCES_READ_TIMEOUT_MS = 15_000;
 
-  if (error) {
-    throw error;
+/**
+ * Thrown when a preferences read was cut short by the CALLER's signal - the
+ * block screen's Retry cancelling a hung read, or an unmount. Named
+ * `AbortError` so `isReportableError` treats it like any other aborted fetch:
+ * a cancellation this app asked for is not a defect.
+ */
+export class PreferencesReadAbortedError extends Error {
+  constructor(cause: unknown) {
+    super("Preferences read aborted");
+    this.name = "AbortError";
+    this.cause = cause;
+  }
+}
+
+/**
+ * Thrown when the read gave up on its OWN clock, after
+ * `PREFERENCES_READ_TIMEOUT_MS`.
+ *
+ * ☠️☠️ Deliberately NOT named `AbortError`, and the split from the class above
+ * is the whole point. Both causes used to share that name, which meant
+ * `isReportableError` (src/lib/sentry.ts) dropped them both - so the ceiling
+ * this release chose, on the read that gates the entire app, would have failed
+ * in production with no signal of any kind: no Sentry event, no Play vital, no
+ * crash. A cancellation the app requested really is unreportable noise; a
+ * self-inflicted deadline expiring on the launch path is the one number nobody
+ * could tune afterwards without hearing about it.
+ *
+ * ⚠️ This does NOT re-open the noise #1548 narrowed away. That narrowing is by
+ * `name`/`message`/`status`, and this error matches none of its rules: it is
+ * not an abort the app asked for, it does not carry "Network request failed" or
+ * "Failed to fetch", and it has no auth status. Every genuinely-offline read
+ * still rejects with a network message or the abort name above and stays
+ * filtered. Nothing in the filter changed for this - the type is distinct
+ * enough that the existing rules simply do not match it, which is pinned by
+ * `repository.test.ts`.
+ */
+export class PreferencesReadTimeoutError extends Error {
+  constructor(cause: unknown) {
+    super(`Preferences read timed out after ${PREFERENCES_READ_TIMEOUT_MS}ms`);
+    this.name = "PreferencesReadTimeoutError";
+    this.cause = cause;
+  }
+}
+
+/**
+ * Read the signed-in person's `user_preferences` row.
+ *
+ * ☠️ The read honours `options.signal` AND gives up on its own after
+ * `PREFERENCES_READ_TIMEOUT_MS` (#2251). The signal is what lets a query
+ * cancellation reach the wire: `queryClient.cancelQueries` rejects the query's
+ * promise, but the request underneath keeps its socket open until something
+ * aborts it. TanStack hands its own signal to every `queryFn`, and it is only
+ * honoured when passed on here.
+ */
+export async function getUserPreferences(
+  userId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<UserPreferences> {
+  const client = requireSupabase();
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  // Which of the two abort causes fired, because they report differently: the
+  // caller's cancellation is expected noise, the deadline is a signal.
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    abort();
+  }, PREFERENCES_READ_TIMEOUT_MS);
+  if (options.signal?.aborted) {
+    abort();
+  } else {
+    options.signal?.addEventListener("abort", abort);
   }
 
-  return mapPreferences(data as UserPreferenceRow | null);
+  try {
+    const { data, error } = await client
+      .from("user_preferences")
+      .select("*")
+      .eq("user_id", userId)
+      .abortSignal(controller.signal)
+      .maybeSingle();
+
+    if (error) {
+      // PostgREST reports an aborted fetch as a plain error object whose
+      // message merely starts with "AbortError:", so the cause has to be
+      // recovered here rather than read off the error.
+      if (!controller.signal.aborted) {
+        throw error;
+      }
+      // ⚠️ The caller's own signal WINS when both fired. A cancellation the app
+      // asked for stays unreportable even if the deadline landed in the same
+      // tick; only a read that nothing cancelled and that ran out of clock is
+      // the self-inflicted failure worth paging about.
+      if (timedOut && !options.signal?.aborted) {
+        throw new PreferencesReadTimeoutError(error);
+      }
+      throw new PreferencesReadAbortedError(error);
+    }
+
+    return mapPreferences(data as UserPreferenceRow | null);
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", abort);
+  }
 }
 
 // Camel-case preference fields -> user_preferences columns, for building partial
@@ -286,23 +441,37 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   habitsReminderHour: "habits_reminder_hour",
   habitsReminderMinute: "habits_reminder_minute",
   habitsReminderTimezone: "habits_reminder_timezone",
+  dbtRemindersEnabled: "dbt_reminders_enabled",
+  dbtReminderHour: "dbt_reminder_hour",
+  dbtReminderMinute: "dbt_reminder_minute",
+  dbtReminderTimezone: "dbt_reminder_timezone",
   actProgramStartedAt: "act_program_started_at",
   actProgramCompletedAt: "act_program_completed_at",
   actProgramPromptDismissedAt: "act_program_prompt_dismissed_at",
   actProgramPhaseIndex: "act_program_phase_index",
   actProgramPhaseStartedAt: "act_program_phase_started_at",
   actGraduationDismissedAt: "act_graduation_dismissed_at",
+  dbtProgramStartedAt: "dbt_program_started_at",
+  dbtProgramCompletedAt: "dbt_program_completed_at",
+  dbtProgramPromptDismissedAt: "dbt_program_prompt_dismissed_at",
+  dbtProgramPhaseIndex: "dbt_program_phase_index",
+  dbtProgramPhaseStartedAt: "dbt_program_phase_started_at",
+  dbtGraduationDismissedAt: "dbt_graduation_dismissed_at",
   privacyPolicyAcceptedAt: "privacy_policy_accepted_at",
   termsAcceptedAt: "terms_accepted_at",
   policyVersionAccepted: "policy_version_accepted",
+  healthDataConsentAt: "health_data_consent_at",
+  ageFloorMet: "age_floor_met",
+  ageAttestedCountry: "age_attested_country",
+  ageAttestedAt: "age_attested_at",
   cookieConsent: "cookie_consent",
   language: "language",
   theme: "theme",
-  selectedConcerns: "selected_concerns",
   activeStrategies: "active_strategies",
   startHereDismissedAt: "start_here_dismissed_at",
   shownButtonTours: "shown_button_tours",
   reminderPromptedTools: "reminder_prompted_tools",
+  starterRoutineOffered: "starter_routine_offered",
   breathSoundId: "breath_sound_id",
   ambientSoundId: "ambient_sound_id",
   breathVolume: "breath_volume",
@@ -311,7 +480,10 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   breathingCycles: "breathing_cycles",
   meditationIntervalBellMinutes: "meditation_interval_bell_minutes",
   meditationBellAtHalf: "meditation_bell_at_half",
+  hapticCues: "haptic_cues",
   bellVolume: "bell_volume",
+  meditationAmbientSoundId: "meditation_ambient_sound_id",
+  meditationAmbientVolume: "meditation_ambient_volume",
   emailVerified: "email_verified",
 };
 
@@ -353,27 +525,6 @@ export async function updateUserPreferences(userId: string, patch: Partial<UserP
   throw new Error("updateUserPreferences: exhausted missing-column retries");
 }
 
-export async function updateShownButtonTours(userId: string, shownButtonTours: ButtonTourKey[]) {
-  const client = requireSupabase();
-  const { data, error } = await client
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        shown_button_tours: shownButtonTours,
-      },
-      { onConflict: "user_id" },
-    )
-    .select("*")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return mapPreferences(data as UserPreferenceRow);
-}
-
 /**
  * The keys an onboarding write may name.
  *
@@ -386,8 +537,6 @@ type OnboardingPreferencesPatch = Partial<
     | "appOnboardingCompleted"
     | "appOnboardingCompletedVia"
     | "appOnboardingCompletedAt"
-    | "shownButtonTours"
-    | "selectedConcerns"
     | "startHereDismissedAt"
   >
 >;
@@ -420,6 +569,19 @@ export async function updateOnboardingPreferences(
   return mapPreferences(data as UserPreferenceRow);
 }
 
+/**
+ * Record what the consent gate collected: the contractual acceptance, and the
+ * explicit Art. 9(2)(a) consent beside it (#1766, spec #227 §3).
+ *
+ * Two records because the gate asks two separate questions. The gate submits
+ * only when BOTH have been ticked, so both are written here - but they are
+ * written as two facts, not one, because `health_data_consent_at` has to be
+ * readable later as its own affirmative act rather than as something implied by
+ * having accepted a policy version.
+ *
+ * The same `now` for both: one submit, one moment. A reader comparing the two
+ * timestamps should not have to wonder what a difference would have meant.
+ */
 export async function recordPolicyConsent(userId: string, policyVersion: string) {
   const client = requireSupabase();
   const now = new Date().toISOString();
@@ -429,6 +591,42 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
       privacy_policy_accepted_at: now,
       terms_accepted_at: now,
       policy_version_accepted: policyVersion,
+      health_data_consent_at: now,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+/**
+ * Record that this person cleared their country's age floor (#1764, §3).
+ *
+ * Its own function rather than a `updateUserPreferences` patch, for one
+ * reason: that path retries while PostgREST reports a missing column, dropping
+ * the named column each pass, so on an environment whose schema predates
+ * #1762's migration it would report success having written nothing. The gate
+ * would then re-ask on every launch, and - worse - a caller could reasonably
+ * read the resolved promise as "attested". This fails instead.
+ *
+ * Only ever called for a PASS. There is no failing counterpart: an under-floor
+ * verdict writes nothing at all, because the account it would be written
+ * against is about to be deleted (#1765).
+ *
+ * ⚠️ The date of birth is not a parameter and must not become one.
+ */
+export async function recordAgeAttestation(userId: string, country: string) {
+  const client = requireSupabase();
+  const { error } = await client.from("user_preferences").upsert(
+    {
+      user_id: userId,
+      age_floor_met: true,
+      // `^[A-Z]{2}$` is checked in the database too; normalising here means a
+      // lower-case code is stored rather than rejected.
+      age_attested_country: country.trim().toUpperCase(),
+      age_attested_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },
   );

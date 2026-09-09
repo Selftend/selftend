@@ -4,6 +4,7 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
+import { SchemePicker } from "@/src/components/app/scheme-picker";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { StylePicker } from "@/src/components/app/style-picker";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -14,16 +15,19 @@ import { CreateAccountCard } from "@/src/features/settings/components/create-acc
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { ExportDataRow } from "@/src/features/settings/components/export-data-row";
 import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
+import { SettingsGroupLabel } from "@/src/features/settings/components/settings-group-label";
 import { SettingsHero } from "@/src/features/settings/components/settings-hero";
 import { SettingsProfileBlock } from "@/src/features/settings/components/settings-profile-block";
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
 import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { useOnboardingActions } from "@/src/features/settings/use-reset-onboarding";
+import { useWideFrame } from "@/src/features/settings/use-wide-frame";
 import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
+import { cn } from "@/lib/utils";
 
 /**
- * Settings: identity header → palette → four labelled runs → colophon.
+ * Settings: identity header → appearance → four labelled runs → colophon.
  *
  * Eleven rows and one grammar, in place of seven `SettingsSectionCard`s. Two of
  * the old cards each held two unrelated things and had to split - `Onboarding`
@@ -54,14 +58,14 @@ export default function SettingsScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
   const { user } = useSession();
+  const wide = useWideFrame();
   const { data } = useUserPreferences(user?.id ?? null);
 
   const { canSignOut, signOut: handleSignOut } = useSignOut(user);
-  const {
-    replayIntroduction,
-    showTipsAgain,
-    isPending: onboardingPending,
-  } = useOnboardingActions(user, data?.appOnboardingCompletedVia);
+  const { replayIntroduction, isPending: onboardingPending } = useOnboardingActions(
+    user,
+    data?.appOnboardingCompletedVia,
+  );
 
   const onboardingDisabled = !data || onboardingPending;
 
@@ -71,8 +75,21 @@ export default function SettingsScreen() {
       {/* Keyboard avoidance for the display-name field (edge-to-edge Android
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-        <KeyboardAwareScrollView contentContainerClassName="grow p-4">
-          <View testID="settings-layout" className="mx-auto w-full max-w-2xl gap-6">
+        {/*
+          D5 (#1830): the page breathes at top and bottom, and the SIDES stay at
+          16px — that inset is what keeps the content column at 672px inside the
+          `max-w-2xl`, which the design system's own kit backs (#1788). Chasing
+          `14a`'s drawn 720 here would widen the column the kit already settled.
+        */}
+        <KeyboardAwareScrollView contentContainerClassName="grow px-4 pt-[40px] pb-[48px]">
+          {/*
+            D4: the column rhythm the drawing has, on the page's one breakpoint
+            (`useWideFrame`, 640) rather than a second hand-written width test.
+          */}
+          <View
+            testID="settings-layout"
+            className={cn("mx-auto w-full max-w-2xl", wide ? "gap-[34px]" : "gap-[26px]")}
+          >
             <SettingsHero />
 
             <SettingsProfileBlock user={user} />
@@ -94,13 +111,45 @@ export default function SettingsScreen() {
               asked-and-refused note in `src/lib/theme/encoding.ts`.
             */}
             <View className="gap-2">
-              <Text variant="muted" className="px-1 text-[13px]">
+              {/*
+                The group's name (#1828), through the same component the four
+                runs use. Both premises of the shipped "two labels for one grid"
+                ruling died: the group holds a SECOND control now, and #1800
+                removed the card that used to delimit it - leaving this as the
+                only bare region on the page, and the only settings group a
+                screen-reader user had nothing to jump to.
+              */}
+              <SettingsGroupLabel>{t("appearance.title")}</SettingsGroupLabel>
+              {/*
+                The appearance axis, restoring the half of #583 that never
+                shipped here (#1827): Settings gets the SAME control the header
+                menu mounts, not a copy of it.
+
+                Its visible caption is suppressed, as the palette grid's already
+                is - two captions inside one group, on a page whose groups are
+                each named once, above. The radiogroups keep their distinct
+                `accessibilityLabel`s.
+
+                ☠️ The two axes in this group have OPPOSITE sync scopes: the
+                scheme rides `user_preferences.theme` across devices, the palette
+                is device-local. That is why `This device only` stays welded to
+                the palette sentence below rather than captioning the group -
+                hoisting it would make it false about the control above.
+              */}
+              <SchemePicker showLabel={false} />
+              {/* No `px-1`: that inset was optical against a card edge, and
+                  #1800 already took the same one off the runs. The sentence
+                  itself is untouched - the eyebrow above is what stops it
+                  standing in as the group's name, so it goes back to being the
+                  palette's own line, where "This device only" is scoped by
+                  adjacency and unconditionally true. */}
+              <Text variant="muted" className="text-[13px]">
                 {t("appearance.description")}
               </Text>
               <StylePicker itemClassName="w-1/2 md:w-1/4 p-1" heading={false} />
             </View>
 
-            <SettingsRun label={t("runs.app")} testID="settings-run-app">
+            <SettingsRun surface="hairline" label={t("runs.app")} testID="settings-run-app">
               <SettingsRow
                 icon="notifications-active"
                 label={t("reminders.title")}
@@ -126,19 +175,9 @@ export default function SettingsScreen() {
                 onPress={() => void replayIntroduction()}
                 testID="settings-row-replay-introduction"
               />
-              <SettingsRow
-                icon="lightbulb"
-                label={t("onboardingSection.showTipsAgain")}
-                trailing={{ kind: "act" }}
-                disabled={onboardingDisabled}
-                pending={onboardingPending}
-                pendingLabel={t("onboarding.saving")}
-                onPress={() => void showTipsAgain()}
-                testID="settings-row-show-tips-again"
-              />
             </SettingsRun>
 
-            <SettingsRun label={t("runs.data")} testID="settings-run-data">
+            <SettingsRun surface="hairline" label={t("runs.data")} testID="settings-run-data">
               <ExportDataRow />
               <SettingsRow
                 icon="shield"
@@ -164,7 +203,7 @@ export default function SettingsScreen() {
               ) : null}
             </SettingsRun>
 
-            <SettingsRun label={t("runs.help")} testID="settings-run-help">
+            <SettingsRun surface="hairline" label={t("runs.help")} testID="settings-run-help">
               <SettingsRow
                 icon="support-agent"
                 label={t("support.support")}
@@ -181,7 +220,7 @@ export default function SettingsScreen() {
               />
             </SettingsRun>
 
-            <SettingsRun label={t("runs.account")} testID="settings-run-account">
+            <SettingsRun surface="hairline" label={t("runs.account")} testID="settings-run-account">
               {/*
                 The drawn "You'll stay signed in on other devices." is back, and
                 now true. It was deleted while `signOut()` still took supabase-js's

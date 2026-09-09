@@ -91,7 +91,7 @@ test.describe("the toast at the bottom of a phone screen", () => {
     await expect(page.getByText(/you're offline/i)).toBeVisible({ timeout: 15_000 });
 
     // --- The toast: a failing mutation, so it is an error and therefore sticky ---
-    await page.getByRole("button", { name: "Favorite", exact: true }).click();
+    await page.getByRole("button", { name: "Favourite", exact: true }).click();
     const toast = page.getByTestId("app-toast");
     await expect(toast).toBeVisible({ timeout: 15_000 });
 

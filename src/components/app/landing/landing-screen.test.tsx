@@ -41,12 +41,20 @@ describe("LandingScreen", () => {
     expect(screen.getByRole("heading", { name: "Small tools for heavy days." })).toBeTruthy();
   });
 
-  it("shows the hero support line", () => {
+  // #1628: the frame lands first and the tools follow it as an on-ramp. The
+  // string is pinned in full because the ordering constraint in
+  // `docs/positioning.md` is the one positioning rule no regex reaches - the
+  // guard in `test/positioning-copy.test.ts` is one-sided by design and cannot
+  // express "mentioned, but second". Naming ACT or enumerating the eight tools
+  // here again is the regression this assertion is watching for; the chip row
+  // below the CTA already carries that inventory, and ACT is named where a user
+  // meets it, in the module section further down.
+  it("shows the hero support line, with the tools after the frame rather than beside it", () => {
     renderWithProviders(<LandingScreen />);
 
     expect(
       screen.getByText(
-        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions.",
+        "A set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });

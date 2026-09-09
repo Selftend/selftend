@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import type { ReactElement } from "react";
 import { Pressable, Text } from "react-native";
@@ -44,12 +44,31 @@ mockNumberRatingImpl = ({ onChange }) => (
 
 const mockEntries = jest.fn(() => ({ data: [], isLoading: false }));
 const mockLatest = jest.fn(() => ({ data: undefined }) as { data: unknown });
-const mockSnapshots = jest.fn(() => ({ data: [] }) as { data: unknown });
+const mockSnapshots = jest.fn(
+  () =>
+    ({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    }) as Record<string, unknown>,
+);
+
+/** One page of snapshots, in the `useInfiniteQuery` envelope the screen reads. */
+function snapshotPages(rows: unknown[], over: Record<string, unknown> = {}) {
+  mockSnapshots.mockReturnValue({
+    data: { pages: [rows], pageParams: [null] },
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    ...over,
+  });
+}
 
 jest.mock("@/src/features/act/queries", () => ({
   useValueEntries: (...args: unknown[]) => mockEntries(...(args as [])),
   useLatestBullsEyeByDomain: (...args: unknown[]) => mockLatest(...(args as [])),
-  useBullsEyeSnapshots: (...args: unknown[]) => mockSnapshots(...(args as [])),
+  useBullsEyeSnapshotPages: (...args: unknown[]) => mockSnapshots(...(args as [])),
   useSaveBullsEyeSnapshot: jest.fn(),
 }));
 
@@ -67,8 +86,212 @@ beforeEach(() => {
   useActValuesCheckInDraftStore.getState().reset();
   mockEntries.mockReturnValue({ data: [], isLoading: false });
   mockLatest.mockReturnValue({ data: undefined });
-  mockSnapshots.mockReturnValue({ data: [] });
+  snapshotPages([]);
   mockSaveResolving();
+});
+
+/**
+ * ☠️ The cap #1517 removed, and why it was worse than it looked. This section sliced its
+ * read to `HISTORY_ROWS = 12`. Twelve rows sounds like twelve reviews, but a check-in
+ * writes ONE ROW PER RATED DOMAIN — up to four — so the visible history was **three
+ * review dates**. #1379 chose the twelve deliberately ("enough to read as a run without
+ * turning the screen into a log"), which is why this was the judgement call on #1517 and
+ * not an obvious oversight; the resolution keeps the recap shape and lets the user extend
+ * it, rather than turning the screen into a log by default.
+ */
+describe("ActValuesScreen - the bull's-eye history is no longer capped at twelve rows", () => {
+  const snapshot = (i: number) => ({
+    id: `snap-${i}`,
+    userId: "user-1",
+    domain: "work",
+    alignmentRating: (i % 10) + 1,
+    reviewedAt: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00.000Z`,
+    createdAt: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00.000Z`,
+  });
+
+  it("renders every loaded snapshot, past the old twelve-row slice", () => {
+    snapshotPages(Array.from({ length: 20 }, (_, i) => snapshot(i)));
+
+    renderWithProviders(<ActValuesScreen />);
+
+    // The pill text is unique per row's rating position; counting rows is what matters.
+    expect(screen.getByTestId("bulls-eye-history").children.length).toBeGreaterThan(12);
+  });
+
+  it("offers to extend the recap only when another page exists", () => {
+    snapshotPages([snapshot(0)], { hasNextPage: false });
+    const { unmount } = renderWithProviders(<ActValuesScreen />);
+    expect(screen.queryByText("Show more")).toBeNull();
+    unmount();
+
+    snapshotPages([snapshot(0)], { hasNextPage: true });
+    renderWithProviders(<ActValuesScreen />);
+    expect(screen.getByText("Show more")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ A failed read is NOT an empty history, and this is the section where it lies
+   * loudest: "No previous ratings yet." over a network error tells a user who checks in
+   * every week that none of it was recorded. Exactly the "cap wearing the face of an
+   * absence" that `getLatestBullsEyeByDomain` already exists one surface over to avoid.
+   */
+  it("tells a failed history read apart from an empty one", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isError: true,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **A read that never STARTED is not an empty history either, and it
+   * is the one case with nothing on screen to contradict it.** Queries keep
+   * `networkMode: "online"`, so an offline arrival never fires this read, never
+   * errors and sits at `isPending` true / `isPaused` true - and `pages.flat() ??
+   * []` collapses that to `[]`. The weekly reviewer this section exists for
+   * opened ACT > Values with no connection and was told in plain words that none
+   * of their reviews was ever recorded, with no error, no retry and no spinner
+   * beside it, for as long as they stayed offline. Same conjunct as #2237's on
+   * the coping-plan screen.
+   */
+  it("tells a read that never started apart from an empty one", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isPending: true,
+      isPaused: true,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  /**
+   * ☠️ And a read still IN FLIGHT claims nothing at all. Only the two sibling
+   * queries gate this screen, so the paged read is still going when the section
+   * first paints and the empty line used to flash on every open. Pending without
+   * paused is an ordinary online first load - never the offline face, which
+   * would put an error in front of a read that is going fine.
+   */
+  it("says nothing about the history while the first read is still in flight", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isPending: true,
+      isPaused: false,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByTestId("bulls-eye-history-loading")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+  });
+
+  /**
+   * The fourth state, and the one the sentence is FOR: a read that completed and
+   * found nothing. Without this the three above could all be satisfied by never
+   * saying it at all.
+   */
+  it("says the history is empty when the read came back empty", () => {
+    snapshotPages([]);
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("No previous ratings yet.")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+    expect(screen.queryByTestId("bulls-eye-history-loading")).toBeNull();
+  });
+
+  it("asks for the next page when the user presses Show more", () => {
+    const fetchNextPage = jest.fn();
+    snapshotPages([snapshot(0)], { hasNextPage: true, fetchNextPage });
+
+    renderWithProviders(<ActValuesScreen />);
+    fireEvent.press(screen.getByText("Show more"));
+
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
+
+  /**
+   * ☠️☠️ **The predicate #2253 removed from `LoadMoreFooter`, one surface over.**
+   * `isError` is the QUERY's status, and query-core sets it on ANY failed fetch whether or
+   * not `data` is already there - which is why TanStack derives `isRefetchError` from
+   * `isError && hasData` at all. Keyed on the bare flag, a failed background refetch of an
+   * already-loaded history (the return visit past the 60s `staleTime`, or the invalidation
+   * after a check-in saves) replaced every recorded rating with an error card. The rows are
+   * safe in the cache and on the server; only the screen said they were gone, to the weekly
+   * reviewer this section exists for.
+   */
+  it("keeps the loaded ratings when a read over them fails", () => {
+    snapshotPages([snapshot(0), snapshot(1)], { isError: true, refetch: jest.fn() });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    const history = within(screen.getByTestId("bulls-eye-history"));
+    expect(history.getByText("1/10")).toBeTruthy();
+    expect(history.getByText("2/10")).toBeTruthy();
+    expect(screen.queryByText("Something went wrong")).toBeNull();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+    // And not the load-more line either: nothing "more" was being fetched. Keyed on the
+    // bare status, the footer below would announce a failure that took nothing away.
+    expect(screen.queryByText("Couldn't load more entries.")).toBeNull();
+  });
+
+  /**
+   * The other direction, so the assertion above can only pass by holding the rows: with
+   * nothing loaded there is nothing to keep, and the error card is the honest answer.
+   * Pinned already by "tells a failed history read apart from an empty one"; this adds the
+   * paged shape - a first page that failed leaves `pages` empty rather than undefined.
+   */
+  it("still shows the error when the failed read left nothing to show", () => {
+    snapshotPages([], { isError: true, refetch: jest.fn() });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  /**
+   * ☠️ A later page that failed is not nothing: without a word under the rows the
+   * history simply stops, a cap wearing the face of its end (#2187). The nineteen paged
+   * list screens say it through `LoadMoreFooter`, and so does this one - the same
+   * component, not a second dialect of the same message.
+   */
+  it("says a later page failed under the rows it is holding, with a retry", () => {
+    const fetchNextPage = jest.fn();
+    snapshotPages([snapshot(0)], {
+      hasNextPage: true,
+      isError: true,
+      isFetchNextPageError: true,
+      fetchNextPage,
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(within(screen.getByTestId("bulls-eye-history")).getByText("1/10")).toBeTruthy();
+    expect(screen.getByText("Couldn't load more entries.")).toBeTruthy();
+    fireEvent.press(screen.getByText("Retry"));
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
 });
 
 /**

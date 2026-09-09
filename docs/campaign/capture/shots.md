@@ -19,7 +19,7 @@ in frame before keeping the take (notably the CBT learn-page copy).
 | Shot id        | Route / surface                           | Action captured                                         | Used in                              |
 | -------------- | ----------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
 | HOME           | `/`                                       | dashboard hold, gentle scroll                           | trailer b2, GS-1                     |
-| TOOLS          | `/tools`                                  | index scroll, hover pauses                              | GS-2, MJ orientation, BG orientation |
+| TOOLS          | `/` (Tools section)                       | catalogue scroll, hover pauses                          | GS-2, MJ orientation, BG orientation |
 | CHECKIN        | `/tools/check-in/new`                     | pick mood, short note, save                             | trailer b3, GS-3, MJ-1               |
 | JOURNAL        | `/tools/journal/new`                      | type a short entry, save                                | trailer b5, MJ-2                     |
 | GRATITUDE      | `/tools/gratitude-log/new`                | three items, save                                       | MJ-3                                 |
@@ -51,11 +51,17 @@ in frame before keeping the take (notably the CBT learn-page copy).
 
 Capture notes:
 
+- **TOOLS:** the shot's subject **moved, it was not cut.** `/tools` stopped being a page
+  on [#2114](https://github.com/Selftend/selftend/issues/2114) and redirects to Home, which
+  lists the same eight tools and the three modules besides. The scroll is the same scroll,
+  one screen further up. ⚠️ Nothing here calls for a **re-shoot**: the campaign is parked
+  pending a UI redesign, and this edit exists so a parked script does not encode a dead URL.
 - **Segment slack:** record each shot with ≥2s of still hold at both ends — the edit needs
   trim room, and the walkthrough VO lines run 2–7s each.
 - **NOTIF-OPTIN:** the browser permission dialog is chrome, not page — grant notification
   permission at the Playwright context level and let the in-app confirmation carry the moment;
   the real OS prompt appears only in the native WIDGET session if wanted.
-- **Known interaction traps (#511):** tour tips, reminder prompts, and the routine FAB can
-  intercept clicks — dismiss or click around them; the harness has fallbacks.
+- **Known interaction traps (#511):** reminder prompts and the routine FAB can intercept
+  clicks — dismiss or click around them; the harness has fallbacks. Tour tips were the
+  third and are gone (#2109), so nothing coach-marks a capture any more.
 - **Naming:** `<SHOT-ID>-vNN.webm` into Drive `captures/<video>/`, logged per the runbook.

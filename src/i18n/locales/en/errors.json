@@ -10,8 +10,21 @@
   "offline": {
     "banner": "You're offline - changes can't be saved right now"
   },
+  "preferencesUnavailable": {
+    "title": "We can't open the app just yet",
+    "description": "The app needs your account settings before it can continue, and they didn't load. Check your connection and try again.",
+    "loadingTitle": "Getting your account ready",
+    "loadingDescription": "The app is reading your account settings. This usually takes a moment.",
+    "offlineTitle": "You're offline",
+    "offlineDescription": "The app needs your account settings before it can continue, and it can't reach them without a connection. It will carry on as soon as you're back online.",
+    "supportTitle": "If you need support right now",
+    "supportBody": "Crisis guidance opens without an account, whether or not the rest of the app does."
+  },
   "saveFailed": {
     "title": "Couldn't save",
     "description": "Your changes are still on this screen. Check your connection and try again."
+  },
+  "loadMore": {
+    "failed": "Couldn't load more entries."
   }
 }

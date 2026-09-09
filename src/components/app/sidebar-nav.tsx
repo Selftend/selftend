@@ -6,7 +6,13 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import {
+  currentStateProps,
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
+} from "@/src/lib/accessibility";
+import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 
 // No nav row carries a status chip (#1020). The field was a three-value union -
@@ -19,13 +25,18 @@ import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 // Completeness* - a nav entry advertising a module the app does not have. BETA
 // went with it: CBT and ACT are both fully usable, so the word understated them
 // and handed the same reviewer a second thing to doubt.
+//
+// `activeWhen` and `a11yKey` went the same way with #2106, and for the same reason.
+// The exact-match predicate existed for the two hub rows and the CBT row; the
+// accessibility override existed for the three module rows. The catalogue left the
+// panel, so both reached zero users, and an optional field nothing sets is a corpse
+// waiting for a caller. `matchPrefix` stays - six of the seven rows use it, and Home
+// is still the `null` branch.
 interface NavItemDef {
   labelKey: string;
   href: Href;
   icon: MaterialIconName;
   matchPrefix: string | null;
-  activeWhen?: (pathname: string) => boolean;
-  a11yKey?: string;
 }
 
 const TODAY_ITEM: NavItemDef = {
@@ -35,14 +46,18 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
+// `history` (a clock turning back) and not `insights`: that glyph is an
+// upward-trending chart, which draws the improvement claim the screen refuses
+// to make in words (#1837). `timeline` fails the same way - it reads as a
+// direction of travel. This icon names the past and carries no direction.
 const PROGRESS_ITEM: NavItemDef = {
   labelKey: "sidebar.progress",
   href: "/(app)/progress",
-  icon: "insights",
+  icon: "history",
   matchPrefix: "/progress",
 };
 
-// Routines lives with the Home & Insights pair (spec #37, "Navigation
+// Routines lives with the Home & Looking back pair (spec #37, "Navigation
 // placement") - not a fourth module pillar and not another tools entry.
 const ROUTINES_ITEM: NavItemDef = {
   labelKey: "sidebar.routines",
@@ -51,81 +66,15 @@ const ROUTINES_ITEM: NavItemDef = {
   matchPrefix: "/routines",
 };
 
-const MODULE_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.cbt",
-    href: "/modules/cbt",
-    icon: "psychology",
-    matchPrefix: "/modules/cbt",
-    activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
-    a11yKey: "sidebar.cbtA11y",
-  },
-  {
-    labelKey: "sidebar.act",
-    href: "/modules/act",
-    icon: "explore",
-    matchPrefix: "/modules/act",
-    a11yKey: "sidebar.actA11y",
-  },
-  {
-    labelKey: "sidebar.dbt",
-    href: "/modules/dbt",
-    icon: "anchor",
-    matchPrefix: "/modules/dbt",
-    a11yKey: "sidebar.dbtA11y",
-  },
-];
-
-const TOOL_ITEMS: NavItemDef[] = [
-  {
-    labelKey: "sidebar.moodTracker",
-    href: "/tools/check-in",
-    icon: "mood",
-    matchPrefix: "/tools/check-in",
-  },
-  {
-    labelKey: "sidebar.journal",
-    href: "/tools/journal",
-    icon: "edit-note",
-    matchPrefix: "/tools/journal",
-  },
-  {
-    labelKey: "sidebar.breathing",
-    href: "/tools/breathing",
-    icon: "air",
-    matchPrefix: "/tools/breathing",
-  },
-  {
-    labelKey: "sidebar.grounding",
-    href: "/tools/grounding",
-    icon: "anchor",
-    matchPrefix: "/tools/grounding",
-  },
-  {
-    labelKey: "sidebar.gratitudeLog",
-    href: "/tools/gratitude-log",
-    icon: "favorite",
-    matchPrefix: "/tools/gratitude-log",
-  },
-  {
-    labelKey: "sidebar.meditation",
-    href: "/tools/meditation",
-    icon: "self-improvement",
-    matchPrefix: "/tools/meditation",
-  },
-  {
-    labelKey: "sidebar.sleep",
-    href: "/tools/sleep",
-    icon: "bedtime",
-    matchPrefix: "/tools/sleep",
-  },
-  {
-    labelKey: "sidebar.habits",
-    href: "/tools/habits",
-    icon: "task-alt",
-    matchPrefix: "/tools/habits",
-  },
-];
+// ☠️ The eleven catalogue rows and the two hub rows are gone (#2106, ruled on #2085).
+// **The panel may duplicate a fixed door; it may not mirror a collection.** Home renders
+// the whole catalogue from the single `CATALOGUE` constant, and this file's rows were a
+// second, hand-maintained list free to drift from it - and unstarrable besides, so the
+// copy was a lesser one. What is left is what the panel is FOR: the record, the plans,
+// the reminders and the account, none of which Home carries.
+//
+// Do not read that as "delete anything with a second door" - Home is a row here and
+// stays one. A fixed row cannot drift and is not a lesser copy of anything.
 
 const ACCOUNT_ITEMS: NavItemDef[] = [
   {
@@ -159,10 +108,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   const insets = useSafeAreaInsets();
 
   function isActive(item: NavItemDef) {
-    if (item.activeWhen) {
-      return item.activeWhen(pathname);
-    }
-
     const { matchPrefix } = item;
     if (matchPrefix) {
       return pathname.startsWith(matchPrefix);
@@ -173,7 +118,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   function renderNavItem(item: NavItemDef) {
     const active = isActive(item);
     const label = t(item.labelKey);
-    const accessibilityLabel = item.a11yKey ? t(item.a11yKey) : label;
 
     return (
       // `dangerouslySingular` (#989): the panel is LATERAL navigation between peer
@@ -186,7 +130,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       // no panel destination is dynamic anyway.
       <Link href={item.href} key={item.labelKey} dangerouslySingular asChild>
         <Pressable
-          accessibilityLabel={accessibilityLabel}
+          accessibilityLabel={label}
           accessibilityRole="link"
           {...currentStateProps(active, "page")}
           onPress={() => {
@@ -205,7 +149,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             breathing row — which is the clearest "distinguishes items in a set"
             case in the app and the one the ruling names outright. What the
             colour here has to carry is WHICH ROW IS ACTIVE, and that is one bit,
-            not eleven; it is the app accent's job.
+            not one per destination; it is the app accent's job.
 
             The three channels stay as they were, because they were never about
             the hue: the chip fill, this glyph and the ink label all move
@@ -244,36 +188,45 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     );
   }
 
-  function renderGroupLabel(label: string, href?: Href) {
-    const active = href ? pathname === href : false;
-    const className = cn(
-      "px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
-      active ? "text-primary" : "text-muted-foreground",
-    );
-
-    if (!href) {
-      return (
-        <Text className={className} key={`group-${label}`}>
-          {label}
-        </Text>
-      );
+  // The donation path (#1625, decided 2026-09-02): one plain row, last, that opens
+  // GitHub Sponsors and nothing else. It is deliberately NOT a NavItemDef - it has
+  // no route to be active on, nothing to keep singular, and it leaves the app - so
+  // it renders through `openExternalUrl` like every other outbound link, not
+  // through `Link`. What it must never grow is the other half of the ruling: no
+  // badge, no count, no modal, no banner, and nothing keyed to use or absence. A
+  // donation surface is reviewed as a behavioural nudge would be; this one is a
+  // static link, and the test pins it to one label and nothing beside it.
+  //
+  // Empty `sponsorsUrl` (a fork that has not set its own) drops the row entirely
+  // rather than pointing a self-hoster's users at someone else's page.
+  //
+  // Not rendering through `Link` has a web cost the route rows never pay: they are
+  // real anchors, which the browser follows on Enter, and this row is a
+  // `<div role="link">` that react-native-web ALSO leaves to the browser on Enter -
+  // which does nothing with it. So the row brings its own Enter handler (#1730).
+  function renderDonateRow() {
+    const url = appEnv.sponsorsUrl;
+    if (!url) {
+      return null;
     }
+    const donate = () => {
+      openExternalUrl(url);
+      onSelect?.();
+    };
 
     return (
-      <Link href={href} key={`group-${label}`} dangerouslySingular asChild>
-        <Pressable
-          accessibilityLabel={label}
-          accessibilityRole="link"
-          {...currentStateProps(active, "page")}
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => {
-            onSelect?.();
-          }}
-          role="link"
-        >
-          <Text className={className}>{label}</Text>
-        </Pressable>
-      </Link>
+      <Pressable
+        accessibilityLabel={t("sidebar.donateA11y")}
+        accessibilityRole="link"
+        onPress={donate}
+        {...enterKeyActivationProps(donate)}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        role="link"
+        className="flex-row items-center gap-3 rounded-md px-3 py-2.5 active:bg-muted/50"
+      >
+        <Icon name="volunteer-activism" className="size-6 text-muted-foreground" />
+        <Text className="flex-1 text-sm font-medium text-foreground">{t("sidebar.donate")}</Text>
+      </Pressable>
     );
   }
 
@@ -290,12 +243,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           {renderNavItem(TODAY_ITEM)}
           {renderNavItem(PROGRESS_ITEM)}
           {renderNavItem(ROUTINES_ITEM)}
-
-          {renderGroupLabel(t("sidebar.modules"), "/modules")}
-          {MODULE_ITEMS.map((item) => renderNavItem(item))}
-
-          {renderGroupLabel(t("sidebar.tools"), "/tools")}
-          {TOOL_ITEMS.map((item) => renderNavItem(item))}
         </View>
 
         <View className="grow" />
@@ -303,6 +250,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         <View className="gap-1 pt-3">
           <View className="mx-1 mb-2 h-px bg-border" />
           {ACCOUNT_ITEMS.map((item) => renderNavItem(item))}
+          {renderDonateRow()}
         </View>
       </ScrollView>
     </View>

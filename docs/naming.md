@@ -6,7 +6,7 @@ Why it fits:
 
 - direct without being clinical
 - frames the app as self-care and maintenance, not diagnosis, treatment, or repair
-- works for CBT, journaling, check-ins, reminders, and later guided self-help tools
+- works for CBT, journaling, check-ins, reminders, and later self-help tools
 - short enough for app stores, docs, and support copy
 
 Rules:

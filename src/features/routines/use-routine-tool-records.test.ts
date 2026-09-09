@@ -22,6 +22,14 @@ import { useMindfulnessSessions } from "@/src/features/mindfulness/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import {
+  useDbtSessions,
+  useEmotionRecords,
+  useJudgements,
+  useOppositeActionPlans,
+  useScripts,
+  useWiseMindCheckins,
+} from "@/src/features/dbt/queries";
 import { lastNDayKeys } from "@/src/utils/date";
 
 jest.mock("@/src/features/mood/queries", () => ({ useMoodHistory: jest.fn() }));
@@ -47,6 +55,14 @@ jest.mock("@/src/features/act/queries", () => ({
   useCommittedActions: jest.fn(),
   useAllActionSteps: jest.fn(),
 }));
+jest.mock("@/src/features/dbt/queries", () => ({
+  useDbtSessions: jest.fn(),
+  useWiseMindCheckins: jest.fn(),
+  useJudgements: jest.fn(),
+  useEmotionRecords: jest.fn(),
+  useOppositeActionPlans: jest.fn(),
+  useScripts: jest.fn(),
+}));
 
 const hookMocks = [
   useMoodHistory,
@@ -68,6 +84,12 @@ const hookMocks = [
   useChoicePoints,
   useCommittedActions,
   useAllActionSteps,
+  useDbtSessions,
+  useWiseMindCheckins,
+  useJudgements,
+  useEmotionRecords,
+  useOppositeActionPlans,
+  useScripts,
 ] as jest.Mock[];
 
 describe("useRoutineToolRecords", () => {
@@ -100,6 +122,12 @@ describe("useRoutineToolRecords", () => {
     expect(useChoicePoints).toHaveBeenCalledWith(null);
     expect(useCommittedActions).toHaveBeenCalledWith(null);
     expect(useAllActionSteps).toHaveBeenCalledWith(null);
+    expect(useDbtSessions).toHaveBeenCalledWith(null, 250);
+    expect(useWiseMindCheckins).toHaveBeenCalledWith(null, 250);
+    expect(useJudgements).toHaveBeenCalledWith(null, 250);
+    expect(useEmotionRecords).toHaveBeenCalledWith(null, 250);
+    expect(useOppositeActionPlans).toHaveBeenCalledWith(null, 250);
+    expect(useScripts).toHaveBeenCalledWith(null, 250);
   });
 
   it("enables the mindfulness query for breathing steps as well", () => {
@@ -166,6 +194,23 @@ describe("useRoutineToolRecords", () => {
     expect(useMoodHistory).toHaveBeenCalledWith("user-1");
   });
 
+  it("widens each DBT window to the strip, and only for the referenced tool", () => {
+    renderHook(() =>
+      useRoutineToolRecords("user-1", ["muscleRelaxation", "wiseMind", "oppositeAction"]),
+    );
+
+    // Every DBT list key includes its limit, so 250 here cannot collide with
+    // the 30/50-row list screens or the programme's own reads.
+    expect(useDbtSessions).toHaveBeenCalledWith("user-1", 250);
+    expect(useWiseMindCheckins).toHaveBeenCalledWith("user-1", 250);
+    expect(useOppositeActionPlans).toHaveBeenCalledWith("user-1", 250);
+    // The three DBT tools this routine does not step through stay disabled -
+    // a module's steps are gated one tool at a time, not one module at a time.
+    expect(useJudgements).toHaveBeenCalledWith(null, 250);
+    expect(useEmotionRecords).toHaveBeenCalledWith(null, 250);
+    expect(useScripts).toHaveBeenCalledWith(null, 250);
+  });
+
   it("shares the default-limit cache entries for ACT hooks whose key excludes the limit", () => {
     renderHook(() => useRoutineToolRecords("user-1", ["observingSelf", "choicePoint"]));
 
@@ -180,21 +225,31 @@ describe("useRoutineToolRecords", () => {
     const habitLogs = [{ loggedOn: "2026-07-15" }];
     const defusionLogs = [{ createdAt: "2026-07-15T09:00:00.000Z" }];
     const actionSteps = [{ createdAt: "2026-07-15T10:00:00.000Z", completedAt: null }];
+    const dbtJudgements = [{ dayKey: "2026-07-15" }];
+    (useJudgements as jest.Mock).mockReturnValue({ data: dbtJudgements });
     (useMoodHistory as jest.Mock).mockReturnValue({ data: moodLogs });
     (useHabitLogs as jest.Mock).mockReturnValue({ data: habitLogs });
     (useDefusionLogs as jest.Mock).mockReturnValue({ data: defusionLogs });
     (useAllActionSteps as jest.Mock).mockReturnValue({ data: actionSteps });
 
     const { result } = renderHook(() =>
-      useRoutineToolRecords("user-1", ["mood", "habits", "defusion", "committedAction"]),
+      useRoutineToolRecords("user-1", [
+        "mood",
+        "habits",
+        "defusion",
+        "committedAction",
+        "judgement",
+      ]),
     );
 
     expect(result.current.moodLogs).toBe(moodLogs);
     expect(result.current.habitLogs).toBe(habitLogs);
     expect(result.current.defusionLogs).toBe(defusionLogs);
     expect(result.current.actionSteps).toBe(actionSteps);
+    expect(result.current.dbtJudgements).toBe(dbtJudgements);
     expect(result.current.journalEntries).toBeUndefined();
     expect(result.current.exposureSessions).toBeUndefined();
+    expect(result.current.dbtScripts).toBeUndefined();
   });
 
   it("keeps every query disabled when signed out", () => {

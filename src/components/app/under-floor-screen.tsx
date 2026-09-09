@@ -1,0 +1,197 @@
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+
+import { Button } from "@/src/components/react-native-reusables/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/react-native-reusables/card";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { LinkButton } from "@/src/components/app/link-button";
+import {
+  useUnderFloorExit,
+  type UnderFloorErasureState,
+} from "@/src/features/auth/use-under-floor-exit";
+import { crisisActionUrls } from "@/src/features/policies/policy-content";
+import { openExternalUrl } from "@/src/lib/linking";
+
+/**
+ * Where an under-floor verdict lands (#1765, spec #227 §3).
+ *
+ * The screen is the block. It has no way into the app and no way back to the
+ * questions, and the device flag written beneath it means closing the app is
+ * not a way past it either - which is what turns #1764's "blocked for as long
+ * as this stays mounted" into the hard block §3 asks for.
+ *
+ * **It does not scold.** It states a rule, says where the person stands against
+ * it, and offers the one thing that is still worth offering. No wrongdoing is
+ * implied, because none occurred: someone answered two questions honestly.
+ *
+ * **No retry, and no hint about what a passing answer would have been.** The
+ * only controls that are not links out act on the ACCOUNT - confirm the
+ * erasure, or run it again after it failed - never on the answers. A screen
+ * offering "try again" would be a screen teaching the floor, which is the same
+ * reason #1764's gate names no age anywhere. `under-floor-screen.test.ts`'s
+ * copy guard fires its own predicate on deliberately bad copy so those absence
+ * assertions cannot go quiet.
+ *
+ * ☠️☠️ **The screen offers the erasure; it never performs it** (#2193), and it
+ * is handed the id of the account the verdict judged rather than reading the
+ * current session (#2195). Both properties live in `useUnderFloorExit`; what
+ * this file owes them is a control the person has to press, and a prop it does
+ * not second-guess.
+ *
+ * **The support links are the point of the screen, not a footer.** This person
+ * is about to not have an account, so both destinations have to work without
+ * one: `/crisis` is a ROOT route, a sibling of the `(app)` group rather than a
+ * screen inside it, so it renders with no session at all; Find A Helpline is a
+ * plain external URL. Their labels and the helpline's URL are read from the
+ * surfaces that already own them (`common:safety.openCrisis`, and
+ * `crisisActionUrls` with `policies:crisis.actions.*`, which is exactly what
+ * `app/crisis.tsx` renders) rather than re-translated into `auth` - one phrase
+ * with two translations is drift waiting to happen, and a helpline URL with two
+ * homes is worse.
+ */
+/**
+ * One sentence per erasure state, in one place - the render, the confirmation
+ * and the retry control all branch on `state`, and several cascades over the
+ * same union drift. `null` means "say nothing", which is the honest answer when
+ * there is no account this block may remove.
+ *
+ * ☠️☠️ Each sentence describes what HAS happened, never what the app will go
+ * on doing (#2232). `failed` said Selftend "will keep working to remove it" -
+ * true while the purge ran from a mount effect, and left behind when #2195
+ * removed it, so the app's last words to a person under the floor were an
+ * assurance nothing backed. Nothing retries by itself; the retry control below
+ * is the whole of it, and the sentence has to point at it rather than excuse
+ * the person from pressing it.
+ */
+const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
+  "awaiting-confirmation": "auth:underFloor.erasureConfirm",
+  working: "auth:underFloor.erasing",
+  erased: "auth:underFloor.erased",
+  failed: "auth:underFloor.erasureFailed",
+  "nothing-to-erase": null,
+};
+
+interface UnderFloorScreenProps {
+  /**
+   * The account the under-floor verdict was rendered for, or `null` when this
+   * mount is the device block alone and judged nobody.
+   *
+   * ☠️ Not `useSession().user.id` (#2195). The device flag holds an expiry and
+   * no identity, and `ProtectedLayout` renders this screen for ANY session
+   * while the window holds - so reading the current user here made the next
+   * account signed in on a shared phone the one that got deleted. The verdict
+   * carries whose it is; the hook refuses everything else.
+   */
+  verdictUserId: string | null;
+}
+
+export function UnderFloorScreen({ verdictUserId }: UnderFloorScreenProps) {
+  const { t } = useTranslation(["auth", "common", "policies"]);
+  // Blocks the device on mount, and offers - never performs - the erasure of
+  // the account that exists on ALL FOUR entry paths, since the gate sits below
+  // `ProtectedLayout`'s session check and is never reached without one (#1919
+  // corrected "three of the four" here). Mounted here rather than in
+  // `ProtectedLayout` so that the status it reports has somewhere to be read: a
+  // silent erasure that failed is the thing the ticket rules out.
+  const { eraseAccount, state } = useUnderFloorExit(verdictUserId);
+
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView contentContainerClassName="grow items-center justify-center gap-4 p-6">
+        <Card className="w-full max-w-lg" testID="under-floor-screen">
+          <CardHeader>
+            <CardTitle>{t("auth:underFloor.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <Text>{t("auth:underFloor.body")}</Text>
+              {/* ☠️ Only once the erasure has actually landed. "Nothing you
+                  entered has been kept" is a claim about a removal, and before
+                  #2193 it was printed unconditionally - including on the mount
+                  where nothing had been removed yet, and on a device block that
+                  will never remove anything. Same rule as the sentences below:
+                  the screen states what it observed. */}
+              {state === "erased" ? (
+                <Text className="text-muted-foreground text-sm" testID="under-floor-retention">
+                  {t("auth:underFloor.retention")}
+                </Text>
+              ) : null}
+              {/* The erasure, said out loud. A deletion that quietly failed
+                  would leave a live account behind a screen promising there
+                  is none, so each state gets its own sentence rather than one
+                  optimistic one - and `nothing-to-erase` gets no sentence at
+                  all, because there is nothing truthful to say about a removal
+                  that was never needed. */}
+              {ERASURE_COPY_KEY[state] ? (
+                <Text className="text-muted-foreground text-sm" testID="under-floor-erasure">
+                  {t(ERASURE_COPY_KEY[state])}
+                </Text>
+              ) : null}
+              {/* ☠️☠️ The confirmation, and the only thing that ever starts the
+                  purge (#2193). The age gate's submit press produced the
+                  verdict; it did not ask for an account to be destroyed, and it
+                  could not have - the gate names no age and no qualifying
+                  answer, so nobody pressing it knows it is destructive. This is
+                  a separate press, on a separate screen, under a sentence that
+                  says the removal is permanent. It is NOT the default action of
+                  the screen: a person who mistyped a birth year can leave it
+                  alone, and stays blocked either way. */}
+              {state === "awaiting-confirmation" ? (
+                <Button
+                  onPress={eraseAccount}
+                  testID="under-floor-erasure-confirm"
+                  variant="secondary"
+                >
+                  <Text>{t("auth:underFloor.erasureConfirmLabel")}</Text>
+                </Button>
+              ) : null}
+              {state === "failed" ? (
+                <Button
+                  onPress={eraseAccount}
+                  testID="under-floor-erasure-retry"
+                  variant="secondary"
+                >
+                  <Text>{t("auth:underFloor.erasureRetryLabel")}</Text>
+                </Button>
+              ) : null}
+              <Text className="text-muted-foreground text-sm">{t("auth:underFloor.closing")}</Text>
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* Its own card, not a row at the bottom of the refusal: crisis
+            guidance stays visible and clearly separate from everything else
+            (AGENTS.md), and here "everything else" is the block itself. */}
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle aria-level={2}>{t("auth:underFloor.supportTitle")}</CardTitle>
+            <CardDescription>{t("auth:underFloor.supportBody")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <View className="gap-3">
+              <LinkButton href="/crisis" variant="secondary">
+                <Text>{t("common:safety.openCrisis")}</Text>
+              </LinkButton>
+              {crisisActionUrls.map((action) => (
+                <Button
+                  key={action.url}
+                  onPress={() => openExternalUrl(action.url)}
+                  variant="secondary"
+                >
+                  <Text>{t(`policies:crisis.actions.${action.key}`)}</Text>
+                </Button>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

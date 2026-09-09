@@ -90,7 +90,13 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 
 `EXPO_PUBLIC_PUBLIC_APP_URL` is baked into the JavaScript bundle during export and is used as the explicit web auth callback base. If it changes or was missing, update the GitHub Actions variable and redeploy.
 
+The three contact addresses are read by `/support`, `/security`, and — as of #2131 — the **FAQ** and the health-data consent gate, which interpolate them instead of hardcoding them. A build that leaves one unset falls back to the address above and logs a startup warning naming the variable — harmless here, since these values are this project's own, but it is the signal a fork needs.
+
+⚠️ That is 6 of the 21 places these addresses appear in copy. The remaining **15** live in the `privacy`, `terms`, `cookies` and `accountDeletion` sections and are still literals, so setting these variables does **not** yet change what those four screens print. They are held back because they are hashed by `policy-content.test.ts` and moving one character costs a `policyVersion` bump, which re-presents the consent gate to every existing user. See [self-hosting.md](self-hosting.md) for what that means for a fork.
+
 `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` is also baked into the web bundle. Browser reminders stay disabled until this public key is present and the matching private key is configured in Supabase Edge Function secrets.
+
+☠️ **Setting the variable is only half of it - the deploy has to forward it, and for months it did not** ([#2263](https://github.com/Selftend/selftend/issues/2263)). Expo inlines `EXPO_PUBLIC_*` at export time, so a name missing from the `env:` block in `.github/workflows/web-deploy.yml` reads as the empty string in the deployed app whatever the environment holds. Both environments carried the key from 2026-07-16 and both live bundles still carried `webPushVapidPublicKey:""`, with the reminder offer ending in "Reminders aren't configured for this app build" on every target. The workflow forwards it now, and `test/web-deploy-public-env.test.ts` fails if any `?? ""` reader in `src/lib/env.ts` stops being forwarded. Forwarding a name whose **value** is empty ships the same dead bundle, so the workflow's "Check deploy environment" step checks this one too - but only where it is expected: on `Selftend/selftend`, where both environments hold the key, an empty value fails the deploy; on a fork it prints a warning and the deploy continues, because a fork with no web push should still be able to deploy.
 
 ### Web Push Reminders
 
@@ -101,7 +107,7 @@ Because the app uses `web.output = "single"`, PWA head tags are added through `p
 Before production web push testing:
 
 1. Generate VAPID keys, for example with `npx web-push generate-vapid-keys`.
-2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in the GitHub repository variables.
+2. Set `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` on the `production` and `staging` GitHub Environments (the web deploy reads `vars.*` under the environment it is called with, and forwards this one into the export env since [#2263](https://github.com/Selftend/selftend/issues/2263)).
 3. Apply the database migration so `web_push_subscriptions`, `pg_cron`, `pg_net`, and Vault are available:
 
 ```bash
@@ -167,7 +173,7 @@ EXPO_PUBLIC_APP_STORE_URL
 EXPO_PUBLIC_DISCORD_URL
 ```
 
-`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` is set to the live Play listing in the production and staging environments (and as a repo variable for the Android build); besides the store chip it also powers the Android mobile-web download bar. `EXPO_PUBLIC_APP_STORE_URL` stays empty until iOS ships ("Coming soon" chip). `EXPO_PUBLIC_PLAY_STORE_URL` also targets the **Android** in-app update offer — an empty value disables that offer entirely rather than falling back to any other store. `EXPO_PUBLIC_APP_STORE_URL` does not drive one: **iOS update offers stay disabled**, because nothing on the device can observe an App Store promotion. `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
+`EXPO_PUBLIC_GITHUB_REPO_URL` is optional in app code because a default exists, but setting it in GitHub keeps the release environment explicit. `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` both **default in code to the live listings**, so they are overrides rather than requirements; both are also set explicitly in the production and staging environments and as repo variables, which keeps the release environment self-describing. Besides the store buttons, the Play URL powers the Android mobile-web download bar. Setting either to an empty string drops that store’s surfaces — the affordance a self-hosted fork uses, not a "coming soon" state. `EXPO_PUBLIC_PLAY_STORE_URL` also targets the **Android** in-app update offer — an empty value disables that offer entirely rather than falling back to any other store. `EXPO_PUBLIC_APP_STORE_URL` does not drive one: **iOS update offers stay disabled**, because nothing on the device can observe an App Store promotion. `EXPO_PUBLIC_DISCORD_URL` defaults to the maintainer's Discord invite; set it to an empty string to hide all Discord UI.
 
 Every web deploy also writes `dist/version.json` (`{version, publishedAt}` from `package.json`) after the export step, served with `Cache-Control: no-cache` via `public/_headers`. The app compares it against its running version and **only the web build acts on it**, offering a refresh. The document records when the _web_ deployed, which is not evidence that a store release is installable, so it is not a native signal and never was — **Android instead asks Google Play directly** whether it is serving a newer build to that specific device, which is immune to rollout percentage, country restrictions and device targeting alike (see `src/lib/android-store-update.ts`). **iOS offers stay off**: a build reaches the App Store only after a human promotes it and Apple reviews it, and the device can observe neither. Every offer is the same quiet banner, dismissible per version.
 

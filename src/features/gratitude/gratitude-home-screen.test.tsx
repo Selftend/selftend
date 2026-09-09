@@ -93,7 +93,7 @@ describe("GratitudeHomeScreen", () => {
     expect(screen.getByText("Three good things from today is enough.")).toBeTruthy();
     expect(screen.getByText("18 entries")).toBeTruthy();
     expect(screen.getByText("4 this week")).toBeTruthy();
-    expect(screen.getByText("3 favorites")).toBeTruthy();
+    expect(screen.getByText("3 favourites")).toBeTruthy();
     expect(screen.getByText("Add one small thing you appreciated today.")).toBeTruthy();
   });
 
@@ -127,7 +127,7 @@ describe("GratitudeHomeScreen", () => {
     } as never);
     renderWithProviders(<GratitudeHomeScreen />);
 
-    fireEvent.press(screen.getByText("Favorites"));
+    fireEvent.press(screen.getByText("Favourites"));
 
     expect(screen.getByText("Older favorite")).toBeTruthy();
     expect(screen.queryByText("Morning walk")).toBeNull();

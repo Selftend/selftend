@@ -20,23 +20,22 @@ import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-deta
 import {
   useDeleteExpansionLog,
   useExpansionLog,
-  useExpansionLogs,
+  useExpansionLogPages,
 } from "@/src/features/act/queries";
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActExpansionDetailScreen() {
   const { t } = useTranslation("act");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
 
   const { item: log, isLoading } = useCachedItem(
-    useExpansionLogs,
+    useExpansionLogPages,
     useExpansionLog,
     user?.id ?? null,
     logId,
@@ -72,7 +71,7 @@ export default function ActExpansionDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={log.emotion} />
-            <Text variant="muted">{formatDateTime(log.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(log.createdAt, null)}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
                 <Icon name="delete-outline" className="size-4 text-destructive" />
