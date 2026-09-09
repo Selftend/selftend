@@ -301,6 +301,12 @@ beforeEach(() => {
   // `clearAllMocks` keeps implementations; the #2251 test installs a
   // never-resolving one on the repository read, which must not outlive it.
   mockGetUserPreferences.mockReset();
+  // ☠️ `onlineManager` is a MODULE SINGLETON, and the offline tests below drive
+  // it from inside a fetch that query-core can resume after the test has ended -
+  // so one test's dropped connection reached the next one's arrange step and it
+  // opened on the offline face. Every test starts online. No `act` needed: the
+  // previous tree is already unmounted by this point, so nothing is subscribed.
+  onlineManager.setOnline(true);
   // AppLockGate (native) waits for the app-lock store to hydrate before rendering
   // protected children. These tests aren't about app-lock, so put the store in its
   // hydrated, disabled steady state for synchronous assertions on the content.
@@ -1080,7 +1086,10 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       expect(screen.queryByText("Stack content")).toBeNull();
     } finally {
       queryClient.clear();
-      onlineManager.setOnline(true);
+      // ⚠️ Inside `act`: the layout subscribes to `onlineManager` through
+      // `useIsOnline` (the offline face is keyed on the connection, not on
+      // `isPaused` alone), so flipping it re-renders a mounted tree.
+      act(() => onlineManager.setOnline(true));
     }
   });
 
@@ -1129,7 +1138,7 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       expect(queryClient.getQueryState(preferencesQueryKey("user-1"))?.status).toBe("error");
 
       // The connection goes away, and the read is dispatched once more.
-      onlineManager.setOnline(false);
+      act(() => onlineManager.setOnline(false));
       await act(async () => {
         fireEvent.press(screen.getByText("Retry"));
       });
@@ -1164,7 +1173,10 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       expect(screen.queryByText("Stack content")).toBeNull();
     } finally {
       queryClient.clear();
-      onlineManager.setOnline(true);
+      // ⚠️ Inside `act`: the layout subscribes to `onlineManager` through
+      // `useIsOnline` (the offline face is keyed on the connection, not on
+      // `isPaused` alone), so flipping it re-renders a mounted tree.
+      act(() => onlineManager.setOnline(true));
     }
   });
 
@@ -1192,6 +1204,7 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     >("@/src/features/settings/queries");
     mockUseUserPreferences.mockImplementation(realUseUserPreferences);
     onlineManager.setOnline(false);
+    // (Before render, so no tree is subscribed yet - no `act` needed here.)
     const queryClient = new QueryClient({
       defaultOptions: { queries: { gcTime: Infinity, retry: 1, retryDelay: 0 } },
     });
@@ -1214,7 +1227,79 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       expect(screen.queryByText("Stack content")).toBeNull();
     } finally {
       queryClient.clear();
-      onlineManager.setOnline(true);
+      // ⚠️ Inside `act`: the layout subscribes to `onlineManager` through
+      // `useIsOnline` (the offline face is keyed on the connection, not on
+      // `isPaused` alone), so flipping it re-renders a mounted tree.
+      act(() => onlineManager.setOnline(true));
+    }
+  });
+
+  /**
+   * ☠️☠️ **A PAUSED READ IS NOT AN OFFLINE ONE, and the offline face costs the
+   * Retry.** query-core has two pause predicates and only the dispatch one is
+   * about connectivity: the retry path is `canContinue = () =>
+   * focusManager.isFocused() && (networkMode === "always" ||
+   * onlineManager.isOnline()) && canRun()`. So a read that failed once on a
+   * healthy connection pauses if its 1s retry delay expires while the app is not
+   * focused - on native ANY AppState other than `active` (`app-providers.tsx`
+   * feeds `handleFocus(state === "active")`): an iOS system banner, the
+   * pulled-down shade, iPad Slide Over, Android split-screen; on web, a hidden
+   * tab. Keyed on the flag alone, that person read "You're offline" about a
+   * connection that was fine AND LOST THE RETRY with it - #2238's shape, on the
+   * legal gate. The connection is what the offline copy is about, so the
+   * connection is what it is keyed on.
+   *
+   * The state is asserted through the mock rather than a real focus event
+   * because `focusManager` is not what the layout reads - `isPaused` plus
+   * `onlineManager` is - and the three tests above already drive the genuinely
+   * offline pauses through a real client.
+   */
+  it("keeps the errored face and its retry for a read paused while ONLINE", async () => {
+    // Paused, one failure behind it, and the network perfectly healthy.
+    const refetch = jest.fn();
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+      isPaused: true,
+      errorUpdateCount: 1,
+      refetch,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("We can't open the app just yet")).toBeTruthy());
+    expect(screen.getByText("Retry")).toBeTruthy();
+    // Never a claim about a connection nothing said was missing.
+    expect(screen.queryByText("You're offline")).toBeNull();
+    // And the gates stay shut regardless: the verdict is still unknown.
+    expect(screen.queryByText("Consent gate")).toBeNull();
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+  });
+
+  /**
+   * The other side of the conjunct, at the mapping level: paused AND offline is
+   * still the offline face, with no retry to press.
+   */
+  it("shows the offline face for a read paused with no connection", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+      isPaused: true,
+      errorUpdateCount: 1,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    try {
+      act(() => onlineManager.setOnline(false));
+      renderWithProviders(<ProtectedLayout />);
+
+      await waitFor(() => expect(screen.getByText("You're offline")).toBeTruthy());
+      expect(screen.queryByText("Retry")).toBeNull();
+    } finally {
+      act(() => onlineManager.setOnline(true));
     }
   });
 

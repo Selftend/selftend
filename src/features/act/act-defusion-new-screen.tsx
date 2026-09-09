@@ -17,6 +17,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
+import { HandoffNotice } from "@/src/components/app/handoff-notice";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
 import { ProgressSegments } from "@/src/components/app/progress-segments";
@@ -160,6 +161,10 @@ export default function ActDefusionNewScreen() {
   const [seedDraft, setSeedDraft] = useState(arrival.seed);
   const draft = seedDraft ?? storedDraft ?? EMPTY_DRAFT;
 
+  // ☠️ A second channel, never the only one - `HandoffNotice` below is the
+  // record. The toast slot is allowed to refuse this one (an unread error toast
+  // already on screen), drop it (a full queue), or take it away after 2.5s,
+  // while the seed it is about is consumed and unrecoverable.
   const keptDraftNoticeRef = useRef(false);
   useEffect(() => {
     if (!arrival.keptDraft || keptDraftNoticeRef.current) return;
@@ -348,6 +353,8 @@ export default function ActDefusionNewScreen() {
         </View>
 
         <CrisisSupportBar />
+
+        <HandoffNotice visible={arrival.keptDraft} />
 
         {submitError ? (
           <Card {...politeLiveRegionProps()}>

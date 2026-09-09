@@ -207,15 +207,49 @@ describe("NotificationsScreen", () => {
     expect(screen.getByText("Reminders")).toBeTruthy();
   });
 
+  /**
+   * ☠️☠️ **The title names the device, because everything else on this screen is
+   * ACCOUNT-WIDE.** `channel.status` is the one per-browser/per-device input
+   * here, so this card also renders for somebody whose reminders are arriving
+   * fine on their phone. It used to be titled "Notifications are turned off" - a
+   * flat account-wide claim, sitting above a master switch labelled
+   * "Notifications enabled" that is on, and above its own body, which named the
+   * device correctly all along. The assertion is REPLACED rather than relaxed:
+   * the old string was the defect. Same rule #2263 applied to the
+   * `prompt-needed` card 25 lines below it.
+   */
   it("shows a page-level notice when the channel is blocked, and leaves rows interactive", () => {
     setChannel("blocked");
     renderWithProviders(<NotificationsScreen />);
 
-    expect(screen.getByText("Notifications are turned off")).toBeTruthy();
+    expect(screen.getByText("This device is blocking notifications")).toBeTruthy();
+    // The body named the device all along; the title agrees with it now.
+    expect(
+      screen.getByText("Notifications are turned off for Selftend in your device settings."),
+    ).toBeTruthy();
+    // ☠️ Never the account-wide claim, which contradicts the master switch below it.
+    expect(screen.queryByText("Notifications are turned off")).toBeNull();
     // The columns are what the server reads the moment a channel returns, so the rows keep
     // working even with no channel to deliver through.
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
     expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
+  });
+
+  it("names the BROWSER on the blocked card when this is a browser", () => {
+    // The card has no `Platform.OS` guard - it renders on both - and its body is
+    // already resolved per platform by `reminderChannelErrorKey`. The title
+    // follows the body rather than out-scoping it.
+    const originalOs = Platform.OS;
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    try {
+      setChannel("blocked");
+      renderWithProviders(<NotificationsScreen />);
+
+      expect(screen.getByText("This browser is blocking notifications")).toBeTruthy();
+      expect(screen.queryByText("This device is blocking notifications")).toBeNull();
+    } finally {
+      Object.defineProperty(Platform, "OS", { configurable: true, value: originalOs });
+    }
   });
 
   it("shows a page-level notice when the channel is unsupported, in this platform's words (#2263)", () => {
@@ -229,7 +263,9 @@ describe("NotificationsScreen", () => {
     expect(screen.getByTestId("notification-channel-unsupported")).toBeTruthy();
     expect(screen.getByText("Reminders can't arrive here")).toBeTruthy();
     expect(screen.getByText("This device can't deliver reminders.")).toBeTruthy();
-    expect(screen.queryByText("Notifications are turned off")).toBeNull();
+    // ⚠️ By testID, not by the blocked card's copy: a negative assertion keyed on
+    // a string is vacuous the day that string is reworded, and it was.
+    expect(screen.queryByTestId("notification-channel-blocked")).toBeNull();
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
   });
 
@@ -249,7 +285,7 @@ describe("NotificationsScreen", () => {
       setChannel(status);
       const view = renderWithProviders(<NotificationsScreen />);
       expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
-      expect(screen.queryByText("Notifications are turned off")).toBeNull();
+      expect(screen.queryByTestId("notification-channel-blocked")).toBeNull();
       view.unmount();
     }
   });

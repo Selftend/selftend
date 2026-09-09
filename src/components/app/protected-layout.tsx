@@ -30,6 +30,7 @@ import { useNotificationSync } from "@/src/features/notifications/use-notificati
 import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
+import { useIsOnline } from "@/src/lib/online-manager";
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";
 import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
@@ -70,6 +71,9 @@ export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
   const { session, status, user } = useSession();
   const queryClient = useQueryClient();
+  // Read here, unconditionally, because it decides which face the block screen
+  // below wears - see `prefsVerdictState`.
+  const isOnline = useIsOnline();
   const {
     data: preferences,
     isLoading: prefsLoading,
@@ -326,14 +330,30 @@ export default function ProtectedLayout() {
     // half above is untouched), the signal reaches the socket through
     // `getUserPreferences`, and only then does the refetch start a new one.
     //
-    // ⚠️ PAUSED OUTRANKS BOTH, and this picks WHAT TO SAY rather than who gets
-    // past: now that an offline read is held here rather than waved through,
-    // somebody with no connection is a real population on this screen, and
-    // neither of the other two faces tells them the truth. "Getting your
-    // account ready" over a spinner is a lie about a request that is not
+    // ⚠️ PAUSED-AND-OFFLINE OUTRANKS BOTH, and this picks WHAT TO SAY rather
+    // than who gets past: now that an offline read is held here rather than
+    // waved through, somebody with no connection is a real population on this
+    // screen, and neither of the other two faces tells them the truth. "Getting
+    // your account ready" over a spinner is a lie about a request that is not
     // running, and a Retry is a control that cannot win - a refetch pauses on
     // the spot. The offline face says what is happening and what ends it, and
     // the query resumes on its own when the network returns.
+    //
+    // ☠️☠️ `&& !isOnline`, never `isPaused` alone: A PAUSED READ IS NOT THE SAME
+    // THING AS AN OFFLINE ONE. query-core has two pause predicates, and only the
+    // dispatch one (`canStart`) is about connectivity. The RETRY one is
+    // `canContinue = () => focusManager.isFocused() && (networkMode === "always"
+    // || onlineManager.isOnline()) && canRun()`, so a read that failed once on a
+    // perfectly good connection pauses if its retry delay expires while the app
+    // is not focused - which on native is ANY AppState other than `active`
+    // (`app-providers.tsx` feeds `handleFocus(state === "active")`): an iOS
+    // system banner, the pulled-down shade, the app switcher, iPad Slide Over,
+    // Android split-screen; on web, a hidden tab. Keyed on the flag alone, that
+    // person read "You're offline" about a connection that was fine AND LOST THE
+    // RETRY with it - #2238's shape, on the legal gate. Online, a focus-pause
+    // now falls through to the errored face, which is sticky and keeps its
+    // control; it can only get there having failed at least once, since the
+    // dispatch pause is connectivity-only.
     //
     // ⚠️ It cannot re-open #2238's hole either: a Retry press while ONLINE
     // moves `fetchStatus` to `"fetching"`, not `"paused"`, so the sticky
@@ -343,7 +363,8 @@ export default function ProtectedLayout() {
       await queryClient.cancelQueries({ queryKey: preferencesQueryKey(user?.id ?? null) });
       await refetchPreferences();
     };
-    const prefsVerdictState = prefsPaused ? "offline" : prefsHasFailed ? "error" : "loading";
+    const prefsVerdictState =
+      prefsPaused && !isOnline ? "offline" : prefsHasFailed ? "error" : "loading";
     return (
       <PreferencesUnavailableScreen
         state={prefsVerdictState}

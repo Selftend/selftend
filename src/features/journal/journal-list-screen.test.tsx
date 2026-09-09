@@ -239,6 +239,49 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
   });
 
+  /**
+   * ☠️☠️ **An offline arrival is a read that never started, not one still
+   * running.** `networkMode: "online"` means the query never fires, never errors
+   * and sits at `isPending` true / `isPaused` true, so "no data and no error"
+   * parked it on a spinner forever with the retry beside it in a branch that
+   * never rendered - on a screen whose other content comes from the cache, so
+   * the section read as broken rather than as offline. #2237's conjunct.
+   */
+  it("offers the retry instead of an endless spinner when the read never started", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPaused: true,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("Couldn't load the writing chart.")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.queryByTestId("journal-writing-loading")).toBeNull();
+  });
+
+  /**
+   * The other side of the conjunct: an ordinary online first load is still a
+   * spinner, not an error about a connection that is fine.
+   */
+  it("still spins while a read that did start is in flight", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPaused: false,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByTestId("journal-writing-loading")).toBeTruthy();
+    expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
+  });
+
   it("keeps the writing section and its control when the selected range is empty", () => {
     mockEntries([journalEntry("old", "2025-01-01")]);
     mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<

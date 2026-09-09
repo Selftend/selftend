@@ -11,6 +11,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { HandoffNotice } from "@/src/components/app/handoff-notice";
 import { HelpButton } from "@/src/components/app/help-button";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -89,6 +90,7 @@ function ThoughtRecordEditorColumn() {
     form,
     errors,
     recordId,
+    handoffDropped,
     submitError,
     natsError,
     clearNatsError,
@@ -217,6 +219,8 @@ function ThoughtRecordEditorColumn() {
         </View>
 
         <CrisisSupportBar />
+
+        <HandoffNotice visible={handoffDropped} />
 
         {submitError ? (
           <Card {...politeLiveRegionProps()}>

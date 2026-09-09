@@ -377,6 +377,9 @@ describe("the category chips and technique cards", () => {
  */
 describe("a door's hand-off", () => {
   const SEED = { fusedThought: "She is ignoring me", thoughtCategory: "selfJudgment" as const };
+  const HANDOFF_BODY =
+    "Nothing was carried over from where you just were. " +
+    "Finish or discard this draft, then use that button again.";
 
   it("opens the form on the hand-off when nothing is held", () => {
     seedDefusionLog(SEED);
@@ -411,11 +414,54 @@ describe("a door's hand-off", () => {
     // The entry the person typed, not the hand-off.
     expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("I never get anything right");
     expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
-    expect(useToastStore.getState().visible?.description).toBe(
-      "Nothing was carried over from where you just were. Finish or discard this draft, then use that button again.",
-    );
+    expect(useToastStore.getState().visible?.description).toBe(HANDOFF_BODY);
+    // ☠️ And on the form itself, where no toast policy can discard it.
+    expect(within(screen.getByTestId("handoff-notice")).getByText(HANDOFF_BODY)).toBeTruthy();
     // ☠️ Nothing left behind: not the judgement, not a flag about it.
     expect(useActDefusionSeedStore.getState().seed).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ **The notice has to survive a toast slot that is allowed to throw it
+   * away.** The seed is consumed and unrecoverable, so this line is the only
+   * record that anything was dropped - and the store refuses a success outright
+   * while an unread error is in the slot, drops it on a full queue, and takes it
+   * away after 2.5s otherwise. The inline line cannot be discarded.
+   */
+  it("says the hand-off was dropped inline, even when the toast slot refuses the toast", () => {
+    useToastStore.getState().showToast({ title: "Couldn't save that", tone: "error" });
+
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
+    first.unmount();
+
+    seedDefusionLog(SEED);
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(useToastStore.getState().visible?.title).toBe("Couldn't save that");
+    const notice = within(screen.getByTestId("handoff-notice"));
+    expect(notice.getByText("Kept your open draft")).toBeTruthy();
+    expect(notice.getByText(HANDOFF_BODY)).toBeTruthy();
+  });
+
+  it("lets the person dismiss the notice once they have read it", () => {
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
+    first.unmount();
+
+    seedDefusionLog(SEED);
+    renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.press(within(screen.getByTestId("handoff-notice")).getByLabelText("Close"));
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
+  });
+
+  it("shows no notice when the hand-off landed", () => {
+    seedDefusionLog(SEED);
+
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.queryByTestId("handoff-notice")).toBeNull();
   });
 
   /**
