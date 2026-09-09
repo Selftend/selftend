@@ -5,39 +5,27 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import type { ToolKey } from "@/src/features/favorites/items";
 import { formatOneDecimal } from "@/src/lib/locale-format";
 import { formatHours } from "@/src/features/sleep/format";
-import { addDaysToKey, formatCompactAtOffset, mondayKeyOf, parseLocalNoon } from "@/src/utils/date";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { formatCompactAtOffset } from "@/src/utils/date";
+import { roundTo1 } from "@/src/utils/number";
 
-import { useMoodLogCount, useMoodWeek } from "@/src/features/mood/queries";
-import { countLogsInCurrentWeek, currentWeekStartKey } from "@/src/features/mood/week-window";
-import { getMoodSummary } from "@/src/features/mood/summaries";
-import { useJournalEntryCount, useJournalWordTotal } from "@/src/features/journal/queries";
-import {
-  useGratitudeEntryCount,
-  useGratitudeEntryCountSinceDayKey,
-} from "@/src/features/gratitude/queries";
-import {
-  useBreathingSessionCount,
-  useBreathingTotalMinutes,
-} from "@/src/features/breathing/queries";
-import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/grounding/queries";
-import {
-  useMeditationMedianMinutes,
-  useMeditationSessionCount,
-} from "@/src/features/meditation/queries";
-import { useSleepStats } from "@/src/features/sleep/queries";
-import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
-import { isScheduledOn, isTickedOn } from "@/src/features/habits/scheduling";
-import type { MindfulnessSession } from "@/src/features/mindfulness/types";
+import { useHomeToolStats } from "@/src/features/home/tool-stats-queries";
 
 /**
  * The stat line of the tool card (#975, S5a; rekeyed onto the favourites card by #1955).
  *
- * Two rules govern every stat here, and they are what keep home and the tool from drifting:
+ * Two rules govern every stat here, and they are what keep home and the tool from
+ * drifting:
  *
  * 1. **A stat quotes its tool and never invents a number.** Only figures the destination's
- *    own header already renders, from the same source. That is why there are no new
- *    queries and no new RPCs — each stat mounts the cache entry its tool already mounts.
+ *    own header already renders, from the same source. Since #2212 the eight stats
+ *    arrive together from ONE query, `useHomeToolStats` - the `home_tool_stats` RPC
+ *    calls each tool's own aggregate (`sleep_stats`, `journal_word_total`,
+ *    `meditation_median_minutes`, `breathing_total_minutes`) and restates only the
+ *    head counts, and an integration test pins every leg to the tool's own read. The
+ *    hooks below take the figures and do what they always did: the rounding
+ *    (`Math.round` / `roundTo1`, ADR-0001) and the wording. Before #2212 each stat
+ *    mounted the cache entries its tool mounts, which cost Home fifteen requests for
+ *    everyone; a stat may not go back to mounting its own query.
  * 2. **A catalogue constant is not a stat.** Grounding's "8 techniques" and meditation's
  *    "Stage N" are product-authored, so a tool's *first* header stat is sometimes the
  *    wrong one to quote. There is no mechanical "first two" rule.
@@ -48,7 +36,7 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
  *
  * Three states, not two:
  * - **loading** → `null`, an empty slot. Never a dash, never a skeleton. A loading surface
- *   never claims emptiness, and `undefined` from these hooks means "not loaded" — which
+ *   never claims emptiness, and `undefined` from the query means "not loaded" — which
  *   includes a failed fetch with no cache, where "Nothing yet" would erase a real history.
  * - **loaded and empty** → the shared `home.rows.empty`. One key for every tool: the card's
  *   own name already supplies the noun.
@@ -86,9 +74,6 @@ function joinClauses(first: string | null, second: string | null): string | null
   return kept.length > 0 ? kept.join(" · ") : null;
 }
 
-/** `undefined` from a query hook means not loaded — never "zero". */
-const isLoaded = (...values: unknown[]) => values.every((value) => value !== undefined);
-
 const emptyStat = (t: TFunction) => t("home.rows.empty");
 
 // --- 1. mood-checkin -------------------------------------------------------
@@ -98,33 +83,31 @@ const emptyStat = (t: TFunction) => t("home.rows.empty");
 export function useMoodStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
   /**
-   * ADR-0001: neither clause may come from a capped list. `useMoodWeek` fetches a DAY
-   * RANGE - [previous Monday, this Sunday] - and `listMoodLogsInDayRange` pages it with
-   * a keyset cursor, so it is uncapped by row count. That 14-day span always contains
-   * both windows this row quotes, which means there is no assumed logging-rate bound to
-   * state and nothing to truncate. (The 30-row list this first used would have silently
-   * undercounted a user checking in twice a day - well inside real behaviour, since the
-   * tool itself invites more than one check-in a day.)
+   * ADR-0001: neither clause may come from a capped list. The RPC counts the calendar
+   * week and averages the trailing seven days over the same fortnight `useMoodWeek`
+   * fetches, uncapped by row count, and the lifetime count is exact.
    *
    * Emptiness is the exact lifetime count, not "nothing in the window": a user whose
    * last check-in was ten days ago has a record, and `0 this week` is the honest clause
-   * for them. An exact `head` count needs no function under ADR-0001.
+   * for them.
    */
-  const { data: logs } = useMoodWeek(userId, currentWeekStartKey());
-  const { data: lifetimeCount } = useMoodLogCount(userId);
+  const { data } = useHomeToolStats(userId);
+  const mood = data?.mood;
 
   let stat: string | null = null;
-  if (isLoaded(logs, lifetimeCount)) {
-    const summary = getMoodSummary(logs, 7);
+  if (mood !== undefined) {
+    // `roundTo1` here, as `getMoodSummary` always applied it; the RPC hands back the
+    // exact mean (ADR-0001's rounding rule).
+    const average = mood.avg7 === null ? null : roundTo1(mood.avg7);
     stat =
-      lifetimeCount === 0
+      mood.lifetimeCount === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.thisWeek", { value: countLogsInCurrentWeek(logs) }),
-            summary.average === null
+            t("home.rows.thisWeek", { value: mood.thisWeekCount }),
+            average === null
               ? null
               : t("home.rows.avg7", {
-                  value: formatOneDecimal(summary.average, i18n.language),
+                  value: formatOneDecimal(average, i18n.language),
                 }),
           );
   }
@@ -135,39 +118,38 @@ export function useMoodStat(userId: string | null): string | null {
 // Lifetime figures, matching the journal hero: the id says "week", the tool does not.
 export function useJournalStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
-  const { data: entries } = useJournalEntryCount(userId);
-  const { data: words } = useJournalWordTotal(userId);
+  const { data } = useHomeToolStats(userId);
+  const journal = data?.journal;
 
   let stat: string | null = null;
-  if (isLoaded(entries, words)) {
+  if (journal !== undefined) {
     stat =
-      entries === 0
+      journal.entries === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.entries", { count: entries }),
-            t("home.rows.words", { count: words }),
+            t("home.rows.entries", { count: journal.entries }),
+            t("home.rows.words", { count: journal.words }),
           );
   }
   return stat;
 }
 
 // --- 3. gratitude-latest ---------------------------------------------------
+// The week clause counts since the Monday of the day Home describes, by each entry's
+// own captured civil day - the same rule `countGratitudeEntriesSinceDayKey` applies.
 export function useGratitudeStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
-  const { selectedDate } = useSelectedDate();
-  // `mondayKeyOf(todayKey)` is what the gratitude home screen passes, so this shares
-  // its cache entry rather than opening a second one on a different key.
-  const { data: total } = useGratitudeEntryCount(userId);
-  const { data: thisWeek } = useGratitudeEntryCountSinceDayKey(userId, mondayKeyOf(selectedDate));
+  const { data } = useHomeToolStats(userId);
+  const gratitude = data?.gratitude;
 
   let stat: string | null = null;
-  if (isLoaded(total, thisWeek)) {
+  if (gratitude !== undefined) {
     stat =
-      total === 0
+      gratitude.entries === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.entries", { count: total }),
-            t("home.rows.thisWeek", { value: thisWeek }),
+            t("home.rows.entries", { count: gratitude.entries }),
+            t("home.rows.thisWeek", { value: gratitude.thisWeek }),
           );
   }
   return stat;
@@ -176,49 +158,43 @@ export function useGratitudeStat(userId: string | null): string | null {
 // --- 4. breathing-suggested ------------------------------------------------
 export function useBreathingStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
-  const { data: sessions } = useBreathingSessionCount(userId);
-  const { data: minutes } = useBreathingTotalMinutes(userId);
+  const { data } = useHomeToolStats(userId);
+  const breathing = data?.breathing;
 
   let stat: string | null = null;
-  if (isLoaded(sessions, minutes)) {
+  if (breathing !== undefined) {
     stat =
-      sessions === 0
+      breathing.sessions === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.sessions", { count: sessions }),
-            t("home.rows.minutes", { count: minutes }),
+            t("home.rows.sessions", { count: breathing.sessions }),
+            t("home.rows.minutes", { count: breathing.minutes }),
           );
   }
   return stat;
 }
 
 // --- 5. grounding-log ------------------------------------------------------
-// Recency reuses the tool's own capped list (limit 5, its cache key) and reads only
-// `at(0)`, which every cap contains - no new query. `formatCompactAtOffset` never
+// Recency is the newest session's own captured instant. `formatCompactAtOffset` never
 // renders "N days ago": a column of `23 days ago · 41 days ago` implies lateness, and
 // home does not tally days since you last opened a tool.
 export function useGroundingStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
-  const { data: sessions } = useGroundingSessionCount(userId);
-  const { data: recent } = useGroundingSessions(userId, 5);
+  const { data } = useHomeToolStats(userId);
+  const grounding = data?.grounding;
 
   let stat: string | null = null;
-  if (isLoaded(sessions, recent)) {
-    const last = (recent ?? []).reduce<MindfulnessSession | null>(
-      (latest, session) =>
-        latest === null || session.completedAt > latest.completedAt ? session : latest,
-      null,
-    );
+  if (grounding !== undefined) {
     stat =
-      sessions === 0
+      grounding.sessions === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.sessions", { count: sessions }),
-            last
+            t("home.rows.sessions", { count: grounding.sessions }),
+            grounding.lastCompletedAt
               ? t("home.rows.last", {
                   when: formatCompactAtOffset(
-                    last.completedAt,
-                    last.completedOffsetMinutes,
+                    grounding.lastCompletedAt,
+                    grounding.lastCompletedOffsetMinutes,
                     i18n.language,
                   ),
                 })
@@ -230,20 +206,23 @@ export function useGroundingStat(userId: string | null): string | null {
 
 // --- 6. meditation-pick ----------------------------------------------------
 // ☠️ The design's drawn "30 sessions · 551 minutes" was the 30-row cache cap times a
-// sum capped the same way. `useMeditationSessionCount` is a real uncapped head count,
-// and the companion figure is the server's median, not a client sum.
+// sum capped the same way. The sits figure is a real uncapped count, and the companion
+// figure is the server's median, not a client sum.
 export function useMeditationStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
-  const { data: sits } = useMeditationSessionCount(userId);
-  const { data: median } = useMeditationMedianMinutes(userId);
+  const { data } = useHomeToolStats(userId);
+  const meditation = data?.meditation;
 
   let stat: string | null = null;
-  if (isLoaded(sits, median)) {
+  if (meditation !== undefined) {
+    // `Math.round` here, as `medianMeditationMinutes` always applied it: the RPC hands
+    // back the exact percentile so a `.5` tie rounds the way it always did (ADR-0001).
+    const median = meditation.medianMinutes === null ? null : Math.round(meditation.medianMinutes);
     stat =
-      sits === 0
+      meditation.sits === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.sits", { count: sits }),
+            t("home.rows.sits", { count: meditation.sits }),
             // null means no sessions at all, which the sits clause already said.
             median === null ? null : t("home.rows.typicalMinutes", { value: median }),
           );
@@ -252,19 +231,22 @@ export function useMeditationStat(userId: string | null): string | null {
 }
 
 // --- 7. sleep-latest -------------------------------------------------------
-// `useSleepStats` passes the viewer timezone itself (`deviceTimeZone()` rides its query
-// key), so the server aggregate is windowed in the viewer's civil days. Duration comes
-// back in MINUTES; `formatHours` does the /60 and the locale-aware decimal (#962).
+// The RPC hands `sleep_stats` the viewer's zone, so the aggregate is windowed in the
+// viewer's civil days. Duration comes back in MINUTES; `formatHours` does the /60 and
+// the locale-aware decimal (#962).
 export function useSleepStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
-  const { data: stats } = useSleepStats(userId);
+  const { data } = useHomeToolStats(userId);
+  const sleep = data?.sleep;
 
   let stat: string | null = null;
-  if (isLoaded(stats)) {
-    // `null` is a real loaded value here (the RPC returned no row), distinct from
-    // `undefined`, and it means the user has no nights rather than none loaded.
-    const sevenDay = stats?.sevenDayDurationMinutes ?? null;
-    const quality = stats?.sevenDayQuality ?? null;
+  if (sleep !== undefined) {
+    // The same rounding `sleepStats()` in the sleep repository applies to these two
+    // figures: `Math.round` on the minutes, `roundTo1` on the quality. `null` is a real
+    // loaded value here, and it means the user has no nights rather than none loaded.
+    const sevenDay =
+      sleep.avgDurationMinutes7 === null ? null : Math.round(sleep.avgDurationMinutes7);
+    const quality = sleep.avgQuality7 === null ? null : roundTo1(sleep.avgQuality7);
     stat =
       sevenDay === null && quality === null
         ? emptyStat(t)
@@ -285,36 +267,21 @@ export function useSleepStat(userId: string | null): string | null {
 // data and no habit data at all. This row reads HABITS, which is what its name has
 // always promised. CBT activities keep their own row in S5b, so nothing is lost.
 //
-// Uncapped: the fraction is over every habit due today, not a page of them.
+// Uncapped: the fraction is over every habit due today, not a page of them. The RPC
+// applies `isScheduledOn` and `isTickedOn` to the day Home describes.
 export function useHabitsStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
-  const { selectedDate } = useSelectedDate();
-  /**
-   * The habits screen's own cache entries. `useHabitLogs`' scope is structural in the
-   * query key, so the options object has to MATCH the screen's to share it - a narrower
-   * `sinceDate` of just today would be a second query for a subset of rows this one
-   * already holds, which is what rule 1 above exists to prevent.
-   */
-  const { data: habits } = useHabits(userId, { includeArchived: true });
-  // The 30-day window is derived from `selectedDate` rather than a fresh `new Date()`:
-  // both resolve to the same civil-day string (so the habits screen's cache entry is
-  // still shared), but a clock read during render is impure and the React Compiler
-  // rejects it outright inside a `useMemo`.
-  const { data: logs } = useHabitLogs(userId, {
-    sinceDate: addDaysToKey(selectedDate, -30),
-  });
+  const { data } = useHomeToolStats(userId);
+  const habits = data?.habits;
 
   let stat: string | null = null;
-  if (isLoaded(habits, logs)) {
-    const active = (habits ?? []).filter((habit) => !habit.archivedAt);
-    const dueToday = active.filter((habit) => isScheduledOn(habit, parseLocalNoon(selectedDate)));
-    const done = dueToday.filter((habit) => isTickedOn(logs ?? [], habit.id, selectedDate)).length;
+  if (habits !== undefined) {
     stat =
-      active.length === 0
+      habits.active === 0
         ? emptyStat(t)
-        : dueToday.length === 0
+        : habits.dueToday === 0
           ? t("home.rows.nothingScheduled")
-          : t("home.rows.doneToday", { done, total: dueToday.length });
+          : t("home.rows.doneToday", { done: habits.doneToday, total: habits.dueToday });
   }
   return stat;
 }

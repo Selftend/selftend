@@ -2,91 +2,41 @@ import { screen } from "@testing-library/react-native";
 
 import type { ToolKey } from "@/src/features/favorites/items";
 import { ToolStat } from "@/src/features/home/tool-row-stats";
-import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import type { HomeToolStats } from "@/src/features/home/tool-stats-repository";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() }, usePathname: () => "/" }));
 
-jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: () => ({ selectedDate: "2026-05-28" }),
+/**
+ * ONE mocked query, not fifteen (#2212).
+ *
+ * Every figure the eight cards draw arrives together from `home_tool_stats`, so the
+ * seam this file mocks is that single hook. The values below are what the RPC hands
+ * back — **exact and unrounded** — because the rounding is the hook's job under
+ * ADR-0001, and `home-query-count.test.tsx` is what holds the count at one.
+ */
+jest.mock("@/src/features/home/tool-stats-queries", () => ({
+  useHomeToolStats: jest.fn(),
 }));
 
-const q = <T,>(data: T) => ({ data });
-const loading = { data: undefined };
+const useHomeToolStats = jest.requireMock("@/src/features/home/tool-stats-queries")
+  .useHomeToolStats as jest.Mock;
 
-jest.mock("@/src/features/mood/queries", () => ({
-  useMoodWeek: jest.fn(),
-  useMoodLogCount: jest.fn(),
-}));
-jest.mock("@/src/features/journal/queries", () => ({
-  useJournalEntryCount: jest.fn(),
-  useJournalWordTotal: jest.fn(),
-}));
-jest.mock("@/src/features/gratitude/queries", () => ({
-  useGratitudeEntryCount: jest.fn(),
-  useGratitudeEntryCountSinceDayKey: jest.fn(),
-}));
-jest.mock("@/src/features/breathing/queries", () => ({
-  useBreathingSessionCount: jest.fn(),
-  useBreathingTotalMinutes: jest.fn(),
-}));
-jest.mock("@/src/features/grounding/queries", () => ({
-  useGroundingSessionCount: jest.fn(),
-  useGroundingSessions: jest.fn(),
-}));
-jest.mock("@/src/features/meditation/queries", () => ({
-  useMeditationSessionCount: jest.fn(),
-  useMeditationMedianMinutes: jest.fn(),
-}));
-jest.mock("@/src/features/sleep/queries", () => ({ useSleepStats: jest.fn() }));
-jest.mock("@/src/features/habits/queries", () => ({
-  useHabits: jest.fn(),
-  useHabitLogs: jest.fn(),
-}));
-const mocks = {
-  moodLogs: jest.requireMock("@/src/features/mood/queries").useMoodWeek as jest.Mock,
-  moodCount: jest.requireMock("@/src/features/mood/queries").useMoodLogCount as jest.Mock,
-  journalEntries: jest.requireMock("@/src/features/journal/queries")
-    .useJournalEntryCount as jest.Mock,
-  journalWords: jest.requireMock("@/src/features/journal/queries").useJournalWordTotal as jest.Mock,
-  gratitudeTotal: jest.requireMock("@/src/features/gratitude/queries")
-    .useGratitudeEntryCount as jest.Mock,
-  gratitudeWeek: jest.requireMock("@/src/features/gratitude/queries")
-    .useGratitudeEntryCountSinceDayKey as jest.Mock,
-  breathingCount: jest.requireMock("@/src/features/breathing/queries")
-    .useBreathingSessionCount as jest.Mock,
-  breathingMinutes: jest.requireMock("@/src/features/breathing/queries")
-    .useBreathingTotalMinutes as jest.Mock,
-  groundingCount: jest.requireMock("@/src/features/grounding/queries")
-    .useGroundingSessionCount as jest.Mock,
-  groundingList: jest.requireMock("@/src/features/grounding/queries")
-    .useGroundingSessions as jest.Mock,
-  sits: jest.requireMock("@/src/features/meditation/queries")
-    .useMeditationSessionCount as jest.Mock,
-  median: jest.requireMock("@/src/features/meditation/queries")
-    .useMeditationMedianMinutes as jest.Mock,
-  sleepStats: jest.requireMock("@/src/features/sleep/queries").useSleepStats as jest.Mock,
-  habits: jest.requireMock("@/src/features/habits/queries").useHabits as jest.Mock,
-  habitLogs: jest.requireMock("@/src/features/habits/queries").useHabitLogs as jest.Mock,
+/** Every tool loaded and empty, so each test only sets the one it is about. */
+const EMPTY: HomeToolStats = {
+  mood: { lifetimeCount: 0, thisWeekCount: 0, avg7: null },
+  journal: { entries: 0, words: 0 },
+  gratitude: { entries: 0, thisWeek: 0 },
+  breathing: { sessions: 0, minutes: 0 },
+  grounding: { sessions: 0, lastCompletedAt: null, lastCompletedOffsetMinutes: null },
+  meditation: { sits: 0, medianMinutes: null },
+  sleep: { avgDurationMinutes7: null, avgQuality7: null },
+  habits: { active: 0, dueToday: 0, doneToday: 0 },
 };
 
-/** Every hook loaded and empty, so each test only sets the ones it is about. */
-function allLoadedEmpty() {
-  mocks.moodLogs.mockReturnValue(q([]));
-  mocks.moodCount.mockReturnValue(q(0));
-  mocks.journalEntries.mockReturnValue(q(0));
-  mocks.journalWords.mockReturnValue(q(0));
-  mocks.gratitudeTotal.mockReturnValue(q(0));
-  mocks.gratitudeWeek.mockReturnValue(q(0));
-  mocks.breathingCount.mockReturnValue(q(0));
-  mocks.breathingMinutes.mockReturnValue(q(0));
-  mocks.groundingCount.mockReturnValue(q(0));
-  mocks.groundingList.mockReturnValue(q([]));
-  mocks.sits.mockReturnValue(q(0));
-  mocks.median.mockReturnValue(q(null));
-  mocks.sleepStats.mockReturnValue(q(null));
-  mocks.habits.mockReturnValue(q([]));
-  mocks.habitLogs.mockReturnValue(q([]));
+/** The whole aggregate, loaded, with one tool's slice overridden. */
+function loaded(patch: Partial<HomeToolStats> = {}) {
+  useHomeToolStats.mockReturnValue({ data: { ...EMPTY, ...patch } });
 }
 
 const renderStat = (toolKey: ToolKey) =>
@@ -103,29 +53,29 @@ function statOf(toolKey: ToolKey): string | null {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  allLoadedEmpty();
+  loaded();
 });
 
 describe("the three states", () => {
   it("renders no stat at all while the data is still loading", () => {
     // Not a dash, not a skeleton, not "Nothing yet". `undefined` also covers a failed
     // fetch with no cache, where claiming emptiness would erase a real history.
-    mocks.journalEntries.mockReturnValue(loading);
-    mocks.journalWords.mockReturnValue(loading);
+    useHomeToolStats.mockReturnValue({ data: undefined });
 
     renderStat("journal");
 
     expect(statOf("journal")).toBeNull();
   });
 
-  it("waits for every clause before showing any of them", () => {
+  it("waits for the whole aggregate before showing any clause", () => {
     // A row that renders half its stat and then reflows is worse than one that waits.
-    mocks.journalEntries.mockReturnValue(q(24));
-    mocks.journalWords.mockReturnValue(loading);
+    // With one query the clauses can no longer arrive apart - which is the point - so
+    // this pins the state that remains: nothing loaded, nothing drawn.
+    useHomeToolStats.mockReturnValue({ data: undefined });
 
-    renderStat("journal");
+    renderStat("mood");
 
-    expect(statOf("journal")).toBeNull();
+    expect(statOf("mood")).toBeNull();
   });
 
   it("renders the one shared empty string when loaded with no record", () => {
@@ -136,9 +86,7 @@ describe("the three states", () => {
 
   it("distinguishes an empty day from an empty record", () => {
     // A user with habits, none due today, has a full record and an empty day.
-    mocks.habits.mockReturnValue(
-      q([{ id: "h1", archivedAt: null, cadence: "custom", customDays: [] }]),
-    );
+    loaded({ habits: { active: 1, dueToday: 0, doneToday: 0 } });
 
     renderStat("habits");
 
@@ -148,8 +96,7 @@ describe("the three states", () => {
 
 describe("the stat grammar", () => {
   it("joins two clauses with the design's separator", () => {
-    mocks.journalEntries.mockReturnValue(q(24));
-    mocks.journalWords.mockReturnValue(q(698));
+    loaded({ journal: { entries: 24, words: 698 } });
 
     renderStat("journal");
 
@@ -157,8 +104,7 @@ describe("the stat grammar", () => {
   });
 
   it("drops a clause rather than rendering it empty", () => {
-    mocks.sits.mockReturnValue(q(30));
-    mocks.median.mockReturnValue(q(null));
+    loaded({ meditation: { sits: 30, medianMinutes: null } });
 
     renderStat("meditation");
 
@@ -166,12 +112,11 @@ describe("the stat grammar", () => {
   });
 
   it("names the window on a windowed number and not on a lifetime one", () => {
-    mocks.journalEntries.mockReturnValue(q(24));
-    mocks.journalWords.mockReturnValue(q(698));
+    loaded({ journal: { entries: 24, words: 698 } });
     renderStat("journal");
     expect(statOf("journal")).not.toMatch(/week|average/i);
 
-    mocks.sleepStats.mockReturnValue(q({ sevenDayDurationMinutes: 432, sevenDayQuality: 3.2 }));
+    loaded({ sleep: { avgDurationMinutes7: 432, avgQuality7: 3.2 } });
     renderStat("sleep");
     expect(statOf("sleep")).toMatch(/7-day average/);
   });
@@ -181,13 +126,8 @@ describe("per-tool stats", () => {
   it("check-in quotes a calendar week and a trailing average, both labelled", () => {
     // The two windows differ ON PURPOSE (#697): `this week` is Mon-Sun, `7-day average`
     // is trailing. Both are labelled, so both are honest - harmonising them reverts #697.
-    mocks.moodLogs.mockReturnValue(
-      q([
-        { dayKey: currentDateKey(), moodScore: 3 },
-        { dayKey: addDaysToKey(currentDateKey(), -1), moodScore: 3 },
-      ]),
-    );
-    mocks.moodCount.mockReturnValue(q(2));
+    // The RPC computes both windows; this pins that the card still names each one.
+    loaded({ mood: { lifetimeCount: 2, thisWeekCount: 2, avg7: 3 } });
 
     renderStat("mood");
 
@@ -195,51 +135,75 @@ describe("per-tool stats", () => {
     expect(statOf("mood")).toMatch(/7-day average/);
   });
 
+  it("draws the check-in average to one decimal, not the raw mean", () => {
+    // ADR-0001: the server hands back the exact mean and the CLIENT reduces it, through
+    // the same `roundTo1` + `formatOneDecimal` pair `getMoodSummary` always fed.
+    // ⚠️ This assertion cannot tell those two apart - `formatOneDecimal` alone would
+    // print the same string - so `roundTo1` stays because it is the old pipeline, not
+    // because this line proves it. The rounding that IS observable is sleep's and the
+    // median's below, and those two tests are the mutation-proved ones.
+    loaded({ mood: { lifetimeCount: 3, thisWeekCount: 3, avg7: 3.266666666 } });
+
+    renderStat("mood");
+
+    expect(statOf("mood")).toBe("3 this week · 7-day average 3.3");
+  });
+
   it("sleep converts the server's minutes into hours and quotes quality out of five", () => {
     // `sleep_stats` returns MINUTES; 432 is 7.2h. The decimal is locale-aware via #962.
-    mocks.sleepStats.mockReturnValue(q({ sevenDayDurationMinutes: 432, sevenDayQuality: 3.2 }));
+    loaded({ sleep: { avgDurationMinutes7: 432, avgQuality7: 3.2 } });
 
     renderStat("sleep");
 
     expect(statOf("sleep")).toBe("7-day average 7.2h · quality 3.2/5");
   });
 
+  it("draws an unrounded server average as the same line as its rounded twin", () => {
+    // 431.5 minutes and quality 3.24 are what the RPC actually returns - exact, because
+    // ADR-0001 keeps the rounding on the client - and they have to read as the figures
+    // the sleep repository's `Math.round`/`roundTo1` always produced.
+    // ⚠️ At this scale the two are indistinguishable by construction: `formatHours`
+    // shows one decimal of an hour, so half a minute cannot move it. The rounding stays
+    // because it is the old pipeline; what this line proves is that an exact numeric
+    // does not reach the card as `7.191666666666666h`.
+    loaded({ sleep: { avgDurationMinutes7: 431.5, avgQuality7: 3.24 } });
+
+    renderStat("sleep");
+
+    expect(statOf("sleep")).toBe("7-day average 7.2h · quality 3.2/5");
+  });
+
+  it("rounds the meditation median rather than drawing the raw percentile", () => {
+    // `percentile_cont` interpolates, so an even number of sits yields a .5; the client
+    // applies the same `Math.round` `medianMeditationMinutes()` always did.
+    loaded({ meditation: { sits: 30, medianMinutes: 22.5 } });
+
+    renderStat("meditation");
+
+    expect(statOf("meditation")).toBe("30 sits · 23 min typical");
+  });
+
   it("habits counts habits due today, not CBT activities", () => {
     // The id maps to ActivitiesWidget today, which reads behavioural-activation data and
-    // no habit data at all. 2026-05-28 is a Thursday (day 4).
-    mocks.habits.mockReturnValue(
-      q([
-        { id: "h1", archivedAt: null, cadence: "daily", customDays: [] },
-        { id: "h2", archivedAt: null, cadence: "daily", customDays: [] },
-        { id: "h3", archivedAt: null, cadence: "custom", customDays: [0] },
-        { id: "h4", archivedAt: "2026-01-01", cadence: "daily", customDays: [] },
-      ]),
-    );
-    mocks.habitLogs.mockReturnValue(q([{ habitId: "h1", loggedOn: "2026-05-28" }]));
+    // no habit data at all. The RPC applies `isScheduledOn`/`isTickedOn` to the viewer's
+    // day; the card states the fraction.
+    loaded({ habits: { active: 3, dueToday: 2, doneToday: 1 } });
 
     renderStat("habits");
 
-    // h1 and h2 are due; h3 is Sundays-only; h4 is archived. One of the two is ticked.
     expect(statOf("habits")).toBe("1 of 2 done today");
   });
 
-  it("gratitude counts everything, then this week from the Monday key", () => {
-    // The week clause is a "since Monday" count keyed on `mondayKeyOf(selectedDate)`,
-    // which is the key the gratitude home screen passes - so the row shares its cache
-    // entry rather than opening a second one on a different key.
-    mocks.gratitudeTotal.mockReturnValue(q(29));
-    mocks.gratitudeWeek.mockReturnValue(q(3));
+  it("gratitude counts everything, then this week", () => {
+    loaded({ gratitude: { entries: 29, thisWeek: 3 } });
 
     renderStat("gratitude");
 
     expect(statOf("gratitude")).toBe("29 entries · 3 this week");
-    // 2026-05-28 is a Thursday; its Monday is the 25th.
-    expect(mocks.gratitudeWeek).toHaveBeenCalledWith("user-1", "2026-05-25");
   });
 
   it("breathing quotes lifetime sessions and lifetime minutes, neither windowed", () => {
-    mocks.breathingCount.mockReturnValue(q(14));
-    mocks.breathingMinutes.mockReturnValue(q(82));
+    loaded({ breathing: { sessions: 14, minutes: 82 } });
 
     renderStat("breathing");
 
@@ -253,22 +217,21 @@ describe("per-tool stats", () => {
   it("check-in stays honest for a user whose record is older than the window", () => {
     // Their last check-in was ten days ago: they have a record, so "Nothing yet" would
     // be false. `0 this week` is the true clause.
-    mocks.moodLogs.mockReturnValue(q([]));
-    mocks.moodCount.mockReturnValue(q(12));
+    loaded({ mood: { lifetimeCount: 12, thisWeekCount: 0, avg7: null } });
 
     renderStat("mood");
 
     expect(statOf("mood")).toBe("0 this week");
   });
 
-  it("grounding reads recency off the tool's own cached list", () => {
-    mocks.groundingCount.mockReturnValue(q(14));
-    mocks.groundingList.mockReturnValue(
-      q([
-        { completedAt: "2026-05-20T10:00:00.000Z", completedOffsetMinutes: 0 },
-        { completedAt: "2026-05-27T19:40:00.000Z", completedOffsetMinutes: 0 },
-      ]),
-    );
+  it("grounding reads recency off the newest session's own captured instant", () => {
+    loaded({
+      grounding: {
+        sessions: 14,
+        lastCompletedAt: "2026-05-27T19:40:00.000Z",
+        lastCompletedOffsetMinutes: 0,
+      },
+    });
 
     renderStat("grounding");
 
@@ -276,5 +239,13 @@ describe("per-tool stats", () => {
     expect(stat).toMatch(/^14 sessions · Last /);
     // Never "N days ago": a column of those implies lateness, which home does not do.
     expect(stat).not.toMatch(/days? ago/i);
+  });
+
+  it("drops grounding's recency clause when the tool has no sessions at all", () => {
+    // `lastCompletedAt` is null exactly when the count is zero, and the empty string
+    // already says so - the card must not render a dangling "Last ".
+    renderStat("grounding");
+
+    expect(statOf("grounding")).toBe("Nothing yet");
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
+import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -119,13 +120,20 @@ export function useSaveGratitudeEntry(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: gratitudeKeys.all }),
         invalidateRecordDays(queryClient),
+        invalidateHomeToolStats(queryClient),
       ]);
     },
   });
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all, recordDaysKeys.all);
+  return useDeleteMutation(
+    userId,
+    deleteGratitudeEntry,
+    gratitudeKeys.all,
+    recordDaysKeys.all,
+    homeToolStatsKeys.all,
+  );
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {
@@ -155,6 +163,10 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       // the comment above is careful about refetch cost: the record-days root
       // has no observer outside "Looking back", so this only marks it stale.
       void invalidateRecordDays(queryClient);
+      // Same coarse rule, same cheapness argument: starring moves no figure on a
+      // Home card, but deciding that per mutation is the judgement that rots, and
+      // the aggregate is one small query with at most eight observers (#2212).
+      void invalidateHomeToolStats(queryClient);
     },
   });
 }
