@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import type { ThoughtCategory } from "@/src/features/act/types";
 import { registerDraftStore } from "@/src/stores/draft-store-registry";
+import { isHandoffSeedFresh } from "@/src/stores/handoff-seed";
 
 /** What a door into the defusion form asks it to open with. */
 export interface ActDefusionSeed {
@@ -11,12 +12,18 @@ export interface ActDefusionSeed {
 
 interface ActDefusionSeedState {
   seed: ActDefusionSeed | null;
+  /** When the hand-off was minted, for {@link isHandoffSeedFresh}. */
+  mintedAt: number | null;
+  /** Whether an arrival has already kept a draft over this seed and said so. */
+  deferred: boolean;
   seedDefusionLog: (seed: ActDefusionSeed) => void;
   /** Read the seed and clear it in one step, so it can never be applied twice. */
   consumeDefusionLogSeed: () => ActDefusionSeed | null;
   /** The draft registry's entry point: sign-out drops the queued hand-off too. */
   reset: () => void;
 }
+
+const EMPTY = { seed: null, mintedAt: null, deferred: false };
 
 /**
  * The DBT judgement's "Unhook from it" hand-off, carried in memory rather than in
@@ -37,16 +44,23 @@ interface ActDefusionSeedState {
  * it, and left the seed here for the next fresh open (#2206) - and a judgement
  * waiting in memory is health data that must not cross a sign-out on a device
  * whose next session is a different person.
+ *
+ * ☠️ That waiting is BOUNDED. This is a module singleton, so on native nothing
+ * ends the wait: an un-consumed seed would land on an open of this form hours
+ * later that had nothing to do with the door, opening it on a judgement the
+ * person did not choose now. See `handoff-seed.ts`.
  */
 export const useActDefusionSeedStore = create<ActDefusionSeedState>((set, get) => ({
-  seed: null,
-  seedDefusionLog: (seed) => set({ seed }),
+  ...EMPTY,
+  seedDefusionLog: (seed) => set({ seed, mintedAt: Date.now(), deferred: false }),
   consumeDefusionLogSeed: () => {
-    const { seed } = get();
-    if (seed) set({ seed: null });
-    return seed;
+    const { seed, mintedAt } = get();
+    if (seed) set(EMPTY);
+    // A seed past its window is dropped rather than applied - the arrival that
+    // finds it is not the one it was minted for (`handoff-seed.ts`).
+    return isHandoffSeedFresh(mintedAt) ? seed : null;
   },
-  reset: () => set({ seed: null }),
+  reset: () => set(EMPTY),
 }));
 
 registerDraftStore(useActDefusionSeedStore);
@@ -56,9 +70,34 @@ export function seedDefusionLog(seed: ActDefusionSeed): void {
   useActDefusionSeedStore.getState().seedDefusionLog(seed);
 }
 
-/** Whether a hand-off is waiting, without taking it. */
+/**
+ * Whether a hand-off is waiting AND still within its window, without taking it.
+ *
+ * ☠️ It DOES drop a seed that has outlived its window. That seed can never be
+ * applied again, and what waits is a judgement the person read - health data
+ * with no reason left to sit in memory for the rest of the app process.
+ */
 export function hasDefusionLogSeed(): boolean {
-  return useActDefusionSeedStore.getState().seed !== null;
+  const { seed, mintedAt } = useActDefusionSeedStore.getState();
+  if (seed === null) return false;
+  if (isHandoffSeedFresh(mintedAt)) return true;
+  useActDefusionSeedStore.setState(EMPTY);
+  return false;
+}
+
+/**
+ * Records that an arrival kept its live entry and left the hand-off waiting.
+ *
+ * Returns true only the FIRST time: the notice is about a decision this arrival
+ * caused, and `keptDraft` is recomputed at every mount from (seed present) AND
+ * (draft has content) with neither side consumed - so without this, every later
+ * open of the form re-announced a hand-off the person had forgotten.
+ */
+export function deferDefusionLogSeed(): boolean {
+  const { deferred } = useActDefusionSeedStore.getState();
+  if (deferred) return false;
+  useActDefusionSeedStore.setState({ deferred: true });
+  return true;
 }
 
 export function consumeDefusionLogSeed(): ActDefusionSeed | null {

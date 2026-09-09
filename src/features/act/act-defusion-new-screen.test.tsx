@@ -7,6 +7,7 @@ import { useSaveDefusionLog } from "@/src/features/act/queries";
 import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
 import { seedDefusionLog, useActDefusionSeedStore } from "@/src/stores/act-defusion-seed-store";
 import { resetAllDraftStores } from "@/src/stores/draft-store-registry";
+import { HANDOFF_SEED_TTL_MS } from "@/src/stores/handoff-seed";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -68,7 +69,7 @@ function setPlatform(os: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   useActDefusionLogDraftStore.getState().reset();
-  useActDefusionSeedStore.setState({ seed: null });
+  useActDefusionSeedStore.setState({ seed: null, mintedAt: null, deferred: false });
   useToastStore.getState().clearToasts();
   mockMutateAsync = jest.fn(() => Promise.resolve({} as never));
   mockUseSave.mockReturnValue({
@@ -401,6 +402,57 @@ describe("a door's hand-off", () => {
     renderWithProviders(<ActDefusionNewScreen />);
 
     expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("She is ignoring me");
+  });
+
+  /**
+   * ☠️☠️ **A kept hand-off waits for the next fresh open, not for any open ever.**
+   * The seed store is a module singleton, so on native nothing ends the wait: the
+   * person finishes or discards the entry they were holding, opens this form from
+   * the ACT hub an hour later to log something unrelated, and it arrives on the
+   * old judgement with the category already answered and nothing on screen saying
+   * where that came from.
+   */
+  it("does not open a later, unrelated visit on a hand-off that has gone stale", () => {
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
+    first.unmount();
+
+    seedDefusionLog(SEED);
+    const second = renderWithProviders(<ActDefusionNewScreen />);
+    expect(useActDefusionSeedStore.getState().seed).toEqual(SEED);
+    second.unmount();
+
+    // The entry is finished with, and the person comes back much later.
+    useActDefusionLogDraftStore.getState().reset();
+    useActDefusionSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS - 1 });
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("");
+    expect(screen.getByText("0 of 5 parts filled in")).toBeTruthy();
+    expect(useActDefusionSeedStore.getState().seed).toBeNull();
+  });
+
+  /**
+   * ☠️ The notice is about a decision this arrival caused. `keptDraft` is
+   * recomputed at every mount from (seed present) AND (draft has content), and
+   * neither side is consumed on that path - so it used to re-announce the
+   * hand-off on every visit for as long as the entry was held.
+   */
+  it("says it kept the entry once, not on every visit while it is held", () => {
+    const first = renderWithProviders(<ActDefusionNewScreen />);
+    fireEvent.changeText(screen.getByLabelText(THOUGHT_LABEL), "I never get anything right");
+    first.unmount();
+
+    seedDefusionLog(SEED);
+    const second = renderWithProviders(<ActDefusionNewScreen />);
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    second.unmount();
+
+    useToastStore.getState().clearToasts();
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    expect(screen.getByLabelText(THOUGHT_LABEL).props.value).toBe("I never get anything right");
+    expect(useToastStore.getState().visible).toBeNull();
   });
 
   /**

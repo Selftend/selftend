@@ -36,7 +36,11 @@ import {
   hasDefusionDraftContent,
   useActDefusionLogDraftStore,
 } from "@/src/stores/act-defusion-log-draft-store";
-import { consumeDefusionLogSeed, hasDefusionLogSeed } from "@/src/stores/act-defusion-seed-store";
+import {
+  consumeDefusionLogSeed,
+  deferDefusionLogSeed,
+  hasDefusionLogSeed,
+} from "@/src/stores/act-defusion-seed-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
@@ -89,7 +93,9 @@ const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
 function decideArrival(): { seed: ActDefusionLogDraft | null; keptDraft: boolean } {
   if (!hasDefusionLogSeed()) return { seed: null, keptDraft: false };
   if (hasDefusionDraftContent(useActDefusionLogDraftStore.getState().values)) {
-    return { seed: null, keptDraft: true };
+    // `keptDraft` drives the notice, and only the arrival that CAUSED the
+    // deferral gets one: every later mount recomputes the same true here.
+    return { seed: null, keptDraft: deferDefusionLogSeed() };
   }
   const seed = consumeDefusionLogSeed();
   return { seed: seed ? { ...EMPTY_DRAFT, ...seed } : null, keptDraft: false };

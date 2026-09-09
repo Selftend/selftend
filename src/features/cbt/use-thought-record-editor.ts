@@ -16,6 +16,7 @@ import { filledThoughtRecordParts } from "@/src/features/cbt/thought-record-step
 import { useThoughtRecordIntroDismissed } from "@/src/features/cbt/use-thought-record-intro-dismissed";
 import {
   consumeThoughtRecordSeed,
+  deferThoughtRecordSeed,
   hasThoughtRecordSeed,
   type ThoughtRecordSeed,
 } from "@/src/stores/thought-record-seed-store";
@@ -55,7 +56,9 @@ function decideArrival(
   // fresh create, which is the only screen a door ever opens.
   if (recordId !== null || !hasThoughtRecordSeed()) return { seed: null, keptDraft: false };
   if (storedDraftValues && hasThoughtRecordDraftContent(storedDraftValues)) {
-    return { seed: null, keptDraft: true };
+    // `keptDraft` drives the notice, and only the arrival that CAUSED the
+    // deferral gets one: every later mount recomputes the same true here.
+    return { seed: null, keptDraft: deferThoughtRecordSeed() };
   }
   return { seed: consumeThoughtRecordSeed(), keptDraft: false };
 }

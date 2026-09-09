@@ -4,6 +4,7 @@ import ThoughtRecordEditorScreen from "@/app/(app)/modules/cbt/new";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { defaultValues } from "@/src/features/cbt/thought-record-form";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
+import { HANDOFF_SEED_TTL_MS } from "@/src/stores/handoff-seed";
 import {
   hasThoughtRecordSeed,
   seedThoughtRecord,
@@ -375,6 +376,53 @@ describe("a door's hand-off", () => {
     expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe(
       "She did not reply for three days",
     );
+  });
+
+  /**
+   * ☠️☠️ **A kept hand-off waits for the next fresh open, not for any open ever.**
+   * The seed store is a module singleton, so on native nothing ends the wait: the
+   * person finishes the record they were holding, comes back to this form from the
+   * CBT hub an hour later to write about something else, and the Situation arrives
+   * pre-filled with a paragraph about an old episode - which they can save into a
+   * record that is not about it.
+   */
+  it("does not open a later, unrelated visit on a hand-off that has gone stale", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    const view = await renderColumn();
+    expect(hasThoughtRecordSeed()).toBe(true);
+    view.unmount();
+
+    // The draft is finished with, and the person comes back much later.
+    useCbtDraftStore.getState().reset();
+    useThoughtRecordSeedStore.setState({ mintedAt: Date.now() - HANDOFF_SEED_TTL_MS - 1 });
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("");
+    expect(hasThoughtRecordSeed()).toBe(false);
+  });
+
+  /**
+   * ☠️ The notice is about a decision this arrival caused. `keptDraft` is
+   * recomputed at every mount from (seed present) AND (draft has content) and
+   * neither side is consumed on that path - so it used to re-announce the
+   * hand-off on every visit for as long as the draft was held, including visits
+   * reached from the hub with no hand-off in mind.
+   */
+  it("says it kept the draft once, not on every visit while the draft is held", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, situation: "the half-written one" });
+    seedThoughtRecord(["anxious"], "She did not reply for three days");
+
+    const first = await renderColumn();
+    expect(useToastStore.getState().visible?.title).toBe("Kept your open draft");
+    first.unmount();
+
+    useToastStore.getState().clearToasts();
+    await renderColumn();
+
+    expect(screen.getByLabelText(SITUATION_LABEL).props.value).toBe("the half-written one");
+    expect(useToastStore.getState().visible).toBeNull();
   });
 
   /**
