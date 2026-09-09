@@ -68,42 +68,58 @@ function declarationBody(name: string): string | null {
 }
 
 /**
- * Every `public.*` table the RPC reads, `_data` suffix dropped — **transitively**.
+ * Every `public.*` table the RPC reads, `_data` suffix dropped — **transitively** —
+ * and every function it went through to get there.
  *
  * ☠️☠️ **The transitive step is the whole point.** `home_tool_stats` deliberately
  * CALLS the tools' own aggregates rather than restating them, so `sleep_logs` is
  * reached only through `sleep_stats(p_time_zone)` and appears nowhere in this
  * function's own text. A guard reading only the top-level `from` clauses would let
  * every sleep write path off, and the sleep card would be the one that goes stale.
- * So a `from public.<name>(` — a call, told from a table by the parenthesis — is
- * resolved to that function's own newest declaration and its tables folded in.
+ *
+ * ☠️☠️ **A call is not always a `from`.** Only ONE of the four aggregates this
+ * function calls sits in a `from` clause; the other three are plpgsql assignments
+ * — `journal_words := public.journal_word_total()`,
+ * `breathing_minutes := public.breathing_total_minutes(grounding)`,
+ * `meditation_median := public.meditation_median_minutes()`. A walk that followed
+ * only `from public.<name>(` saw none of them. It missed no table today only
+ * because all three read tables the function also reads directly — a coincidence
+ * of the current eight, not a property of the rule. So calls are followed
+ * WHEREVER they appear, and tables are taken from `from` clauses that are not
+ * calls.
  *
  * ☠️ SQL COMMENTS ARE STRIPPED FIRST: the prose in these migrations names tables it
  * is explaining rather than reading.
  */
-function sourceTables(): string[] {
-  const seen = new Set<string>();
+function sourceGraph(): { tables: string[]; followed: string[] } {
+  const seen = new Set<string>(["home_tool_stats"]);
   const tables = new Set<string>();
 
   const walk = (sql: string) => {
     for (const match of sql.matchAll(/\bfrom\s+public\.(\w+)\s*(\()?/g)) {
       const [, name, isCall] = match;
-      if (isCall) {
-        if (seen.has(name)) continue;
-        seen.add(name);
-        const body = declarationBody(name);
-        if (body) walk(body);
-        continue;
-      }
-      tables.add(name.replace(/_data$/, ""));
+      if (!isCall) tables.add(name.replace(/_data$/, ""));
+    }
+    // Every invocation, `from` clause or assignment - resolved to that function's
+    // own newest declaration, whose tables fold in.
+    for (const match of sql.matchAll(/\bpublic\.(\w+)\s*\(/g)) {
+      const name = match[1];
+      if (seen.has(name)) continue;
+      seen.add(name);
+      const body = declarationBody(name);
+      if (body) walk(body);
     }
   };
 
   const body = declarationBody("home_tool_stats");
   expect(body).not.toBeNull();
   walk(body!);
-  return [...tables].sort();
+  // The seed is the function itself, not something the walk found.
+  seen.delete("home_tool_stats");
+  return { tables: [...tables].sort(), followed: [...seen].sort() };
 }
+
+const sourceTables = (): string[] => sourceGraph().tables;
 
 /**
  * A repository is `<feature>/repository.ts` OR one file of a `<feature>/repository/`
@@ -173,10 +189,16 @@ describe("every mutation that writes a home_tool_stats source invalidates it", (
    * Positive control on the derivation: a renamed migration or a changed shape would
    * return an empty list and make the assertion below vacuously green.
    *
-   * ⚠️ A FLOOR plus the two names the transitive walk exists for. `sleep_logs` is
-   * reachable ONLY through `sleep_stats`, and `journal_entries` only through
-   * `journal_word_total` — if either drops out, the walk has stopped following calls
-   * and half the write paths silently stop being checked.
+   * ⚠️ A FLOOR plus a name only the transitive walk can reach. `sleep_logs` appears
+   * nowhere in `home_tool_stats` itself and enters the set only through
+   * `sleep_stats` — if it drops out, the walk has stopped following calls and every
+   * sleep write path silently stops being checked.
+   *
+   * ☠️ The other three tables named here are read DIRECTLY as well, so they cannot
+   * speak for the walk — `journal_entries` is in this set whether or not
+   * `journal_word_total()` is ever followed, which is what an earlier version of
+   * this comment claimed it proved. The walk's other half is asserted below,
+   * against the functions it went through.
    */
   it("derives the sources from the migration itself, following the functions it calls", () => {
     const tables = sourceTables();
@@ -188,6 +210,29 @@ describe("every mutation that writes a home_tool_stats source invalidates it", (
     expect(tables).toContain("mindfulness_sessions");
     expect(tables).toContain("habit_logs");
     expect(REPOSITORIES.length).toBeGreaterThan(10);
+  });
+
+  /**
+   * The control the one above cannot be: **every aggregate the RPC calls is
+   * followed, however it is called.** Three of the four are plpgsql assignments
+   * (`x := public.f()`), which no `from`-anchored walk can see; today they read
+   * tables the RPC also reads directly, so their absence costs nothing and shows
+   * as nothing. A ninth tool reached only that way would arrive with no
+   * invalidation guard at all and the suite would stay green.
+   */
+  it("follows an aggregate invoked as an assignment, not only one in a FROM clause", () => {
+    const { followed } = sourceGraph();
+
+    expect(followed).toContain("sleep_stats"); // from public.sleep_stats(...)
+    expect(followed).toContain("journal_word_total"); // journal_words := ...
+    expect(followed).toContain("breathing_total_minutes"); // breathing_minutes := ...
+    expect(followed).toContain("meditation_median_minutes"); // meditation_median := ...
+    // Each of those resolved to a real declaration - a name with no migration
+    // behind it would be followed into nothing and prove the walk works over an
+    // empty body.
+    for (const name of ["sleep_stats", "journal_word_total", "meditation_median_minutes"]) {
+      expect(declarationBody(name)).not.toBeNull();
+    }
   });
 
   /**

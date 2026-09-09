@@ -13,6 +13,8 @@ import {
 import type { ReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import type { ReminderChannelStatus, ReminderScheduleResult } from "@/src/lib/notifications";
+import bgNotifications from "@/src/i18n/locales/bg/notifications.json";
+import enNotifications from "@/src/i18n/locales/en/notifications.json";
 import i18n from "@/src/i18n";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -340,9 +342,30 @@ describe("NotificationTargetRow - state it renders", () => {
 });
 
 describe("NotificationTargetRow - a held-out target (#2260)", () => {
-  const NOTE = "Coming soon on phones. This reminder switches on with the next app update.";
+  const NOTE =
+    "Not ready yet. This reminder can't be delivered until the phone apps can open the place it leads to, so the switch stays off everywhere until then.";
 
-  it("shows the row switched off and disabled, with the phones note, while the cron holds it out", async () => {
+  /**
+   * ☠️ **The note is read on desktop web too** - it renders with no `Platform.OS`
+   * branch, and the web build goes live the moment a promotion merges. It used to
+   * say "Coming soon on phones. This reminder switches on with the next app
+   * update.", which told a browser user to perform an update they cannot perform,
+   * on a switch disabled for a reason that has nothing to do with their browser.
+   *
+   * ☠️ And it named a release the product does not control. Lifting a target is a
+   * MANUAL post-release step (`docs/releasing.md`, "Post-release: lift held-out
+   * reminder targets"), so "the next app update" is a date that can slip - and a
+   * specific untrue thing on a control the app disabled for them.
+   */
+  it("promises no release and asks for no app update, in either language", () => {
+    for (const note of [enNotifications.heldOut.note, bgNotifications.heldOut.note]) {
+      expect(note).not.toMatch(/updat|актуализац|обнов/i);
+      expect(note).not.toMatch(/\bnext\b|следващ/i);
+      expect(note).not.toMatch(/\bsoon\b|скоро/i);
+    }
+  });
+
+  it("shows the row switched off and disabled, under the hold-out note, while the cron holds it out", async () => {
     // DBT is on the real list today. The cron sends nothing for it, so the row
     // must not take an opt-in it would then confirm and never honour.
     renderRow({ targetKey: "dbt" });

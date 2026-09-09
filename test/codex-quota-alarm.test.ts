@@ -313,6 +313,64 @@ describe("the calls it makes", () => {
   it("computes the window backwards from now", () => {
     expect(windowStart(NOW, 24)).toBe("2026-09-08T07:17:00.000Z");
   });
+
+  /**
+   * ☠️ **`gh pr list` pages by CREATION date, never by merge date.** The alarm
+   * exists for the PR that sat open waiting on a review that never came - which
+   * is precisely the PR whose `createdAt` is oldest, and so the first to fall off
+   * a fixed page of the newest-created merges. Measured on the live repo on
+   * 2026-09-09, the 50 newest-created merges into `dev` spanned about 46 hours,
+   * so a PR opened two days before its merge was already invisible to a 24h run.
+   *
+   * The fake below models the real ordering rather than a fixed reply: a page
+   * sorted by `createdAt` descending, cut at `--limit`, and narrowed FIRST by a
+   * `--search merged:>=` qualifier when one is passed (which is how the real
+   * `gh` applies it, server-side). Nothing about the alarm's own filtering is
+   * relaxed - the window is still re-applied over whatever comes back.
+   */
+  it("finds a PR merged inside the window that was opened long before it", () => {
+    const corpus = [
+      { number: 2260, createdAt: "2026-09-09T06:00:00Z", mergedAt: "2026-09-09T06:30:00Z" },
+      // Created after the one below and merged BEFORE the window opened: it takes
+      // a slot on a page ordered by creation and is then thrown away as stale.
+      { number: 2200, createdAt: "2026-09-06T10:00:00Z", mergedAt: "2026-09-07T10:00:00Z" },
+      // Opened four days ago, merged an hour ago: the shape the alarm is for.
+      { number: 2100, createdAt: "2026-09-05T09:00:00Z", mergedAt: "2026-09-09T06:15:00Z" },
+    ].map((entry) => ({
+      ...entry,
+      title: `PR ${entry.number}`,
+      url: `https://github.com/Selftend/selftend/pull/${entry.number}`,
+    }));
+
+    const { gh, calls } = fakeGh({
+      "repos/Selftend/selftend/issues/2100/comments": comments,
+      "issue create": "https://github.com/Selftend/selftend/issues/2301",
+    });
+    const pagingGh: GhExecutor = (args, input) => {
+      if (args.slice(0, 2).join(" ") !== "pr list") return gh(args, input);
+      calls.push({ args, input });
+      const searchIndex = args.indexOf("--search");
+      const search = searchIndex === -1 ? "" : args[searchIndex + 1];
+      const mergedSince = /merged:>=(\S+)/.exec(search)?.[1];
+      const limit = Number(args[args.indexOf("--limit") + 1]);
+      const matching = mergedSince
+        ? corpus.filter((entry) => entry.mergedAt >= mergedSince)
+        : corpus;
+      return JSON.stringify(
+        [...matching].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit),
+      );
+    };
+
+    const { outcome, starved } = run(pagingGh, {
+      repo: "Selftend/selftend",
+      windowHours: 24,
+      limit: 2,
+      now: NOW,
+    });
+
+    expect(starved.map((entry) => entry.number)).toEqual([2100]);
+    expect(outcome.action).toBe("create");
+  });
 });
 
 describe("the workflow that runs it", () => {

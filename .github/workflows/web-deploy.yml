@@ -81,6 +81,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Whether THIS deployment is the one that ships browser reminders. The
+          # upstream repo's `production` and `staging` environments both hold the
+          # VAPID key and the edge function holds its private half; a fork runs
+          # neither, and must still be able to deploy the site.
+          IS_UPSTREAM: ${{ github.repository == 'Selftend/selftend' }}
         run: |
           missing=0
           for name in \
@@ -98,6 +103,20 @@ jobs:
               missing=1
             fi
           done
+
+          # ☠️ Forwarding the key (the `env:` block above) is only half of #2263:
+          # clearing it, renaming it, or setting it on one environment only ships
+          # a bundle whose browser reminders are silently dead, exactly as they
+          # were from 2026-05-05 to 2026-09-08 - green deploy, nothing red. So it
+          # is checked HERE too, where the deployment is expected to have it.
+          if [ -z "$EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY" ]; then
+            if [ "$IS_UPSTREAM" = "true" ]; then
+              echo "::error::EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY must be set before deploying the web app - browser reminders are inlined at export time and go dead without it."
+              missing=1
+            else
+              echo "::warning::EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY is unset; this build ships with browser reminders unavailable."
+            fi
+          fi
 
           if [ "$missing" -ne 0 ]; then
             exit 1

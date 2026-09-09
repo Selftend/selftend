@@ -201,8 +201,17 @@ function issueFromUrl(stdout) {
 /**
  * The PRs merged into `dev` since `since`, each with its Codex comments and reviews.
  *
- * `gh pr list` has no "merged after" filter, so the window is applied here over
- * a recent page — a day's merges are a handful and the limit is generous.
+ * ☠️ **The window is asked for, not paged for.** `gh pr list` orders its page by
+ * CREATION date, so a fixed page of the newest-created merges is a window on
+ * `createdAt` — and the PR this alarm exists for is exactly the one that sat open
+ * for days waiting on the review that never came, which is the first to fall off
+ * that page. Measured on the live repo (2026-09-09) the 50 newest-created merges
+ * into `dev` spanned about 46 hours, so a PR opened two days before its merge was
+ * already invisible to a 24h run. `--search merged:>=` narrows server-side by the
+ * date that matters; `--limit` then caps a set that is already the right one.
+ *
+ * The client-side `mergedAt >= since` below stays: search resolution is coarser
+ * than the window, and a filter that agrees with the query costs nothing.
  *
  * @param {GhExecutor} gh
  * @param {{ repo: string | undefined, since: string, limit: number }} options
@@ -219,6 +228,8 @@ export function inspectMergedPullRequests(gh, { repo, since, limit }) {
       "dev",
       "--state",
       "merged",
+      "--search",
+      `merged:>=${since}`,
       "--limit",
       String(limit),
       "--json",

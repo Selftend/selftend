@@ -50,6 +50,16 @@ const FORWARDED_KEYS = [
   ),
 ].map((match) => ({ name: match[1], from: match[2] }));
 
+/**
+ * The `Check deploy environment` step's script - the workflow's own preflight,
+ * read from its `- name:` to the next step's.
+ */
+const PREFLIGHT = (() => {
+  const start = WORKFLOW.indexOf("- name: Check deploy environment");
+  const end = WORKFLOW.indexOf("\n      - name:", start + 1);
+  return WORKFLOW.slice(start, end === -1 ? undefined : end);
+})();
+
 describe("web-deploy forwards the variables the app cannot default (#2263)", () => {
   it("derives both lists from the files, so the assertions below are not vacuous", () => {
     // If either regex stops matching, these fail rather than passing over an
@@ -69,6 +79,31 @@ describe("web-deploy forwards the variables the app cannot default (#2263)", () 
 
   it.each(EMPTY_DEFAULT_KEYS)("forwards %s into the export environment", (key) => {
     expect(FORWARDED_KEYS.map((entry) => entry.name)).toContain(key);
+  });
+
+  /**
+   * ☠️ Forwarding is only half of it. A forwarded name whose VALUE is empty at
+   * deploy time exports the same dead bundle #2263 was about, and the workflow's
+   * own preflight - the eight names it refuses to deploy without - did not ask
+   * for this one. Clearing the variable, renaming it, or setting it on one
+   * environment only would re-open the failure one level down, green all the way.
+   *
+   * ⚠️ Upstream only. A fork runs no web push (no VAPID key, no private half on
+   * the edge function) and must still be able to deploy the site, so off this
+   * repository the same absence is a warning, not a blocker.
+   */
+  it("refuses to deploy without the VAPID key where it is expected, and warns on a fork", () => {
+    // Non-vacuous: the step was found and holds the loop it has always held.
+    expect(PREFLIGHT).toContain("EXPO_PUBLIC_SUPABASE_URL");
+    expect(PREFLIGHT).toContain("github.repository ==");
+
+    const vapidLines = PREFLIGHT.split(/\r?\n/).filter((line) =>
+      line.includes("EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY"),
+    );
+    expect(vapidLines.some((line) => line.includes("::error::"))).toBe(true);
+    expect(vapidLines.some((line) => line.includes("::warning::"))).toBe(true);
+    // The error path has to actually fail the step, not just annotate it.
+    expect(PREFLIGHT).toMatch(/::error::[^\n]*VAPID[^\n]*"\n\s+missing=1/);
   });
 
   it("reads each forwarded value from the variable of the same name", () => {

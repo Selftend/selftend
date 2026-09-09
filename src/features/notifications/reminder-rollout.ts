@@ -16,7 +16,12 @@
  * file by relative path under Deno (the same route `send-web-reminders/index.ts`
  * takes to the `notifications` locale JSON), and jest loads it for both sides.
  * Keep it a plain constant - never an env flag the app could read differently
- * per build.
+ * per build. That rule is a TEST, not just this sentence
+ * (`reminder-rollout.test.ts`, "the edge function can load it"): nothing else in
+ * the repo can see the breakage - eslint ignores `supabase/functions/**`, CI runs
+ * no Deno, and tsc and jest both resolve a React Native import happily, so the
+ * first one added here would surface at `supabase functions deploy`, after the
+ * merge.
  *
  * Lifting a target is a release step, not a code comment: `docs/releasing.md`,
  * "Post-release: lift held-out reminder targets". The tests that pin this list
