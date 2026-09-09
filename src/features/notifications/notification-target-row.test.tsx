@@ -339,6 +339,37 @@ describe("NotificationTargetRow - state it renders", () => {
   });
 });
 
+describe("NotificationTargetRow - a held-out target (#2260)", () => {
+  const NOTE = "Coming soon on phones. This reminder switches on with the next app update.";
+
+  it("shows the row switched off and disabled, with the phones note, while the cron holds it out", async () => {
+    // DBT is on the real list today. The cron sends nothing for it, so the row
+    // must not take an opt-in it would then confirm and never honour.
+    renderRow({ targetKey: "dbt" });
+
+    expect(screen.getByTestId("notification-row-held-out-dbt")).toBeTruthy();
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    expect(screen.getByLabelText("DBT").props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText("DBT reminder time").props.accessibilityState?.disabled).toBe(
+      true,
+    );
+
+    // Belt and braces: a press that somehow lands writes nothing and asks the channel nothing.
+    fireEvent(screen.getByLabelText("DBT"), "valueChange", true);
+    await act(async () => {});
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockEnsure).not.toHaveBeenCalled();
+  });
+
+  it("leaves a target that is not held out alone: no note, switch live", () => {
+    renderRow({ targetKey: "sleep" });
+
+    expect(screen.queryByTestId("notification-row-held-out-sleep")).toBeNull();
+    expect(screen.queryByText(NOTE)).toBeNull();
+    expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+  });
+});
+
 const LONGEST_BG_LABEL = "Дневник на благодарността";
 
 function atWidth<T>(width: number, run: () => T): T {

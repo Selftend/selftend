@@ -16,6 +16,7 @@ import {
 } from "@/src/features/notifications/registry";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
 import { enableTargetPatch } from "@/src/features/notifications/enable-patch";
+import { isReminderTargetHeldOut } from "@/src/features/notifications/reminder-rollout";
 import type { ReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { getReminderTimeZone } from "@/src/lib/notifications";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
@@ -119,7 +120,14 @@ export function NotificationTargetRow({
     hour: readHour(preferences, target),
     minute: readMinute(preferences, target),
   };
-  const disabled = !masterEnabled || locked || requestPending || !userId;
+  /**
+   * Held out (#2260): the cron skips this target until the native build that routes its
+   * url is live on both stores, so the row cannot take an opt-in it would not honour. The
+   * controls are disabled - not hidden, so a bell that lands here still finds its row - and
+   * the note under the name says why. Same list the edge function reads.
+   */
+  const heldOut = isReminderTargetHeldOut(target.key);
+  const disabled = !masterEnabled || locked || requestPending || !userId || heldOut;
 
   /**
    * `message` is only for callers with something specific to say (the channel-reason
@@ -144,7 +152,7 @@ export function NotificationTargetRow({
   }
 
   async function handleToggle(next: boolean) {
-    if (!userId || requestPending || locked) return;
+    if (!userId || requestPending || locked || heldOut) return;
 
     if (!next) {
       await writePatch({ [target.enabledField]: false });
@@ -243,6 +251,15 @@ export function NotificationTargetRow({
           />
         )}
       </View>
+      {heldOut ? (
+        <Text
+          testID={`notification-row-held-out-${target.key}`}
+          variant="muted"
+          className={cn("text-[13px]", Platform.OS === "web" && "max-w-[64ch]")}
+        >
+          {t("heldOut.note")}
+        </Text>
+      ) : null}
       {errorMessage ? (
         <Text
           className={cn("text-sm text-destructive", Platform.OS === "web" && "max-w-[64ch]")}

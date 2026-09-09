@@ -86,6 +86,26 @@ describe("ReminderPromptCard", () => {
     expect(preferences.reminderPromptedTools).toEqual([]);
   });
 
+  it("renders nothing for a held-out target and does not mark it prompted (#2260)", async () => {
+    // DBT is held out of the cron until the native build that routes its url is
+    // live on both stores. Six DBT saves request this prompt; every one must be
+    // a no-op - no card, and no `reminderPromptedTools` write, so the one ask
+    // is still owed after the lift.
+    setPreferences();
+    const mutateAsync = setUpdateMutation();
+
+    renderWithProviders(<ReminderPromptCard />);
+    act(() => {
+      useReminderPromptStore.getState().requestReminderPrompt("dbt");
+    });
+    await act(async () => {});
+
+    expect(screen.queryByText("Set reminder")).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
+    // The request itself is consumed, so the next save can ask again once lifted.
+    expect(useReminderPromptStore.getState().request).toBeNull();
+  });
+
   it("renders nothing when the tool was already prompted", async () => {
     setPreferences({ reminderPromptedTools: ["mood"] });
     const mutateAsync = setUpdateMutation();

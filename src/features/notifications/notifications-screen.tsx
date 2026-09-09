@@ -20,7 +20,7 @@ import {
 } from "@/src/features/notifications/notification-target-row";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
-import { cancelAllReminders } from "@/src/lib/notifications";
+import { cancelAllReminders, reminderChannelUnsupportedReason } from "@/src/lib/notifications";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -217,6 +217,22 @@ export default function NotificationsScreen() {
               <Text className="text-[15px] font-semibold">{t("channel.blockedTitle")}</Text>
               <Text variant="muted" className="text-[13px]">
                 {t(reminderChannelErrorKey("permission-denied"))}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* `unsupported` writes the columns just like `blocked` does, and for the same
+              reason - but it used to say nothing at page level (#2263), so a web build with
+              no VAPID key let every switch go on and delivered none of them. The sentence
+              names the actual reason: the build's missing key, or this browser/device. */}
+          {channel.status === "unsupported" ? (
+            <View
+              testID="notification-channel-unsupported"
+              className="gap-1 rounded-xl border border-border bg-card p-4"
+            >
+              <Text className="text-[15px] font-semibold">{t("channel.unsupportedTitle")}</Text>
+              <Text variant="muted" className="text-[13px]">
+                {t(reminderChannelErrorKey(reminderChannelUnsupportedReason()))}
               </Text>
             </View>
           ) : null}

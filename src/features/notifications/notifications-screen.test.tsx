@@ -7,7 +7,7 @@ import NotificationsScreen from "@/src/features/notifications/notifications-scre
 import { NOTIFICATION_TARGETS } from "@/src/features/notifications/registry";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { cancelAllReminders } from "@/src/lib/notifications";
+import { cancelAllReminders, reminderChannelUnsupportedReason } from "@/src/lib/notifications";
 import type { ReminderChannelStatus, ReminderScheduleResult } from "@/src/lib/notifications";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -74,6 +74,7 @@ jest.mock("@/src/features/notifications/use-reminder-channel", () => ({
 jest.mock("@/src/lib/notifications", () => ({
   cancelAllReminders: jest.fn().mockResolvedValue(undefined),
   getReminderTimeZone: () => "Europe/Sofia",
+  reminderChannelUnsupportedReason: jest.fn().mockReturnValue("unsupported"),
 }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -86,6 +87,7 @@ const mockUseUserPreferences = jest.mocked(useUserPreferences);
 const mockUseUpdatePreferences = jest.mocked(useUpdateUserPreferences);
 const mockUseReminderChannel = jest.mocked(useReminderChannel);
 const mockCancelAllReminders = jest.mocked(cancelAllReminders);
+const mockUnsupportedReason = jest.mocked(reminderChannelUnsupportedReason);
 const mockMutateAsync = jest.fn();
 const mockEnsure = jest.fn<Promise<ReminderScheduleResult>, []>();
 
@@ -213,6 +215,43 @@ describe("NotificationsScreen", () => {
     // The columns are what the server reads the moment a channel returns, so the rows keep
     // working even with no channel to deliver through.
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
+  });
+
+  it("shows a page-level notice when the channel is unsupported, in this platform's words (#2263)", () => {
+    // `unsupported` writes the columns like `blocked` does - and used to say nothing at
+    // page level, so a person could switch every reminder on and never be told none of
+    // them can arrive.
+    mockUnsupportedReason.mockReturnValue("unsupported");
+    setChannel("unsupported");
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getByTestId("notification-channel-unsupported")).toBeTruthy();
+    expect(screen.getByText("Reminders can't arrive here")).toBeTruthy();
+    expect(screen.getByText("This device can't deliver reminders.")).toBeTruthy();
+    expect(screen.queryByText("Notifications are turned off")).toBeNull();
+    expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
+  });
+
+  it("names the build's missing VAPID key when that is why the channel is unsupported (#2263)", () => {
+    // The deployed web bundles inlined an empty key for months; "this browser doesn't
+    // support reminders" would have been a lie on every browser that does.
+    mockUnsupportedReason.mockReturnValue("missing-vapid-key");
+    setChannel("unsupported");
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getByText("Reminders can't arrive here")).toBeTruthy();
+    expect(screen.getByText("Reminders aren't configured for this app build.")).toBeTruthy();
+  });
+
+  it("shows no channel notice at all while the channel is granted or prompt-needed", () => {
+    for (const status of ["granted", "prompt-needed"] as const) {
+      setChannel(status);
+      const view = renderWithProviders(<NotificationsScreen />);
+      expect(screen.queryByTestId("notification-channel-unsupported")).toBeNull();
+      expect(screen.queryByText("Notifications are turned off")).toBeNull();
+      view.unmount();
+    }
   });
 
   it("master off writes the column and then tears the channel down", async () => {
