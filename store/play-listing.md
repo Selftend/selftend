@@ -1,6 +1,6 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-06** — **four** changes went in that day, read off _Publishing overview → Submission activity_, which is the authoritative record and worth opening before guessing at state:
+**Last verified against Play Console: 2026-09-09** — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
 
 | #   | Sent  | Change                                                                                          | Status    |
 | --- | ----- | ----------------------------------------------------------------------------------------------- | --------- |
@@ -34,13 +34,13 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
-## Verbatim, as saved on 2026-09-05 (evening)
+## Verbatim, as saved on 2026-09-09
+
+Two edits since the 2026-09-05 save are folded into the block below, each one line of the full description and both saved in the Console form: `catastrophizing` → `catastrophising` on 2026-09-06 (submission 98, [#2061](https://github.com/Selftend/selftend/issues/2061)), and on 2026-09-09 the closing line of "What's inside", _"Everything is optional — use only the parts that help you. Missing a day is never punished."_ → _"Everything is optional — use only the parts that help you, at whatever pace suits you."_ ([#2216](https://github.com/Selftend/selftend/issues/2216); the full description is **2,012** characters with it, five fewer than before). The mirror carried that second sentence ahead of the Console from PR #2249 until the Console edit — the one exception ever made to the rule below, because the alternative was muting `test/restraint-copy.test.ts` on the day it reached this surface — and the diff that retired the warning paragraph is the record.
 
 Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://github.com/Selftend/selftend/issues/1999) visit: new short description, new first paragraph, and the bullet fixes [#1823](https://github.com/Selftend/selftend/issues/1823) decided — Check-in, a Grounding bullet, Sleep diary, the meditation line, Habits, `journalling`; the "Private by design" block, the sync line, the 18+ line and the closing paragraph unchanged). Read back from the form after the save; that review cleared and the public page matched on the evening of 2026-09-05. The same evening the short description was re-saved as the 28 below and sent for review ([#2010](https://github.com/Selftend/selftend/issues/2010)); the full description was not touched. The 2026-09-02 text this replaced is in this file's git history. This block is the listing word for word, not a summary.
 
 ⚠️ **The 18+ line was kept deliberately.** Production is still v0.17.0 (released 2026-08-28), which predates the teen floor; the replacement string is [#1771](https://github.com/Selftend/selftend/issues/1771)'s, after the release that ships it.
-
-⚠️ **One sentence below is ahead of the Console, deliberately** ([#2216](https://github.com/Selftend/selftend/issues/2216)). The live full description still closes its "What's inside" block with _"Everything is optional — use only the parts that help you. Missing a day is never punished."_ — the exact restraint pitch `test/restraint-copy.test.ts` bans (#711: the framework may talk about missing, the product may not advertise its own restraint), and that guard now reads this block. The mirror carries the replacement sentence, _"…use only the parts that help you, at whatever pace suits you."_, so the full description is **2,012** characters here against the Console's 2,017 (the swap is five characters shorter). **Owner step:** paste the replacement into Play Console, then delete this paragraph — the diff on that day is the record. This is the one exception to "do not fix this file ahead of the store": the alternative was muting a gate on the day it reached this surface.
 
 **Short description (28 of 80 characters):**
 
