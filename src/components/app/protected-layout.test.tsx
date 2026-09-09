@@ -517,9 +517,20 @@ describe("ProtectedLayout app onboarding", () => {
     await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
   });
 
+  /**
+   * ⚠️ The fixture was `data: null`, and that is not a loaded user - it is the
+   * unknown verdict wearing the word "loaded". The repository never produces
+   * it: `getUserPreferences` maps a missing row to `defaultUserPreferences`, so
+   * a successful read always hands back an object. With the age floor now
+   * blocking on "no row" rather than on a status flag, the old fixture asserted
+   * that a person with NO row still meets the consent gate - which is the
+   * ordering inversion the block screen exists to prevent, pinned as if it were
+   * the requirement. The requirement it was written for - a row that records no
+   * acceptance still gates - is what it asserts now.
+   */
   it("still gates a loaded user with no acceptance on record", async () => {
     mockUseUserPreferences.mockReturnValue({
-      data: null,
+      data: { ...defaultUserPreferences, ageFloorMet: true, policyVersionAccepted: null },
       isLoading: false,
       isError: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
@@ -1058,7 +1069,12 @@ describe("ProtectedLayout when preferences cannot be read", () => {
       // The load-bearing half: the legal gates are unknown, so nothing behind
       // them renders - and the gate that DID render before this fix was the
       // wrong one.
-      await waitFor(() => expect(screen.getByText("Getting your account ready")).toBeTruthy());
+      //
+      // ⚠️ The face changed with the guard, and the assertion moved with it:
+      // this used to expect the in-flight copy ("Getting your account ready"),
+      // which was a spinner's promise over a read that is not running. A paused
+      // read is an offline one, and it now says so.
+      await waitFor(() => expect(screen.getByText("You're offline")).toBeTruthy());
       expect(screen.queryByText("Consent gate")).toBeNull();
       expect(screen.queryByText("Age gate")).toBeNull();
       expect(screen.queryByText("Stack content")).toBeNull();
@@ -1069,16 +1085,108 @@ describe("ProtectedLayout when preferences cannot be read", () => {
   });
 
   /**
-   * ⚠️ The no-over-fire direction for the case above, and the reason the guard
-   * asks for a failure count rather than for `isPaused` alone. A device that is
-   * offline when the query is asked to run pauses BEFORE it ever fetches, with
-   * a failure count of zero. `docs/age-floor.md` records that state as
-   * deliberately untouched - the consent gate owns it - and raising the block
-   * screen there would put a spinner with no control in front of every offline
-   * cold start, which is the blocking spinner the `!preferences` key exists to
-   * avoid.
+   * ☠️☠️ THE COUNTER THE LIBRARY RESETS. The guard above used to read
+   * `isPaused && failureCount > 0`, on the reasoning that only a read which
+   * STARTED and FAILED counts as unknown. TanStack erases the second half of
+   * that on its own: the `"fetch"` action applies `fetchState`, which sets
+   * `fetchFailureCount: 0` and - for a query with `data === undefined` - also
+   * `error: null, status: "pending"`, while `fetchStatus` becomes `"paused"`
+   * when the device is offline. So ANY re-dispatch of a data-less read while
+   * offline reports `paused / 0 failures / no error / not loading`, which is
+   * indistinguishable from the offline cold start the counter was there to
+   * exempt - and the layout then rendered the CONSENT gate over an
+   * unestablished age floor, the exact inversion the guard exists to prevent.
+   *
+   * Three things re-dispatch it with no tap at all: returning to the foreground
+   * (`onFocus` refetches, because `isStaleByTime` is unconditionally true for a
+   * data-less query), a fresh mount of this layout, and the block screen's own
+   * Retry - which is what this drives, being the one route a test can press.
+   *
+   * ⚠️ The IRREVERSIBLE tail is why this is a blocking defect rather than a
+   * cosmetic one: for an account created before `AGE_GATE_INTRODUCED_AT` that
+   * has never accepted a policy, accepting the consent wrongly offered here
+   * writes `policy_version_accepted`, which flips `isExistingAccount` to true
+   * for good - nothing writes that column back to NULL - and the age gate can
+   * never ask them again.
    */
-  it("still leaves an offline cold start to the consent gate, not the block screen", async () => {
+  it("keeps the app out of reach when a failed read is RE-DISPATCHED while offline", async () => {
+    const { useUserPreferences: realUseUserPreferences } = jest.requireActual<
+      typeof import("@/src/features/settings/queries")
+    >("@/src/features/settings/queries");
+    mockUseUserPreferences.mockImplementation(realUseUserPreferences);
+    // Online throughout the first read, so it really runs and really exhausts
+    // its retry: the population here is a read that FAILED, not one that paused.
+    mockGetUserPreferences.mockRejectedValue(new Error("Network request failed"));
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: Infinity, retry: 1, retryDelay: 0 } },
+    });
+
+    try {
+      renderWithProviders(<ProtectedLayout />, { queryClient });
+
+      // The errored, retries-exhausted state the block screen owns.
+      await waitFor(() => expect(screen.getByText("Retry")).toBeTruthy());
+      expect(queryClient.getQueryState(preferencesQueryKey("user-1"))?.status).toBe("error");
+
+      // The connection goes away, and the read is dispatched once more.
+      onlineManager.setOnline(false);
+      await act(async () => {
+        fireEvent.press(screen.getByText("Retry"));
+      });
+
+      // The state itself, asserted rather than assumed: the failure count that
+      // the old guard keyed on has been reset to zero by the dispatch, and the
+      // error and status with it.
+      await waitFor(() => {
+        expect(queryClient.getQueryState(preferencesQueryKey("user-1"))?.fetchStatus).toBe(
+          "paused",
+        );
+      });
+      const state = queryClient.getQueryState(preferencesQueryKey("user-1"));
+      expect(state?.fetchFailureCount).toBe(0);
+      expect(state?.status).toBe("pending");
+      expect(state?.error).toBeNull();
+      expect(state?.data).toBeUndefined();
+
+      // ⚠️ Waited on a POSITIVE marker of the re-render, never on the absence
+      // of a gate: the tree the press left behind was already the block screen,
+      // so asserting "no consent gate" straight after it would pass on a stale
+      // frame the observer has not yet pushed into. The offline face is what
+      // the new result renders, so seeing it proves the layout re-ran with the
+      // reset flags in hand.
+      await waitFor(() => expect(screen.getByText("You're offline")).toBeTruthy());
+
+      // The load-bearing half: with no row in hand neither legal verdict is
+      // known, so neither gate - and above all not the consent gate on its own.
+      expect(screen.getByTestId("preferences-unavailable-support")).toBeTruthy();
+      expect(screen.queryByText("Consent gate")).toBeNull();
+      expect(screen.queryByText("Age gate")).toBeNull();
+      expect(screen.queryByText("Stack content")).toBeNull();
+    } finally {
+      queryClient.clear();
+      onlineManager.setOnline(true);
+    }
+  });
+
+  /**
+   * ☠️☠️ THE OFFLINE COLD START, AND THE RULING THAT CHANGED IT. This test used
+   * to assert the opposite - "still leaves an offline cold start to the consent
+   * gate" - on the reasoning in `docs/age-floor.md` that a query which pauses
+   * before it ever runs has a failure count of zero, so the block screen must
+   * not claim it. That reasoning is what the test above dismantles: the zero is
+   * not a property of a cold start, it is what `fetchState` writes on every
+   * dispatch, so no gate can be built on it.
+   *
+   * Once the counter is gone the two cases are one state - no row, therefore no
+   * verdict - and the two requirements genuinely conflict. The age floor is a
+   * statutory gate and the pass-through was a convenience, so the gate wins:
+   * an offline cold start now meets the block screen. It costs an offline
+   * person a screen they could not have used anyway (with no row and no
+   * network, the consent they were being offered could not be written either),
+   * and it is not a dead end - the query resumes on its own the moment the
+   * connection returns, and crisis guidance is on the screen throughout.
+   */
+  it("holds an offline cold start at the block screen, gates and shell alike", async () => {
     const { useUserPreferences: realUseUserPreferences } = jest.requireActual<
       typeof import("@/src/features/settings/queries")
     >("@/src/features/settings/queries");
@@ -1091,13 +1199,19 @@ describe("ProtectedLayout when preferences cannot be read", () => {
     try {
       renderWithProviders(<ProtectedLayout />, { queryClient });
 
-      await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+      await waitFor(() => expect(screen.getByText("You're offline")).toBeTruthy());
+      // Crisis guidance is on this face too - it is the whole reason blocking
+      // here is defensible (#2228).
+      expect(screen.getByTestId("preferences-unavailable-support")).toBeTruthy();
       const state = queryClient.getQueryState(preferencesQueryKey("user-1"));
       expect(state?.fetchStatus).toBe("paused");
-      // Paused, but nothing was ever attempted - the read has not failed.
+      // Paused, and nothing was ever attempted - the state the old guard read
+      // as "known" because the read had not failed.
       expect(state?.fetchFailureCount).toBe(0);
       expect(mockGetUserPreferences).not.toHaveBeenCalled();
-      expect(screen.queryByText("Getting your account ready")).toBeNull();
+      expect(screen.queryByText("Consent gate")).toBeNull();
+      expect(screen.queryByText("Age gate")).toBeNull();
+      expect(screen.queryByText("Stack content")).toBeNull();
     } finally {
       queryClient.clear();
       onlineManager.setOnline(true);
@@ -1156,6 +1270,90 @@ describe("ProtectedLayout when preferences cannot be read", () => {
 
     await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
     expect(screen.queryByText("We can't open the app just yet")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ THE WHOLE STATE SPACE, ENUMERATED, because picking the unknown states
+   * off a list of library statuses is precisely what went wrong twice: #2229
+   * found a fourth state the list did not name (in flight), and the paused
+   * state that followed it was fenced with a counter TanStack resets on every
+   * dispatch. A table cannot be short a row the way a disjunction can be short
+   * a term.
+   *
+   * The rule this pins is one sentence: **with no row in hand, nothing behind
+   * the legal gates renders, in any combination of the flags.** The flags are
+   * varied against each other rather than one at a time - including the
+   * combinations the library itself can produce (paused with zero failures and
+   * no error; errored with a stale error count; a retry in flight over a
+   * previous failure) and ones it arguably cannot, since a table that only
+   * covers what the library does today has to be revisited every time it
+   * changes.
+   *
+   * ⚠️ The last row is the one that keeps this from being vacuous: the same
+   * flags WITH a row still reach the gates.
+   */
+  describe.each([
+    ["errored, nothing cached", { isError: true, errorUpdateCount: 1 }],
+    ["a first read in flight", { isLoading: true, errorUpdateCount: 0 }],
+    ["a retry in flight over a failure", { isLoading: true, errorUpdateCount: 1 }],
+    ["paused with a failure behind it", { isPaused: true, failureCount: 1, errorUpdateCount: 1 }],
+    [
+      "paused with the count reset to zero",
+      { isPaused: true, failureCount: 0, errorUpdateCount: 1 },
+    ],
+    ["paused before it ever ran", { isPaused: true, failureCount: 0, errorUpdateCount: 0 }],
+    ["errored AND paused at once", { isError: true, isPaused: true, errorUpdateCount: 2 }],
+    ["idle, having reported nothing at all", { errorUpdateCount: 0 }],
+  ])("with no preferences row and the read %s", (_label, flags) => {
+    it("renders no gate, no shell, and no way past", async () => {
+      mockUseUserPreferences.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: false,
+        isPaused: false,
+        failureCount: 0,
+        // No `errorUpdateCount` default: every row of the table sets one, and a
+        // default the spread always overwrites is a lie about what is varying.
+        refetch: jest.fn(),
+        ...flags,
+      } as unknown as ReturnType<typeof useUserPreferences>);
+
+      renderWithProviders(<ProtectedLayout />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId("preferences-unavailable-support")).toBeTruthy(),
+      );
+      expect(screen.queryByText("Age gate")).toBeNull();
+      expect(screen.queryByText("Consent gate")).toBeNull();
+      expect(screen.queryByText("Stack content")).toBeNull();
+      expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+    });
+
+    it("still reaches the gates once the SAME flags have a row behind them", async () => {
+      mockUseUserPreferences.mockReturnValue({
+        data: { ...defaultUserPreferences, ageFloorMet: null, policyVersionAccepted: null },
+        isError: false,
+        isPaused: false,
+        failureCount: 0,
+        // No `errorUpdateCount` default: every row of the table sets one, and a
+        // default the spread always overwrites is a lie about what is varying.
+        refetch: jest.fn(),
+        ...flags,
+        // ⚠️ Forced false AFTER the spread, because the library cannot report a
+        // row and `isLoading` together: `isLoading` is `isPending && fetching`,
+        // and a query holding data is not pending. Leaving the row's copy of
+        // that flag true would test a state that does not exist.
+        isLoading: false,
+      } as unknown as ReturnType<typeof useUserPreferences>);
+
+      renderWithProviders(<ProtectedLayout />);
+
+      // The row says never-attested and never-consented, and the account
+      // predates the gate without having consented - so the age gate asks,
+      // whatever the read's status flags are doing around it.
+      await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
+      expect(screen.queryByTestId("preferences-unavailable-support")).toBeNull();
+    });
   });
 
   it("sends a signed-out person to the landing, not to the retry screen", async () => {
