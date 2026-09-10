@@ -3,11 +3,19 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Text } from "@/src/components/react-native-reusables/text";
+import { RouteHead } from "@/src/components/app/route-head";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
 
 interface PolicyPageLayoutProps extends PropsWithChildren {
+  /**
+   * The on-page subline as ONE plain string - the web document's
+   * `description`, `og:description` (#2294). `subtitle` below can be a
+   * fragment; a meta tag cannot, so the caller hands the sentence over twice
+   * rather than the layout flattening a node tree into copy.
+   */
+  description: string;
   /**
    * ☠️ `ReactNode`, NOT `string`, and that is load-bearing rather than
    * permissive. `InfoScreen` renders the subtitle and the `lastUpdated` suffix
@@ -49,9 +57,18 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  * `info-screen.test.tsx`, where it was really a `ScreenHeader` test wearing an
  * `InfoScreen` costume.
  */
-export function PolicyPageLayout({ children, subtitle, title }: PolicyPageLayoutProps) {
+export function PolicyPageLayout({
+  children,
+  description,
+  subtitle,
+  title,
+}: PolicyPageLayoutProps) {
   return (
     <SafeAreaView className="flex-1 bg-background">
+      {/* The page's own <head> - title, description, og:*, canonical - from the
+          same two strings the header and subline render, so "document title =
+          on-page H1" is structural and no route file can forget it (#2294). */}
+      <RouteHead title={title} description={description} />
       <ScrollView contentContainerClassName={cn("grow p-6", HOME_COLUMN)}>
         <View className="gap-6">
           <View className="gap-2">

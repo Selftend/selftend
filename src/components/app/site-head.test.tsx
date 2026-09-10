@@ -65,18 +65,14 @@ describe("SiteHead (#2293)", () => {
     );
   });
 
-  // STOPGAP until #2294 gives every public screen its own title and
-  // description: the shared defaults are the landing's two keys, so the other
-  // public files do not export headless. Delete this test with the stopgap.
-  it("carries the landing's title and description as the shared defaults, for now", () => {
+  // #2293's stopgap defaults left on #2294: every public screen emits its own
+  // title and description through RouteHead, so a default here would be a
+  // file naming the wrong page the moment a screen forgot its own.
+  it("carries no title and no description", () => {
     render(<SiteHead />);
 
-    expect(tags().filter(({ type }) => type === "title")).toEqual([
-      { type: "title", props: { children: enAuth.landingPage.metaTitle } },
-    ]);
-    expect(meta("description").map(({ props }) => props.content)).toEqual([
-      enAuth.landingPage.metaDescription,
-    ]);
+    expect(tags().filter(({ type }) => type === "title")).toEqual([]);
+    expect(meta("description")).toEqual([]);
   });
 
   // § 4.4: the sole owner of <html lang>. `en` in the exported file (i18next's
