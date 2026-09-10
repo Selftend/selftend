@@ -20,9 +20,10 @@ import { SITE_ORIGIN } from "@/src/lib/site";
  * preference is Bulgarian gets `bg` after hydration. `app/+html.tsx` sets no
  * `lang` for that reason.
  *
- * ⚠️ STOPGAP, removed on #2294: the landing's title and description double as
- * the shared defaults so the other public files do not export headless. Once
- * every public screen emits its own, this component carries no copy.
+ * No title and no description here, since #2294: every public screen emits its
+ * own through `RouteHead` (the landing through `LandingHead`), so a file that
+ * inherited one would be a file naming the wrong page. The one translated
+ * value below is the share image's alt.
  *
  * The share image is the 512 px app icon - the only share-sized image the
  * site serves - so the card is `summary`, not `summary_large_image`: a wide
@@ -39,8 +40,6 @@ export function SiteHead() {
   return (
     <Head>
       <html lang={i18n.language} />
-      <title>{t("landingPage.metaTitle")}</title>
-      <meta name="description" content={t("landingPage.metaDescription")} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Selftend" />
       <meta property="og:image" content={`${SITE_ORIGIN}/favicon-512.png`} />

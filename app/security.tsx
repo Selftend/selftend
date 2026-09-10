@@ -42,7 +42,11 @@ export default function SecurityScreen() {
   const { securityEmail } = contactEmails();
 
   return (
-    <PolicyPageLayout title={t("page.pageTitle")} subtitle={t("page.pageDescription")}>
+    <PolicyPageLayout
+      title={t("page.pageTitle")}
+      description={t("page.pageDescription")}
+      subtitle={t("page.pageDescription")}
+    >
       {/*
         The guard stays with the caller, as it does in `InfoScreen`: `t(key, {
         returnObjects: true })` returns a STRING when the key is missing, and the

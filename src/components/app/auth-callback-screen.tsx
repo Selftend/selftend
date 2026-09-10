@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { DocumentTitle } from "@/src/components/app/document-title";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { markEmailVerifiedFromCallback } from "@/src/features/auth/api";
 import { completeAuthRedirect, parseAuthCallbackUrl } from "@/src/features/auth/callback";
@@ -208,6 +209,7 @@ export default function AuthCallbackScreen() {
       <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
+            <DocumentTitle page={t("callback.supabaseRequired")} />
             <Text variant="h1">{t("callback.supabaseRequired")}</Text>
             <Card>
               <CardHeader>
@@ -239,6 +241,7 @@ export default function AuthCallbackScreen() {
       <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
+            <DocumentTitle page={t("callback.linkProblem")} />
             <Text variant="h1">{t("callback.linkProblem")}</Text>
             <Card>
               <CardHeader>
@@ -267,6 +270,7 @@ export default function AuthCallbackScreen() {
       <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
+            <DocumentTitle page={t("callback.linkRequired")} />
             <Text variant="h1">{t("callback.linkRequired")}</Text>
             <Card>
               <CardHeader>
@@ -337,6 +341,7 @@ export default function AuthCallbackScreen() {
   return (
     <CallbackShell>
       <View className="flex-1 items-center justify-center gap-3 p-6">
+        <DocumentTitle page={t("callback.checking")} />
         <Text variant="h1">{t("callback.checking")}</Text>
         <ActivityIndicator />
         <Text variant="muted">{t("callback.completing")}</Text>
