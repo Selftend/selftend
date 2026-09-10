@@ -1,41 +1,17 @@
 import { act, render } from "@testing-library/react-native";
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 
 import i18n from "@/src/i18n";
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import enAuth from "@/src/i18n/locales/en/auth.json";
+import { meta, rendered, reset, tags } from "@/test/head-capture";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 import { SiteHead } from "./site-head";
 
-// Helmet is not under test; what reaches it is. The mock records every
-// <Head> render's children so the assertions read the tags as elements.
-const captured: ReactNode[] = [];
-jest.mock("expo-router/head", () => ({
-  __esModule: true,
-  default: ({ children }: { children: ReactNode }) => {
-    captured.push(children);
-    return null;
-  },
-}));
-
-type Tag = { type: string; props: Record<string, unknown> };
-
-function tags(): Tag[] {
-  return Children.toArray(captured.flat())
-    .filter((node): node is ReactElement<Record<string, unknown>> => isValidElement(node))
-    .filter((node) => typeof node.type === "string")
-    .map((node) => ({ type: node.type as string, props: node.props }));
-}
-
-function meta(named: string): Tag[] {
-  return tags().filter(
-    ({ type, props }) => type === "meta" && (props.name === named || props.property === named),
-  );
-}
+jest.mock("expo-router/head", () => require("@/test/head-capture").headMock());
 
 beforeEach(() => {
-  captured.length = 0;
+  reset();
   setPlatformOS("web");
 });
 
@@ -55,7 +31,7 @@ describe("SiteHead (#2293)", () => {
       "og:image": "https://selftend.org/favicon-512.png",
       "og:image:width": "512",
       "og:image:height": "512",
-      "og:image:alt": "The Selftend app icon",
+      "og:image:alt": enAuth.landingPage.shareImageAlt,
       "og:locale": "en_GB",
       "twitter:card": "summary",
     };
@@ -104,7 +80,8 @@ describe("SiteHead (#2293)", () => {
   });
 
   // § 4.4: the sole owner of <html lang>. `en` in the exported file (i18next's
-  // default in Node), the visitor's language after hydration.
+  // default in Node), the visitor's language after hydration - and the one
+  // translated site constant, the share image's alt, follows it.
   it("owns <html lang>, and it follows the language", async () => {
     const first = render(<SiteHead />);
     expect(
@@ -114,7 +91,7 @@ describe("SiteHead (#2293)", () => {
     ).toEqual(["en"]);
 
     first.unmount();
-    captured.length = 0;
+    reset();
     i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
     await act(() => i18n.changeLanguage("bg"));
     render(<SiteHead />);
@@ -123,6 +100,7 @@ describe("SiteHead (#2293)", () => {
         .filter(({ type }) => type === "html")
         .map(({ props }) => props.lang),
     ).toEqual(["bg"]);
+    expect(meta("og:image:alt")[0].props.content).toBe(bgAuth.landingPage.shareImageAlt);
   });
 
   it("renders nothing off web", () => {
@@ -130,6 +108,6 @@ describe("SiteHead (#2293)", () => {
 
     render(<SiteHead />);
 
-    expect(captured).toEqual([]);
+    expect(rendered()).toBe(false);
   });
 });

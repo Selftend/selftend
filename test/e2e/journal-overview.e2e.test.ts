@@ -86,6 +86,12 @@ test.describe("journal overview", () => {
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-entries-en-light.png", fullPage: true });
     await page.goto("/tools/journal");
+    // Arriving by URL mounts the protected Stack on Home first and then applies
+    // the deep link, so for a moment the address bar reads `/`; a reload inside
+    // that moment reloads `/`, and the index route sends a signed-in user Home
+    // (#2293 exposed it - the static export shifts when `load` fires). Wait for
+    // the journal to be the screen on top before reloading.
+    await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
 
     const darkPreferences = await admin
       .from("user_preferences")
@@ -107,6 +113,7 @@ test.describe("journal overview", () => {
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-entries-en-dark.png", fullPage: true });
     await page.goto("/tools/journal");
+    await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
 
     const bulgarianPreferences = await admin
       .from("user_preferences")
@@ -129,6 +136,7 @@ test.describe("journal overview", () => {
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-entries-bg-dark.png", fullPage: true });
     await page.goto("/tools/journal");
+    await expect(page.getByRole("heading", { name: "Дневник", exact: true })).toBeVisible();
 
     const lightPreferences = await admin
       .from("user_preferences")

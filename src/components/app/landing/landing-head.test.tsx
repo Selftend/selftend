@@ -1,41 +1,17 @@
 import { act, render } from "@testing-library/react-native";
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 
 import i18n from "@/src/i18n";
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import enAuth from "@/src/i18n/locales/en/auth.json";
+import { meta, rendered, reset, tags } from "@/test/head-capture";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 import { LandingHead } from "./landing-head";
 
-// Helmet is not under test; what reaches it is. The mock records every
-// <Head> render's children so the assertions read the tags as elements.
-const captured: ReactNode[] = [];
-jest.mock("expo-router/head", () => ({
-  __esModule: true,
-  default: ({ children }: { children: ReactNode }) => {
-    captured.push(children);
-    return null;
-  },
-}));
-
-type Tag = { type: string; props: Record<string, unknown> };
-
-function tags(): Tag[] {
-  return Children.toArray(captured.flat())
-    .filter((node): node is ReactElement<Record<string, unknown>> => isValidElement(node))
-    .filter((node) => typeof node.type === "string")
-    .map((node) => ({ type: node.type as string, props: node.props }));
-}
-
-function meta(named: string): Tag[] {
-  return tags().filter(
-    ({ type, props }) => type === "meta" && (props.name === named || props.property === named),
-  );
-}
+jest.mock("expo-router/head", () => require("@/test/head-capture").headMock());
 
 beforeEach(() => {
-  captured.length = 0;
+  reset();
   setPlatformOS("web");
 });
 
@@ -112,6 +88,6 @@ describe("LandingHead (#2293)", () => {
 
     render(<LandingHead />);
 
-    expect(captured).toEqual([]);
+    expect(rendered()).toBe(false);
   });
 });

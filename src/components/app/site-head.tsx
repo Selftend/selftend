@@ -46,7 +46,7 @@ export function SiteHead() {
       <meta property="og:image" content={`${SITE_ORIGIN}/favicon-512.png`} />
       <meta property="og:image:width" content="512" />
       <meta property="og:image:height" content="512" />
-      <meta property="og:image:alt" content="The Selftend app icon" />
+      <meta property="og:image:alt" content={t("landingPage.shareImageAlt")} />
       <meta property="og:locale" content="en_GB" />
       <meta name="twitter:card" content="summary" />
     </Head>

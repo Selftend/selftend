@@ -34,7 +34,7 @@
  * can now…"), not the generic reader.
  *
  * The sub is hyphens-only, so the doc's em dashes are carried as ` - `. That
- * is the shipped shape already (`auth:landing.subtitle`, `public/index.html`),
+ * is the shipped shape already (`auth:landing.subtitle`, `auth:landingPage.metaDescription`),
  * not a third variant (#1627).
  *
  * ☠️ THE TOOLS LINE STAYS OUT OF THE ROTATION (#1880 §2, reaffirmed by #1950).
