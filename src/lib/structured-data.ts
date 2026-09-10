@@ -1,5 +1,5 @@
 import { appEnv } from "@/src/lib/env";
-import { SHARE_IMAGE_URL, SITE_NAME, canonicalUrl } from "@/src/lib/site";
+import { SHARE_IMAGE_URL, SITE_NAME } from "@/src/lib/site";
 
 /**
  * The landing page's structured data (`docs/indexability.md` § 5, #2296).
@@ -8,10 +8,10 @@ import { SHARE_IMAGE_URL, SITE_NAME, canonicalUrl } from "@/src/lib/site";
  * that says who publishes the site, and a `WebSite` that says what the site
  * is called and points at the publisher by `@id`. The strings are the ones
  * the page already shows - the site name and share image from `site.ts`, the
- * description the caller reads from the same key as the meta description, the
- * links from the env constants - so the block cannot disagree with the
- * visible page. No rich result is expected; the win is the logo and site-name
- * association in Google and Bing.
+ * address and description the caller reads for its own `og:url` and meta
+ * description, the links from the env constants - so the block cannot
+ * disagree with the visible page. No rich result is expected; the win is the
+ * logo and site-name association in Google and Bing.
  *
  * What is not here is each a ruling, not an omission: no `nonprofitStatus`
  * (no registered entity exists), no `founder` or `Person`, no `email` or
@@ -25,34 +25,38 @@ import { SHARE_IMAGE_URL, SITE_NAME, canonicalUrl } from "@/src/lib/site";
 /** The block's media type. A data block, never JavaScript: the CSP does not see it. */
 export const STRUCTURED_DATA_TYPE = "application/ld+json";
 
-const SITE_URL = canonicalUrl("/");
-const ORGANIZATION_ID = `${SITE_URL}#organization`;
-const WEBSITE_ID = `${SITE_URL}#website`;
+interface LandingStructuredDataInput {
+  /** The landing page's canonical URL - the head's own `og:url`. */
+  url: string;
+  /** The description the head renders as the meta description. */
+  description: string;
+}
 
 /**
- * The graph, from the description the landing head renders as the meta
- * description. Serialise with `JSON.stringify` into the script's children.
+ * The graph, from the two strings the landing head already reads. Serialise
+ * with `JSON.stringify` into the script's children.
  */
-export function landingStructuredData(description: string) {
+export function landingStructuredData({ url, description }: LandingStructuredDataInput) {
+  const organizationId = `${url}#organization`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": ORGANIZATION_ID,
+        "@id": organizationId,
         name: SITE_NAME,
-        url: SITE_URL,
+        url,
         logo: SHARE_IMAGE_URL,
         description,
-        // A fork may blank a link; an empty `sameAs` entry is a validator error.
+        // A fork blanks a link with an empty env value, as the footer and the
+        // user menu already honour; an empty `sameAs` entry is a validator error.
         sameAs: [appEnv.githubRepoUrl, appEnv.redditUrl, appEnv.youtubeUrl].filter(Boolean),
       },
       {
         "@type": "WebSite",
-        "@id": WEBSITE_ID,
         name: SITE_NAME,
-        url: SITE_URL,
-        publisher: { "@id": ORGANIZATION_ID },
+        url,
+        publisher: { "@id": organizationId },
       },
     ],
   };

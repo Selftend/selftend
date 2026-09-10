@@ -148,8 +148,8 @@ describe("the structured-data block (#2296)", () => {
   });
 
   // The block is a data block: nothing executable, and it is the only script
-  // the head emits, so the CSP's two inline hashes stay the whole story.
-  it("is the only script in the head, and it is not JavaScript", () => {
+  // this head emits - no JavaScript for the CSP's inline hashes to cover.
+  it("is the only script this head emits, and it is not JavaScript", () => {
     render(<LandingHead />);
 
     const scripts = tags().filter(({ type }) => type === "script");

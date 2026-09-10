@@ -29,8 +29,9 @@ import { SHARE_IMAGE_URL, SITE_NAME } from "@/src/lib/site";
  * site serves - so the card is `summary`, not `summary_large_image`: a wide
  * card would letterbox a square icon. The image URL and the site name are
  * `site.ts` constants shared with the landing's structured data (§ 5), so
- * `Organization.logo` is `og:image` by construction. `twitter:title`, `twitter:description`
- * and `twitter:image` are gone: every unfurler falls back to `og:*`.
+ * `Organization.logo` is `og:image` by construction. `twitter:title`,
+ * `twitter:description` and `twitter:image` are gone: every unfurler falls
+ * back to `og:*`.
  */
 export function SiteHead() {
   const { t, i18n } = useTranslation("auth");
