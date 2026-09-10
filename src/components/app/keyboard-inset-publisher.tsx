@@ -10,7 +10,7 @@ const KEYBOARD_ID = "keyboard";
 /**
  * The soft keyboard's top edge, published as layer 0 (#1339, spec §5.2).
  *
- * ☠️ The web keyboard overlays the layout viewport. `public/index.html` has no
+ * ☠️ The web keyboard overlays the layout viewport. `app/+html.tsx` has no
  * `interactive-widget=resizes-content` — deliberately, see
  * `use-web-keyboard-inset.ts` — so a bottom-anchored `absolute` element sits
  * BEHIND the keyboard unless something measures it. `visualViewport` is that

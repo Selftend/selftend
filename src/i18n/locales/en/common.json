@@ -1,5 +1,6 @@
 {
   "beta": "Beta",
+  "documentTitle": "{{page}} - Selftend",
   "loading": "Loading",
   "preparingWorkspace": "Preparing your workspace...",
   "restoringSession": "Restoring your session...",

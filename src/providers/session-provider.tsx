@@ -19,8 +19,7 @@ import {
 import { readUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 import { purgePersistedWizardDrafts, resetAllDraftStores } from "@/src/stores/draft-store-registry";
 import { useFreshStartNoticeStore } from "@/src/stores/fresh-start-notice-store";
-
-type SessionStatus = "loading" | "ready";
+import { seedSessionStatus, type SessionStatus } from "@/src/providers/session-status-seed";
 
 interface SessionContextValue {
   hasSupabaseConfig: boolean;
@@ -34,7 +33,11 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   // Without a Supabase client there is nothing to wait for - start "ready".
-  const [status, setStatus] = useState<SessionStatus>(supabase ? "loading" : "ready");
+  // Without a window - the static export rendering in Node (#2293) - likewise:
+  // see seedSessionStatus.
+  const [status, setStatus] = useState<SessionStatus>(() =>
+    seedSessionStatus({ hasClient: Boolean(supabase), hasWindow: typeof window !== "undefined" }),
+  );
   const queryClient = useQueryClient();
 
   useEffect(() => {

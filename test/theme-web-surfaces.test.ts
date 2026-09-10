@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import Root from "@/app/+html";
 import { THEME_HEXES } from "@/lib/theme";
 import { COLOR_SCHEMES } from "@/src/lib/theme/contract";
 import { DEFAULT_STYLE, STYLE_NAMES } from "@/src/lib/theme/styles";
@@ -20,18 +23,25 @@ import { DEFAULT_STYLE, STYLE_NAMES } from "@/src/lib/theme/styles";
 // so the mismatch reads as a background colour rather than a broken frame.
 
 const ROOT = join(__dirname, "..");
-const indexHtml = readFileSync(join(ROOT, "public", "index.html"), "utf8");
+// The web document as the static export writes it (#2293): `app/+html.tsx`
+// rendered in Node, exactly as `expo export` renders it around every route.
+// Rendered rather than read as source so the assertions below - and above all
+// the CSP hash - are over the bytes a browser receives, not over a template
+// literal whose escaping the test would otherwise have to undo.
+const indexHtml = renderToStaticMarkup(
+  createElement(Root, null, createElement("div", { id: "root" })),
+);
 const appConfig = readFileSync(join(ROOT, "app.config.ts"), "utf8");
 const manifest = readFileSync(join(ROOT, "public", "manifest.webmanifest"), "utf8");
 
 /**
  * The page-background map inlined in the first-paint script. It has to be
- * literals — public/index.html is copied verbatim, with no build step that could
- * inject them — so this parses the copy back out and pins it to the palettes.
+ * literals — the script runs before any module and nothing can inject a value
+ * into it — so this parses the copy back out and pins it to the palettes.
  */
 function inlinedPages(): Record<string, [string, string]> {
   const block = indexHtml.match(/var PAGE = \{([\s\S]*?)\};/)?.[1];
-  if (!block) throw new Error("Could not find the PAGE map in public/index.html");
+  if (!block) throw new Error("Could not find the PAGE map in the rendered app/+html.tsx");
   const pages: Record<string, [string, string]> = {};
   for (const [, quoted, bare, light, dark] of block.matchAll(
     /(?:"([a-z-]+)"|([a-z-]+))\s*:\s*\["(#[0-9a-f]{6})",\s*"(#[0-9a-f]{6})"\]/g,
@@ -106,6 +116,21 @@ describe("the web first paint follows the selected palette", () => {
     expect(headers).toContain(`'sha256-${digest}'`);
     // The weaker fix that must not creep back in.
     expect(headers).not.toContain("script-src 'self' 'unsafe-inline'");
+  });
+
+  // The static export writes a second inline script into every page - the
+  // one-line hydration flag - and the same CSP has to allow it, or production
+  // refuses it and the app mounts with createRoot instead of hydrateRoot:
+  // every prerendered page thrown away and rendered again from scratch, with
+  // no error anywhere (measured on #2293). Its text is expo-router's, not
+  // ours, so it is pinned here as the literal the exporter emits; a different
+  // literal after an expo-router upgrade fails this test rather than hydration.
+  it("also allows the static export's hydration flag, by hash", () => {
+    const hydrateFlag = "globalThis.__EXPO_ROUTER_HYDRATE__=true;";
+    const digest = createHash("sha256").update(hydrateFlag, "utf8").digest("base64");
+    const headers = readFileSync(join(ROOT, "public", "_headers"), "utf8");
+
+    expect(headers).toContain(`'sha256-${digest}'`);
   });
 
   // "system" is the default preference, so the overwhelmingly common path is

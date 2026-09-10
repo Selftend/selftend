@@ -7,4 +7,8 @@ compatibility_date = "2026-07-01"
 
 [assets]
 directory = "./dist"
-not_found_handling = "single-page-application"
+# The eight files on the index list answer 200; every other path - the gated
+# (app) tree, the (auth) screens, a typo - answers a real 404 with dist/404.html,
+# which is the app shell and hydrates into the real screen (docs/indexability.md
+# § 6.4, #2295). The export writes 404.html (scripts/apply-index-list.js).
+not_found_handling = "404-page"

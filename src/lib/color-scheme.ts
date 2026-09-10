@@ -3,8 +3,17 @@ import { Platform, useColorScheme } from "react-native";
 import { colorScheme as nwColorScheme } from "nativewind";
 
 import { useThemeStore } from "@/src/stores/theme-store";
+import { useIsHydrated } from "@/src/lib/use-is-hydrated";
 
 export type ColorSchemeName = "light" | "dark";
+
+/**
+ * What the static export renders with (#2293): Node has no `matchMedia` and
+ * nothing stored, so every exported page carries the light scheme's tokens.
+ * The reader below returns this for the hydration render, whatever the device
+ * says, so that render matches the file - see `useIsHydrated`.
+ */
+export const EXPORTED_COLOR_SCHEME: ColorSchemeName = "light";
 
 // Exactly one driver may be mounted at a time. A second one re-runs the hydrate
 // and the NativeWind push against the same store, which is how the previous
@@ -26,6 +35,16 @@ let mountedDrivers = 0;
 export function useColorSchemeName(): ColorSchemeName {
   const preference = useThemeStore((s) => s.preference);
   const systemColorScheme: ColorSchemeName = useColorScheme() === "dark" ? "dark" : "light";
+  const hydrated = useIsHydrated();
+
+  // Web, hydrating a prerendered page: report what the file was rendered
+  // with, not what `matchMedia` says. React does not patch a mismatched
+  // attribute in production, so a dark device that rendered dark here would
+  // keep the file's light inline tokens on the root view for good - dark text
+  // on a dark page (#2293). The real scheme lands on the very next render.
+  if (Platform.OS === "web" && !hydrated) {
+    return EXPORTED_COLOR_SCHEME;
+  }
 
   return preference === "system" ? systemColorScheme : preference;
 }

@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 // The other half of the web shell fix (#584).
 //
-// The first-paint script in public/index.html sets `<meta name="theme-color">`
+// The first-paint script in app/+html.tsx sets `<meta name="theme-color">`
 // and the `<html>` background from storage, which is what stops the white flash
 // before React mounts. But that script runs exactly once, at load. Every change
 // after it - picking another palette, switching appearance, or the OS flipping
@@ -35,7 +35,7 @@ export function useDocumentThemeColor(pageColor: string): void {
     document.documentElement.style.backgroundColor = pageColor;
 
     const meta = document.querySelector('meta[name="theme-color"]');
-    // Absent in test harnesses and any shell that is not public/index.html; the
+    // Absent in test harnesses and any document that is not app/+html.tsx; the
     // background above is still worth setting on its own.
     if (meta) {
       meta.setAttribute("content", pageColor);

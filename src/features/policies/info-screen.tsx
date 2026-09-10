@@ -68,6 +68,7 @@ export function InfoScreen({
   return (
     <PolicyPageLayout
       title={title}
+      description={subtitle}
       subtitle={
         /*
           ☠️ Passed as a FRAGMENT, not a concatenated string. These are two

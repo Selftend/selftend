@@ -110,7 +110,11 @@ export function FaqScreen() {
   const letter = entryOf(FAQ_LAYOUT.letter);
 
   return (
-    <PolicyPageLayout title={t("faq.pageTitle")} subtitle={t("faq.pageDescription")}>
+    <PolicyPageLayout
+      title={t("faq.pageTitle")}
+      description={t("faq.pageDescription")}
+      subtitle={t("faq.pageDescription")}
+    >
       {/*
         Rendered unmodified, as #2129 ruled - including its heading level, which
         is 2 from the component's own default on all five screens (#2137, #2167).

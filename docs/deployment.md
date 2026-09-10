@@ -41,7 +41,7 @@ Porkbun's included email forwarding is enough for early aliases such as `support
 
 ## Hosting Portability
 
-Cloudflare Workers (static assets) is the production frontend host. It is not a backend dependency. Supabase remains the backend for auth, database, storage, and any future Supabase Edge Functions. The frontend stays portable — any static host that serves `index.html` for unknown routes works — so the host can change without touching app code.
+Cloudflare Workers (static assets) is the production frontend host. It is not a backend dependency. Supabase remains the backend for auth, database, storage, and any future Supabase Edge Functions. The frontend stays portable — any static host that serves the exported files and answers unknown routes with `404.html` (a 404 status, as Cloudflare's `404-page` mode does; the file is the app shell and hydrates into the real screen) works — so the host can change without touching app code.
 
 Do not move the frontend app into Supabase Edge Functions as the default plan. Supabase custom domains are for Supabase project URLs such as APIs, Auth, Storage, and Edge Functions; Supabase documents that custom domains are not intended to host frontend applications through Edge Functions.
 
@@ -49,25 +49,37 @@ The portable contract is:
 
 - build the web app with `npm run export:web`
 - deploy `dist` to a static frontend host
-- require the frontend host to serve `index.html` for unknown navigation routes
-- let Expo Router handle unmatched paths with `app/+not-found.tsx`
+- require the frontend host to serve `404.html` (with a 404 status) for unknown navigation routes - it is the app shell
+- let Expo Router handle every such path at runtime: the real screen where one matches, `app/+not-found.tsx` where none does
 - keep app URLs in environment variables and Supabase dashboard configuration, not hard-coded into app flows
 
 ## Cloudflare Workers Deployment
 
 GitHub Actions is the only deployer. It builds the Expo web export and publishes the prebuilt `dist/` to a Cloudflare Worker (static assets) via `wrangler` — Cloudflare never builds the project itself. Cloudflare Workers has **no per-deploy billing**, so deploys run on push:
 
-- **Production** (`selftend.org` + `www.selftend.org`, Worker `selftend`): deploys on a **published Release** (`release.yml`, after the prod DB migration gate). Manual fallback: the `Web production deploy` (`web-deploy.yml`) workflow in the Actions tab.
+- **Production** (`selftend.org`, Worker `selftend`; `www.selftend.org` is bound to the same Worker only so the zone-level rule in "Cloudflare zone settings" below can answer it with a 301 to the apex): deploys on a **published Release** (`release.yml`, after the prod DB migration gate). Manual fallback: the `Web production deploy` (`web-deploy.yml`) workflow in the Actions tab.
 - **Staging** (`staging.selftend.org`, Worker `selftend-staging`): deploys on **push to `dev`** (`staging.yml`, after the staging DB migration gate). Staging is served `noindex`.
 
 The deploy step uses `cloudflare/wrangler-action@v3` on Node 22, selecting the config by environment:
 
-- [`wrangler.toml`](../wrangler.toml) — production Worker `selftend`, assets from `dist/`, SPA fallback (`not_found_handling = "single-page-application"`).
-- [`wrangler.staging.toml`](../wrangler.staging.toml) — staging Worker `selftend-staging`.
+- [`wrangler.toml`](../wrangler.toml) — production Worker `selftend`, assets from `dist/`, real 404s (`not_found_handling = "404-page"`, since [#2295](https://github.com/Selftend/selftend/issues/2295)): the eight files on the index list answer 200, and every other path — a gated screen, an auth screen, a typo — answers **404** with `dist/404.html`, which is the app shell and hydrates into the real screen.
+- [`wrangler.staging.toml`](../wrangler.staging.toml) — staging Worker `selftend-staging`, the same fallback mode.
 
-Build env comes from GitHub Actions **variables** (`EXPO_PUBLIC_*`); the deploy needs the `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets (see below). Security headers ship via `public/_headers` (copied into `dist/`), which Cloudflare Workers static assets applies natively; the staging deploy injects `X-Robots-Tag: noindex` into the existing `/*` block.
+Build env comes from GitHub Actions **variables** (`EXPO_PUBLIC_*`); the deploy needs the `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets (see below). Security headers ship via `public/_headers` (copied into `dist/`), which Cloudflare Workers static assets applies natively; the staging deploy injects `X-Robots-Tag: noindex` into the existing `/*` block, deletes `dist/sitemap.xml` and strips the `Sitemap:` line from `dist/robots.txt` (the sitemap names production URLs; [indexability.md](indexability.md) § 6.7). It adds no `Disallow` — a disallowed URL is never fetched, so its `noindex` would never be read.
 
 Custom-domain binding (one-time, dashboard): Cloudflare dash → Workers → the Worker → **Domains → Add Domain**. The zone must be on Cloudflare nameservers first, and any pre-existing DNS record for the hostname must be deleted before binding (Cloudflare refuses a custom domain over an existing record). Cloudflare provisions the edge TLS cert automatically.
+
+### Cloudflare zone settings
+
+Three settings on the `selftend.org` zone live in the Cloudflare dashboard and in no file in this repo, so this table is their only record in the repo ([indexability.md](indexability.md) § 6.1, § 6.2, § 6.5 and § 6.8; decided on [#2288](https://github.com/Selftend/selftend/issues/2288), recorded and verified on [#2297](https://github.com/Selftend/selftend/issues/2297)). Together with the Worker's real 404s they make `https://selftend.org` the only serving origin: `www` and plain `http://` each answer a 301 instead of a second copy of the site. Each row carries the `curl` that verifies it from outside and the date it was last verified; re-run the `curl` and update the date whenever the zone is touched. The control-tower inventory carries the same three settings (control-tower [#132](https://github.com/vasilyoshev/control-tower/issues/132)).
+
+| Setting                    | Where in the dashboard                                                                                                                                                                                                                                                           | Value                                                                                                                                                                                                                                                                                                      | Verified from outside                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `www` → apex redirect rule | Rules → Overview → Create rule → Redirect Rule, "Custom filter expression"                                                                                                                                                                                                       | expression `http.host eq "www.selftend.org" and not starts_with(http.request.uri.path, "/.well-known/")`; redirect type **Dynamic**, expression `concat("https://selftend.org", http.request.uri)`; status **301**; leave "Preserve query string" off (the default) - the target already carries the query | `curl -sI https://www.selftend.org/faq` → `301` with `location: https://selftend.org/faq`; `curl -sI "https://www.selftend.org/faq?x=1"` keeps `?x=1`; `curl -sI https://www.selftend.org/.well-known/apple-app-site-association` → `200`. **Pending the owner's click** - not yet applied as of 2026-09-10             |
+| Always Use HTTPS           | SSL/TLS → Edge Certificates → Always Use HTTPS                                                                                                                                                                                                                                   | **on** (zone-wide: apex, `www`, `staging`). No HSTS preload submission - the `preload` token in `public/_headers` stays as it is ("HSTS preload" below)                                                                                                                                                    | `curl -sI http://selftend.org/` → `301` with `location: https://selftend.org/`. **Pending the owner's click** - not yet applied as of 2026-09-10                                                                                                                                                                        |
+| Managed robots.txt         | AI Crawl Control → Signals → "Managed robots.txt" (it sat under Security → Bots when [#2288](https://github.com/Selftend/selftend/issues/2288) was decided; location checked 2026-09-10; <https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/>) | **on**. Cloudflare prepends its content-signals block to `public/robots.txt` and never replaces it, so the repo's `User-agent: *`, empty `Disallow:` and `Sitemap:` lines follow it                                                                                                                        | `curl -s https://selftend.org/robots.txt` reads the managed block first, then the repo's three lines, and **no HTML** (before the export shipped `robots.txt`, the whole app shell was appended instead). Toggle confirmed on 2026-09-10; the combined file is checked after the release that ships `public/robots.txt` |
+
+The `/.well-known/` carve-out in the redirect rule exists because Apple and Google both refuse an association file that answers with a redirect, and the iOS build still claims `applinks:www.selftend.org`. It is retired, together with that claim, at the next native release ([#2298](https://github.com/Selftend/selftend/issues/2298); [indexability.md](indexability.md) § 6.3). Nothing else on `www` needs to answer 200.
 
 Required build-time GitHub Actions **variables** (production Environment):
 
@@ -102,7 +114,7 @@ The three contact addresses are read by `/support`, `/security`, and — as of #
 
 Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds go through the same Edge Function, delivering to an Expo push token in `device_push_tokens` - nothing is scheduled locally on any platform.
 
-Because the app uses `web.output = "single"`, PWA head tags are added through `public/index.html`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
+The PWA head tags - the manifest link, the apple-touch icon, the theme colour - live in the web document, `app/+html.tsx`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
 
 Before production web push testing:
 
@@ -149,7 +161,8 @@ iOS and iPadOS web push requires the user to install the web app to the Home Scr
 The reusable `.github/workflows/web-deploy.yml` workflow (called by `release.yml` for prod and `staging.yml` for staging; also manually dispatchable):
 
 - checks out the release tag (prod) or the triggering `dev` SHA (staging)
-- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web`
+- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web` (the Expo export, then the index-list step that prunes `dist/` to the nine HTML files and writes `sitemap.xml` — "Web Build" below)
+- on staging only, appends `X-Robots-Tag: noindex` to `dist/_headers`, deletes `dist/sitemap.xml` and strips the `Sitemap:` line from `dist/robots.txt`
 - switches to Node 22 and deploys `dist` (+ the `worker`-less static-assets config) via `cloudflare/wrangler-action@v3`, selecting `wrangler.toml` (prod) or `wrangler.staging.toml` (staging)
 
 Required GitHub repository variables:
@@ -212,7 +225,16 @@ Local production smoke:
 npm run serve:web:production
 ```
 
-The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts). Unknown routes should load `index.html`, then Expo Router handles the unmatched path at runtime with [app/+not-found.tsx](../app/+not-found.tsx). Do not add duplicate provider-specific 404 pages for this behavior.
+`npm run export:web` is the export the deploy runs (`.github/workflows/web-deploy.yml`, "GitHub Actions Web Deploy" above). It is two steps. The web build uses `web.output = "static"` in [app.config.ts](../app.config.ts) (since [#2293](https://github.com/Selftend/selftend/issues/2293)): `expo export` renders every route in Node and writes one HTML file per route - `dist/index.html`, `dist/faq.html`, `dist/crisis.html` and so on, some three hundred files including the whole signed-in tree and the auth screens - around the document in [app/+html.tsx](../app/+html.tsx), which replaced `public/index.html`. Each public file carries the page's own `<head>` and full body, so it reads without JavaScript; the head each file carries is specified in [indexability.md](indexability.md) § 4.
+
+Then `node scripts/apply-index-list.js dist` applies the **index list** ([scripts/lib/index-list.js](../scripts/lib/index-list.js); [indexability.md](indexability.md) § 3, [#2295](https://github.com/Selftend/selftend/issues/2295)) - the one list of the public routes: `/`, `/faq`, `/crisis`, `/privacy`, `/terms`, `/cookies`, `/security`, `/account-deletion`. It deletes every other HTML file (the gated `(app)` tree, the `(auth)` screens, Expo's `_sitemap.html`), moves `+not-found.html` to `404.html`, and writes `dist/sitemap.xml` from the same list - absolute `https://selftend.org` URLs, the root with its slash and the rest without, no `lastmod`, `hreflang`, `priority` or `changefreq`. After it, `dist/` holds exactly nine HTML files: the eight plus `404.html`. The step fails the export if a listed file did not export, so a public page cannot silently drop out of a deploy. `public/robots.txt` (allow all, no `Disallow`, one `Sitemap:` line) is copied into `dist/` unchanged by the export; Cloudflare prepends its managed AI-crawler block to it at the edge, which is expected. `test/index-list.test.ts` pins the list to the route tree (every route file outside `(app)` and `(auth)` is on it, and nothing else), and pins `robots.txt`, both `wrangler*.toml` and the staging strip; `scripts/lib/index-list.test.js` covers the prune and the sitemap. Adding a public route means adding it to the list - the test fails until you do. The sitemap is submitted once in Search Console after the first production deploy that ships it ([indexability.md](indexability.md) § 9).
+
+Two things to keep straight after that change:
+
+- The production CSP in [public/\_headers](../public/_headers) allows exactly two inline scripts, by hash: the first-paint palette script in `app/+html.tsx`, and the one-line hydration flag (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) the static export writes into every page. `test/theme-web-surfaces.test.ts` recomputes both - the first from the rendered document, the second from the literal expo-router emits - so editing the script, or an expo-router upgrade changing the flag, fails `verify` rather than silently blocking a script in production. Without the flag's hash the browser refuses it and the app mounts with `createRoot` instead of `hydrateRoot`: the prerendered page is thrown away and rendered again from scratch, with nothing in the console to say so (measured on [#2293](https://github.com/Selftend/selftend/issues/2293)).
+- Every path off the index list - a gated screen such as `/modules/cbt`, an auth screen such as `/sign-in`, a typo - is answered with `dist/404.html` and a **404 status** (`not_found_handling = "404-page"` in both Worker configs; [indexability.md](indexability.md) § 6.4). That file is the exported not-found route, which is the app shell: it hydrates, Expo Router matches the real path, and the visitor sees the real screen (or the not-found screen, [app/+not-found.tsx](../app/+not-found.tsx), when nothing matches). Only the status line differs from a listed page. Do not add provider-specific 404 pages, and do not point the fallback at `index.html` again - the two auth URLs leave Google's index by that status.
+
+`npm run serve:web:production` serves the listed pages but does not fall back for unknown paths; to see the real fallback locally, run the Worker: `npx wrangler@4 dev --config wrangler.toml` serves `dist/` exactly as Cloudflare does, 200 for `/faq`, 404 with the app for `/modules/cbt`.
 
 ## Production Headers
 
@@ -237,7 +259,7 @@ Expo's web export fingerprints these filenames with an MD5 of their contents, so
 The HTML shell is deliberately left to that default. Do not add a rule for it:
 
 - `/index.html` is never served — Cloudflare 307s it to `/` — so a rule on that path matches nothing.
-- A rule on `/` would cover only the root, not the SPA fallback that serves the same shell for every client route (`/journal`, `/settings/...`).
+- A rule on `/` would cover only the root, not `404.html`, which is served for every client route off the index list (`/journal`, `/settings/...`).
 
 `max-age=0, must-revalidate` is already the correct behaviour for the shell, so a partial rule would buy nothing and mislead the next reader. [web-headers.test.ts](../web-headers.test.ts) pins this shape.
 
@@ -261,18 +283,28 @@ Removing `'unsafe-inline'` breaks the web build. If Expo adds nonce-based CSP su
 
 ### HSTS preload
 
-The HSTS header includes the `preload` directive. After the first production deploy to `selftend.org`, submit the domain to <https://hstspreload.org> to be included in browser preload lists.
+The HSTS header in `public/_headers` carries the `preload` token, and the domain is **not** submitted to <https://hstspreload.org> - decided on [#2288](https://github.com/Selftend/selftend/issues/2288) ([indexability.md](indexability.md) § 6.2): a preload-list entry is irreversible in practice and nothing here needs it. The token stays as it is because removing it changes nothing for visitors and would touch a pinned header. What forces HTTPS is the zone's Always Use HTTPS setting ("Cloudflare zone settings" above); the header then keeps a browser that has visited once on HTTPS for a year.
 
 ## Public Routes To Verify
 
-These routes must be reachable without signing in:
+These routes must be reachable without signing in. The eight on the index list answer **200** with their own file:
 
+- `/` (the landing page)
+- `/faq`
+- `/crisis`
 - `/privacy`
 - `/terms`
-- `/crisis`
+- `/cookies`
+- `/security`
 - `/account-deletion`
-- `/auth-callback`
-- a deliberately unknown route, such as `/missing-test`, should load the app and render the simple not-found screen with a home link
+
+Everything else answers **404** with `404.html`, which still loads the app:
+
+- `/auth-callback` — 404 status, and the missing-link state renders after hydration
+- a deliberately unknown route, such as `/missing-test` — 404 status, and the simple not-found screen with a home link renders
+- a gated deep link, such as `/modules/cbt` — 404 status, and the real screen renders after hydration (for a signed-out visitor, whatever the app shows a signed-out visitor there)
+
+`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the eight, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
 
 The Google Play privacy policy URL should use the production domain:
 
@@ -344,7 +376,7 @@ Manual smoke:
 
 - open `/privacy`, `/terms`, `/crisis`, and `/account-deletion`
 - open `/auth-callback` directly and confirm the missing-link state renders
-- open `/missing-test` and confirm the not-found screen renders
+- open `/missing-test` and confirm the not-found screen renders (the status line reads 404; that is intended)
 - sign in with Google on web
 - create, edit, and archive a CBT record against the live Supabase project
 
@@ -380,7 +412,7 @@ If step 6 fails with a permissions error, the function owner (usually `postgres`
 Web launch is acceptable only when:
 
 - the app loads over HTTPS on `https://selftend.org`
-- unknown browser routes render the app not-found screen
+- unknown browser routes answer 404 and still render the app not-found screen
 - public policy and account-deletion routes are reachable without signing in
 - Supabase Google sign-in returns to `/auth-callback`
 - authenticated CBT persistence works against the intended Supabase project
@@ -391,12 +423,15 @@ Web launch is acceptable only when:
 
 ### Unknown routes return 404 instead of the app
 
-Check in this order:
+A **404 status** on an unknown or gated route is the intended answer since [#2295](https://github.com/Selftend/selftend/issues/2295) (`not_found_handling = "404-page"`; [indexability.md](indexability.md) § 6.4): only the eight files on the index list answer 200, and every other path is served `dist/404.html` with a 404 - the app shell, which hydrates into the real screen. The failure is a 404 that shows Cloudflare's plain error page, a blank page, or a page that never becomes the app. Check in this order:
 
-1. Confirm [wrangler.toml](../wrangler.toml) has `not_found_handling = "single-page-application"` under `[assets]`.
-2. Confirm the deploy uploaded `dist/` (the Expo web export), not an empty or wrong directory.
-3. Confirm the latest `Web deploy` GitHub Actions run for the environment succeeded.
-4. Re-run the deploy (`release.yml` for prod, push to `dev` / `staging.yml` for staging).
+1. Confirm `dist/404.html` is in the deployed export. The index-list step (`node scripts/apply-index-list.js dist`, the second half of `npm run export:web`) moves `+not-found.html` there and fails the export if that file is missing; a deploy that ran `expo export` alone ships no `404.html`, and Cloudflare then answers with its own bare 404.
+2. Confirm both [wrangler.toml](../wrangler.toml) and [wrangler.staging.toml](../wrangler.staging.toml) have `not_found_handling = "404-page"` under `[assets]` (`test/index-list.test.ts` pins it, so a drift fails `verify` first).
+3. Confirm the deploy uploaded `dist/` (the pruned Expo web export), not an empty or wrong directory.
+4. Confirm the latest `Web deploy` GitHub Actions run for the environment succeeded.
+5. Re-run the deploy (`release.yml` for prod, push to `dev` / `staging.yml` for staging).
+
+If instead a page that should answer 200 (`/faq`, `/privacy`, ...) answers 404, the route is missing from the index list ([scripts/lib/index-list.js](../scripts/lib/index-list.js)) - the route-tree test fails on that, so check `verify` on the deployed commit.
 
 ### Google sign-in returns to `localhost:8081`
 

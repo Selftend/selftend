@@ -95,6 +95,17 @@ A paid subscription since 2026-08-04, on the owner's individual account. It is c
 - Not available: the ElevenLabs Impact Program (12 months of free Pro for non-profits) requires a registered entity, which the project does not have (checked 2026-08-20).
 - Source: <https://elevenlabs.io/pricing> (checked 2026-09-02)
 
+## Search instrument: Ahrefs
+
+A paid subscription since 2026-09-10, on the owner's individual account. In the marketing plan's vocabulary it is an **instrument**, like Google Search Console - never a channel and never media spend - so Square 3's "no spend before the Bulgarian window reports" rule does not touch it ([marketing-plan.md](marketing-plan.md) § 4, square 3; ruled on [#2289](https://github.com/Selftend/selftend/issues/2289)). It sits outside the Scenario A–C totals and inside the "light design or content tooling" room of the comfortable budget below.
+
+- Plan: **Starter**, `$29/month` on monthly billing; next billing 2026-10-10; 200 credits/month; one verified project (Site Audit, Site Explorer, Keywords Explorer at Starter's limits). No trial, no refund by right ([#2283](https://github.com/Selftend/selftend/issues/2283)).
+- What it pays for: the demand facts behind the search-channel ruling (read 2026-09-10, seven credits), and the monthly Site Audit that reads whether the site is readable to a crawler - nothing else. Free plus Search Console answers everything the indexability spec itself needs ([indexability.md](indexability.md) § 9).
+- Why Starter and not Free: Keywords Explorer and competitor Site Explorer exist only on a paid tier, and nothing above Starter bears on any decision the plan makes.
+- ☠️ **Downgrade to Free before 2026-10-10** unless the 2026-12-10 call promotes a pond that search serves. Starter was bought for one read and one audit; a second month buys nothing the plan has asked for.
+- Not used: Ahrefs Web Analytics. It is a script from `analytics.ahrefs.com` collecting IP-derived location and a salted IP and user-agent hash - an analytics tracking service by the privacy policy's words, which `docs/analytics.md` and the policy promise not to run.
+- Source: <https://ahrefs.com/pricing> (checked 2026-09-09)
+
 ## Shared inbox and email operations
 
 Recommended early setup:
@@ -193,6 +204,7 @@ Avoid paying for these before the product earns them:
 - AWS SES pricing: <https://aws.amazon.com/ses/pricing/>
 - Cloudflare Workers pricing: <https://developers.cloudflare.com/workers/platform/pricing/>
 - ElevenLabs pricing: <https://elevenlabs.io/pricing>
+- Ahrefs pricing: <https://ahrefs.com/pricing>
 - ElevenLabs Eleven Music Model-Specific Terms (commercial-rights table by plan): <https://elevenlabs.io/eleven-music-model-specific-terms>
 - Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
 - Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>
