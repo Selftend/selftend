@@ -4,6 +4,11 @@
 // to `404.html`, writes `sitemap.xml`. See scripts/lib/index-list.js.
 //
 //   node scripts/apply-index-list.js [dist]
+//
+// Run it once, on a fresh export: it refuses a directory that lacks
+// `+not-found.html`, which an already-applied export does (its not-found file
+// is `404.html` by then). `npm run export:web` always exports first, so the
+// only way to hit that is running this script by hand twice.
 
 const path = require("node:path");
 

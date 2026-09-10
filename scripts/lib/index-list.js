@@ -78,8 +78,8 @@ function sitemapUrlFor(route) {
  * every page is not), no `hreflang` (English-only indexing is a ruling), no
  * `priority` or `changefreq` (ignored by Google and a claim either way).
  */
-function buildSitemap(routes = INDEX_LIST) {
-  const entries = routes.map(
+function buildSitemap() {
+  const entries = INDEX_LIST.map(
     (route) => `  <url>\n    <loc>${sitemapUrlFor(route)}</loc>\n  </url>`,
   );
   return [
@@ -126,9 +126,9 @@ function removeEmptyDirsUpTo(dir, root) {
  */
 function applyIndexList(distDir) {
   const root = path.resolve(distDir);
-  const keep = new Set(INDEX_LIST.map(exportedFileFor));
+  const listedFiles = new Set(INDEX_LIST.map(exportedFileFor));
 
-  const missing = [...keep, NOT_FOUND_EXPORT_FILE].filter(
+  const missing = [...listedFiles, NOT_FOUND_EXPORT_FILE].filter(
     (file) => !fs.existsSync(path.join(root, file)),
   );
   if (missing.length > 0) {
@@ -140,7 +140,7 @@ function applyIndexList(distDir) {
 
   const deleted = [];
   for (const rel of htmlFilesUnder(root)) {
-    if (keep.has(rel) || rel === NOT_FOUND_EXPORT_FILE) continue;
+    if (listedFiles.has(rel) || rel === NOT_FOUND_EXPORT_FILE) continue;
     const abs = path.join(root, rel);
     fs.rmSync(abs);
     removeEmptyDirsUpTo(path.dirname(abs), root);
@@ -151,7 +151,7 @@ function applyIndexList(distDir) {
   fs.writeFileSync(path.join(root, SITEMAP_FILE), buildSitemap());
 
   return {
-    kept: [...keep, NOT_FOUND_FILE],
+    kept: [...listedFiles, NOT_FOUND_FILE],
     deleted,
     sitemap: SITEMAP_FILE,
   };

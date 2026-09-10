@@ -32,7 +32,7 @@ const indexList = require("../scripts/lib/index-list") as {
   INDEX_LIST: readonly string[];
   NOT_FOUND_FILE: string;
   SITEMAP_FILE: string;
-  buildSitemap: (routes?: readonly string[]) => string;
+  buildSitemap: () => string;
   sitemapUrlFor: (route: string) => string;
 };
 

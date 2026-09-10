@@ -49,8 +49,8 @@ The portable contract is:
 
 - build the web app with `npm run export:web`
 - deploy `dist` to a static frontend host
-- require the frontend host to serve `index.html` for unknown navigation routes
-- let Expo Router handle unmatched paths with `app/+not-found.tsx`
+- require the frontend host to serve `404.html` (with a 404 status) for unknown navigation routes - it is the app shell
+- let Expo Router handle every such path at runtime: the real screen where one matches, `app/+not-found.tsx` where none does
 - keep app URLs in environment variables and Supabase dashboard configuration, not hard-coded into app flows
 
 ## Cloudflare Workers Deployment
@@ -292,7 +292,7 @@ Everything else answers **404** with `404.html`, which still loads the app:
 - a deliberately unknown route, such as `/missing-test` — 404 status, and the simple not-found screen with a home link renders
 - a gated deep link, such as `/modules/cbt` — 404 status, and the real screen renders after hydration (for a signed-out visitor, whatever the app shows a signed-out visitor there)
 
-`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the eight, and `/robots.txt` is Cloudflare's managed block followed by the repo's three lines.
+`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the eight, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
 
 The Google Play privacy policy URL should use the production domain:
 

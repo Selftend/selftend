@@ -26,8 +26,9 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # No rule for the HTML shell on purpose. /index.html is never served - it 307s
-# to / - and a rule on / would only cover the root, not the SPA fallback that
-# serves the same shell for every client route (/journal, /settings/..., ...).
+# to / - and a rule on / would only cover the root, not 404.html, which is
+# served (with a 404) for every client route off the index list (/journal,
+# /settings/..., ...; #2295).
 # All of those already come back as max-age=0, must-revalidate, which is what
 # the shell wants, so a partial rule here would only be misleading.
 

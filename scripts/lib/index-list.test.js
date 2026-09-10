@@ -27,6 +27,7 @@ const EXPORT_FIXTURE = {
   "security.html": "<html>security</html>",
   "account-deletion.html": "<html>account-deletion</html>",
   "+not-found.html": "<html>not found</html>",
+  "_sitemap.html": "<html>expo's dev sitemap route</html>",
   "sign-in.html": "<html>sign-in</html>",
   "(auth)/sign-in.html": "<html>sign-in</html>",
   "(app)/index.html": "<html>spinner</html>",
@@ -70,17 +71,10 @@ describe("scripts/lib/index-list", () => {
   });
 
   describe("the list", () => {
-    it("is the eight public routes, the root first", () => {
-      expect(INDEX_LIST).toEqual([
-        "/",
-        "/faq",
-        "/crisis",
-        "/privacy",
-        "/terms",
-        "/cookies",
-        "/security",
-        "/account-deletion",
-      ]);
+    // Membership is pinned to the route tree by test/index-list.test.ts, not
+    // repeated here as a literal.
+    it("puts the root first, so the sitemap leads with the landing page", () => {
+      expect(INDEX_LIST[0]).toBe("/");
     });
 
     it("maps each route to the file expo export writes for it", () => {
@@ -168,6 +162,7 @@ describe("scripts/lib/index-list", () => {
 
       expect(result.deleted.sort()).toEqual(
         [
+          "_sitemap.html",
           "sign-in.html",
           "(auth)/sign-in.html",
           "(app)/index.html",
