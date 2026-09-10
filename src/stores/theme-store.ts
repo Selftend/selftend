@@ -24,7 +24,7 @@ export function isThemePreference(value: unknown): value is ThemePreference {
  * The web-only synchronous seed, mirroring the one in style-store.ts — and the
  * reason the appearance axis does not flash on a cold web load.
  *
- * The first-paint script in public/index.html already paints the STORED
+ * The first-paint script in app/+html.tsx already paints the STORED
  * appearance. Without this seed the store still started at "system", so React's
  * first commit resolved to the DEVICE scheme and only flipped back once the
  * async read landed: stored → device → stored, a worse flash than the script

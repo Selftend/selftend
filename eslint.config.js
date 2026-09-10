@@ -296,6 +296,9 @@ module.exports = [
       ".expo/**",
       "dist/**",
       "dist-e2e/**",
+      // The e2e server writes a port-scoped export per non-default port (see
+      // scripts/e2e-web-server.js); .gitignore already ignores them.
+      "dist-e2e-*/**",
       "build/**",
       "build-artifacts/**",
       "web-build/**",

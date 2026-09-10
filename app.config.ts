@@ -231,7 +231,10 @@ const baseConfig: ExpoConfig = withDevelopmentCleartextTraffic({
   },
   web: {
     bundler: "metro",
-    output: "single",
+    // Every route is rendered in Node at export, one HTML file each, so the
+    // public pages carry their own head and body for crawlers and unfurlers
+    // (docs/indexability.md § 2, #2293). The document is app/+html.tsx.
+    output: "static",
     favicon: "./assets/favicon.png",
   },
   plugins: [

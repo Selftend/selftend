@@ -45,6 +45,13 @@ jest.mock("@/src/stores/theme-store", () => ({
   useThemeStore: jest.fn(),
 }));
 
+// The hydration face (#2293): `true` everywhere below unless a test says
+// otherwise, which is what the real hook returns outside a hydration.
+let mockHydrated = true;
+jest.mock("@/src/lib/use-is-hydrated", () => ({
+  useIsHydrated: () => mockHydrated,
+}));
+
 const mockNwSet = nwColorScheme.set as jest.Mock;
 const mockUseThemeStore = useThemeStore as unknown as jest.Mock;
 // react-native's useColorScheme is provided by jest-expo - mock it via spyOn
@@ -67,7 +74,45 @@ describe("useColorSchemeName - the reader", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockHydrate.mockResolvedValue(undefined);
+    mockHydrated = true;
     Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+  });
+
+  // The static export renders every page with the light scheme's tokens, and
+  // React leaves a mismatched attribute as the file had it - so the hydration
+  // render has to say light too, whatever the device and the stored choice say,
+  // or a dark device keeps the light inline tokens for good (#2293).
+  it("reports the exported scheme for the hydration render on web, whatever the device says", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    setupStore("dark");
+    mockUseColorScheme.mockReturnValue("dark");
+    mockHydrated = false;
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("light");
+  });
+
+  it("reports the real scheme once hydrated on web", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+    setupStore("dark");
+    mockUseColorScheme.mockReturnValue("light");
+    mockHydrated = true;
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("dark");
+  });
+
+  // Native never hydrates a file; the flag must not reach it.
+  it("ignores the hydration face on native", () => {
+    setupStore("dark");
+    mockUseColorScheme.mockReturnValue("light");
+    mockHydrated = false;
+
+    const { result } = renderHook(() => useColorSchemeName());
+
+    expect(result.current).toBe("dark");
   });
 
   it("returns the resolved scheme (explicit preference wins)", () => {

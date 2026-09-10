@@ -25,6 +25,8 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
  */
 export const INVISIBLE_HEADER_HEIGHT = 64;
 
+const LOGO = require("../../../assets/icon.png");
+
 interface InvisibleHeaderProps {
   /**
    * Opens the navigation panel. Omit when signed out — there is no nav, so
@@ -89,9 +91,16 @@ export function InvisibleHeader({ onMenuPress, homeHref }: InvisibleHeaderProps)
             hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             className="flex-row items-center gap-2 rounded-md p-1.5"
           >
+            {/* `defaultSource` is the same file on purpose (#2293): on web the
+                Image shows `source` only once the browser has loaded it, so
+                the static export - rendered in Node, where nothing loads -
+                wrote no logo into the file. The default is shown from the
+                first render, in Node and in the browser alike, so the mark is
+                in the HTML a crawler or a no-JavaScript visitor reads. */}
             <Image
               accessible={false}
-              source={require("../../../assets/icon.png")}
+              source={LOGO}
+              defaultSource={LOGO}
               resizeMode="contain"
               style={{ width: 28, height: 28, borderRadius: 6 }}
             />
