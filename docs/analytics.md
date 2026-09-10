@@ -8,6 +8,8 @@ The MVP does not include any analytics SDK, tracking service, or telemetry. This
 - Privacy policy: "We do not use advertising SDKs, analytics tracking services, behavioral profiling tools, or social media pixels."
 - Deployment docs, stack docs, and self-hosting docs all list analytics SDKs as not required for MVP.
 
+The instruments that read the public website - Google Search Console, Bing Webmaster Tools and the Ahrefs Site Audit ([indexability.md](indexability.md) § 9) - read it from outside, as a crawler or a visitor would: none adds a script, a cookie or an outbound request to the page, and a sitemap submitted to them is a file the site already serves. They change nothing above.
+
 The consent infrastructure is already built and waiting:
 
 - `src/stores/cookie-consent-store.ts` has an `analytics` toggle (default `false`).
