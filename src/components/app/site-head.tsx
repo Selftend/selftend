@@ -1,0 +1,54 @@
+import Head from "expo-router/head";
+import { Platform } from "react-native";
+import { useTranslation } from "react-i18next";
+
+import { SITE_ORIGIN } from "@/src/lib/site";
+
+/**
+ * The web document's site-wide `<head>` defaults, rendered once from the root
+ * layout (`docs/indexability.md` § 4.2, #2293).
+ *
+ * *Inherit only what names the site.* Everything here is true of every page:
+ * the `og:` type, site name, share image and locale, and the card type. What
+ * names a page - title, description, `og:title`, `og:description`, `og:url`,
+ * canonical - is each screen's own `<Head>`; Helmet dedupes by name and
+ * property, so a screen's tag replaces a default of the same name in the
+ * exported file and in the DOM.
+ *
+ * `<html lang>` has exactly one owner, and it is this component (§ 4.4): the
+ * exported file carries `en` (i18next's default in Node), and a visitor whose
+ * preference is Bulgarian gets `bg` after hydration. `app/+html.tsx` sets no
+ * `lang` for that reason.
+ *
+ * ⚠️ STOPGAP, removed on #2294: the landing's title and description double as
+ * the shared defaults so the other public files do not export headless. Once
+ * every public screen emits its own, this component carries no copy.
+ *
+ * The share image is the 512 px app icon - the only share-sized image the
+ * site serves - so the card is `summary`, not `summary_large_image`: a wide
+ * card would letterbox a square icon. `twitter:title`, `twitter:description`
+ * and `twitter:image` are gone: every unfurler falls back to `og:*`.
+ */
+export function SiteHead() {
+  const { t, i18n } = useTranslation("auth");
+
+  if (Platform.OS !== "web") {
+    return null;
+  }
+
+  return (
+    <Head>
+      <html lang={i18n.language} />
+      <title>{t("landingPage.metaTitle")}</title>
+      <meta name="description" content={t("landingPage.metaDescription")} />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="Selftend" />
+      <meta property="og:image" content={`${SITE_ORIGIN}/favicon-512.png`} />
+      <meta property="og:image:width" content="512" />
+      <meta property="og:image:height" content="512" />
+      <meta property="og:image:alt" content="The Selftend app icon" />
+      <meta property="og:locale" content="en_GB" />
+      <meta name="twitter:card" content="summary" />
+    </Head>
+  );
+}

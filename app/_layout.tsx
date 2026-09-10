@@ -26,6 +26,7 @@ import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
 import { FreshStartNotice } from "@/src/components/app/fresh-start-notice";
 import { KeyboardInsetPublisher } from "@/src/components/app/keyboard-inset-publisher";
+import { SiteHead } from "@/src/components/app/site-head";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
@@ -91,6 +92,9 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* The web document's site-wide head and the sole <html lang> owner;
+          each public screen's own <Head> overrides what names the page (#2293). */}
+      <SiteHead />
       <AppProviders>
         <ThemeProvider value={NAV_THEME[style][colorScheme]}>
           <View className="flex-1 bg-background" style={THEME_VARIABLES[style][colorScheme]}>

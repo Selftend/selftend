@@ -124,6 +124,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.10",
+    "@types/react-dom": "~19.2.0",
     "babel-preset-expo": "~57.0.3",
     "eslint": "^10.7.0",
     "eslint-config-expo": "~57.0.0",
