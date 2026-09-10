@@ -118,6 +118,21 @@ describe("the web first paint follows the selected palette", () => {
     expect(headers).not.toContain("script-src 'self' 'unsafe-inline'");
   });
 
+  // The static export writes a second inline script into every page - the
+  // one-line hydration flag - and the same CSP has to allow it, or production
+  // refuses it and the app mounts with createRoot instead of hydrateRoot:
+  // every prerendered page thrown away and rendered again from scratch, with
+  // no error anywhere (measured on #2293). Its text is expo-router's, not
+  // ours, so it is pinned here as the literal the exporter emits; a different
+  // literal after an expo-router upgrade fails this test rather than hydration.
+  it("also allows the static export's hydration flag, by hash", () => {
+    const hydrateFlag = "globalThis.__EXPO_ROUTER_HYDRATE__=true;";
+    const digest = createHash("sha256").update(hydrateFlag, "utf8").digest("base64");
+    const headers = readFileSync(join(ROOT, "public", "_headers"), "utf8");
+
+    expect(headers).toContain(`'sha256-${digest}'`);
+  });
+
   // "system" is the default preference, so the overwhelmingly common path is
   // the one with nothing stored on either key.
   it("falls back to the default palette and the device scheme", () => {

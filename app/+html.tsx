@@ -108,7 +108,16 @@ const ROOT_RESET_STYLE = `
 
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html>
+    // `prefix` declares the Open Graph RDFa vocabulary every exported page's
+    // `og:*` tags use (https://ogp.me/ - "og: https://ogp.me/ns#"). It is also
+    // load-bearing for `lang`: the exporter splices Helmet's `<html>` attributes
+    // in by string, matching the literal `<html ` WITH its trailing space, so an
+    // `<html>` with no attribute of its own never receives them and the root
+    // layout's `<html lang>` would silently never reach the file. (Expo's
+    // default document gets the space from a hardcoded `lang="en"` - and a
+    // duplicate `lang` attribute with it.)
+    // eslint-disable-next-line react/no-unknown-property -- RDFa's `prefix` is a real HTML attribute the rule's list lacks; React passes it through
+    <html prefix="og: https://ogp.me/ns#">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />

@@ -143,4 +143,6 @@ Expected MVP entities: user, profile, preferences, enabled modules, onboarding f
 
 The browser version is the same product, not a separate marketing site: Expo web build, static hosting, Supabase-backed auth and data.
 
+The web output mode is `static` (`web.output` in `app.config.ts`, since [#2293](https://github.com/Selftend/selftend/issues/2293)): `expo export` renders every route in Node, one HTML file per route, around the document in `app/+html.tsx`. The public routes - the landing page and the policy pages - are therefore prerendered: a crawler, a link unfurler or a visitor without JavaScript receives the page's own `<head>` and its full body, in English and on the default palette, and the app hydrates it into the live, language- and palette-aware tree on load. The signed-in tree is exported too but is only ever a loading state, since no session exists at export and no guest is minted there. What each file's `<head>` carries, and which files the deploy keeps, is specified in [indexability.md](indexability.md).
+
 MVP observability stays minimal and privacy-aware: structured app errors, auth/backend error logging, and build/deploy monitoring. Anything beyond that needs explicit review.

@@ -102,7 +102,7 @@ The three contact addresses are read by `/support`, `/security`, and — as of #
 
 Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds go through the same Edge Function, delivering to an Expo push token in `device_push_tokens` - nothing is scheduled locally on any platform.
 
-Because the app uses `web.output = "single"`, PWA head tags are added through `public/index.html`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
+The PWA head tags - the manifest link, the apple-touch icon, the theme colour - live in the web document, `app/+html.tsx`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
 
 Before production web push testing:
 
@@ -212,7 +212,12 @@ Local production smoke:
 npm run serve:web:production
 ```
 
-The web build uses `web.output = "single"` in [app.config.ts](../app.config.ts). Unknown routes should load `index.html`, then Expo Router handles the unmatched path at runtime with [app/+not-found.tsx](../app/+not-found.tsx). Do not add duplicate provider-specific 404 pages for this behavior.
+`npm run export:web` is the export the deploy runs (`.github/workflows/web-deploy.yml`, "GitHub Actions Web Deploy" above). The web build uses `web.output = "static"` in [app.config.ts](../app.config.ts) (since [#2293](https://github.com/Selftend/selftend/issues/2293)): `expo export` renders every route in Node and writes one HTML file per route - `dist/index.html`, `dist/faq.html`, `dist/crisis.html` and so on - around the document in [app/+html.tsx](../app/+html.tsx), which replaced `public/index.html`. Each public file carries the page's own `<head>` and full body, so it reads without JavaScript; the head each file carries is specified in [indexability.md](indexability.md) § 4.
+
+Two things to keep straight after that change:
+
+- The production CSP in [public/\_headers](../public/_headers) allows exactly two inline scripts, by hash: the first-paint palette script in `app/+html.tsx`, and the one-line hydration flag (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) the static export writes into every page. `test/theme-web-surfaces.test.ts` recomputes both - the first from the rendered document, the second from the literal expo-router emits - so editing the script, or an expo-router upgrade changing the flag, fails `verify` rather than silently blocking a script in production. Without the flag's hash the browser refuses it and the app mounts with `createRoot` instead of `hydrateRoot`: the prerendered page is thrown away and rendered again from scratch, with nothing in the console to say so (measured on [#2293](https://github.com/Selftend/selftend/issues/2293)).
+- Unknown routes still load `index.html` (the rendered landing page), then Expo Router handles the unmatched path at runtime with [app/+not-found.tsx](../app/+not-found.tsx). Do not add duplicate provider-specific 404 pages for this behavior. The move to real 404s (`not_found_handling = "404-page"`) is a later slice of the same spec (§ 6.4), not this one.
 
 ## Production Headers
 

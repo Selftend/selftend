@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 import { useDocumentThemeColor } from "@/src/lib/use-document-theme-color";
 
-// The first-paint script in public/index.html sets theme-color and the document
+// The first-paint script in app/+html.tsx sets theme-color and the document
 // background once, at load. Everything after it — picking another palette,
 // switching appearance, the OS flipping scheme under "system" — used to leave
 // the BROWSER chrome on the load-time colour until the next reload. These cover
