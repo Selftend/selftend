@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.0](https://github.com/Selftend/selftend/compare/v0.18.0...v0.19.0) (2026-09-10)
+
+
+### Features
+
+* **web:** every public route owns its head, and the document title follows the H1 everywhere ([#2294](https://github.com/Selftend/selftend/issues/2294)) ([#2300](https://github.com/Selftend/selftend/issues/2300)) ([60ad87d](https://github.com/Selftend/selftend/commit/60ad87d845801a7ae44f6b11552a625d766ba3bc))
+* **web:** the index list prunes the export, writes the sitemap, and every other path is a real 404 ([#2295](https://github.com/Selftend/selftend/issues/2295)) ([#2311](https://github.com/Selftend/selftend/issues/2311)) ([7c9fe06](https://github.com/Selftend/selftend/commit/7c9fe0628303dc9ee13afedb42b789baf2a13a02))
+* **web:** the landing page says who publishes it, in one structured-data block ([#2296](https://github.com/Selftend/selftend/issues/2296)) ([#2312](https://github.com/Selftend/selftend/issues/2312)) ([71ac85b](https://github.com/Selftend/selftend/commit/71ac85b3449a9564f5606e9e48b35853f23d04eb))
+* **web:** the static export, with the landing page complete ([#2293](https://github.com/Selftend/selftend/issues/2293)) ([#2299](https://github.com/Selftend/selftend/issues/2299)) ([1e438dc](https://github.com/Selftend/selftend/commit/1e438dc07cb93cdb61fa3d6874049d159acf782c))
+
 ## [0.18.0](https://github.com/Selftend/selftend/compare/v0.17.0...v0.18.0) (2026-09-09)
 
 
