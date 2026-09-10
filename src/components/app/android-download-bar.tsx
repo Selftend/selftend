@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
+import { useIsHydrated } from "@/src/lib/use-is-hydrated";
 
 // The Android mobile-web download bar (#388 spec section 4): shown only on
 // public/auth routes (the mount points choose that), only in an Android
@@ -40,8 +41,13 @@ export function AndroidDownloadBar() {
       return true;
     }
   });
+  // The static export renders the public routes in Node, where there is no
+  // user agent, so the file never carries the bar; the hydration render must
+  // not either, or React throws the prerendered page away (#2293). It appears
+  // on the render right after hydration, still decided once, by the same rule.
+  const hydrated = useIsHydrated();
 
-  if (!visible) return null;
+  if (!visible || !hydrated) return null;
 
   const dismiss = () => {
     setVisible(false);
