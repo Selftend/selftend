@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { DocumentTitle } from "@/src/components/app/document-title";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Text } from "@/src/components/react-native-reusables/text";
 
@@ -32,6 +33,9 @@ export default function NotFoundScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScreenTopBar />
+      {/* The one route-shaped file that is not a route: it is served for every
+          path off the index list, so it alone carries noindex (#2294). */}
+      <DocumentTitle page={t("notFound.title")} noindex />
       <View className="flex-1 items-center justify-center gap-4 p-6">
         <Text variant="h1">{t("notFound.title")}</Text>
       </View>

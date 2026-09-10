@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { DocumentTitle } from "@/src/components/app/document-title";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -60,6 +61,7 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
+        <DocumentTitle page={t("forgotPassword.title")} />
         <CardTitle aria-level={1}>{t("forgotPassword.title")}</CardTitle>
         <CardDescription>{t("forgotPassword.subtitle")}</CardDescription>
       </CardHeader>
