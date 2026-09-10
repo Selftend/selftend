@@ -142,6 +142,19 @@ jobs:
         run: |
           printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
 
+      - name: Strip the sitemap from staging
+        # The sitemap names production URLs (scripts/lib/index-list.js writes the
+        # apex origin, never the deploying host), so a staging copy would point a
+        # crawler at another host's pages. Delete it, and the robots.txt line that
+        # advertises it. No path is disallowed: a disallowed URL is never
+        # fetched, so the noindex header above would never be read
+        # (docs/indexability.md § 6.7). test/index-list.test.ts pins this step.
+        if: ${{ inputs.environment == 'staging' }}
+        run: |
+          rm dist/sitemap.xml
+          sed -i '/^Sitemap:/d' dist/robots.txt
+          cat dist/robots.txt
+
       # TRANSITION NOTE (until the prod cutover, control-tower#69): production
       # traffic is still served by Netlify until the owner binds selftend.org
       # to the Worker. A Release in that window updates ONLY the Worker (the

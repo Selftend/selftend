@@ -19,7 +19,7 @@
     "submit:android:closed": "npm exec eas-cli -- submit --platform android --profile closed",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "export:web": "npm exec expo -- export --platform web --clear",
+    "export:web": "npm exec expo -- export --platform web --clear && node scripts/apply-index-list.js dist",
     "serve:web:production": "npm exec expo -- serve",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
