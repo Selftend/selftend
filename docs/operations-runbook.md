@@ -194,6 +194,12 @@ retains the `code` branch, which is also still used by web Google OAuth).
   CAPTCHA deferral trigger has fired — see
   [Deferred Security Decisions](#deferred-security-decisions).
 
+## Recurring Checks
+
+Build-health readings that are nobody's marketing duty. Record the date checked on every line, even when nothing changed.
+
+- **Monthly, on the 9th - the Ahrefs Site Audit of `selftend.org`** (project 10345616; Execute JavaScript on; URL sources: the website plus the custom list of the eight public routes). It reads whether the site is still readable to a crawler: every page on the index list crawled with its own title and description, no duplicate group, no `www` twin, the `(auth)` routes answering 404. A regression here is a build defect and goes to a GitHub issue, never to the marketing plan - the plan reads Search Console's coverage once a year, on 2026-12-10, and nothing else ([marketing-plan.md](marketing-plan.md) § 7; decided on [#2289](https://github.com/Selftend/selftend/issues/2289)). The spec the audit is read against is [indexability.md](indexability.md). ⚠️ The audit runs on whichever Ahrefs plan is active; it needs no paid tier, and the Starter subscription is scheduled to end before 2026-10-10 ([costs.md](costs.md)).
+
 ## Privacy And GDPR Requests
 
 - Use `privacy@selftend.org` for access, export, correction, restriction, objection, deletion fallback, complaints, and transfer-safeguard requests.

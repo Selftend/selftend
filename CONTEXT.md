@@ -361,3 +361,15 @@ account is ever deleted. Cleanup removes exactly what self-service account delet
 nothing less. A device that returns after its account was cleaned up starts fresh with a calm,
 one-time notice — never silently (#1431).
 _Avoid_: purge, garbage collection, expiry
+
+### The public website ("readable")
+
+The vocabulary for the part of the site a search engine can read without signing in (map #2281).
+
+**Index list**:
+The one list of the public routes the website tells search engines about - the pages that exist as
+a page of their own, the pages the sitemap lists, and therefore the pages that can be indexed. Those
+three are one fact, never three: a route is on the index list or it is not, and there is no third
+state such as "published but hidden" (#2287, #2288). Adding a public page means adding it to the
+index list; nothing else makes a page findable, and nothing off the list is.
+_Avoid_: keep-list, allow-list, prune list (mechanism words, not the term); whitelist
