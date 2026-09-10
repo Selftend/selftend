@@ -201,7 +201,7 @@ Google OAuth uses that Supabase instance's provider callback, for example:
 https://<supabase-domain>/auth/v1/callback
 ```
 
-Build the web app with `npm run export:web` and serve locally with `npm run serve:web:production`. Deploy `dist` to any HTTPS static host that serves `index.html` for unknown routes.
+Build the web app with `npm run export:web` and serve locally with `npm run serve:web:production`. The export keeps only the public pages as HTML files, plus `404.html`; deploy `dist` to any HTTPS static host that answers unknown routes with `404.html` (a 404 status is fine and is what the maintainer's host does - the file is the app shell and hydrates into the real screen). `dist/sitemap.xml` and `dist/robots.txt` name `https://selftend.org`: a mirror should delete the sitemap and drop the `Sitemap:` line, as the maintainer's staging deploy does, rather than advertise another site's pages.
 
 The public Android closed-test build uses the maintainer backend. Self-hosters who want native apps must build their own binaries with their own public Supabase configuration and handle app identifiers, store accounts, redirects, support contacts, privacy policy, and deletion process.
 
