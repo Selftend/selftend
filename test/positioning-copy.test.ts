@@ -120,19 +120,21 @@ const USER_FACING: Scanned[] = [
     })),
   ),
   readFile("public/manifest.webmanifest"),
-  readFile("public/index.html"),
+  // `public/index.html` left this list on #2293: the web shell is now
+  // `app/+html.tsx`, which carries no copy - the landing's title and
+  // description moved into the `auth` namespace (`landingPage.metaTitle`,
+  // `landingPage.metaDescription`), where the i18n half above already reads them.
 ];
 
 /**
  * The i18n half of `USER_FACING`, on its own.
  *
  * ☠️ The house-style spelling rules (#1639) MUST run against this and not
- * against `USER_FACING`, because the two static files in that list are full of
- * CSS and manifest tokens that are correctly American and are not copy at all:
- * `theme_color` and `background_color` in `manifest.webmanifest`,
- * `prefers-color-scheme`, `theme-color` and `backgroundColor` in `index.html`.
- * A `colour` rule at `user-facing` scope goes red on all five on the day it
- * lands - the over-sweep failure that gets a guard deleted rather than fixed.
+ * against `USER_FACING`, because the static file in that list is full of
+ * manifest tokens that are correctly American and are not copy at all:
+ * `theme_color` and `background_color` in `manifest.webmanifest`. A `colour`
+ * rule at `user-facing` scope goes red on both on the day it lands - the
+ * over-sweep failure that gets a guard deleted rather than fixed.
  */
 const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.startsWith("i18n/"));
 
@@ -1639,12 +1641,15 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       }
     }
 
-    // The scoping, asserted from both sides: these WOULD be caught, and the
-    // only thing keeping them safe is that they are not in the corpus.
+    // The scoping, asserted from both sides. A hyphenated CSS token WOULD be
+    // caught, so the rule cannot run over a static file - and the one static
+    // file still in `USER_FACING` (the manifest, with its American
+    // `theme_color`) is genuinely outside the i18n half. The web shell's
+    // `prefers-color-scheme` left the corpus with `public/index.html` (#2293).
     const colour = HOUSE_STYLE_SPELLING.find((rule) => rule.name.startsWith("en: color"))!;
     expect(colour.pattern.test("prefers-color-scheme")).toBe(true);
-    expect(I18N_VALUES.some(({ text }) => /prefers-color-scheme/.test(text))).toBe(false);
-    expect(USER_FACING.some(({ text }) => /prefers-color-scheme/.test(text))).toBe(true);
+    expect(I18N_VALUES.some(({ text }) => /theme_color/.test(text))).toBe(false);
+    expect(USER_FACING.some(({ text }) => /theme_color/.test(text))).toBe(true);
 
     // Positive control: the British forms are genuinely present in shipped copy
     // and genuinely unmatched, so the rules are not passing over an empty set.
@@ -1841,20 +1846,10 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
     bg: /КПТ програма/i,
   };
 
-  const INDEX_HTML = readFile("public/index.html").text;
   const MANIFEST = JSON.parse(readFile("public/manifest.webmanifest").text) as Record<
     string,
     string
   >;
-
-  /** One `<meta>`'s content, whether it is written on one line or on four. */
-  function metaContent(named: string): string {
-    const hit = new RegExp(`<meta\\s+(?:name|property)="${named}"\\s+content="([^"]*)"`).exec(
-      INDEX_HTML,
-    );
-    if (!hit) throw new Error(`public/index.html has no <meta> named "${named}"`);
-    return hit[1];
-  }
 
   /** One i18n value by `namespace:dotted.key`, from the same corpus the bans use. */
   function i18nValue(locale: Locale, id: string): string {
@@ -1866,22 +1861,27 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
   /**
    * The uncapped, repo-shipped surfaces `docs/positioning.md` says carry the
    * frame sentence. Each is addressed as the FIELD it is, never as "somewhere
-   * in the file": `index.html` carries the sentence in three separate metas,
-   * and a whole-file scan would stay green with two of them hollowed out.
+   * in the file", so a hollowed-out field cannot hide behind a sibling.
+   *
+   * `landingPage.metaDescription` is the web `<meta name="description">`,
+   * `og:description` and the landing's canonical description in one key
+   * (#2293): before the static export it was three literals in
+   * `public/index.html`, read here as three fields. `landingPage.metaTitle`
+   * is NOT here - it is the short form, which has no method in it by design
+   * (the capped-fields exclusion below), and the bans scan it as an i18n value.
    */
   const FRAME_CARRIERS: { id: string; locale: Locale; text: string }[] = [
     ...(["en", "bg"] as const).flatMap((locale) =>
-      ["auth:landing.subtitle", "auth:landingPage.heroSupport"].map((key) => ({
+      [
+        "auth:landing.subtitle",
+        "auth:landingPage.heroSupport",
+        "auth:landingPage.metaDescription",
+      ].map((key) => ({
         id: `i18n/${locale} ${key}`,
         locale,
         text: i18nValue(locale, key),
       })),
     ),
-    ...["description", "og:description", "twitter:description"].map((named) => ({
-      id: `public/index.html <meta ${named}>`,
-      locale: "en" as Locale,
-      text: metaContent(named),
-    })),
     {
       id: "public/manifest.webmanifest description",
       locale: "en" as Locale,

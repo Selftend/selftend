@@ -45,8 +45,11 @@ const REPO = path.join(__dirname, "..");
 
 // ---------------------------------------------------------------------------
 // The population: every route file under app/. Layouts are configuration, not
-// screens. `+not-found` IS a route here — it renders UI and must carry chrome
-// like any other screen (G4: it was converted, the assertion did not widen).
+// screens, and so is `+html` — the web document the static export wraps every
+// route in (#2293); expo-router never registers it as a route and it renders
+// `<html>`, not a screen. `+not-found` IS a route here — it renders UI and must
+// carry chrome like any other screen (G4: it was converted, the assertion did
+// not widen).
 //
 // `sourceFiles` admits `.ts` as well as `.tsx` — deliberately: a bare
 // re-export needs no JSX, so a future `.ts` route file would otherwise never
@@ -57,7 +60,7 @@ const REPO = path.join(__dirname, "..");
 // ---------------------------------------------------------------------------
 
 const ROUTES = sourceFiles(REPO, { dirs: ["app"], excludeTests: false })
-  .filter((file) => !/\/_layout\.tsx?$/.test(file))
+  .filter((file) => !/\/(_layout|\+html)\.tsx?$/.test(file))
   .sort();
 
 /** `app/(app)/tools/journal/index.tsx` → `/tools/journal`, the runtime pathname. */

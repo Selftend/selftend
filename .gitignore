@@ -75,3 +75,6 @@ store.config.json
 # the prompts and the manifest, never the audio. Only the finished .m4a clips
 # under assets/sounds/ are ever committed. See scripts/audio/README.md.
 audio-masters/
+
+# wrangler dev state (local Worker runs against dist/; docs/deployment.md "Web Build")
+.wrangler/

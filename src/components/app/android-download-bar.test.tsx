@@ -15,6 +15,13 @@ function fakeNavigator(value: { userAgentData?: { platform?: string }; userAgent
   Object.defineProperty(global, "navigator", { value, configurable: true, writable: true });
 }
 
+// The hydration face (#2293): `true` everywhere below unless a test says
+// otherwise, which is what the real hook returns outside a hydration.
+let mockHydrated = true;
+jest.mock("@/src/lib/use-is-hydrated", () => ({
+  useIsHydrated: () => mockHydrated,
+}));
+
 // jest-expo is the native platform and has no DOM storage: pin web and shim
 // localStorage with an in-memory map for the persistence assertions.
 let platformSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
@@ -59,6 +66,20 @@ describe("AndroidDownloadBar", () => {
     fakeNavigator({ userAgentData: { platform: "Android" } });
     renderWithProviders(<AndroidDownloadBar />);
     expect(await screen.findByText("Selftend is on Google Play.")).toBeTruthy();
+  });
+
+  // The static export's file never carries the bar (Node has no user agent),
+  // so the render React hydrates against that file must not either - or the
+  // whole prerendered page is thrown away for an Android visitor (#2293).
+  it("stays out of the hydration render, even for an Android browser", () => {
+    fakeNavigator({ userAgentData: { platform: "Android" } });
+    mockHydrated = false;
+    try {
+      renderWithProviders(<AndroidDownloadBar />);
+      expect(screen.queryByText("Selftend is on Google Play.")).toBeNull();
+    } finally {
+      mockHydrated = true;
+    }
   });
 
   it("falls back to the UA string when userAgentData is absent", async () => {

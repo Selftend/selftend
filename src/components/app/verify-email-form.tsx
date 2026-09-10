@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { DocumentTitle } from "@/src/components/app/document-title";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { resendVerificationEmail } from "@/src/features/auth/api";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
@@ -100,6 +101,7 @@ export function VerifyEmailForm() {
   return (
     <Card>
       <CardHeader>
+        <DocumentTitle page={t("verifyEmail.title")} />
         <CardTitle aria-level={1}>{t("verifyEmail.title")}</CardTitle>
         <CardDescription>
           {t("verifyEmail.subtitle", { email: email ?? "your email" })}

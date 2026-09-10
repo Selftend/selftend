@@ -1,9 +1,15 @@
+# script-src allows exactly two inline scripts, by hash (test/theme-web-surfaces.test.ts
+# recomputes both): the first-paint palette script in app/+html.tsx, and the one-line
+# hydration flag `globalThis.__EXPO_ROUTER_HYDRATE__=true;` that the static export
+# writes into every page (#2293). Without the second hash the browser refuses the flag,
+# the app mounts with createRoot instead of hydrateRoot, and every prerendered page is
+# thrown away and rendered again from scratch - silently, with no error in the console.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-cp6uvOq7d5oXEI6cYviENOOu6LvvSgkGYbIK4vHOhiE='; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://accounts.google.com; img-src 'self' data: https://*.supabase.co https://*.googleusercontent.com; font-src 'self'; frame-src https://accounts.google.com https://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-cp6uvOq7d5oXEI6cYviENOOu6LvvSgkGYbIK4vHOhiE=' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://accounts.google.com; img-src 'self' data: https://*.supabase.co https://*.googleusercontent.com; font-src 'self'; frame-src https://accounts.google.com https://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
 # Content-hashed build output. Expo's web export fingerprints these filenames
@@ -20,8 +26,9 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # No rule for the HTML shell on purpose. /index.html is never served - it 307s
-# to / - and a rule on / would only cover the root, not the SPA fallback that
-# serves the same shell for every client route (/journal, /settings/..., ...).
+# to / - and a rule on / would only cover the root, not 404.html, which is
+# served (with a 404) for every client route off the index list (/journal,
+# /settings/..., ...; #2295).
 # All of those already come back as max-age=0, must-revalidate, which is what
 # the shell wants, so a partial rule here would only be misleading.
 

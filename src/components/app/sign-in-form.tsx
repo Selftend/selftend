@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { DocumentTitle } from "@/src/components/app/document-title";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -166,6 +167,7 @@ export function SignInForm() {
   return (
     <Card>
       <CardHeader>
+        <DocumentTitle page={t("signIn.title")} />
         <CardTitle aria-level={1}>{t("signIn.title")}</CardTitle>
         <CardDescription>{t("signIn.subtitle")}</CardDescription>
       </CardHeader>

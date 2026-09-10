@@ -13,6 +13,16 @@ export default function IndexScreen() {
   const { session, status } = useSession();
 
   if (status === "loading") {
+    // Web: the exported `/` file IS the landing page - the session seeds
+    // "ready" at export (#2293) - so the hydration render has to be the landing
+    // too. A spinner here would mismatch the file's body, and React would throw
+    // the server-rendered page away and re-render it from scratch. A signed-in
+    // visitor sees the landing for the instant the stored session takes to
+    // resolve, then the redirect below; that instant used to show the spinner.
+    if (Platform.OS === "web") {
+      return <LandingScreen />;
+    }
+
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">

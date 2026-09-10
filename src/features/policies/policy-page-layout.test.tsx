@@ -40,7 +40,11 @@ describe("PolicyPageLayout", () => {
    */
   it("carries an Escape on a one-crumb policy route (#1250)", () => {
     renderWithProviders(
-      <PolicyPageLayout subtitle="If you need help now." title="Crisis support" />,
+      <PolicyPageLayout
+        description="If you need help now."
+        subtitle="If you need help now."
+        title="Crisis support"
+      />,
     );
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
@@ -62,6 +66,7 @@ describe("PolicyPageLayout", () => {
   it("renders a multi-part subtitle as one run of text", () => {
     renderWithProviders(
       <PolicyPageLayout
+        description="How we handle your data."
         subtitle={
           <>
             {"How we handle your data."}
@@ -96,7 +101,13 @@ describe("PolicyPageLayout", () => {
    * `contentContainerStyle` instead and this query would return undefined.
    */
   it("puts the shared 672px column on the padded scroll box", () => {
-    renderWithProviders(<PolicyPageLayout subtitle="How we handle your data." title="Privacy" />);
+    renderWithProviders(
+      <PolicyPageLayout
+        description="How we handle your data."
+        subtitle="How we handle your data."
+        title="Privacy"
+      />,
+    );
 
     const tokens = String(
       screen.UNSAFE_getByType(ScrollView).props.contentContainerClassName,

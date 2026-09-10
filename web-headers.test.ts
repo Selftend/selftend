@@ -82,9 +82,10 @@ describe("public/_headers caching", () => {
   });
 
   it("leaves the HTML shell to revalidate by default on every route", () => {
-    // A rule on "/" would cover only the root, never the SPA fallback that
-    // serves the same shell for /journal, /settings/..., and friends - so
-    // pinning one here would be misleading rather than useful.
+    // A rule on "/" would cover only the root, never 404.html, which is served
+    // (with a 404) for /journal, /settings/..., and every other path off the
+    // index list (#2295) - so pinning one here would be misleading rather
+    // than useful.
     for (const path of ["/", "/journal", "/settings/about"]) {
       expect(headerFor(path, "cache-control")).toBeUndefined();
     }
