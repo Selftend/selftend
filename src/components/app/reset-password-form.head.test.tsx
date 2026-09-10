@@ -1,7 +1,6 @@
-import { screen } from "@testing-library/react-native";
-
 import { ResetPasswordForm } from "./reset-password-form";
 import i18n from "@/src/i18n";
+import { h1Text, hasH1 } from "@/test/h1";
 import { reset, tags } from "@/test/head-capture";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -55,7 +54,7 @@ describe("ResetPasswordForm - the document title follows the H1's state (#2294)"
 
     renderWithProviders(<ResetPasswordForm />);
 
-    const h1 = screen.getByRole("heading", { level: 1 }).props.children as string;
+    const h1 = h1Text();
     expect(h1).toBe("Reset your password");
     expect(documentTitle()).toBe(`${h1} - Selftend`);
   });
@@ -65,7 +64,7 @@ describe("ResetPasswordForm - the document title follows the H1's state (#2294)"
 
     renderWithProviders(<ResetPasswordForm />);
 
-    const h1 = screen.getByRole("heading", { level: 1 }).props.children as string;
+    const h1 = h1Text();
     expect(h1).toBe("Link invalid or expired");
     expect(documentTitle()).toBe(`${h1} - Selftend`);
   });
@@ -75,7 +74,7 @@ describe("ResetPasswordForm - the document title follows the H1's state (#2294)"
 
     renderWithProviders(<ResetPasswordForm />);
 
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(hasH1()).toBe(false);
     expect(documentTitle()).toBeUndefined();
   });
 });

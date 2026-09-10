@@ -1,7 +1,6 @@
-import { screen } from "@testing-library/react-native";
-
 import NotFoundScreen from "@/src/components/app/not-found-screen";
 import enNavigation from "@/src/i18n/locales/en/navigation.json";
+import { h1Text } from "@/test/h1";
 import { meta, reset, tags } from "@/test/head-capture";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -35,7 +34,7 @@ describe("the not-found screen's head (#2294)", () => {
   it("titles the document from its H1 and carries noindex", () => {
     renderWithProviders(<NotFoundScreen />);
 
-    const h1 = screen.getByRole("heading", { level: 1 }).props.children as string;
+    const h1 = h1Text();
     expect(h1).toBe(enNavigation.notFound.title);
     expect(tags().filter(({ type }) => type === "title")).toEqual([
       { type: "title", props: { children: `${h1} - Selftend` } },

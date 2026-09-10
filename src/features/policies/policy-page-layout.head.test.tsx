@@ -5,6 +5,8 @@ import i18n from "@/src/i18n";
 import bgCommon from "@/src/i18n/locales/bg/common.json";
 import bgPolicies from "@/src/i18n/locales/bg/policies.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
+import enSecurity from "@/src/i18n/locales/en/security.json";
+import { h1Text } from "@/test/h1";
 import { meta, reset, tags } from "@/test/head-capture";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -28,10 +30,9 @@ jest.mock("expo-router", () => ({
 const TEMPLATE = /^(.+) - Selftend$/;
 
 /** What the page shows as its H1 and its subline, read from the tree. */
-function rendered(title: string, subline: string) {
-  const heading = screen.getByRole("heading", { level: 1, name: title });
+function pageShows(subline: string) {
   const muted = screen.getByText(subline);
-  return { h1: heading.props.children as string, subline: muted.props.children as string };
+  return { h1: h1Text(), subline: muted.props.children as string };
 }
 
 beforeEach(() => {
@@ -56,7 +57,7 @@ describe("PolicyPageLayout - document title = on-page H1 (#2294)", () => {
       />,
     );
 
-    const page = rendered(pageTitle, pageDescription);
+    const page = pageShows(pageDescription);
     const documentTitle = tags().find(({ type }) => type === "title")?.props.children as string;
 
     expect(documentTitle).toMatch(TEMPLATE);
@@ -88,7 +89,7 @@ describe("PolicyPageLayout - document title = on-page H1 (#2294)", () => {
       />,
     );
 
-    const page = rendered(pageTitle, pageDescription);
+    const page = pageShows(pageDescription);
     const documentTitle = tags().find(({ type }) => type === "title")?.props.children as string;
 
     expect(page.h1).toBe("Кризисно ръководство");
@@ -101,17 +102,19 @@ describe("PolicyPageLayout - document title = on-page H1 (#2294)", () => {
   // subline. Pinned as the literals so a reworded key fails somewhere a
   // reviewer reads rather than silently changing a search result.
   it("the seven routes' titles and sublines are the spec's table, verbatim", () => {
-    expect(
-      (["faq", "crisis", "privacy", "terms", "cookies", "accountDeletion"] as const).map(
+    expect([
+      ...(["faq", "crisis", "privacy", "terms", "cookies", "accountDeletion"] as const).map(
         (route) => `${enPolicies[route].pageTitle} - Selftend`,
       ),
-    ).toEqual([
+      `${enSecurity.page.pageTitle} - Selftend`,
+    ]).toEqual([
       "Common questions - Selftend",
       "Crisis guidance - Selftend",
       "Privacy policy - Selftend",
       "Terms of service - Selftend",
       "Cookie policy - Selftend",
       "Account deletion - Selftend",
+      "How we protect your data - Selftend",
     ]);
     expect(enPolicies.crisis.pageDescription).toBe(
       "This app is not emergency support and is not monitored. If you are in danger, contact local emergency services.",
