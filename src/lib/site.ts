@@ -11,6 +11,22 @@
 export const SITE_ORIGIN = "https://selftend.org";
 
 /**
+ * The site's name as the head states it - `og:site_name` and the
+ * `Organization` and `WebSite` nodes of the structured data read this one
+ * value (`docs/indexability.md` § 4.2, § 5), so the block cannot name a site
+ * the page does not.
+ */
+export const SITE_NAME = "Selftend";
+
+/**
+ * The share image: the 512 px app icon, the only share-sized image the site
+ * serves. `og:image` in the site head and `Organization.logo` in the
+ * structured data are this one URL (§ 4.2, § 5); 512 px clears Google's
+ * 112 px floor for a logo.
+ */
+export const SHARE_IMAGE_URL = `${SITE_ORIGIN}/favicon-512.png`;
+
+/**
  * The canonical URL of a route path.
  *
  * The root carries its slash - an origin's root path is always `/`, and the

@@ -2,7 +2,7 @@ import Head from "expo-router/head";
 import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { SITE_ORIGIN } from "@/src/lib/site";
+import { SHARE_IMAGE_URL, SITE_NAME } from "@/src/lib/site";
 
 /**
  * The web document's site-wide `<head>` defaults, rendered once from the root
@@ -27,8 +27,11 @@ import { SITE_ORIGIN } from "@/src/lib/site";
  *
  * The share image is the 512 px app icon - the only share-sized image the
  * site serves - so the card is `summary`, not `summary_large_image`: a wide
- * card would letterbox a square icon. `twitter:title`, `twitter:description`
- * and `twitter:image` are gone: every unfurler falls back to `og:*`.
+ * card would letterbox a square icon. The image URL and the site name are
+ * `site.ts` constants shared with the landing's structured data (§ 5), so
+ * `Organization.logo` is `og:image` by construction. `twitter:title`,
+ * `twitter:description` and `twitter:image` are gone: every unfurler falls
+ * back to `og:*`.
  */
 export function SiteHead() {
   const { t, i18n } = useTranslation("auth");
@@ -41,8 +44,8 @@ export function SiteHead() {
     <Head>
       <html lang={i18n.language} />
       <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="Selftend" />
-      <meta property="og:image" content={`${SITE_ORIGIN}/favicon-512.png`} />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:image" content={SHARE_IMAGE_URL} />
       <meta property="og:image:width" content="512" />
       <meta property="og:image:height" content="512" />
       <meta property="og:image:alt" content={t("landingPage.shareImageAlt")} />
