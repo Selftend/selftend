@@ -28,9 +28,13 @@ import { renderWithProviders } from "@/test/render-with-providers";
  * as 6 of 6 - tested below in that exact shape.
  */
 
+// Mutable so the edit path can be reached: this screen is both "new" and
+// "edit", told apart only by the `recordId` param.
+let mockSearchParams: { recordId?: string } = {};
+
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), canGoBack: jest.fn(() => false), push: jest.fn(), replace: jest.fn() },
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => mockSearchParams,
   usePathname: () => "/modules/cbt/new",
 }));
 
@@ -79,6 +83,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  mockSearchParams = {};
   // Settle the persisted store's rehydration once so the boot gate opens
   // immediately, then start every test from a clean draft.
   await act(async () => {
@@ -173,6 +178,13 @@ describe("the two checkbox lists", () => {
     }
   });
 
+  /**
+   * ☠️ The patterns half used to read the checkbox back (`toBeChecked()`) after
+   * the press. It cannot any more and the assertion is REPLACED, not weakened:
+   * that row is unmounted by the fold the same press causes (#2350), so the
+   * choice is read where it now lives - the summary - and the rail's count
+   * proves the FIELD took it either way. The feelings half is untouched.
+   */
   it("☠️ toggles from the row itself in BOTH lists - the label is no longer the whole target", async () => {
     await renderColumn();
 
@@ -180,9 +192,194 @@ describe("the two checkbox lists", () => {
     expect(screen.getByRole("checkbox", { name: "Anxious" })).toBeChecked();
 
     fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
-    expect(screen.getByRole("checkbox", { name: "Catastrophising" })).toBeChecked();
+    expect(
+      within(screen.getByTestId("patterns-summary")).getByText("Catastrophising"),
+    ).toBeTruthy();
 
     expect(screen.getByText("2 of 6 parts filled in")).toBeTruthy();
+  });
+});
+
+/**
+ * The patterns fold (#2350), and the gate underneath it: an answer may never
+ * leave the screen; unchosen options may, but only once the person has answered.
+ *
+ * ☠️ The fold UNMOUNTS the rows - `Disclosure` is unanimated and drops its
+ * children by written ruling (#716) - so "the selection survives it" is asserted
+ * rather than assumed. An unmount that dropped the value would look exactly like
+ * a working fold right up to the save, which is why the save is asserted too.
+ */
+describe("the patterns fold", () => {
+  const SECOND_PATTERN = "Mind reading";
+  const CATASTROPHISING_DESCRIPTION = i18n.t("cbt:distortions.catastrophizing.shortDescription");
+
+  it("folds nothing before a first tick, and offers no control that would", async () => {
+    await renderColumn();
+
+    for (const distortion of distortionDefinitions) {
+      expect(screen.getByTestId(`pattern-row-${distortion.key}`)).toBeTruthy();
+    }
+    // Structural, not a habit: with nothing chosen there is no disclosure in
+    // the tree at all, so no press can take the seventeen away from someone who
+    // has answered nothing.
+    expect(screen.queryByTestId("patterns-show-all")).toBeNull();
+    expect(screen.queryByTestId("patterns-summary")).toBeNull();
+  });
+
+  it("folds the other sixteen away on the first tick, stating the choice as a chip", async () => {
+    await renderColumn();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+
+    // The sixteen are gone - and so is the row that was ticked. What stays is
+    // the answer.
+    expect(screen.queryByTestId("pattern-row-mind-reading")).toBeNull();
+    expect(screen.queryByTestId("pattern-row-catastrophizing")).toBeNull();
+
+    const summary = within(screen.getByTestId("patterns-summary"));
+    expect(summary.getByText("Catastrophising")).toBeTruthy();
+    // At exactly one choice, the pattern's meaning comes with it.
+    expect(summary.getByText(CATASTROPHISING_DESCRIPTION)).toBeTruthy();
+    expect(screen.getByTestId("patterns-show-all")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ "No count" asserted as NO DIGITS in the summary rather than as the
+   * absence of the literal "1 of 17". A literal goes vacuously green the moment
+   * the copy is reworded, and the ruling is not about one phrasing: a summary
+   * that scores the person for how much of a list they ticked is the thing
+   * refused (#2333).
+   */
+  it("carries no count", async () => {
+    await renderColumn();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+
+    expect(within(screen.getByTestId("patterns-summary")).queryByText(/\d/)).toBeNull();
+  });
+
+  it("☠️ reopens the full list without losing the selection, and saves it", async () => {
+    await renderColumn();
+    await addThought("I will fail");
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+    fireEvent.press(screen.getByTestId("patterns-show-all"));
+
+    // All seventeen are back, with the tick still on.
+    for (const distortion of distortionDefinitions) {
+      expect(screen.getByTestId(`pattern-row-${distortion.key}`)).toBeTruthy();
+    }
+    expect(screen.getByRole("checkbox", { name: "Catastrophising" })).toBeChecked();
+
+    // And the value the unmount could have dropped is the value that saves.
+    await act(async () => {
+      fireEvent.press(screen.getByText("Save record"));
+    });
+    await waitFor(() => expect(mockMutateAsync).toHaveBeenCalled());
+    expect(mockMutateAsync.mock.calls[0][0].input.distortions).toEqual(["catastrophizing"]);
+  });
+
+  it("drops the description once a second pattern is chosen", async () => {
+    await renderColumn();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+    // Reopening is sticky - a list someone opened to pick a second pattern must
+    // not slam shut under the tick that picks it.
+    fireEvent.press(screen.getByTestId("patterns-show-all"));
+    fireEvent.press(screen.getByTestId("pattern-row-mind-reading"));
+    expect(screen.getByTestId("pattern-row-catastrophizing")).toBeTruthy();
+
+    // Folded again by hand: both names stay, the description goes.
+    fireEvent.press(screen.getByTestId("patterns-show-all"));
+    const summary = within(screen.getByTestId("patterns-summary"));
+    expect(summary.getByText("Catastrophising")).toBeTruthy();
+    expect(summary.getByText(SECOND_PATTERN)).toBeTruthy();
+    expect(summary.queryByText(CATASTROPHISING_DESCRIPTION)).toBeNull();
+  });
+
+  it("opens again when the last pattern is unticked", async () => {
+    await renderColumn();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+    fireEvent.press(screen.getByTestId("patterns-show-all"));
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+
+    expect(screen.queryByTestId("patterns-summary")).toBeNull();
+    expect(screen.queryByTestId("patterns-show-all")).toBeNull();
+    expect(screen.getByTestId("pattern-row-mind-reading")).toBeTruthy();
+  });
+
+  /**
+   * ☠️☠️ The gate is about the state of the ANSWER, not the recency of the tap -
+   * so a restored draft arrives folded, and so does an edit. The edit case is
+   * the one a `useState` initialiser cannot pass: the record is fetched and then
+   * `reset` into the form from an effect, which lands AFTER this block's first
+   * render, so a fold decided at mount would read an empty field and leave the
+   * wall open on every record anyone ever edits.
+   */
+  it("arrives folded on a restored draft that already holds patterns", async () => {
+    useCbtDraftStore.getState().setValues({ ...defaultValues, distortions: ["catastrophizing"] });
+
+    await renderColumn();
+
+    expect(
+      within(screen.getByTestId("patterns-summary")).getByText("Catastrophising"),
+    ).toBeTruthy();
+    expect(screen.queryByTestId("pattern-row-mind-reading")).toBeNull();
+  });
+
+  it("arrives folded on an edited record, whose values land after the first render", async () => {
+    mockSearchParams = { recordId: "record-1" };
+    mockUseThoughtRecord.mockReturnValue({
+      data: {
+        id: "record-1",
+        situation: "a tense meeting",
+        nats: [{ text: "I will fail", beliefRating: 70, isHotThought: true }],
+        emotions: ["anxious"],
+        emotionIntensityBefore: 60,
+        emotionIntensityAfter: 30,
+        distortions: ["catastrophizing"],
+        evidenceFor: [],
+        evidenceAgainst: [],
+        balancedThought: "",
+        beliefAfter: 40,
+        outcomeNotes: "",
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useThoughtRecord>);
+
+    await renderColumn();
+
+    expect(
+      within(screen.getByTestId("patterns-summary")).getByText("Catastrophising"),
+    ).toBeTruthy();
+    expect(screen.queryByTestId("pattern-row-mind-reading")).toBeNull();
+  });
+
+  it("arrives open on an edited record with no patterns chosen", async () => {
+    mockSearchParams = { recordId: "record-1" };
+    mockUseThoughtRecord.mockReturnValue({
+      data: {
+        id: "record-1",
+        situation: "a tense meeting",
+        nats: [{ text: "I will fail", beliefRating: 70, isHotThought: true }],
+        emotions: ["anxious"],
+        emotionIntensityBefore: 60,
+        emotionIntensityAfter: 30,
+        distortions: [],
+        evidenceFor: [],
+        evidenceAgainst: [],
+        balancedThought: "",
+        beliefAfter: 40,
+        outcomeNotes: "",
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useThoughtRecord>);
+
+    await renderColumn();
+
+    expect(screen.getByTestId("pattern-row-mind-reading")).toBeTruthy();
+    expect(screen.queryByTestId("patterns-summary")).toBeNull();
   });
 });
 
