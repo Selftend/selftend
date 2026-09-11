@@ -1,6 +1,6 @@
 # Measurement spec — how Selftend counts visitors and arrivals
 
-**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** The one schema change is now built ([#2323](https://github.com/Selftend/selftend/issues/2323), § 4 and § 10 items 1–3); the link-tagging scheme is still specified and waiting (§ 5, § 10 item 4); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
+**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** The one schema change is now built ([#2323](https://github.com/Selftend/selftend/issues/2323), § 4 and § 10 items 1–3), and so is the link-tagging scheme on Selftend's own surfaces ([#2324](https://github.com/Selftend/selftend/issues/2324), § 5 and § 10 item 4 — the hand-written links are still a human's job); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
 
 **Audience:** Developers and product contributors; the owner for the store-console and Cloudflare dashboard reads in § 6.
 
@@ -177,7 +177,7 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 ☠️☠️ **Play's UTM parameters ride URL-encoded inside `referrer=`, not as top-level query params.** A hand-written `?utm_source=…` on a Play link registers **nothing**, silently.
 
-☠️☠️ **The in-app update offer is never tagged.** `appEnv.playStoreUrl` / `appStoreUrl` feed four consumers, and `use-update-availability` opens the store _from inside the installed app_ — a tag on those constants would inject every updating user into the very dimension the scheme exists to read. **Bare constants stay bare**; a separate tagged constant serves the three web-facing surfaces.
+☠️☠️ **The in-app update offer is never tagged.** `appEnv.playStoreUrl` / `appStoreUrl` feed four consumers, and `use-update-availability` opens the store _from inside the installed app_ — a tag on those constants would inject every updating user into the very dimension the scheme exists to read. **Bare constants stay bare**; a separate tagged constant serves the web-facing surfaces. ⚠️ **This section said _three_ of those until [#2324](https://github.com/Selftend/selftend/issues/2324) built it and found four** — see the vocabulary below.
 
 ☠️ **Why in-URL tagging is the only mechanism that can work:** every web store link opens through `openExternalUrl` with `noopener,noreferrer`, so the site's own posture already destroyed the referrer signal.
 
@@ -187,13 +187,30 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The source names live in `src/lib/store-links.ts` as `STORE_LINK_SOURCES`, which is the canonical list; this table is the reader's copy.
 
-| Source             | Surface                                                                    |
-| ------------------ | -------------------------------------------------------------------------- |
-| `web-download-bar` | The Android-browser download bar on the public web app                     |
-| `web-get-the-app`  | The "Get the app" section (user menu popover, and anywhere else it mounts) |
-| `app-support`      | The Support screen's two store rows                                        |
+| Source             | Surface                                                 | Live? |
+| ------------------ | ------------------------------------------------------- | ----- |
+| `web-download-bar` | The Android-browser download bar on the public web app  | ✅    |
+| `web-get-the-app`  | The "Get the app" section on the sign-in landing screen | ✅    |
+| `app-user-menu`    | The "Get the app" section in the signed-in user menu    | ✅    |
+| `app-support`      | The Support screen's two store rows                     | ✅    |
+| `github-readme`    | The repository README's store links                     | ❌    |
+| `r-selftend`       | The project's own subreddit                             | ❌    |
+| `r-bulgaria`       | Other subreddits, one source per community              | ❌    |
+| `youtube`          | The YouTube channel's links                             | ❌    |
+| `alternativeto`    | The AlternativeTo listing                               | ❌    |
 
-⚠️ **`app-support` names itself rather than a marketing surface on purpose.** It fires for someone _already using the web app_, so a marketing-style name would let existing users read as fresh acquisitions. Named this way the number stays legible — "existing web users who installed native" — instead of polluting the channel vocabulary (owner ruling, 2026-09-11).
+☠️ **The ❌ rows are a reserved vocabulary, not a description of live links.** They come from [#2305](https://github.com/Selftend/selftend/issues/2305) and are applied when a human next edits that surface; none is tagged yet. They are also **not** in `STORE_LINK_SOURCES`, so no test checks their shape — that part is a reviewer's job.
+
+☠️ **A `web-` prefix means a visitor with no account can reach the surface; an `app-` prefix means it only ever fires for somebody already using Selftend on the web.** `app-support` and `app-user-menu` are named for themselves rather than for a marketing surface on purpose: a marketing-style name would let existing users read as fresh acquisitions. Named that way the number stays legible — "existing web users who installed native" — instead of polluting the channel vocabulary (owner ruling, 2026-09-11).
+
+⚠️ **The ruling is about audience, not about one file, and that is why there are four in-app sources rather than three.** `GetTheAppSection` mounts twice — on the sign-in landing, reached by a visitor with no account, and in the signed-in user menu, which only ever renders for somebody who already has one. It shipped with one `web-` name across both and was split on [#2324](https://github.com/Selftend/selftend/issues/2324); the component now takes its source as a **required prop**, so a third mount point has to decide rather than inherit.
+
+**The hand-written form**, for pasting somewhere this repo does not control:
+
+- Play — `https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend&referrer=utm_source%3D<source>`, and with a campaign, `referrer=utm_source%3D<source>%26utm_campaign%3D<source>-<start-month>`.
+- Apple — `https://apps.apple.com/app/selftend/id6796318929?ct=<campaign or source>`.
+
+⚠️ **Open question, to settle at the first store read after this ships:** App Store Connect's own generated campaign links also carry a `pt` provider token, minted console-side when a campaign is created. Whether a `ct` on its own attributes is not checkable from this repo. If the ASC Campaigns tab stays empty while Play's UTM source rows fill, `pt` is the first suspect — **not** a reason to add a token before that evidence exists.
 
 ⚠️ **The bare constants necessarily carry a query parameter, and that is not a tag.** `appEnv.playStoreUrl` is `…/details?id=<package>`; the package id is what makes it a link at all. What must never appear on the bare constants is a **tagging** parameter — `referrer`, `utm_*`, `ct` — which is what `src/lib/store-links.test.ts` pins.
 
@@ -283,7 +300,7 @@ Ready for `/to-tickets`. Items 1–3 are one coherent change; 4 and 5 are indepe
 1. **Migration** — add `account_origin` with its `CHECK` and a `comment on column` explaining the gate-order constraint; redeclare `export_user_data()` from the newest declaration with the column in the `preferences` list.
 2. **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ **This item predicted a `PREFERENCE_COLUMNS` entry, and that part of it is wrong.** The guard is a conditional `update(...).is("account_origin", null)`, atomic where a read-then-write would race; a patch-map entry would exist only to let `updateUserPreferences` overwrite a value that must never change. The write plumbing the item is really asking for is the third argument to `recordAgeAttestation`.
 3. **Tests** — the § 4 derivation table, the converted-guest case, and whatever the export-completeness suite demands.
-4. **The tagged store constant** — a separate constant carrying § 5's `utm_source` / `ct`, wired to the three web-facing surfaces only, with a test pinning that `appEnv.playStoreUrl` and `appStoreUrl` stay bare.
+4. ✅ **The tagged store constant** — built on [#2324](https://github.com/Selftend/selftend/issues/2324). `src/lib/store-links.ts` carries § 5's `utm_source` / `ct` separately from `appEnv.playStoreUrl` / `appStoreUrl`, and the bare constants stay bare with two guards keeping them that way. ⚠️ **It wired four surfaces, not three** — the Get-the-app section has two mount points with different audiences. The hand-written links in § 5's vocabulary are still a human's job.
 5. **Harden the CSP test** (§ 9) to an exact `script-src` token-set allowlist, with a comment naming the beacon incident as the reason.
 6. **Documentation** — `CONTEXT.md` § _Accounts_ gains the **account origin** glossary entry; an ADR records the beacon incident and its lesson.
 
