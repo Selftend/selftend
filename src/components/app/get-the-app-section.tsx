@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { STORE_LINK_SOURCES, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type StoreId = "android" | "ios";
@@ -26,8 +26,11 @@ type GetTheAppSectionProps = {
 
 export function GetTheAppSection({
   compact = false,
-  playStoreUrl = appEnv.playStoreUrl,
-  appStoreUrl = appEnv.appStoreUrl,
+  // Tagged, so the stores can report that this section is what sent someone
+  // (#2324). The bare constants stay bare for the in-app update path; see
+  // `store-links.ts`.
+  playStoreUrl = taggedPlayStoreUrl(STORE_LINK_SOURCES.getTheApp),
+  appStoreUrl = taggedAppStoreUrl(STORE_LINK_SOURCES.getTheApp),
 }: GetTheAppSectionProps) {
   const { t } = useTranslation("navigation");
   const iconColor = useColorSchemeName() === "dark" ? "#fafafa" : "#0a0a0a";

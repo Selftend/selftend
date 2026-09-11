@@ -183,6 +183,20 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 ⚠️ **Tagging does not convert a standing surface into a pursued one**, and the control is written down: **a tagged standing surface's number is read, never used to keep or cut it.**
 
+### The minted vocabulary
+
+Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The source names live in `src/lib/store-links.ts` as `STORE_LINK_SOURCES`, which is the canonical list; this table is the reader's copy.
+
+| Source             | Surface                                                                    |
+| ------------------ | -------------------------------------------------------------------------- |
+| `web-download-bar` | The Android-browser download bar on the public web app                     |
+| `web-get-the-app`  | The "Get the app" section (user menu popover, and anywhere else it mounts) |
+| `app-support`      | The Support screen's two store rows                                        |
+
+⚠️ **`app-support` names itself rather than a marketing surface on purpose.** It fires for someone _already using the web app_, so a marketing-style name would let existing users read as fresh acquisitions. Named this way the number stays legible — "existing web users who installed native" — instead of polluting the channel vocabulary (owner ruling, 2026-09-11).
+
+⚠️ **The bare constants necessarily carry a query parameter, and that is not a tag.** `appEnv.playStoreUrl` is `…/details?id=<package>`; the package id is what makes it a link at all. What must never appear on the bare constants is a **tagging** parameter — `referrer`, `utm_*`, `ct` — which is what `src/lib/store-links.test.ts` pins.
+
 ---
 
 ## 6. The reading cadence
