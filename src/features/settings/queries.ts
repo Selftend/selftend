@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { type AccountOrigin } from "@/src/features/auth/account-origin";
 import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import {
   deleteUserAccount,
@@ -105,6 +106,18 @@ export function useRecordPolicyConsent(userId: string | null) {
 }
 
 /**
+ * What one passing attestation carries: the country it was judged against, and
+ * the door this account was minted by (#2323). One object rather than two
+ * positional arguments, because a mutation takes one variable - and because the
+ * two travel together by design: the gate that can answer the first is the only
+ * gate that can answer the second (`docs/measurement.md` §4).
+ */
+interface AgeAttestation {
+  country: string;
+  accountOrigin: AccountOrigin;
+}
+
+/**
  * Persist a passing age attestation and let the gate fall away (#1764).
  *
  * The invalidate is what actually dismisses the gate: `ProtectedLayout` reads
@@ -117,7 +130,8 @@ export function useRecordAgeAttestation(userId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (country: string) => recordAgeAttestation(userId!, country),
+    mutationFn: ({ country, accountOrigin }: AgeAttestation) =>
+      recordAgeAttestation(userId!, country, accountOrigin),
     meta: { suppressGlobalErrorToast: true }, // the gate shows its own error
     onSuccess: async () => {
       if (!userId) {

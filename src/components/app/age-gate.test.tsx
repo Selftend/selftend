@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
-import { KeyboardAvoidingView, ScrollView } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 
 import { AgeGate } from "./age-gate";
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
@@ -9,9 +9,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 const mockMutateAsync = jest.fn();
 let mockIsError = false;
 let mockIsPending = false;
+// A guest by default - no email - because that is the primary way into the app.
+let mockUser: { id: string; email?: string } = { id: "user-1" };
 
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ user: { id: "user-1" } }),
+  useSession: () => ({ user: mockUser }),
 }));
 
 jest.mock("@/src/features/settings/queries", () => ({
@@ -39,6 +41,7 @@ beforeEach(() => {
   mockMutateAsync.mockReset().mockResolvedValue(undefined);
   mockIsError = false;
   mockIsPending = false;
+  mockUser = { id: "user-1" };
 });
 
 afterEach(() => {
@@ -95,7 +98,10 @@ describe("AgeGate", () => {
     // The mutation's whole argument list. If a date of birth ever reaches it,
     // this is where that shows up.
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
-    expect(mockMutateAsync).toHaveBeenCalledWith("DE");
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      country: "DE",
+      accountOrigin: "native_cold_start",
+    });
     expect(onAttested).toHaveBeenCalled();
   });
 
@@ -139,7 +145,7 @@ describe("AgeGate", () => {
     chooseCountry("Bulgaria", "BG");
     await submit();
 
-    expect(mockMutateAsync).toHaveBeenCalledWith("BG");
+    expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ country: "BG" }));
     expect(onUnderFloor).not.toHaveBeenCalled();
   });
 
@@ -203,6 +209,63 @@ describe("AgeGate", () => {
     renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
 
     expect(screen.getByText(enAuth.ageGate.error)).toBeTruthy();
+  });
+});
+
+/**
+ * The account-origin stamp (#2323, `docs/measurement.md` §4).
+ *
+ * `account-origin.test.ts` proves the derivation; what these pin is that THIS
+ * gate is where it is read, and that it reads the signed-in user rather than
+ * anything else. The gate matters because it is the earliest one: the
+ * derivation is sound only before a conversion can have happened.
+ */
+describe("AgeGate account origin", () => {
+  let platformSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
+
+  afterEach(() => {
+    platformSpy?.restore();
+    platformSpy = undefined;
+  });
+
+  async function attestFrom(os: typeof Platform.OS, user: { id: string; email?: string }) {
+    platformSpy = jest.replaceProperty(Platform, "OS", os);
+    mockUser = user;
+    renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+    fillDate("3", "9", "1990");
+    chooseCountry("Germany", "DE");
+    await submit();
+
+    return mockMutateAsync.mock.calls[0][0].accountOrigin;
+  }
+
+  const GUEST = { id: "user-1" };
+  const REGISTERED = { id: "user-1", email: "someone@example.com" };
+
+  // Two cases, not four: the table itself belongs to `account-origin.test.ts`,
+  // and repeating it here would pin the same rule twice while proving nothing
+  // extra about the gate. These two flip BOTH inputs, which is what shows the
+  // gate reads the live platform and the signed-in user rather than a constant.
+  it("sends web_cta for a guest who arrived on the web", async () => {
+    expect(await attestFrom("web", GUEST)).toBe("web_cta");
+  });
+
+  it("sends native_signup for a registered account in a native build", async () => {
+    expect(await attestFrom("android", REGISTERED)).toBe("native_signup");
+  });
+
+  it("sends no origin at all when the verdict fails", async () => {
+    // ☠️ The same rule as every other write here: an under-floor answer
+    // persists nothing, because the account is about to be deleted (#1765).
+    platformSpy = jest.replaceProperty(Platform, "OS", "web");
+    renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+    fillDate("3", "9", "2012"); // 14 today, against Germany's floor of 16
+    chooseCountry("Germany", "DE");
+    await submit();
+
+    expect(mockMutateAsync).not.toHaveBeenCalled();
   });
 });
 

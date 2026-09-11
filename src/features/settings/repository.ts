@@ -1,4 +1,5 @@
 import { resolveAmbientSoundId, resolveBreathSoundId } from "@/src/constants/breathing-sounds";
+import { type AccountOrigin } from "@/src/features/auth/account-origin";
 import {
   defaultUserPreferences,
   sanitizeEnabledModules,
@@ -8,6 +9,7 @@ import {
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface UserPreferenceRow {
@@ -616,8 +618,18 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
  * against is about to be deleted (#1765).
  *
  * ⚠️ The date of birth is not a parameter and must not become one.
+ *
+ * `accountOrigin` rides along because this is the earliest gate and therefore
+ * the only place the derivation is sound (#2323, `docs/measurement.md` §4). It
+ * is a required parameter rather than an optional one so that a second call
+ * site has to think about it rather than inherit a default; `stampAccountOrigin`
+ * below is where the write-once rule lives.
  */
-export async function recordAgeAttestation(userId: string, country: string) {
+export async function recordAgeAttestation(
+  userId: string,
+  country: string,
+  accountOrigin: AccountOrigin,
+) {
   const client = requireSupabase();
   const { error } = await client.from("user_preferences").upsert(
     {
@@ -633,6 +645,68 @@ export async function recordAgeAttestation(userId: string, country: string) {
 
   if (error) {
     throw error;
+  }
+
+  // AFTER the upsert, never in it, and the order is structural rather than
+  // stylistic: the upsert is what guarantees the row exists, and the stamp is a
+  // conditional UPDATE that would match nothing without it. Putting
+  // `account_origin` into the upsert payload instead would overwrite the value
+  // on every later gate pass, which is the one thing it must never do.
+  await stampAccountOrigin(client, userId, accountOrigin);
+}
+
+/**
+ * Write `account_origin` if and only if it is still null (#2323).
+ *
+ * ☠️ **The guard is the `is("account_origin", null)` filter, not a read
+ * beforehand.** A select-then-write would be a lost-update race, and - worse -
+ * at the first gate there may be no row to read yet. One conditional UPDATE
+ * decides it in the database: the first gate stamps, every later one matches
+ * zero rows. That is what makes the value "fixed at creation and never changed
+ * afterwards, including by conversion" (`CONTEXT.md` §Accounts) rather than
+ * merely usually right.
+ *
+ * ☠️ **Non-fatal, deliberately.** A failure here must not fail the attestation:
+ * `account_origin` is a measurement column whose only consumer is a human
+ * running a query, and the caller's resolved promise means "this person cleared
+ * their age floor" - a marketing number is not allowed to keep someone out of
+ * the app, and on an environment whose schema predates this column PostgREST's
+ * missing-column error would do exactly that.
+ *
+ * ☠️ **Non-fatal, but not silent, and the difference matters.** The column is
+ * never backfilled, so a failure here costs that account permanently - and a
+ * swallowed one would be indistinguishable from the `null` of an account minted
+ * before the column existed. An RLS regression could then erase every new
+ * account from the count while every screen still looked healthy. Reported, so
+ * the null bucket cannot quietly absorb a bug; `isReportableError` keeps the
+ * ordinary offline case out of Sentry.
+ *
+ * ⚠️ Both failure shapes need handling, because PostgREST uses both: a rejected
+ * write comes back in the resolved `error`, while a transport failure throws.
+ */
+async function stampAccountOrigin(
+  client: ReturnType<typeof requireSupabase>,
+  userId: string,
+  accountOrigin: AccountOrigin,
+) {
+  try {
+    const { error } = await client
+      .from("user_preferences")
+      .update({ account_origin: accountOrigin })
+      .eq("user_id", userId)
+      .is("account_origin", null);
+
+    if (error) {
+      reportStampFailure(error);
+    }
+  } catch (error) {
+    reportStampFailure(error);
+  }
+}
+
+function reportStampFailure(error: unknown) {
+  if (isReportableError(error)) {
+    captureError(error, { operation: "stampAccountOrigin" });
   }
 }
 

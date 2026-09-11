@@ -1,6 +1,6 @@
 # Measurement spec — how Selftend counts visitors and arrivals
 
-**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** One schema change and one link-tagging scheme are specified and waiting for `/to-tickets` (§ 10); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
+**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** The one schema change is now built ([#2323](https://github.com/Selftend/selftend/issues/2323), § 4 and § 10 items 1–3); the link-tagging scheme is still specified and waiting (§ 5, § 10 item 4); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
 
 **Audience:** Developers and product contributors; the owner for the store-console and Cloudflare dashboard reads in § 6.
 
@@ -135,7 +135,7 @@ Map ruling 7, confirmed by [#2309](https://github.com/Selftend/selftend/issues/2
 
 ## 4. The schema change — `account_origin`
 
-One new column makes § 2.1's split computable ([#2306](https://github.com/Selftend/selftend/issues/2306)).
+One new column makes § 2.1's split computable ([#2306](https://github.com/Selftend/selftend/issues/2306)). **Built** in [#2323](https://github.com/Selftend/selftend/issues/2323) — `supabase/migrations/20260914000000_account_origin.sql` and `src/features/auth/account-origin.ts`; this section is the spec it was built from and still describes it.
 
 ```sql
 alter table public.user_preferences
@@ -267,7 +267,7 @@ Neither number is invented: the **5** is § 3's own detection target, and the **
 Ready for `/to-tickets`. Items 1–3 are one coherent change; 4 and 5 are independent of it and of each other.
 
 1. **Migration** — add `account_origin` with its `CHECK` and a `comment on column` explaining the gate-order constraint; redeclare `export_user_data()` from the newest declaration with the column in the `preferences` list.
-2. **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ It is **client-written**, so it needs a `PREFERENCE_COLUMNS` entry and the write plumbing even though no UI reads it.
+2. **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ **This item predicted a `PREFERENCE_COLUMNS` entry, and that part of it is wrong.** The guard is a conditional `update(...).is("account_origin", null)`, atomic where a read-then-write would race; a patch-map entry would exist only to let `updateUserPreferences` overwrite a value that must never change. The write plumbing the item is really asking for is the third argument to `recordAgeAttestation`.
 3. **Tests** — the § 4 derivation table, the converted-guest case, and whatever the export-completeness suite demands.
 4. **The tagged store constant** — a separate constant carrying § 5's `utm_source` / `ct`, wired to the three web-facing surfaces only, with a test pinning that `appEnv.playStoreUrl` and `appStoreUrl` stay bare.
 5. **Harden the CSP test** (§ 9) to an exact `script-src` token-set allowlist, with a comment naming the beacon incident as the reason.
