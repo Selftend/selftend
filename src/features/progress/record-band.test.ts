@@ -31,24 +31,41 @@ describe("buildRecordBand states", () => {
   });
 
   /**
-   * ☠️ The gate is SPAN, not count. #1836 anchors the axis at the first record,
-   * so a record that is only hours old gives a zero-width axis with nothing to
-   * draw on it - and "nothing here yet" would be a lie about the person's own
-   * record, which is why the single-day state has a string of its own.
+   * ☠️ The gate is SPAN, and the span is zero exactly (#2344). Span 0 means
+   * first = last = today, because `lastKey` is `max(today, latest record day)` -
+   * so the single-day line means precisely "everything you have is today", and
+   * nothing else. Any day the person recorded on before today draws a band,
+   * even an 8px one, because a mark that exists must never be invisible.
    *
-   * These two cases are the mutation guard: the case with FEWER days draws the
-   * band and the case with MORE days does not, so a gate that counted marks
-   * would have to invert to pass both.
+   * These cases are the mutation guard, and no one wrong gate passes them all:
+   * a gate that counted marks fails the yesterday-only case (ONE day, drawn),
+   * and the `span < 2` gate this replaced fails the yesterday-and-today case
+   * (TWO days, drawn). Only the record that is today alone stays a sentence.
    */
   it("draws the band from one record two days back", () => {
     expect(band(["2026-09-02"]).kind).toBe("band");
   });
 
-  it("stays a single day for two days of records ending today", () => {
-    expect(band(["2026-09-03", "2026-09-04"]).kind).toBe("singleDay");
+  it("draws an 8px band from one record made yesterday and nothing since", () => {
+    const result = expectBand(band(["2026-09-03"]));
+
+    // Two days of axis, one mark: 5px of pitch and a 3px mark. An 8px band is a
+    // legitimate render - the alternative is a mark the person cannot see.
+    expect(result.totalDays).toBe(2);
+    expect(result.marks).toEqual([{ key: "2026-09-03", index: 0 }]);
   });
 
-  it("stays a single day when the only record is today", () => {
+  it("draws the band for two days of records ending today", () => {
+    const result = expectBand(band(["2026-09-03", "2026-09-04"]));
+
+    expect(result.totalDays).toBe(2);
+    expect(result.marks).toEqual([
+      { key: "2026-09-03", index: 0 },
+      { key: "2026-09-04", index: 1 },
+    ]);
+  });
+
+  it("stays a single day only when the whole record is today", () => {
     expect(band(["2026-09-04"]).kind).toBe("singleDay");
   });
 });

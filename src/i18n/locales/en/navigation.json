@@ -331,7 +331,7 @@
     "timelineTitle": "Your days",
     "timelineDescription": "One mark for each day with a record.",
     "timelineEmpty": "Days you record anything will appear here.",
-    "timelineSingleDay": "Your record starts here.",
+    "timelineSingleDay": "Today is on your record.",
     "timelineError": "Your days could not be loaded just now.",
     "timelineA11y": "Record timeline, {{from}} to {{to}}.",
     "reflectionTitle": "Reflection prompt",
