@@ -79,6 +79,42 @@ describe("tagged store links", () => {
 
     expect(new Set(values).size).toBe(values.length);
   });
+
+  // The third vocabulary rule - "names the surface, not the platform" - and it
+  // IS mechanically checkable, which I had wrongly written off as a reviewer's
+  // job only (thanks to the parallel #2324 build on PR #2339 for the idea).
+  // One string has to serve Play's `utm_source` and Apple's `ct`, so a source
+  // naming either store would be wrong on the other one by construction.
+  const PLATFORM_WORDS = [
+    "play",
+    "googleplay",
+    "google",
+    "ios",
+    "android",
+    "apple",
+    "appstore",
+    "itunes",
+    "iphone",
+    "ipad",
+  ];
+
+  function platformWordsIn(source: string): string[] {
+    return source.split("-").filter((segment) => PLATFORM_WORDS.includes(segment));
+  }
+
+  it("names the surface, never the platform", () => {
+    for (const source of Object.values(STORE_LINK_SOURCES)) {
+      expect({ source, platformWords: platformWordsIn(source) }).toEqual({
+        source,
+        platformWords: [],
+      });
+    }
+  });
+
+  it("would catch a platform-named source", () => {
+    expect(platformWordsIn("google-play-badge")).toEqual(["google", "play"]);
+    expect(platformWordsIn("ios-footer")).toEqual(["ios"]);
+  });
 });
 
 // `use-update-availability` opens the store from inside the installed app. If

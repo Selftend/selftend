@@ -201,7 +201,9 @@ Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The in-app s
 
 **The rules a new value has to meet:** lowercase-hyphenated, ≤ 30 characters, and it names the surface rather than the platform.
 
-⚠️ **Only the first two are pinned by a test, and only for the in-app sources.** `src/lib/store-links.test.ts` asserts shape and length against `STORE_LINK_SOURCES`, which is the four ✅ rows — the hand-written values are not in it, so nothing checks them. **"Names the surface rather than the platform" is asserted by nothing at all** and is not mechanically assertable; it is a reviewer's job. Said plainly here because this document's own § 9 is the story of a guard everyone assumed was tested.
+⚠️ **All three are pinned by a test, but only for the in-app sources.** `src/lib/store-links.test.ts` asserts shape, length, and — by rejecting any `-`-separated segment that names a store — the surface-not-platform rule, against `STORE_LINK_SOURCES`, which is the four ✅ rows. **The hand-written values are not in that constant, so nothing checks them**; they are a reviewer's job. Said plainly here because this document's own § 9 is the story of a guard everyone assumed was tested.
+
+☠️ **The platform rule looked like a matter of taste and is not.** One string has to serve both Play's `utm_source` and Apple's `ct`, so a source naming either store is wrong on the other by construction — which is what makes it checkable at all.
 
 ☠️ **A `web-` prefix means a visitor with no account can reach that surface; an `app-` prefix means it only ever fires for somebody already using Selftend on the web.** `app-support` and `app-user-menu` are named that way deliberately (owner ruling, 2026-09-11): those installs are _existing web users who installed native_, and a marketing-style name would let them read as fresh acquisitions. ⚠️ **The Get-the-app section has two mount points with different audiences**, which is why it takes its source as a prop rather than owning one.
 
