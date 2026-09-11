@@ -1,8 +1,44 @@
+import type { Locator } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 
 import { deleteAllThoughtRecordsForUser } from "./helpers";
 
 const THOUGHT_DRAFT_KEY = "selftend:wizard-draft:cbt-thought-record";
+
+/**
+ * How far a block's top sits from the top of whatever is scrolling it, in CSS
+ * px, unsigned - so a block scrolled off the top ABOVE the viewport cannot pass
+ * a "close to the top" assertion the way a one-sided bound would let it.
+ *
+ * Measured against the scroll container rather than the window because that is
+ * what the person sees scroll: the form's rail is pinned outside the scroll view
+ * (`MobileFormScreen`), so the window never moves at all.
+ *
+ * ⚠️ A flake here means finding the cause, never widening the bound. The
+ * position is deliberate - `scrollNodeToTop` asks for `block: "start"` - so
+ * anything but zero-ish is a real change in where people land.
+ */
+async function distanceFromScrollTop(locator: Locator): Promise<number | null> {
+  return locator.evaluate((element) => {
+    let parent = element.parentElement;
+    while (parent) {
+      const { overflowY } = getComputedStyle(parent);
+      if (
+        (overflowY === "auto" || overflowY === "scroll") &&
+        parent.scrollHeight > parent.clientHeight
+      ) {
+        return Math.abs(
+          Math.round(element.getBoundingClientRect().top - parent.getBoundingClientRect().top),
+        );
+      }
+      parent = parent.parentElement;
+    }
+    // Null rather than a number: "no scroll container found" must fail the
+    // assertion, not sail through it as a zero.
+    return null;
+  });
+}
 
 test.describe("create thought record", () => {
   test.beforeEach(async ({ user }) => {
@@ -70,6 +106,23 @@ test.describe("create thought record", () => {
 
     // Patterns sit BEFORE evidence in the column.
     await page.getByRole("checkbox", { name: "Catastrophising", exact: true }).click();
+
+    // ☠️ That tick FOLDS the other sixteen away (#2350). `Disclosure` is
+    // unanimated and unmounts its children, so ~1,200px leaves in one frame
+    // while the viewport is inside the region that goes - and where the person
+    // lands is an acceptance criterion rather than wherever the scroll offset
+    // clamps to. The block itself goes to the top of the scroll container, so
+    // what they see next is their answer and then the field they are owed.
+    await expect(page.getByRole("checkbox", { name: "Mind reading", exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("patterns-summary")).toBeVisible();
+    await expect
+      .poll(() => distanceFromScrollTop(page.getByTestId("patterns-block")), {
+        message:
+          "the patterns block must land at the top of its scroll container after the fold; " +
+          "null means no scrolling ancestor was found, which is a broken measurement rather " +
+          "than a moved block",
+      })
+      .toBeLessThanOrEqual(1);
 
     // Evidence prompts must render real copy, not raw keys.
     await expect(page.getByText("Is this a fact or an opinion?")).toBeVisible();

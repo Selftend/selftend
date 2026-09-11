@@ -1059,6 +1059,7 @@
     "intensityBeforeHint": "Optional. 0 means no intensity; 100 means as strong as it gets.",
     "patternsLabel": "Thinking patterns",
     "patternsChooseHint": "Optional: choose the thinking patterns that seem closest. You can pick more than one, or skip this step.",
+    "patternsShowAll": "All patterns",
     "evidenceFor": "Evidence for",
     "evidenceForLabel": "Evidence supporting the thought",
     "evidenceForHint": "Optional. Add one fact per line.",
