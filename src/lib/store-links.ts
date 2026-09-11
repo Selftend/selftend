@@ -28,12 +28,17 @@ import { appEnv } from "@/src/lib/env";
  * platform**, and at most {@link STORE_LINK_SOURCE_MAX_LENGTH} characters so one
  * string serves both Play's `utm_source` and Apple's `ct`.
  *
- * ⚠️ `app-support` is named for itself rather than for a marketing surface on
- * purpose. It fires for someone *already using the web app*, so a
- * marketing-style name would let existing users read as fresh acquisitions.
- * Named this way the number stays legible - "existing web users who installed
- * native" - instead of polluting the channel vocabulary (owner ruling,
- * 2026-09-11).
+ * ☠️ **A `web-` prefix means a visitor with no account can reach the surface; an
+ * `app-` prefix means it only ever fires for somebody already using Selftend on
+ * the web.** `app-support` and `app-user-menu` are named for themselves rather
+ * than for a marketing surface on purpose: a marketing-style name would let
+ * existing users read as fresh acquisitions. Named this way the number stays
+ * legible - "existing web users who installed native" - instead of polluting
+ * the channel vocabulary (owner ruling, 2026-09-11).
+ *
+ * ⚠️ **The ruling is about audience, not about one file.** Ask which prefix a
+ * new surface takes before asking what to call it; the test cannot check that
+ * for you, and a wrong prefix is invisible in the console.
  *
  * Adding one: keep the same shape, and prefer a name that says which surface a
  * reader of the console is looking at.
@@ -41,8 +46,19 @@ import { appEnv } from "@/src/lib/env";
 export const STORE_LINK_SOURCES = {
   /** The Android-browser download bar on the public web app. */
   downloadBar: "web-download-bar",
-  /** The "Get the app" section (user menu popover, and anywhere else it mounts). */
+  /** The "Get the app" section on the sign-in landing screen. */
   getTheApp: "web-get-the-app",
+  /**
+   * The "Get the app" section in the signed-in user menu.
+   *
+   * ☠️ **The same component, a different audience, and that is why it needs its
+   * own source.** `GetTheAppSection` mounts twice: on the sign-in landing,
+   * reached by a visitor with no account, and here, which only ever renders for
+   * somebody already using Selftend on the web. One `web-` name across both
+   * would put existing users into the visitor number - the failure the ruling
+   * below names, applied to a second surface (#2324).
+   */
+  userMenu: "app-user-menu",
   /** The Support screen's store rows - internal by name, see above. */
   support: "app-support",
 } as const;
