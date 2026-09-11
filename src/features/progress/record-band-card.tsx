@@ -156,9 +156,10 @@ function RecordBandStrip({
   label: string;
 }) {
   const scrollRef = useRef<ScrollView>(null);
-  // A ref, not state: the viewport width is read by an imperative call and
-  // nothing renders from it, so measuring must not cost a second pass.
+  // Refs, not state: both are read by an imperative call and nothing renders
+  // from either, so measuring must not cost a second pass.
   const viewportWidthRef = useRef(0);
+  const placedForRef = useRef<number | null>(null);
 
   const axisWidth = (band.totalDays - 1) * DAY_PITCH + MARK_WIDTH;
   // Room for the final month label to finish, and no more: it is left-aligned on
@@ -174,15 +175,14 @@ function RecordBandStrip({
   const lastMarkRight = band.marks[band.marks.length - 1].index * DAY_PITCH + MARK_WIDTH;
 
   /*
-   * Both handlers call this because their order is not guaranteed and either
-   * one alone is half the input: content size without a viewport cannot place
-   * anything, and a viewport measured before the content lands would scroll an
-   * axis that is not there yet. The clamp at zero is what puts an early mark at
-   * the LEFT edge rather than scrolling the strip backwards past its own start.
+   * The clamp at zero is what puts an early mark at the LEFT edge rather than
+   * scrolling the strip backwards past its own start - which is what makes the
+   * 8px band, and every axis narrower than the card, open where the eye is.
    */
-  function openOnLastMark() {
+  function placeLastMark() {
     const viewportWidth = viewportWidthRef.current;
     if (viewportWidth <= 0) return;
+    placedForRef.current = lastMarkRight;
     scrollRef.current?.scrollTo({ x: Math.max(0, lastMarkRight - viewportWidth), animated: false });
   }
 
@@ -204,12 +204,25 @@ function RecordBandStrip({
         testID="record-band-scroll"
         horizontal
         showsHorizontalScrollIndicator={false}
-        // Opens on the last mark; the rest of the axis is reached by scrolling.
+        /*
+         * Both events place the strip, because neither alone is enough and
+         * their order is not guaranteed: content size without a measured
+         * viewport cannot place anything, and a viewport measured before the
+         * content lands scrolls an axis that is not there yet - so the content
+         * signal has to be able to correct it afterwards.
+         *
+         * ☠️ But layout places only the FIRST time for a given last mark. A
+         * re-layout - rotation, the keyboard, a breakpoint change - is not an
+         * opening, and re-running the placement there would yank a reader who
+         * had scrolled back into their own history to the right-hand edge. The
+         * opening position is opinionated; where the person has scrolled to
+         * since is theirs.
+         */
         onLayout={(event) => {
           viewportWidthRef.current = event.nativeEvent.layout.width;
-          openOnLastMark();
+          if (placedForRef.current !== lastMarkRight) placeLastMark();
         }}
-        onContentSizeChange={openOnLastMark}
+        onContentSizeChange={placeLastMark}
       >
         <View style={{ width: axisWidth + tail }}>
           <View style={{ height: MARK_HEIGHT }}>

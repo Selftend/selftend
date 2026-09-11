@@ -84,6 +84,10 @@ describe("RecordBandCard opening position", () => {
    * The case the fix exists for: the record ends on 1 August and the axis runs
    * on to 4 September, so the last mark sits 308px along a 478px axis. Opening
    * at the end would have shown the 170px after it and nothing else.
+   *
+   * ⚠️ The size passed to `contentSizeChange` is what react-native would report
+   * and nothing reads it - the placement is computed from the band, not from
+   * the event. It is the event's ARRIVAL that matters, never its arguments.
    */
   it("brings the last mark to the right edge when the record ends early", async () => {
     const strip = await openStrip(["2026-06-01", "2026-08-01"]);
@@ -139,5 +143,42 @@ describe("RecordBandCard opening position", () => {
 
     layout(strip);
     expect(mockScrollTo).toHaveBeenCalledWith({ x: 108, animated: false });
+  });
+
+  /**
+   * ☠️ The other order, and the reason `onContentSizeChange` is still wired at
+   * all: a viewport measured before the content lands scrolls an axis that is
+   * not there yet, and the native scroller clamps that to nothing. The content
+   * signal has to be able to place it AGAIN afterwards - so this asserts the
+   * second call, which is what drops if the handler is removed.
+   */
+  it("places the strip again once the content is measured after the viewport", async () => {
+    const strip = await openStrip(["2026-06-01", "2026-08-01"]);
+
+    layout(strip);
+    fireEvent(strip, "contentSizeChange", 478, 40);
+
+    expect(mockScrollTo).toHaveBeenCalledTimes(2);
+    expect(mockScrollTo).toHaveBeenNthCalledWith(2, { x: 108, animated: false });
+  });
+
+  /**
+   * ☠️☠️ **A re-layout is not an opening.** Rotation, the keyboard and a
+   * breakpoint change all fire `onLayout` again, and re-running the placement
+   * there would drag a reader who had scrolled back into their own history
+   * forward to the right-hand edge - the app taking the surface back off them.
+   * The opening position is opinionated; where they scrolled to since is not.
+   */
+  it("does not drag the reader back when the card is laid out again", async () => {
+    const strip = await openStrip(["2026-06-01", "2026-08-01"]);
+
+    layout(strip);
+    fireEvent(strip, "contentSizeChange", 478, 40);
+    expect(mockScrollTo).toHaveBeenCalledTimes(2);
+
+    layout(strip, 320);
+    layout(strip);
+
+    expect(mockScrollTo).toHaveBeenCalledTimes(2);
   });
 });
