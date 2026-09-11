@@ -16,6 +16,10 @@ The consent infrastructure is already built and waiting:
 - `src/components/app/cookie-consent-banner.tsx` offers "Accept all" / "Essential only" / "Manage preferences."
 - Cookie consent is currently stored only in browser `localStorage` (key `selftend_cookie_consent`) on web; the store does not persist consent server-side. The Supabase `user_preferences.cookie_consent` column exists (and is included in `export_user_data()`) but is **not** populated by the current consent flow - it is always written as `null` (see `cookieConsent: null` default in `src/features/modules/types.ts`). Treat the column as reserved for future server-side consent recording.
 
+☠️ **This document covers in-product behaviour only. How people _arrive_ is [measurement.md](measurement.md)'s subject, and the two must not be conflated** — see the guard under _Trigger for advancing phases_. That document records what is counted (accounts, and page loads that are not counted at all), what is refused and why, and the conditions under which any of it is revisited. Decided across [map #2301](https://github.com/Selftend/selftend/issues/2301).
+
+⚠️ **One correction to the promise quoted above, recorded rather than quietly fixed.** Cloudflare Web Analytics was enabled on the `selftend.org` zone from 2026-07-18 to 2026-09-10 — a wildcard auto-install rule that collected nothing at all, and is now disabled. It is an analytics tracking service, and it was configured on the property, so **the second bullet was literally false for those eight weeks** ([#2316](https://github.com/Selftend/selftend/issues/2316)). No user data was involved and no consent was affected, so the remedy is this record rather than a policy version bump. [measurement.md](measurement.md) § 9 holds the detail and what guards the promise now.
+
 Contributors must not add ad-hoc tracking without explicit review through the roadmap and PR template.
 
 ## Phased plan
@@ -290,6 +294,10 @@ Do not add analytics preemptively. Advance to the next phase only when:
 
 - **Phase 2**: Done (2026-07-04) - implemented ahead of closed testing; see status note above.
 - **Phase 3**: A concrete, documented product question cannot be answered by Supabase aggregate queries alone.
+
+☠️☠️ **An acquisition question is never grounds for advancing to Phase 3.** "Where did our users come from", "which channel is working", "how many visitors did the site get" and anything else about **how people arrive** are answered — or deliberately refused — in [measurement.md](measurement.md), never here. They are not the concrete product question Phase 3 waits for, and they must not be used to justify a client-side SDK.
+
+This guard exists because the failure is predictable and was nearly made: an acquisition question reads exactly like a question Phase 1 cannot answer, so the next reader reaches for an event library in good faith. ⚠️ **Phase 3 is about in-product behaviour** — where someone stalls inside a flow, which surface goes unused. The relevant refusals live in [measurement.md](measurement.md) § 3, and two of them are guardrails this document cannot repeal: **no source, channel or referrer field on an account record**, and **no analytics script or beacon on the website**. Decided across [map #2301](https://github.com/Selftend/selftend/issues/2301).
 
 ## Related files
 

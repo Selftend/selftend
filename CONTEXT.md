@@ -302,6 +302,22 @@ chrome already says where the user is, without anything being opened)
 The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
 account exists from first use, and a sign-in identity is attached later, if ever.
 
+**Account origin**:
+How an account came into existence — which of the four doors into the app it was minted by, and
+therefore whether a person asked for it or the app made one on their behalf. Fixed at creation and
+never changed afterwards, including by conversion: an account minted by a native cold start stays
+that, whatever it later becomes. Unknown for every account minted before the fact was recorded, and
+never guessed at. Stored as `user_preferences.account_origin`, one of `native_cold_start`,
+`web_cta`, `native_signup`, `web_signup` (#2306; spec in `docs/measurement.md` § 4).
+_Avoid_: acquisition source, channel, referrer, attribution. All four say **who sent the person**,
+which is a different thing and is refused — the sender outright, and a surface label written onto an
+account row on principle, because such a value on a person's row is an inferred-mental-state field
+(#2307, `docs/marketing-plan.md` § 6). Also avoid "signup platform", which names half of it.
+⚠️ **Not the same four-way split as `age-gate.tsx`'s "four ways into the app"**, which is an
+**auth-method** axis — email/password, Google, Apple and the silent guest. That axis mostly
+describes a _conversion_, which by the rule above never changes an origin. Two different fours; do
+not cite one as evidence for the other.
+
 **Guest account**:
 The account created silently on first use, with no sign-in identity attached. A full account — it
 owns its data like any other — whose only key is the session held on that device or browser: lose

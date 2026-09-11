@@ -36,6 +36,12 @@ Measured once and dated on [#2285](https://github.com/Selftend/selftend/issues/2
 | Status codes                                  | four origins answer 200; plain `http://` never redirected; unknown paths 200; `/sitemap.xml` returns the HTML shell; `/index.html` 307 → `/`                                                                    | the eight files 200; everything else a real 404 that still hydrates into the app; `/sitemap.xml` is XML              |
 | Guest accounts                                | web never mints a guest at load (`src/providers/session-provider.tsx` gates `signInAnonymously` on `Platform.OS !== "web"`), so rendering crawlers create no auth users                                         | unchanged; the export runs in Node with no session at all                                                            |
 
+✅ **Crawlers do arrive, and this is the first hard evidence of it** — measured 2026-09-10 at the Cloudflare edge while assembling [map #2301](https://github.com/Selftend/selftend/issues/2301), on [#2304](https://github.com/Selftend/selftend/issues/2304). The zone's `searchEngine` bot class runs **106–256 requests a day**, with GoogleBot and BingBot identified by name. Until this reading, every statement in this spec about crawler behaviour rested on Search Console's own reporting of itself; the edge now confirms it independently.
+
+⚠️ **It is not a visitor number and must not be read as one.** It counts machines, and the same zone data cannot separate production from staging and bots from humans at the same time — why no visitor layer exists is set out in [measurement.md](measurement.md) § 2.3, and that document's reporting discipline (§ 8) binds any figure taken from this source.
+
+☠️ **The site's script-free posture is guarded by the Content-Security-Policy, and that guard is now asserted.** This spec deliberately keeps the served pages free of third-party script, but for eight weeks in 2026 a Cloudflare Web Analytics beacon was configured to auto-inject into every page — see [measurement.md](measurement.md) § 9 and [ADR-0007](adr/0007-a-vendor-setting-can-break-a-promise-the-repo-makes.md). Anyone widening `script-src` in `public/_headers` is widening the only thing that would make such an injection inert.
+
 ---
 
 ## 2. The rendering mechanism - C, a static export pruned to the public routes
