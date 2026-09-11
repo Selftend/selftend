@@ -57,14 +57,15 @@ describe("deriveAccountOrigin", () => {
     expect(deriveAccountOrigin(justConverted)).toBe("web_signup");
   });
 
-  it("names the four values the column's CHECK constrains, and only those", () => {
-    // Pinned against the migration's inline CHECK: a fifth value added here
-    // without the migration would be written and rejected by the database.
-    expect([...ACCOUNT_ORIGINS].sort()).toEqual([
-      "native_cold_start",
-      "native_signup",
-      "web_cta",
-      "web_signup",
-    ]);
+  it("derives only values the union admits", () => {
+    // That those four are also the column's CHECK is pinned by
+    // `test/account-origin-check-parity.test.ts`, which reads the migration.
+    // Asserting it here against a hand-copied literal would have been a claim,
+    // not a guarantee - the same file would have carried both halves.
+    const derived = [deriveAccountOrigin(GUEST), deriveAccountOrigin(REGISTERED)];
+
+    for (const value of derived) {
+      expect(ACCOUNT_ORIGINS).toContain(value);
+    }
   });
 });

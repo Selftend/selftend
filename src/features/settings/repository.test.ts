@@ -16,7 +16,7 @@ import {
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
 // The real filter, not a stand-in: what this file pins is that the two abort
 // causes land on OPPOSITE sides of it.
-import { isReportableError } from "@/src/lib/sentry";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/features/profile/repository", () => ({
@@ -25,6 +25,14 @@ jest.mock("@/src/features/profile/repository", () => ({
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
+}));
+
+jest.mock("@/src/lib/sentry", () => ({
+  captureError: jest.fn(),
+  // The real predicate, so "offline is not reported" is tested against the rule
+  // the rest of the app reports by rather than against a stub of it - which is
+  // also why this file imports it directly above.
+  isReportableError: jest.requireActual("@/src/lib/sentry").isReportableError,
 }));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
@@ -825,6 +833,13 @@ describe("age attestation preferences (#1762)", () => {
 });
 
 describe("recordAgeAttestation", () => {
+  // `captureError` is a module-level mock, so without this the "offline is not
+  // reported" case reads the call the test before it made and passes or fails
+  // on its neighbour's behaviour.
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   function mockAttestationUpsert(error: unknown = null) {
     const upsert = jest.fn().mockResolvedValue({ error });
     // The `account_origin` stamp beside it: update -> eq -> is, resolving the
@@ -927,6 +942,40 @@ describe("recordAgeAttestation", () => {
     // not a theoretical one: PostgREST answers a missing column with an error,
     // and a throwing stamp would turn the gate into a wall.
     await expect(recordAgeAttestation("user-1", "DE", "web_cta")).resolves.toBeUndefined();
+  });
+
+  it("reports a rejected stamp rather than letting the null bucket absorb it", async () => {
+    const { from, upsert } = mockAttestationUpsert();
+    // PostgREST reports a rejected write in the RESOLVED value, not by throwing.
+    const is = jest.fn().mockResolvedValue({ error: { message: "permission denied" } });
+    const eq = jest.fn(() => ({ is }));
+    const update = jest.fn(() => ({ eq }));
+    from.mockImplementation(() => ({ upsert, update }) as never);
+
+    await recordAgeAttestation("user-1", "DE", "web_cta");
+
+    // ☠️ Non-fatal must not mean invisible. The column is never backfilled, so
+    // a silent failure is indistinguishable from an account minted before the
+    // column existed - an RLS regression could erase every new account from the
+    // count while every screen still looked healthy.
+    expect(captureError).toHaveBeenCalledWith(
+      { message: "permission denied" },
+      { operation: "stampAccountOrigin" },
+    );
+  });
+
+  it("does not page anyone because the device was offline", async () => {
+    const { from, upsert } = mockAttestationUpsert();
+    const update = jest.fn(() => {
+      throw new Error("Network request failed");
+    });
+    from.mockImplementation(() => ({ upsert, update }) as never);
+
+    await recordAgeAttestation("user-1", "DE", "web_cta");
+
+    // Judged by the real `isReportableError`, the same rule the rest of the app
+    // reports by. Offline is expected operation, not a defect.
+    expect(captureError).not.toHaveBeenCalled();
   });
 });
 

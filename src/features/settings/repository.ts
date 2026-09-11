@@ -9,6 +9,7 @@ import {
   type UserPreferences,
 } from "@/src/features/modules/types";
 import { removeCurrentUserUploadedAvatar } from "@/src/features/profile/repository";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 interface UserPreferenceRow {
@@ -665,13 +666,23 @@ export async function recordAgeAttestation(
  * afterwards, including by conversion" (`CONTEXT.md` §Accounts) rather than
  * merely usually right.
  *
- * ☠️ **Best-effort, deliberately.** A failure here must not fail the
- * attestation: `account_origin` is a measurement column whose only consumer is
- * a human running a query, and the caller's resolved promise means "this person
- * cleared their age floor" - a marketing number is not allowed to keep someone
- * out of the app, and on an environment whose schema predates this column
- * PostgREST's missing-column error would do exactly that. A swallowed failure
- * leaves the column null, which already has a defined meaning: unknown.
+ * ☠️ **Non-fatal, deliberately.** A failure here must not fail the attestation:
+ * `account_origin` is a measurement column whose only consumer is a human
+ * running a query, and the caller's resolved promise means "this person cleared
+ * their age floor" - a marketing number is not allowed to keep someone out of
+ * the app, and on an environment whose schema predates this column PostgREST's
+ * missing-column error would do exactly that.
+ *
+ * ☠️ **Non-fatal, but not silent, and the difference matters.** The column is
+ * never backfilled, so a failure here costs that account permanently - and a
+ * swallowed one would be indistinguishable from the `null` of an account minted
+ * before the column existed. An RLS regression could then erase every new
+ * account from the count while every screen still looked healthy. Reported, so
+ * the null bucket cannot quietly absorb a bug; `isReportableError` keeps the
+ * ordinary offline case out of Sentry.
+ *
+ * ⚠️ Both failure shapes need handling, because PostgREST uses both: a rejected
+ * write comes back in the resolved `error`, while a transport failure throws.
  */
 async function stampAccountOrigin(
   client: ReturnType<typeof requireSupabase>,
@@ -679,16 +690,23 @@ async function stampAccountOrigin(
   accountOrigin: AccountOrigin,
 ) {
   try {
-    // Both failure shapes are ignored on purpose: PostgREST reports a rejected
-    // write in the resolved `error`, which nothing here reads, and a transport
-    // error throws, which the `catch` takes. See the docblock.
-    await client
+    const { error } = await client
       .from("user_preferences")
       .update({ account_origin: accountOrigin })
       .eq("user_id", userId)
       .is("account_origin", null);
-  } catch {
-    // Never at the expense of the attestation.
+
+    if (error) {
+      reportStampFailure(error);
+    }
+  } catch (error) {
+    reportStampFailure(error);
+  }
+}
+
+function reportStampFailure(error: unknown) {
+  if (isReportableError(error)) {
+    captureError(error, { operation: "stampAccountOrigin" });
   }
 }
 

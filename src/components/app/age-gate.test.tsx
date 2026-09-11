@@ -243,16 +243,12 @@ describe("AgeGate account origin", () => {
   const GUEST = { id: "user-1" };
   const REGISTERED = { id: "user-1", email: "someone@example.com" };
 
+  // Two cases, not four: the table itself belongs to `account-origin.test.ts`,
+  // and repeating it here would pin the same rule twice while proving nothing
+  // extra about the gate. These two flip BOTH inputs, which is what shows the
+  // gate reads the live platform and the signed-in user rather than a constant.
   it("sends web_cta for a guest who arrived on the web", async () => {
     expect(await attestFrom("web", GUEST)).toBe("web_cta");
-  });
-
-  it("sends web_signup for a registered account on the web", async () => {
-    expect(await attestFrom("web", REGISTERED)).toBe("web_signup");
-  });
-
-  it("sends native_cold_start for a guest in a native build", async () => {
-    expect(await attestFrom("ios", GUEST)).toBe("native_cold_start");
   });
 
   it("sends native_signup for a registered account in a native build", async () => {

@@ -6,8 +6,10 @@ import { isGuestAccount } from "@/src/features/profile/guest";
  * The four doors an account can be minted by (#2306, `docs/measurement.md` §4).
  *
  * Kept in the same order as the column's inline `CHECK`
- * (`20260914000000_account_origin.sql`); the two lists are one list in two
- * places, and `account-origin.test.ts` pins them together.
+ * (`20260914000000_account_origin.sql`). The two lists are one list in two
+ * places, and `test/account-origin-check-parity.test.ts` reads the migration to
+ * hold them together - a fifth value added here alone would be derived at the
+ * age gate, written, and rejected by the database.
  */
 export const ACCOUNT_ORIGINS = [
   "native_cold_start",
