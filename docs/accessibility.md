@@ -15,6 +15,19 @@ Accessibility is part of the app foundation, not a polish pass. Users must be ab
 - Respect reduced motion for modals, menus, and animated wrappers.
 - Keep crisis and safety guidance reachable without sign-in.
 
+## The two checkbox lists in a thought record
+
+The Feelings list and the Thinking patterns list on `/modules/cbt/new` render rows below the 44px target and, on web, below the 24 x 24 WCAG 2.5.8 AA floor on height. That is a ruling, not an oversight, and it is written down here because the failure is otherwise silent and the next person to measure it would read it as a bug.
+
+Raising those rows to a 44px minimum was measured on [#2333](https://github.com/Selftend/selftend/issues/2333) and rejected: it adds roughly 936px across the two lists against the 864px of card chrome the row shape reclaimed - a net loss on a block that was already 2,318px at 360dp. What the rows give instead:
+
+- On native, `Checkbox` carries `COMPACT_CONTROL_HIT_SLOP`, so the 16px box is already a 44px effective target and costs no layout height.
+- On both platforms the whole row is pressable, so the target spans the row rather than the label's text box - which is what it was limited to before.
+
+Both lists render the shared `CheckboxRow` ([src/components/app/checkbox-row.tsx](../src/components/app/checkbox-row.tsx)) so they cannot drift into different row shapes. A future change proposing a 44px minimum has to beat that measurement first.
+
+Accepted with it: at the shipped row pitch adjacent hit areas overlap slightly on native, so a sloppy tap can tick a neighbour. The failure is visible and undone in one tap.
+
 ## Supported width floor
 
 **The narrowest supported viewport is 360dp.** 320dp is explicitly **not** supported, and the difference is not cosmetic: below roughly 324px the compact 12-hour time control on the reminders screen paints over that row's switch (measured 3.5px of overlap at 320px). That was ruled acceptable rather than fixed, so it is written down here — the failure is silent otherwise, and the next person to measure it would read it as a bug.
