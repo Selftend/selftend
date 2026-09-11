@@ -28,6 +28,13 @@ Both lists render the shared `CheckboxRow` ([src/components/app/checkbox-row.tsx
 
 Accepted with it: at the shipped row pitch adjacent hit areas overlap slightly on native, so a sloppy tap can tick a neighbour. The failure is visible and undone in one tap.
 
+### The patterns list folds, and the fold unmounts
+
+Ticking a thinking pattern collapses the other sixteen ([#2350](https://github.com/Selftend/selftend/issues/2350)). `Disclosure` is unanimated and unmounts its children by ruling, so the row that was pressed is removed by the press. Two consequences, handled differently:
+
+- **Keyboard focus is moved, not dropped.** On web the pressed row is the focused element, so focus would land on the document body. It is put on the disclosure's trigger instead - the control that now stands for what went - through `Disclosure`'s `triggerRef` and `focusNode`.
+- **Where the person lands is web-only.** About 1,200px leaves in one frame while the viewport sits inside the region that goes, so the block puts itself at the top of its scroll container (`src/lib/scroll-node-to-top.ts`). On iOS and Android a `View` ref has no such method and the position is whatever the scroll offset clamps to. That is written down here because the failure is silent: closing it needs the `ScrollView` ref `MobileFormScreen` was ruled not to forward on [#2333](https://github.com/Selftend/selftend/issues/2333), which is a ruling to reopen rather than route around.
+
 ## Supported width floor
 
 **The narrowest supported viewport is 360dp.** 320dp is explicitly **not** supported, and the difference is not cosmetic: below roughly 324px the compact 12-hour time control on the reminders screen paints over that row's switch (measured 3.5px of overlap at 320px). That was ruled acceptable rather than fixed, so it is written down here — the failure is silent otherwise, and the next person to measure it would read it as a bug.

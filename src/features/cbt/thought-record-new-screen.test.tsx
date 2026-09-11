@@ -12,6 +12,7 @@ import {
 } from "@/src/stores/thought-record-seed-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
+import { scrollNodeToTop } from "@/src/lib/scroll-node-to-top";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -65,6 +66,14 @@ jest.mock("@/src/lib/back-with-fallback", () => ({
   backWithFallback: jest.fn(),
 }));
 
+// The real helper is a no-op under this project (a native ref has no
+// `scrollIntoView`), so the fold's landing position is only observable here as
+// the ask. The browser's answer to that ask is measured in the e2e suite.
+jest.mock("@/src/lib/scroll-node-to-top", () => ({
+  scrollNodeToTop: jest.fn(() => false),
+}));
+
+const mockScrollNodeToTop = jest.mocked(scrollNodeToTop);
 const mockUseThoughtRecord = jest.mocked(useThoughtRecord);
 const mockUseSave = jest.mocked(useSaveThoughtRecord);
 const mockBackWithFallback = jest.mocked(backWithFallback);
@@ -297,7 +306,14 @@ describe("the patterns fold", () => {
     expect(summary.queryByText(CATASTROPHISING_DESCRIPTION)).toBeNull();
   });
 
-  it("opens again when the last pattern is unticked", async () => {
+  /**
+   * ☠️ The last press is the point. Unticking the last pattern has to put the
+   * block back to never-answered, `showAll` included - left sticky, `folded`
+   * (`chosen.length > 0 && !showAll`) can never become true again and the NEXT
+   * first tick folds nothing at all, silently, for the rest of the mount.
+   * Stopping one press earlier is exactly the shape that hides it.
+   */
+  it("opens again when the last pattern is unticked - and folds again on the next tick", async () => {
     await renderColumn();
 
     fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
@@ -307,6 +323,33 @@ describe("the patterns fold", () => {
     expect(screen.queryByTestId("patterns-summary")).toBeNull();
     expect(screen.queryByTestId("patterns-show-all")).toBeNull();
     expect(screen.getByTestId("pattern-row-mind-reading")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("pattern-row-mind-reading"));
+
+    expect(within(screen.getByTestId("patterns-summary")).getByText("Mind reading")).toBeTruthy();
+    expect(screen.queryByTestId("pattern-row-catastrophizing")).toBeNull();
+  });
+
+  /**
+   * ☠️ The fold takes ~1,200px out from under the thumb, so where the person
+   * lands is an acceptance criterion rather than wherever the scroll offset
+   * clamps to. What the browser then does with `block: "start"` is measured for
+   * real in `create-thought-record.e2e.test.ts`; what is assertable HERE is the
+   * wiring - that the fold asks at all, and only when it folds.
+   */
+  it("puts the block at the top of the scroll container as it folds, and only then", async () => {
+    await renderColumn();
+
+    expect(mockScrollNodeToTop).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
+    expect(mockScrollNodeToTop).toHaveBeenCalledTimes(1);
+
+    // Reopening by hand, and a tick inside a list the person opened themselves,
+    // move nobody: no heights change under them.
+    fireEvent.press(screen.getByTestId("patterns-show-all"));
+    fireEvent.press(screen.getByTestId("pattern-row-mind-reading"));
+    expect(mockScrollNodeToTop).toHaveBeenCalledTimes(1);
   });
 
   /**

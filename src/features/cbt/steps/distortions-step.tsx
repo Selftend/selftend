@@ -10,6 +10,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { distortionDefinitions } from "@/src/constants/distortions";
 import type { ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
+import { focusNode } from "@/src/lib/accessibility";
 import { scrollNodeToTop } from "@/src/lib/scroll-node-to-top";
 
 interface DistortionsStepProps {
@@ -53,19 +54,18 @@ interface PatternsBlockProps {
  * reopened the list to pick a second pattern should not have it slam shut under
  * the tick that picks it.
  *
- * ⚠️ **Two consequences of the unmount are stated rather than fixed here, both
- * on #2350's PR.** The landing position is met on web only (`scrollNodeToTop`);
- * closing it on native needs the `ScrollView` ref `MobileFormScreen` was ruled
- * not to forward. And on web the row that was ticked is the element that had
- * keyboard focus, so focus falls to the document body as it goes - restoring it
- * to the disclosure's trigger would need a `triggerRef` on `Disclosure`, which
- * the same ruling recorded as needing no component change. Neither is reversed
- * quietly.
+ * ⚠️ **One consequence of the unmount is stated rather than fixed, on #2350's
+ * PR:** the landing position is met on web only (`scrollNodeToTop`), and closing
+ * it on native needs the `ScrollView` ref `MobileFormScreen` was ruled not to
+ * forward - a ruling to reopen, not to route around. The other consequence,
+ * keyboard focus falling to the document body with the row that was ticked, IS
+ * fixed here, because this change is what introduces it.
  */
 function PatternsBlock({ chosenKeys, onChange, error }: PatternsBlockProps) {
   const { t } = useTranslation("cbt");
   const [showAll, setShowAll] = useState(false);
   const blockRef = useRef<View>(null);
+  const triggerRef = useRef<View>(null);
   const landAfterFold = useRef(false);
 
   /*
@@ -77,6 +77,13 @@ function PatternsBlock({ chosenKeys, onChange, error }: PatternsBlockProps) {
     put at the top of the scroll container instead, and that position is an
     acceptance criterion on #2350.
 
+    ☠️ The row that was ticked is INSIDE what unmounts, so on web it is also the
+    element that had keyboard focus - dropped to the document body by the same
+    frame. Focus moves to the disclosure's trigger, which is the control that now
+    stands for the sixteen that went, before the block is positioned: `focus()`
+    scrolls on its own in a browser, so doing it the other way round would let it
+    overwrite the landing position.
+
     No dependency array on purpose: the ref is the whole condition, this fires
     once per fold and the guard costs a boolean read on the other renders. It has
     to run after the collapse has been committed, which is what an effect is.
@@ -86,6 +93,7 @@ function PatternsBlock({ chosenKeys, onChange, error }: PatternsBlockProps) {
       return;
     }
     landAfterFold.current = false;
+    focusNode(triggerRef.current);
     scrollNodeToTop(blockRef.current);
   });
 
@@ -98,9 +106,17 @@ function PatternsBlock({ chosenKeys, onChange, error }: PatternsBlockProps) {
       : [...chosenKeys, key];
     // The first tick on an open list is the one that folds it - and only that
     // one moves anybody. A tick inside a list the person reopened themselves
-    // changes no heights, and unticking the last one opens the list again.
+    // changes no heights.
     if (chosenKeys.length === 0 && next.length > 0 && !showAll) {
       landAfterFold.current = true;
+    }
+    // ☠️ Unticking the last pattern does not merely reopen the list - it puts
+    // the block back to never-answered, `showAll` included. Left sticky, a
+    // person who reopened the list, cleared it and then ticked again would get
+    // no fold at all the second time: `folded` is `chosen.length > 0 && !showAll`
+    // and nothing else ever puts `showAll` down.
+    if (next.length === 0) {
+      setShowAll(false);
     }
     onChange(next);
   };
@@ -156,6 +172,7 @@ function PatternsBlock({ chosenKeys, onChange, error }: PatternsBlockProps) {
           label={t("record.patternsShowAll")}
           onToggle={() => setShowAll((previous) => !previous)}
           testID="patterns-show-all"
+          triggerRef={triggerRef}
         >
           {rows}
         </Disclosure>

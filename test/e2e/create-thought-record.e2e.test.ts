@@ -116,7 +116,12 @@ test.describe("create thought record", () => {
     await expect(page.getByRole("checkbox", { name: "Mind reading", exact: true })).toHaveCount(0);
     await expect(page.getByTestId("patterns-summary")).toBeVisible();
     await expect
-      .poll(() => distanceFromScrollTop(page.getByTestId("patterns-block")))
+      .poll(() => distanceFromScrollTop(page.getByTestId("patterns-block")), {
+        message:
+          "the patterns block must land at the top of its scroll container after the fold; " +
+          "null means no scrolling ancestor was found, which is a broken measurement rather " +
+          "than a moved block",
+      })
       .toBeLessThanOrEqual(1);
 
     // Evidence prompts must render real copy, not raw keys.
