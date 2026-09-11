@@ -9,9 +9,11 @@ import { CheckboxRow } from "@/src/components/app/checkbox-row";
  * apart, so what is asserted here is asserted once for both: the same press
  * targets, the same structure, an optional description in the same column.
  *
- * The press targets are three and each must fire EXACTLY once - the row nests
- * a pressable label inside a pressable body, and a double fire would toggle
- * twice and read as a dead tap.
+ * ⚠️ What these do NOT prove is that the three nested handlers (row, label,
+ * checkbox) never double-fire. RNTL's `fireEvent.press` walks to the nearest
+ * handler and stops rather than bubbling, so a double fire is invisible to
+ * it. That property comes from the responder system granting one touch to one
+ * node; the reasoning is recorded on the component, not faked as a guard here.
  */
 describe("CheckboxRow", () => {
   it("renders the label, and a description when one is given", () => {
@@ -60,7 +62,7 @@ describe("CheckboxRow", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("☠️ toggles from the row body - the hit area is no longer the text box", () => {
+  it("☠️ toggles from the row itself - the hit area is no longer the text box", () => {
     const onToggle = jest.fn();
     render(
       <CheckboxRow
@@ -72,7 +74,7 @@ describe("CheckboxRow", () => {
       />,
     );
 
-    fireEvent.press(screen.getByTestId("row-catastrophizing-body"));
+    fireEvent.press(screen.getByTestId("row-catastrophizing"));
 
     expect(onToggle).toHaveBeenCalledTimes(1);
   });

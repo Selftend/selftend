@@ -157,8 +157,11 @@ describe("the two checkbox lists", () => {
     for (const distortion of distortionDefinitions) {
       expect(screen.getByTestId(`pattern-row-${distortion.key}`)).toBeTruthy();
     }
+    // Read through i18n, not as a literal: the assertion is that the
+    // description is IN the column, and a reworded `en` value must not be the
+    // thing that breaks it.
     expect(
-      screen.getByText("Jumping quickly to the worst-case outcome and treating it as likely."),
+      screen.getByText(i18n.t("cbt:distortions.catastrophizing.shortDescription")),
     ).toBeTruthy();
   });
 
@@ -170,13 +173,13 @@ describe("the two checkbox lists", () => {
     }
   });
 
-  it("☠️ toggles from the row body in BOTH lists - the label is no longer the whole target", async () => {
+  it("☠️ toggles from the row itself in BOTH lists - the label is no longer the whole target", async () => {
     await renderColumn();
 
-    fireEvent.press(screen.getByTestId("emotion-row-anxious-body"));
+    fireEvent.press(screen.getByTestId("emotion-row-anxious"));
     expect(screen.getByRole("checkbox", { name: "Anxious" })).toBeChecked();
 
-    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing-body"));
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing"));
     expect(screen.getByRole("checkbox", { name: "Catastrophising" })).toBeChecked();
 
     expect(screen.getByText("2 of 6 parts filled in")).toBeTruthy();
