@@ -827,17 +827,22 @@ describe("age attestation preferences (#1762)", () => {
 describe("recordAgeAttestation", () => {
   function mockAttestationUpsert(error: unknown = null) {
     const upsert = jest.fn().mockResolvedValue({ error });
-    const from = jest.fn(() => ({ upsert }));
+    // The `account_origin` stamp beside it: update -> eq -> is, resolving the
+    // PostgREST way (an `error` field, not a rejection).
+    const is = jest.fn().mockResolvedValue({ error: null });
+    const eq = jest.fn(() => ({ is }));
+    const update = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ upsert, update }));
 
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    return { from, upsert };
+    return { eq, from, is, update, upsert };
   }
 
   it("writes the verdict, the country and the moment - and nothing else", async () => {
     const { from, upsert } = mockAttestationUpsert();
 
-    await recordAgeAttestation("user-1", "DE");
+    await recordAgeAttestation("user-1", "DE", "native_cold_start");
 
     expect(from).toHaveBeenCalledWith("user_preferences");
     const [payload] = upsert.mock.calls[0];
@@ -850,13 +855,17 @@ describe("recordAgeAttestation", () => {
     // ☠️ The whole payload is asserted, not just its known keys: the date of
     // birth reaching the database is the one failure §3 rules out outright, and
     // a `toMatchObject` here would not notice it arriving.
+    //
+    // ⚠️ It is also what keeps `account_origin` OUT of the upsert. Folding it
+    // in would look tidier and would overwrite the value on every later gate
+    // pass - the one thing #2323 forbids.
     expect(Object.keys(payload)).toHaveLength(4);
   });
 
   it("normalises the country rather than letting the column check reject it", async () => {
     const { upsert } = mockAttestationUpsert();
 
-    await recordAgeAttestation("user-1", " bg ");
+    await recordAgeAttestation("user-1", " bg ", "native_cold_start");
 
     expect(upsert.mock.calls[0][0]).toMatchObject({ age_attested_country: "BG" });
   });
@@ -867,9 +876,126 @@ describe("recordAgeAttestation", () => {
     // "attested" against a row that says nothing of the kind.
     mockAttestationUpsert({ message: "column does not exist" });
 
-    await expect(recordAgeAttestation("user-1", "DE")).rejects.toEqual({
+    await expect(recordAgeAttestation("user-1", "DE", "native_cold_start")).rejects.toEqual({
       message: "column does not exist",
     });
+  });
+
+  it("stamps the origin only where the column is still null (#2323)", async () => {
+    const { eq, is, update } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", "DE", "web_cta");
+
+    expect(update).toHaveBeenCalledWith({ account_origin: "web_cta" });
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    // ☠️ The write-once rule IS this filter. Without it the stamp is a plain
+    // update that relabels a converted guest on any later gate pass, and no
+    // amount of care at the call site would repair it - the value is supposed
+    // to be fixed at creation.
+    expect(is).toHaveBeenCalledWith("account_origin", null);
+  });
+
+  it("stamps only after the row exists, never in the same statement", async () => {
+    const { from, update, upsert } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", "DE", "web_cta");
+
+    // The stamp is a conditional UPDATE, which matches nothing until the upsert
+    // has created the row. Ordering is the whole of its correctness at a first
+    // gate, so it is asserted rather than assumed.
+    expect(upsert.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
+    expect(from).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not stamp an origin onto a row the attestation failed to write", async () => {
+    const { update } = mockAttestationUpsert({ message: "column does not exist" });
+
+    await expect(recordAgeAttestation("user-1", "DE", "web_cta")).rejects.toBeDefined();
+
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("reports the attestation as written even when the origin stamp fails", async () => {
+    const { from, upsert } = mockAttestationUpsert();
+    const update = jest.fn(() => {
+      throw new Error("network");
+    });
+    from.mockImplementation(() => ({ upsert, update }) as never);
+
+    // ☠️ A measurement column must never keep someone out of the app. On an
+    // environment whose schema predates the migration this is the live case,
+    // not a theoretical one: PostgREST answers a missing column with an error,
+    // and a throwing stamp would turn the gate into a wall.
+    await expect(recordAgeAttestation("user-1", "DE", "web_cta")).resolves.toBeUndefined();
+  });
+});
+
+describe("account_origin survives a conversion (#2323)", () => {
+  /**
+   * A one-row stand-in for `user_preferences` that applies the update the way
+   * Postgres would - honouring `is('account_origin', null)` if it is there, and
+   * writing unconditionally if it is not.
+   *
+   * ☠️ The unconditional path is the point. A fake that only ever applied the
+   * filtered write would pass just as happily against an implementation with
+   * the filter deleted, which is the single mutation these tests exist to
+   * catch: awaiting the chain one link early lands on `eq`'s `then`, and the
+   * stamp overwrites.
+   */
+  function mockPreferencesRow(accountOrigin: string | null) {
+    const row = { account_origin: accountOrigin };
+    let pending: string | null = null;
+    const apply = () => {
+      row.account_origin = pending;
+      return { error: null };
+    };
+
+    const is = jest.fn((column: string, value: unknown) => {
+      if (column === "account_origin" && value === null && row.account_origin === null) {
+        apply();
+      }
+      return Promise.resolve({ error: null });
+    });
+    const eq = jest.fn(() => ({
+      is,
+      // Awaiting the chain HERE means no filter was applied.
+      then: (resolve: (result: { error: null }) => void) => resolve(apply()),
+    }));
+    const update = jest.fn((patch: { account_origin: string }) => {
+      pending = patch.account_origin;
+      return { eq };
+    });
+    const upsert = jest.fn().mockResolvedValue({ error: null });
+    const from = jest.fn(() => ({ update, upsert }));
+
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    return { row };
+  }
+
+  it("keeps the door a guest came through after they convert", async () => {
+    // Stamped at the first gate, when this account had no email.
+    const { row } = mockPreferencesRow("native_cold_start");
+
+    // The person has since created an account, so a gate running now derives
+    // native + registered - which is a true statement about the session and a
+    // false one about the origin.
+    await recordAgeAttestation("user-1", "DE", "native_signup");
+
+    // The column is fixed at creation and never changed afterwards, including
+    // by conversion (`CONTEXT.md` §Accounts). The database is what enforces it.
+    expect(row.account_origin).toBe("native_cold_start");
+  });
+
+  it("stamps an account that has never been stamped", async () => {
+    const { row } = mockPreferencesRow(null);
+
+    await recordAgeAttestation("user-1", "DE", "web_cta");
+
+    // The other half: write-once has to still write the first time. `null`
+    // means "minted before the column existed", and only a real gate pass may
+    // replace it.
+    expect(row.account_origin).toBe("web_cta");
   });
 });
 
