@@ -1,6 +1,8 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 
 import ThoughtRecordEditorScreen from "@/app/(app)/modules/cbt/new";
+import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
+import { distortionDefinitions } from "@/src/constants/distortions";
 import { useSaveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
 import { defaultValues } from "@/src/features/cbt/thought-record-form";
 import { useCbtDraftStore } from "@/src/stores/cbt-draft-store";
@@ -134,6 +136,50 @@ describe("the thought record as one column", () => {
     for (const name of STOP_NAMES) {
       expect(screen.getAllByText(name, { includeHiddenElements: true }).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("the two checkbox lists", () => {
+  /**
+   * Feelings and Patterns sit next to each other in the column, so they are
+   * one control in one shape (#2349). The patterns stopped being Cards; the
+   * chrome went and the descriptions stayed.
+   *
+   * ☠️ Row HEIGHT is not assertable here - NativeWind resolves nothing into
+   * `props.style` under jest, so a class-name assertion would be vacuously
+   * green. What is assertable, and what actually prevents the drift, is that
+   * both lists render the same component: every row in both answers to the
+   * same press targets below.
+   */
+  it("renders all seventeen patterns as rows, descriptions still in the column", async () => {
+    await renderColumn();
+
+    for (const distortion of distortionDefinitions) {
+      expect(screen.getByTestId(`pattern-row-${distortion.key}`)).toBeTruthy();
+    }
+    expect(
+      screen.getByText("Jumping quickly to the worst-case outcome and treating it as likely."),
+    ).toBeTruthy();
+  });
+
+  it("renders every feeling as the same row", async () => {
+    await renderColumn();
+
+    for (const emotion of DEFAULT_EMOTIONS) {
+      expect(screen.getByTestId(`emotion-row-${emotion.id}`)).toBeTruthy();
+    }
+  });
+
+  it("☠️ toggles from the row body in BOTH lists - the label is no longer the whole target", async () => {
+    await renderColumn();
+
+    fireEvent.press(screen.getByTestId("emotion-row-anxious-body"));
+    expect(screen.getByRole("checkbox", { name: "Anxious" })).toBeChecked();
+
+    fireEvent.press(screen.getByTestId("pattern-row-catastrophizing-body"));
+    expect(screen.getByRole("checkbox", { name: "Catastrophising" })).toBeChecked();
+
+    expect(screen.getByText("2 of 6 parts filled in")).toBeTruthy();
   });
 });
 
