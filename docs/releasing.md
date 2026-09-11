@@ -49,6 +49,10 @@ The lift is one edit plus its tests, in one change:
 
 Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store.
 
+## Post-release, one-time: retire the `www` app-links carve-out
+
+The first native release carrying [#2298](https://github.com/Selftend/selftend/issues/2298) ships an iOS entitlement that claims `applinks:selftend.org` only. **Once that build is the current App Store version** (a person promotes it in App Store Connect, per [How iOS reaches users](#how-ios-reaches-users)), the Cloudflare redirect rule's `/.well-known/` carve-out has nothing left to serve: follow [launch/app-links-runbook.md](launch/app-links-runbook.md) § _Retiring the `www` carve-out_ - edit the rule, verify the 301, date the row in [deployment.md](deployment.md), update control-tower #132 - then delete this section.
+
 ## Posting the r/Selftend thread (by hand)
 
 Every published release also gets a **draft r/Selftend thread**, filed as a GitHub issue by the [Release thread](../.github/workflows/release-thread.yml) workflow (`reddit-draft` + `ready-for-human`, titled `r/Selftend thread for <tag>`). CI drafts; a person posts. Nothing in the pipeline touches the Reddit API, and the thread's text is the release's own changelog, filtered and cleaned - the rules are in [scripts/release-thread/README.md](../scripts/release-thread/README.md), decided on [#1873](https://github.com/Selftend/selftend/issues/1873).

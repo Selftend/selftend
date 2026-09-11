@@ -166,19 +166,23 @@ const baseConfig: ExpoConfig = withDevelopmentCleartextTraffic({
     // origin ({{ .SiteURL }}/auth-callback...), and without this entitlement
     // iOS hands them to Safari instead of the installed app.
     //
-    // Both hosts are declared because both serve the app directly - neither
-    // redirects to the other - so a link someone typed or shared as `www`
-    // would otherwise miss. Emails themselves only ever produce the apex,
-    // since Supabase's SiteURL has no `www`.
+    // The apex is the only host declared, because `https://selftend.org` is
+    // the only serving origin (indexability.md § 6.1, #2297): a zone-level
+    // Cloudflare rule 301s every `www` URL to the apex, and Apple refuses an
+    // association file served with a redirect, so once that rule's temporary
+    // `/.well-known/` carve-out is retired a `www` claim cannot verify at all
+    // (#2298 dropped the claim ahead of that). A link typed or shared as `www`
+    // is not lost: Safari follows the 301 and the apex WEB app completes
+    // `/auth-callback`. The native handoff only ever covers apex links, which
+    // is all email produces, since Supabase's SiteURL has no `www`. Android is
+    // unaffected: its intent filter below names the apex only.
     //
     // Gated on `appLinksEnabled`, not just the variant: the association file
     // vouches for C5GVSW74D2.org.vasilyoshev.selftend, so the .dev bundle id
     // could never associate, and a localhost origin has nothing to associate
     // with. Declaring it regardless would add an entitlement the provisioning
     // profile has to carry for a handoff that cannot work.
-    associatedDomains: appLinksEnabled
-      ? [`applinks:${publicAppHost}`, `applinks:www.${publicAppHost}`]
-      : undefined,
+    associatedDomains: appLinksEnabled ? [`applinks:${publicAppHost}`] : undefined,
     infoPlist: {
       // iOS resolves the app's language from the bundle's declared
       // localizations, not from whatever i18next happens to ship. Without this
