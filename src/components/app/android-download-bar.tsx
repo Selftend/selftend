@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { appEnv } from "@/src/lib/env";
+import { STORE_LINK_SOURCES, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { useIsHydrated } from "@/src/lib/use-is-hydrated";
 
 // The Android mobile-web download bar (#388 spec section 4): shown only on
@@ -27,7 +27,9 @@ function isAndroidBrowser(): boolean {
 export function AndroidDownloadBar() {
   const { t } = useTranslation("common");
   const insets = useSafeAreaInsets();
-  const playStoreUrl = appEnv.playStoreUrl.trim();
+  // Tagged, so Play can report that this bar is what sent someone (#2324). The
+  // bare constant stays bare for the in-app update path; see `store-links.ts`.
+  const playStoreUrl = taggedPlayStoreUrl(STORE_LINK_SOURCES.downloadBar);
 
   // Visibility is decided once at mount - UA and dismissal cannot change under
   // a mounted bar, so a lazy initializer beats an effect (and satisfies the
