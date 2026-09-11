@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 
 import { AndroidDownloadBar } from "./android-download-bar";
 import { appEnv } from "@/src/lib/env";
@@ -106,6 +106,20 @@ describe("AndroidDownloadBar", () => {
     fakeNavigator({ userAgentData: { platform: "Android" } });
     renderWithProviders(<AndroidDownloadBar />);
     await waitFor(() => expect(screen.queryByText("Selftend is on Google Play.")).toBeNull());
+  });
+
+  // The bar is a web-facing acquisition surface, so its Play link carries the
+  // source tag - and Play reads that tag only out of a URL-encoded `referrer=`
+  // value, never a top-level `utm_source` (measurement.md § 5).
+  it("opens Play with the download-bar source nested inside referrer=", async () => {
+    const openSpy = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    fakeNavigator({ userAgentData: { platform: "Android" } });
+    renderWithProviders(<AndroidDownloadBar />);
+
+    fireEvent.press(await screen.findByText("Get the app"));
+
+    expect(openSpy).toHaveBeenCalledWith(`${PLAY_URL}&referrer=utm_source%3Dweb-download-bar`);
+    openSpy.mockRestore();
   });
 
   it("dismisses permanently per browser", async () => {

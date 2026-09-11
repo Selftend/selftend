@@ -453,19 +453,24 @@ describe("SupportScreen column (#1726)", () => {
     expect(screen.queryByRole("link", { name: "Get it on iOS" })).toBeNull();
   });
 
-  it("on web, both store rows open their live listing", () => {
+  // The listings, tagged `app-support` (measurement.md § 5). This row fires
+  // for somebody already using the web app, so the source name says so:
+  // otherwise these installs would read as fresh acquisitions. Play reads its
+  // parameters only out of a URL-encoded `referrer=`; Apple's `ct` is
+  // top-level.
+  it("on web, both store rows open their live listing, tagged as an internal surface", () => {
     setPlatformOS("web");
     renderWithProviders(<SupportScreen />);
 
     fireEvent.press(screen.getByRole("link", { name: "Get it on Android" }));
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
-      "https://play.google.com/store/apps/details?id=org.selftend.app",
+      "https://play.google.com/store/apps/details?id=org.selftend.app&referrer=utm_source%3Dapp-support",
     );
     expect(screen.getByText("Google Play")).toBeTruthy();
 
     fireEvent.press(screen.getByRole("link", { name: "Get it on iOS" }));
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
-      "https://apps.apple.com/app/selftend/id0000000000",
+      "https://apps.apple.com/app/selftend/id0000000000?ct=app-support",
     );
     expect(screen.getByText("App Store")).toBeTruthy();
   });

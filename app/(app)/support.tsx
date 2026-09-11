@@ -13,6 +13,7 @@ import { isGuestAccount } from "@/src/features/profile/guest";
 import { appEnv } from "@/src/lib/env";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { openExternalUrl } from "@/src/lib/linking";
+import { STORE_LINK_SOURCES, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 import { useSession } from "@/src/providers/session-provider";
@@ -530,13 +531,19 @@ export default function SupportScreen() {
             inside the Android app is noise. Gated here, at the mount point, for
             the same `Children.toArray` reason as the Discord row.
           */}
+            {/*
+            Tagged `app-support`, not a marketing-style surface name: this row
+            fires for somebody already using the web app, so its installs are
+            "existing web users who installed native" rather than fresh
+            acquisitions (measurement.md § 5, owner ruling 2026-09-11).
+          */}
             {Platform.OS === "web" && appEnv.playStoreUrl ? (
               <SettingsRow
                 icon="android"
                 label={t("supportPage.getAndroid")}
                 description={t("supportPage.playStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(appEnv.playStoreUrl)}
+                onPress={() => openExternalUrl(taggedPlayStoreUrl(STORE_LINK_SOURCES.appSupport))}
                 testID="support-row-android"
               />
             ) : null}
@@ -546,7 +553,7 @@ export default function SupportScreen() {
                 label={t("supportPage.getIos")}
                 description={t("supportPage.appStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(appEnv.appStoreUrl)}
+                onPress={() => openExternalUrl(taggedAppStoreUrl(STORE_LINK_SOURCES.appSupport))}
                 testID="support-row-ios"
               />
             ) : null}

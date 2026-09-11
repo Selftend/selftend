@@ -297,6 +297,11 @@ describe("useUpdateAvailability (act: per-platform close semantics)", () => {
         expect(await AsyncStorage.getItem("updateBannerDismissed:18")).toBe("1"),
       );
       expect(openSpy).toHaveBeenCalledWith(appEnv.playStoreUrl);
+      // This opens the store from INSIDE the installed app, so it must stay
+      // untagged: a source tag here would put every updating user into the
+      // acquisition dimension the tagging scheme exists to read
+      // (measurement.md § 5). The tagged constant lives in `store-links.ts`.
+      expect(openSpy.mock.calls.at(-1)?.[0]).not.toMatch(/referrer=|utm_|[?&]ct=/);
 
       // ...and the latch is the persistent half: a remount stays quiet.
       const second = renderHook(() => useUpdateAvailability());

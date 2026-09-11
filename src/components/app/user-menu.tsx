@@ -25,6 +25,7 @@ import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
+import { STORE_LINK_SOURCES } from "@/src/lib/store-links";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
 import { useStyleName } from "@/src/lib/style";
@@ -471,7 +472,7 @@ export function UserMenu() {
                 <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
               </Pressable>
 
-              <GetTheAppSection compact />
+              <GetTheAppSection compact source={STORE_LINK_SOURCES.appUserMenu} />
               {/* Community links (#668): this social row is the app's only
               community surface. Community spaces first in order of
               interactivity, GitHub last as the transparency door. Each

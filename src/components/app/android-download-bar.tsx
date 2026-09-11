@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { appEnv } from "@/src/lib/env";
+import { STORE_LINK_SOURCES, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { useIsHydrated } from "@/src/lib/use-is-hydrated";
 
 // The Android mobile-web download bar (#388 spec section 4): shown only on
@@ -27,7 +27,11 @@ function isAndroidBrowser(): boolean {
 export function AndroidDownloadBar() {
   const { t } = useTranslation("common");
   const insets = useSafeAreaInsets();
-  const playStoreUrl = appEnv.playStoreUrl.trim();
+  // Tagged: this bar is a web-facing acquisition surface, so the Play console
+  // can tell its installs from every other door (measurement.md § 5). The
+  // helper returns "" for an unconfigured store, so the visibility gate below
+  // reads the same as it did on the bare constant.
+  const playStoreUrl = taggedPlayStoreUrl(STORE_LINK_SOURCES.webDownloadBar);
 
   // Visibility is decided once at mount - UA and dismissal cannot change under
   // a mounted bar, so a lazy initializer beats an effect (and satisfies the

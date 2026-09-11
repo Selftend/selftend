@@ -7,6 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { type StoreLinkSource, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type StoreId = "android" | "ios";
@@ -19,6 +20,15 @@ const STORE_ICONS: Record<StoreId, "logo-google-playstore" | "logo-apple"> = {
 type GetTheAppSectionProps = {
   /** Tighter spacing for the user-menu popover. */
   compact?: boolean;
+  /**
+   * Which surface this copy of the section is sitting on, tagged onto the
+   * store links so the consoles can tell them apart (measurement.md § 5).
+   * Required, because the two mount points have different audiences: the
+   * sign-in landing reaches a visitor with no account, the user menu only ever
+   * fires for somebody already using Selftend on the web, and folding those
+   * together would let existing users read as fresh acquisitions.
+   */
+  source: StoreLinkSource;
   /** Overridable in tests only; the app always uses the deployment config. */
   playStoreUrl?: string;
   appStoreUrl?: string;
@@ -26,6 +36,7 @@ type GetTheAppSectionProps = {
 
 export function GetTheAppSection({
   compact = false,
+  source,
   playStoreUrl = appEnv.playStoreUrl,
   appStoreUrl = appEnv.appStoreUrl,
 }: GetTheAppSectionProps) {
@@ -41,8 +52,8 @@ export function GetTheAppSection({
   // never coming to a listing we could name. With neither store configured the
   // heading would sit over nothing, so the whole section goes.
   const stores: { id: StoreId; url: string }[] = [
-    { id: "android", url: playStoreUrl },
-    { id: "ios", url: appStoreUrl },
+    { id: "android", url: taggedPlayStoreUrl(source, playStoreUrl) },
+    { id: "ios", url: taggedAppStoreUrl(source, appStoreUrl) },
   ].filter((store): store is { id: StoreId; url: string } => Boolean(store.url));
 
   if (stores.length === 0) return null;

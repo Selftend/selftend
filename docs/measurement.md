@@ -1,6 +1,6 @@
 # Measurement spec — how Selftend counts visitors and arrivals
 
-**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** The one schema change is now built ([#2323](https://github.com/Selftend/selftend/issues/2323), § 4 and § 10 items 1–3); the link-tagging scheme is still specified and waiting (§ 5, § 10 item 4); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
+**Status:** Decided spec, assembled 2026-09-11 from wayfinder map [#2301](https://github.com/Selftend/selftend/issues/2301) on its last ticket, [#2310](https://github.com/Selftend/selftend/issues/2310). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling. ☠️ **Almost nothing here is built.** The one schema change is now built ([#2323](https://github.com/Selftend/selftend/issues/2323), § 4 and § 10 items 1–3), and so is the link-tagging scheme on Selftend's own surfaces ([#2324](https://github.com/Selftend/selftend/issues/2324), § 5.1 and § 10 item 4 — the hand-written links are still a human's job); the visitor layer was measured and **declined** (§ 2.3); everything else is a refusal, a cadence or a trigger. That is the honest output of the map and not a shortfall.
 
 **Audience:** Developers and product contributors; the owner for the store-console and Cloudflare dashboard reads in § 6.
 
@@ -183,6 +183,33 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 ⚠️ **Tagging does not convert a standing surface into a pursued one**, and the control is written down: **a tagged standing surface's number is read, never used to keep or cut it.**
 
+### 5.1 The vocabulary — start here before minting a tag
+
+Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The in-app surfaces resolve their tag through `src/lib/store-links.ts`; the rest are hand-written links that a human pastes, and this table is the record of what they carry.
+
+| Source             | Where the link sits                                         | Written by                                          |
+| ------------------ | ----------------------------------------------------------- | --------------------------------------------------- |
+| `web-download-bar` | The Android mobile-web download bar, landing + auth screens | `src/components/app/android-download-bar.tsx`       |
+| `web-auth-landing` | The Get-the-app block on the sign-in landing screen         | `src/components/app/auth-landing-block.tsx`         |
+| `app-user-menu`    | The Get-the-app block in the signed-in user menu            | `src/components/app/user-menu.tsx`                  |
+| `app-support`      | The Support screen's two store rows                         | `app/(app)/support.tsx`                             |
+| `github-readme`    | The repository README's store links                         | Hand-written                                        |
+| `r-selftend`       | The project's own subreddit                                 | Hand-written (`scripts/release-thread/` posts here) |
+| `r-bulgaria`       | Other subreddits, one source per community                  | Hand-written                                        |
+| `youtube`          | The YouTube channel's links                                 | Hand-written                                        |
+| `alternativeto`    | The AlternativeTo listing                                   | Hand-written                                        |
+
+**The rules a new value has to meet**, all pinned by `src/lib/store-links.test.ts`: lowercase-hyphenated, ≤ 30 characters, names the surface rather than the platform.
+
+☠️ **A `web-` prefix means a visitor with no account can reach that surface; an `app-` prefix means it only ever fires for somebody already using Selftend on the web.** `app-support` and `app-user-menu` are named that way deliberately (owner ruling, 2026-09-11): those installs are _existing web users who installed native_, and a marketing-style name would let them read as fresh acquisitions. ⚠️ **The Get-the-app section has two mount points with different audiences**, which is why it takes its source as a prop rather than owning one.
+
+**The hand-written form**, for pasting somewhere this repo does not control:
+
+- Play — `https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend&referrer=utm_source%3D<source>`, and with a campaign, `referrer=utm_source%3D<source>%26utm_campaign%3D<source>-<start-month>`.
+- Apple — `https://apps.apple.com/app/selftend/id6796318929?ct=<campaign or source>`.
+
+⚠️ **Open question, to settle at the first store read after this ships:** App Store Connect's own generated campaign links also carry a `pt` provider token, minted console-side when a campaign is created. Whether a `ct` on its own attributes is not checkable from this repo. If the ASC Campaigns tab stays empty while Play's UTM source rows fill, `pt` is the first suspect — **not** a reason to add a token before that evidence exists.
+
 ---
 
 ## 6. The reading cadence
@@ -269,7 +296,7 @@ Ready for `/to-tickets`. Items 1–3 are one coherent change; 4 and 5 are indepe
 1. **Migration** — add `account_origin` with its `CHECK` and a `comment on column` explaining the gate-order constraint; redeclare `export_user_data()` from the newest declaration with the column in the `preferences` list.
 2. **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ **This item predicted a `PREFERENCE_COLUMNS` entry, and that part of it is wrong.** The guard is a conditional `update(...).is("account_origin", null)`, atomic where a read-then-write would race; a patch-map entry would exist only to let `updateUserPreferences` overwrite a value that must never change. The write plumbing the item is really asking for is the third argument to `recordAgeAttestation`.
 3. **Tests** — the § 4 derivation table, the converted-guest case, and whatever the export-completeness suite demands.
-4. **The tagged store constant** — a separate constant carrying § 5's `utm_source` / `ct`, wired to the three web-facing surfaces only, with a test pinning that `appEnv.playStoreUrl` and `appStoreUrl` stay bare.
+4. ✅ **The tagged store constant** — built on [#2324](https://github.com/Selftend/selftend/issues/2324). `src/lib/store-links.ts` carries § 5's `utm_source` / `ct` separately from `appEnv.playStoreUrl` / `appStoreUrl`, and the bare constants stay bare with a test to keep them that way. ⚠️ **It wired four surfaces, not three**: the Get-the-app section has two mount points with different audiences, so the sign-in landing and the user menu tag differently (§ 5.1).
 5. **Harden the CSP test** (§ 9) to an exact `script-src` token-set allowlist, with a comment naming the beacon incident as the reason.
 6. **Documentation** — `CONTEXT.md` § _Accounts_ gains the **account origin** glossary entry; an ADR records the beacon incident and its lesson.
 
