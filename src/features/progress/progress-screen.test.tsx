@@ -278,7 +278,7 @@ describe("ProgressScreen", () => {
         const body =
           screen.queryByTestId("record-band") ??
           screen.queryByText("Days you record anything will appear here.") ??
-          screen.queryByText("Your record starts here.");
+          screen.queryByText("Today is on your record.");
         expect(body).not.toBeNull();
       });
       return view;
@@ -297,21 +297,33 @@ describe("ProgressScreen", () => {
     });
 
     /**
-     * ☠️ **The gate is SPAN, not count** - and these two cases invert the count
-     * to prove it. Two recorded days ending today draw no band; ONE recorded day
-     * three days back does. A gate that counted marks cannot pass both.
+     * ☠️ **The gate is SPAN, and the span is zero exactly** (#2344) - and these
+     * three cases invert both wrong gates to prove it. ONE recorded day draws a
+     * band, so a gate that counted marks cannot pass; TWO recorded days ending
+     * today draw one too, so the `span < 2` gate this replaced cannot either.
+     * Only a record that is today and nothing else stays a sentence.
      */
     it("draws the band from a single record three days back", async () => {
       await renderAt(["2026-09-01"]);
 
       expect(screen.getByTestId("record-band")).toBeTruthy();
-      expect(screen.queryByText("Your record starts here.")).toBeNull();
+      expect(screen.queryByText("Today is on your record.")).toBeNull();
     });
 
-    it("says the record starts here when two days of records leave no axis", async () => {
+    it("draws the band when two days of records leave only 8px of axis", async () => {
       await renderAt(["2026-09-03", "2026-09-04"]);
 
-      expect(screen.getByText("Your record starts here.")).toBeTruthy();
+      // ☠️ The mark made yesterday EXISTS, so it is drawn. An 8px band is an
+      // accepted render; a sentence in its place says the card's one promise -
+      // "one mark for each day with a record" - is not kept.
+      expect(screen.getAllByTestId("record-mark")).toHaveLength(2);
+      expect(screen.queryByText("Today is on your record.")).toBeNull();
+    });
+
+    it("says today is on the record when today is the whole of it", async () => {
+      await renderAt(["2026-09-04"]);
+
+      expect(screen.getByText("Today is on your record.")).toBeTruthy();
       expect(screen.queryByTestId("record-band")).toBeNull();
       // ☠️ Its own string: "nothing here yet" would be a lie about the person's
       // own record, and a count would be the count line refused below.
@@ -486,7 +498,7 @@ describe("ProgressScreen", () => {
 
       expect(screen.getByText("Your days")).toBeTruthy();
       expect(screen.queryByText("Days you record anything will appear here.")).toBeNull();
-      expect(screen.queryByText("Your record starts here.")).toBeNull();
+      expect(screen.queryByText("Today is on your record.")).toBeNull();
       expect(screen.queryByTestId("record-band")).toBeNull();
     });
   });
