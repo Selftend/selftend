@@ -177,7 +177,7 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 ☠️☠️ **Play's UTM parameters ride URL-encoded inside `referrer=`, not as top-level query params.** A hand-written `?utm_source=…` on a Play link registers **nothing**, silently.
 
-☠️☠️ **The in-app update offer is never tagged.** `appEnv.playStoreUrl` / `appStoreUrl` feed four consumers, and `use-update-availability` opens the store _from inside the installed app_ — a tag on those constants would inject every updating user into the very dimension the scheme exists to read. **Bare constants stay bare**; a separate tagged constant serves the three web-facing surfaces.
+☠️☠️ **The in-app update offer is never tagged.** `appEnv.playStoreUrl` / `appStoreUrl` feed four consumers, and `use-update-availability` opens the store _from inside the installed app_ — a tag on those constants would inject every updating user into the very dimension the scheme exists to read. **Bare constants stay bare**; a separate tagged constant serves the web-facing surfaces. ⚠️ **This section said _three_ of those until [#2324](https://github.com/Selftend/selftend/issues/2324) built it and found four** — the Get-the-app section has two mount points with different audiences (§ 5.1).
 
 ☠️ **Why in-URL tagging is the only mechanism that can work:** every web store link opens through `openExternalUrl` with `noopener,noreferrer`, so the site's own posture already destroyed the referrer signal.
 
@@ -185,21 +185,23 @@ Guest-ness is read with `isGuestAccount(user)` — **the absence of an email, ne
 
 ### 5.1 The vocabulary — start here before minting a tag
 
-Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The in-app surfaces resolve their tag through `src/lib/store-links.ts`; the rest are hand-written links that a human pastes, and this table is the record of what they carry.
+Built on [#2324](https://github.com/Selftend/selftend/issues/2324). The in-app surfaces resolve their tag through `src/lib/store-links.ts` and carry it today. ☠️ **The hand-written rows below are a reserved vocabulary, not a description of live links** — each is applied when a human next edits that surface, and none of them is tagged yet.
 
-| Source             | Where the link sits                                         | Written by                                          |
-| ------------------ | ----------------------------------------------------------- | --------------------------------------------------- |
-| `web-download-bar` | The Android mobile-web download bar, landing + auth screens | `src/components/app/android-download-bar.tsx`       |
-| `web-auth-landing` | The Get-the-app block on the sign-in landing screen         | `src/components/app/auth-landing-block.tsx`         |
-| `app-user-menu`    | The Get-the-app block in the signed-in user menu            | `src/components/app/user-menu.tsx`                  |
-| `app-support`      | The Support screen's two store rows                         | `app/(app)/support.tsx`                             |
-| `github-readme`    | The repository README's store links                         | Hand-written                                        |
-| `r-selftend`       | The project's own subreddit                                 | Hand-written (`scripts/release-thread/` posts here) |
-| `r-bulgaria`       | Other subreddits, one source per community                  | Hand-written                                        |
-| `youtube`          | The YouTube channel's links                                 | Hand-written                                        |
-| `alternativeto`    | The AlternativeTo listing                                   | Hand-written                                        |
+| Source             | Where the link sits                                         | Written by                                          | Live? |
+| ------------------ | ----------------------------------------------------------- | --------------------------------------------------- | ----- |
+| `web-download-bar` | The Android mobile-web download bar, landing + auth screens | `src/components/app/android-download-bar.tsx`       | ✅    |
+| `web-auth-landing` | The Get-the-app block on the sign-in landing screen         | `src/components/app/auth-landing-block.tsx`         | ✅    |
+| `app-user-menu`    | The Get-the-app block in the signed-in user menu            | `src/components/app/user-menu.tsx`                  | ✅    |
+| `app-support`      | The Support screen's two store rows                         | `app/(app)/support.tsx`                             | ✅    |
+| `github-readme`    | The repository README's store links                         | Hand-written                                        | ❌    |
+| `r-selftend`       | The project's own subreddit                                 | Hand-written (`scripts/release-thread/` posts here) | ❌    |
+| `r-bulgaria`       | Other subreddits, one source per community                  | Hand-written                                        | ❌    |
+| `youtube`          | The YouTube channel's links                                 | Hand-written                                        | ❌    |
+| `alternativeto`    | The AlternativeTo listing                                   | Hand-written                                        | ❌    |
 
-**The rules a new value has to meet**, all pinned by `src/lib/store-links.test.ts`: lowercase-hyphenated, ≤ 30 characters, names the surface rather than the platform.
+**The rules a new value has to meet:** lowercase-hyphenated, ≤ 30 characters, and it names the surface rather than the platform.
+
+⚠️ **Only the first two are pinned by a test, and only for the in-app sources.** `src/lib/store-links.test.ts` asserts shape and length against `STORE_LINK_SOURCES`, which is the four ✅ rows — the hand-written values are not in it, so nothing checks them. **"Names the surface rather than the platform" is asserted by nothing at all** and is not mechanically assertable; it is a reviewer's job. Said plainly here because this document's own § 9 is the story of a guard everyone assumed was tested.
 
 ☠️ **A `web-` prefix means a visitor with no account can reach that surface; an `app-` prefix means it only ever fires for somebody already using Selftend on the web.** `app-support` and `app-user-menu` are named that way deliberately (owner ruling, 2026-09-11): those installs are _existing web users who installed native_, and a marketing-style name would let them read as fresh acquisitions. ⚠️ **The Get-the-app section has two mount points with different audiences**, which is why it takes its source as a prop rather than owning one.
 

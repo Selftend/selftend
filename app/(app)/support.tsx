@@ -156,6 +156,12 @@ export default function SupportScreen() {
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
 
+  // The store rows' one source of truth, tagged and resolved once: empty when
+  // this build has no listing, so the rows below gate on the same value they
+  // open (measurement.md § 5.1).
+  const playStoreLink = taggedPlayStoreUrl(STORE_LINK_SOURCES.appSupport);
+  const appStoreLink = taggedAppStoreUrl(STORE_LINK_SOURCES.appSupport);
+
   // A registered user's reply address comes from their account on the server;
   // only a guest, who has no email anywhere, is offered one - optional,
   // guest-only, and used for nothing but replying (#1447). This surface
@@ -536,24 +542,28 @@ export default function SupportScreen() {
             fires for somebody already using the web app, so its installs are
             "existing web users who installed native" rather than fresh
             acquisitions (measurement.md § 5, owner ruling 2026-09-11).
+
+            The gate and the press read the SAME value, never the bare constant
+            and the tagged one separately - two reads of one fact drift, and a
+            whitespace-only store URL would render a row that opens nothing.
           */}
-            {Platform.OS === "web" && appEnv.playStoreUrl ? (
+            {Platform.OS === "web" && playStoreLink ? (
               <SettingsRow
                 icon="android"
                 label={t("supportPage.getAndroid")}
                 description={t("supportPage.playStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(taggedPlayStoreUrl(STORE_LINK_SOURCES.appSupport))}
+                onPress={() => openExternalUrl(playStoreLink)}
                 testID="support-row-android"
               />
             ) : null}
-            {Platform.OS === "web" && appEnv.appStoreUrl ? (
+            {Platform.OS === "web" && appStoreLink ? (
               <SettingsRow
                 icon="phone-iphone"
                 label={t("supportPage.getIos")}
                 description={t("supportPage.appStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(taggedAppStoreUrl(STORE_LINK_SOURCES.appSupport))}
+                onPress={() => openExternalUrl(appStoreLink)}
                 testID="support-row-ios"
               />
             ) : null}

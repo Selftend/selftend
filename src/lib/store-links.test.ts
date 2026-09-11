@@ -1,10 +1,5 @@
 import { appEnv } from "@/src/lib/env";
-import {
-  STORE_LINK_SOURCES,
-  storeLinkSourceValues,
-  taggedAppStoreUrl,
-  taggedPlayStoreUrl,
-} from "@/src/lib/store-links";
+import { STORE_LINK_SOURCES, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 
 const PLAY_BASE = "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend";
 const APPLE_BASE = "https://apps.apple.com/app/selftend/id6796318929";
@@ -56,7 +51,7 @@ describe("tagged store links", () => {
   // Play has no medium dimension and Apple has no slot for one. Omitted on
   // purpose (measurement.md section 5) - a test so nobody "fixes" it later.
   it("carries no utm_medium on either store", () => {
-    for (const source of storeLinkSourceValues()) {
+    for (const source of Object.values(STORE_LINK_SOURCES)) {
       expect(taggedPlayStoreUrl(source)).not.toContain("utm_medium");
       expect(taggedAppStoreUrl(source)).not.toContain("utm_medium");
     }
@@ -73,14 +68,14 @@ describe("tagged store links", () => {
   });
 
   it("keeps every source value inside the vocabulary rules", () => {
-    for (const source of storeLinkSourceValues()) {
+    for (const source of Object.values(STORE_LINK_SOURCES)) {
       expect({ source, ok: source.length <= 30 }).toEqual({ source, ok: true });
       expect(source).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
     }
   });
 
   it("has no duplicate source values", () => {
-    const values = storeLinkSourceValues();
+    const values = Object.values(STORE_LINK_SOURCES);
 
     expect(new Set(values).size).toBe(values.length);
   });
@@ -112,33 +107,60 @@ describe("the bare store constants", () => {
     }
   }
 
-  // The Play default legitimately carries `?id=`, so this cannot assert "no
-  // query parameters at all" - it names the tagging parameters instead.
-  const TAGGING_PARAMETERS = ["referrer=", "utm_", "ct=", "pt=", "mt="];
+  // An **allowlist of query keys**, not a denylist of tagging ones. The Play
+  // default legitimately carries `?id=`, so this cannot assert "no query
+  // parameters at all" as the ticket worded it - but naming the keys that may
+  // appear catches a tag under a name nobody thought to forbid, which a list
+  // of `utm_`/`ct=`/`pt=` would not. Same reasoning as the exact `script-src`
+  // token-set allowlist in the CSP test (measurement.md § 10 item 5).
+  const ALLOWED_QUERY_KEYS: Record<string, string[]> = {
+    playStoreUrl: ["id"],
+    appStoreUrl: [],
+  };
 
-  it("leaves the shipped Play and App Store URLs free of tagging parameters", () => {
+  function queryKeys(url: string): string[] {
+    const query = url.split("#")[0].split("?").slice(1).join("?");
+    if (!query) return [];
+    return query
+      .split("&")
+      .filter(Boolean)
+      .map((pair) => pair.split("=")[0]);
+  }
+
+  it("leaves the shipped Play and App Store URLs carrying no key but their listing id", () => {
     const defaults = shippedDefaults();
 
     for (const [name, url] of Object.entries(defaults)) {
-      expect({ name, url, tagged: TAGGING_PARAMETERS.filter((p) => url.includes(p)) }).toEqual({
-        name,
-        url,
-        tagged: [],
-      });
+      expect({ name, keys: queryKeys(url) }).toEqual({ name, keys: ALLOWED_QUERY_KEYS[name] });
     }
   });
 
-  // Prove the check above is looking at something: a tagged URL trips it.
-  it("would catch a tagged constant", () => {
-    const previous = appEnv.playStoreUrl;
-    appEnv.playStoreUrl = PLAY_BASE;
+  // Prove the check above is looking at something: a tagged URL trips it, on
+  // both stores and whatever the tag is called.
+  it("would catch a tagged constant on either store", () => {
+    expect(queryKeys(taggedPlayStoreUrl(STORE_LINK_SOURCES.webDownloadBar, PLAY_BASE))).not.toEqual(
+      ALLOWED_QUERY_KEYS.playStoreUrl,
+    );
+    expect(queryKeys(taggedAppStoreUrl(STORE_LINK_SOURCES.webDownloadBar, APPLE_BASE))).not.toEqual(
+      ALLOWED_QUERY_KEYS.appStoreUrl,
+    );
+  });
+
+  // ⚠️ The limit of this guard, stated rather than left to be discovered: it
+  // reads the hardcoded defaults, because `EXPO_PUBLIC_PLAY_STORE_URL` and
+  // `EXPO_PUBLIC_APP_STORE_URL` are deploy config no test can see. A tag added
+  // to a deployment's env var would not trip anything here - the update path
+  // would carry it, and only a human reading `.env` would know.
+  it("is pinned to the hardcoded defaults, not to whatever a deployment sets", () => {
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL = `${PLAY_BASE}&referrer=utm_source%3Dsomething`;
 
     try {
-      const tagged = taggedPlayStoreUrl(STORE_LINK_SOURCES.webDownloadBar);
-
-      expect(TAGGING_PARAMETERS.filter((parameter) => tagged.includes(parameter))).not.toEqual([]);
+      // The guard's own helper strips the env var, which is exactly why an
+      // env-supplied tag is invisible to it.
+      expect(queryKeys(shippedDefaults().playStoreUrl)).toEqual(ALLOWED_QUERY_KEYS.playStoreUrl);
     } finally {
-      appEnv.playStoreUrl = previous;
+      delete process.env.EXPO_PUBLIC_PLAY_STORE_URL;
+      jest.resetModules();
     }
   });
 });

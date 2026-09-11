@@ -488,6 +488,16 @@ describe("SupportScreen column (#1726)", () => {
     expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
 
+  // The gate and the press read one value, so a whitespace-only URL cannot
+  // render a row that opens nothing - it just isn't a store this build has.
+  it("drops the row for a store URL that is only whitespace", () => {
+    setPlatformOS("web");
+    appEnv.appStoreUrl = "   ";
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.queryByTestId("support-row-ios")).toBeNull();
+  });
+
   it("policies are two rows that push in-app, and none of them is the crisis page", () => {
     renderWithProviders(<SupportScreen />);
 

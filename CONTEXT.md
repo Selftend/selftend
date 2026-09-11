@@ -318,6 +318,18 @@ account row on principle, because such a value on a person's row is an inferred-
 describes a _conversion_, which by the rule above never changes an origin. Two different fours; do
 not cite one as evidence for the other.
 
+**Store link source**:
+Which Selftend surface an outbound link to Google Play or the App Store was placed on — a fact
+about our own link, carried on the URL so the store consoles can report it. Named in
+`src/lib/store-links.ts`, vocabulary and rules in `docs/measurement.md` § 5.1 (#2324).
+☠️ **This is the one place "source" is a legitimate word, and the reason is that it never touches a
+person or a row.** Nothing is collected, nothing returns to the database, and the value is read only
+in Google's and Apple's consoles. The moment such a value would be stored against an account it
+becomes the refused thing the entry above describes — so the boundary to check is _collection and
+disclosure_, never whether a file under `src/` changed.
+_Avoid_: calling it attribution, a channel, or a referrer. It says **where the link sat**, never
+where the click came from, and never who sent the person.
+
 **Guest account**:
 The account created silently on first use, with no sign-in identity attached. A full account — it
 owns its data like any other — whose only key is the session held on that device or browser: lose

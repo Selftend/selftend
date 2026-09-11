@@ -54,10 +54,6 @@ export const STORE_LINK_SOURCES = {
 
 export type StoreLinkSource = (typeof STORE_LINK_SOURCES)[keyof typeof STORE_LINK_SOURCES];
 
-export function storeLinkSourceValues(): StoreLinkSource[] {
-  return Object.values(STORE_LINK_SOURCES);
-}
-
 function appendParameter(url: string, parameter: string): string {
   const base = url.trim();
   // An unconfigured store is absent, not "a bare tag": every calling surface
