@@ -1,6 +1,6 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +9,6 @@ import { Section } from "@/src/components/app/section";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
-import { BarChart } from "@/src/components/charts/bar-chart";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -20,13 +19,14 @@ import { JournalCard } from "@/src/features/journal/journal-card";
 import {
   formatJournalMonth,
   formatJournalRecentWhen,
-  formatJournalWritingBucket,
   formatJournalWritingRange,
   groupRecentJournalEntries,
-  journalWritingBarLabel,
-  journalWritingUnit,
   type JournalRecentSection,
 } from "@/src/features/journal/journal-overview";
+import {
+  JournalWritingChart,
+  JournalWritingChartReservation,
+} from "@/src/features/journal/journal-writing-chart";
 import {
   useJournalEntries,
   useJournalEntryCount,
@@ -124,7 +124,6 @@ export default function JournalListScreen() {
   // leave that range.
   const hasAnyEntry = (totalEntries ?? allEntries.length) > 0;
   const hasWritingInRange = Boolean(writingBuckets?.some((bucket) => bucket.wordCount > 0));
-  const writingUnit = journalWritingUnit(writingBuckets ?? []);
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback(
@@ -217,34 +216,18 @@ export default function JournalListScreen() {
                     </Button>
                   </View>
                 ) : !writingBuckets ? (
-                  <View className="items-center py-8">
-                    <ActivityIndicator testID="journal-writing-loading" />
-                  </View>
+                  // And it holds the chart's space while it says nothing, so the entries
+                  // list below does not rise and drop back as the buckets land (ADR-0009
+                  // clause 2). The reservation derives its own columns from the selected
+                  // range - see `JournalWritingChartReservation`.
+                  //
+                  // This arm is what the two above leave: a read that did start and has
+                  // not finished. A read that never started, or failed, answers with the
+                  // error line and its retry, so the space is held for something actually
+                  // on its way.
+                  <JournalWritingChartReservation range={writingRange} />
                 ) : hasWritingInRange ? (
-                  <>
-                    <BarChart
-                      bars={(writingBuckets ?? []).map((bucket, index, buckets) => ({
-                        key: bucket.startDayKey,
-                        value: bucket.wordCount,
-                        label: journalWritingBarLabel(bucket, index, buckets.length, i18n.language),
-                        accessibilityLabel: t("writing.barLabel", {
-                          period: formatJournalWritingBucket(bucket, i18n.language),
-                          count: bucket.wordCount,
-                        }),
-                      }))}
-                      barAreaHeight={72}
-                      minBarHeight={8}
-                      zeroHeight={2}
-                      tintClass="bg-primary"
-                      barClassName="rounded-sm"
-                      columnClassName="gap-1.5"
-                      labelClassName="tabular-nums"
-                      className={writingBuckets && writingBuckets.length > 14 ? "gap-0.5" : "gap-1"}
-                    />
-                    <Text variant="muted" className="text-xs">
-                      {t(`writing.caption.${writingUnit}`)}
-                    </Text>
-                  </>
+                  <JournalWritingChart buckets={writingBuckets} />
                 ) : (
                   <Text variant="muted" className="py-4 text-[13px]">
                     {t("writing.emptyRange")}
