@@ -549,19 +549,14 @@ describe("MoodEntryEditorScreen", () => {
     });
 
     /**
-     * #2360. The door to the manage-emotions panel is shut while this read is in flight,
-     * and the reason is the panel's own sizing rather than anything on this screen: on web
-     * it hugs its content (`VIEW_SIZING`, design 2E/#905), so a panel opened onto a pending
-     * read grows from a short card to a viewport-capped one when the rows land — recentring
-     * the desktop card, growing the mobile drawer upward, and carrying the header and the
-     * "Add emotion" button with it. ADR-0009 edge 5 fixed the column's own order (#2348),
-     * but it assumes a column of definite height, which the web panel does not have.
+     * #2360. The door to the manage-emotions panel is shut while this read is in flight.
+     * The reason is the panel's own sizing rather than anything on this screen, and it is
+     * written once at `mood-entry-editor-screen.tsx`'s gate and in ADR-0009 edge 5 rather
+     * than restated here.
      *
-     * The gate lives HERE rather than in the panel because this screen is the panel's only
-     * door, and because the two read the SAME query key through the same hook — so the panel
-     * is pending exactly when this screen is, which is knowable at the moment of the tap.
-     * Shutting the door makes the settle unreachable by construction, and costs the panel's
-     * sizing nothing.
+     * What is local, and all this suite can see: the panel is pending exactly when this
+     * screen is — same query key, same hook — so `emotionsLoading` is the right flag, and
+     * shutting the door for that window is enough to keep the panel off a pending read.
      */
     it("shuts the door to the manage panel rather than open it onto a pending read", () => {
       renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);

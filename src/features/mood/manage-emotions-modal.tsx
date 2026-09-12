@@ -590,13 +590,20 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                   Ruled on #2360: the cure is at the DOOR. `mood-entry-editor-screen.tsx`
                   is this panel's only opener and reads the same query key through the
                   same hook, so it is pending exactly when this surface is; it shuts the
-                  "Manage" link for that window, and this panel therefore only ever opens
-                  onto rows. ☠️ That is what keeps `VIEW_SIZING` as it is — do not
-                  "finish" the job here by giving the panel a height or a `min-h`, and if
-                  a SECOND door to this panel is ever added it needs the same gate, or the
-                  settle comes back. The `isLoading` branch below stays regardless: the
-                  query key carries the user id, so a sign-out under an open panel makes
-                  it pending again. */}
+                  "Manage" link for that window, so the panel does not open onto a pending
+                  read at all. ☠️ That is what keeps `VIEW_SIZING` as it is — do not
+                  "finish" the job here by giving the panel a height or a `min-h`. If a
+                  SECOND door is ever added it needs the same gate or the settle comes
+                  back, which `test/manage-emotions-single-door.test.ts` is there to catch.
+
+                  ⚠️ The `isLoading` branch below is NOT dead, and the gate is not a
+                  promise this panel never settles. Three paths survive it: a read that
+                  ERRORS settles with no rows and `isLoading` false, so the door opens on
+                  an empty panel and a later successful refetch grows it; a sign-out under
+                  an open panel changes the user id in the query key, making it pending
+                  again; and the cache can be cleared outright. The first is ADR-0009 edge
+                  1's ruled trade — a shift-on-success converted into a rarer
+                  shift-on-failure — rather than a gap in this fix. */}
               <View className={cn(FORM_COLUMN, "gap-4")} testID="manage-emotions-column">
                 <Button
                   variant="outline"

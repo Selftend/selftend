@@ -525,8 +525,17 @@ export function MoodEntryEditorScreen({
                 The gate belongs here because this screen is the panel's only door, and
                 because the panel reads the SAME query key through the same hook — it is
                 pending exactly when `emotionsLoading` is true, so the answer is already in
-                hand at the moment of the tap. That makes the settle unreachable by
-                construction and costs the panel's sizing nothing.
+                hand at the moment of the tap. `test/manage-emotions-single-door.test.ts`
+                holds that one-door premise up; without it this argument quietly stops being
+                true. Costs the panel's sizing nothing.
+
+                ⚠️ This shuts the FIRST-LOAD path — the one that produced the defect — and
+                not every path. A read that ERRORS settles with no rows and `isLoading`
+                false, so the door opens on an empty panel, and a later successful refetch
+                grows it after all. That residue is ADR-0009 edge 1's ruling, not an
+                oversight: reservation belongs to the pending state, which "converts a
+                shift-on-success into a rarer shift-on-failure — a trade, not an
+                elimination". Do not read this gate as a promise the panel never settles.
 
                 `disabled` rather than a swap to a plain `View`: the link stays visible here
                 (unlike a reservation's stick), so it must announce that it is not yet live
