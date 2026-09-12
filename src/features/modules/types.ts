@@ -5,14 +5,6 @@ export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 // ("cbt:info"), or a home tour stop ("home:edit").
 export type ButtonTourKey = string;
 
-// A notification target key ("mood", "cbt", ...) the one-time contextual
-// reminder prompt was shown for, back when there was one.
-//
-// ⚠️ Write-once history. The prompt was removed outright (#2342, ADR-0008), so
-// nothing appends to this list and nothing reads it; the column and the rows go
-// in #2343, and this type goes with them. Do not build anything on it.
-export type ReminderPromptedTool = string;
-
 export type GratitudeLevel = 1 | 2 | 3;
 
 export interface CookieConsent {
@@ -142,7 +134,6 @@ export interface UserPreferences {
   activeStrategies: string[];
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
-  reminderPromptedTools: ReminderPromptedTool[];
   /**
    * The once-ever starter-routine offer at the second action (#1677) has been
    * shown. Marked on show: navigating away counts as asked, and declining
@@ -290,7 +281,6 @@ export const defaultUserPreferences: UserPreferences = {
   activeStrategies: [],
   startHereDismissedAt: null,
   shownButtonTours: [],
-  reminderPromptedTools: [],
   starterRoutineOffered: false,
   breathSoundId: "guided",
   ambientSoundId: "none",
