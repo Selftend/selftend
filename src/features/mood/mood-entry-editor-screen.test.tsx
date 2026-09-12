@@ -77,6 +77,23 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => {
   };
 });
 
+/**
+ * The panel behind the "Manage" link, reduced to whether it is open (#2360).
+ *
+ * The real one brings `GestureHandlerRootView` and `Sortable.Grid`, neither of which this
+ * suite has any business installing — and a screen test that renders them is testing the
+ * panel, which `manage-emotions-modal.test.tsx` already does. What belongs HERE is only the
+ * door: whether this screen lets the panel open at all, which is this screen's own state.
+ */
+jest.mock("@/src/features/mood/manage-emotions-modal", () => {
+  const { View } = require("react-native");
+
+  return {
+    ManageEmotionsModal: ({ visible }: { visible: boolean }) =>
+      visible ? <View testID="manage-emotions-panel" /> : null,
+  };
+});
+
 jest.mock("@/src/components/react-native-reusables/checkbox", () => {
   const Pressable = mockPressable;
 
@@ -531,6 +548,29 @@ describe("MoodEntryEditorScreen", () => {
       expect(screen.UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThan(0);
     });
 
+    /**
+     * #2360. The door to the manage-emotions panel is shut while this read is in flight.
+     * The reason is the panel's own sizing rather than anything on this screen, and it is
+     * written once at `mood-entry-editor-screen.tsx`'s gate and in ADR-0009 edge 5 rather
+     * than restated here.
+     *
+     * What is local, and all this suite can see: the panel is pending exactly when this
+     * screen is — same query key, same hook — so `emotionsLoading` is the right flag, and
+     * shutting the door for that window is enough to keep the panel off a pending read.
+     */
+    it("shuts the door to the manage panel rather than open it onto a pending read", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      const link = screen.getByLabelText("Manage emotions");
+      expect(link.props.accessibilityState?.disabled).toBe(true);
+
+      // ☠️ The a11y state above is an announcement, not a lock. The press is asserted
+      // separately because a `disabled` that only renamed the control — and still opened the
+      // panel — would leave the assertion above vacuously green.
+      fireEvent.press(link);
+      expect(screen.queryByTestId("manage-emotions-panel")).toBeNull();
+    });
+
     it("gives the space back to the real grid once the rows land", async () => {
       const { rerender } = renderWithProviders(
         <MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />,
@@ -638,6 +678,21 @@ describe("MoodEntryEditorScreen", () => {
       // Short visible copy, full accessible name (design 2b).
       expect(screen.getByText("Manage")).toBeTruthy();
       expect(screen.getByLabelText("Manage emotions")).toBeTruthy();
+    });
+
+    /**
+     * The other half of #2360's gate, and the reason it is not one test. A link hardcoded
+     * shut would satisfy the pending assertion above on its own and ship a door that never
+     * opens; only the settled case can tell a gate from a wall.
+     */
+    it("opens the door again once the emotions have landed", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      const link = screen.getByLabelText("Manage emotions");
+      expect(link.props.accessibilityState?.disabled).toBe(false);
+
+      fireEvent.press(link);
+      expect(screen.getByTestId("manage-emotions-panel")).toBeTruthy();
     });
   });
 

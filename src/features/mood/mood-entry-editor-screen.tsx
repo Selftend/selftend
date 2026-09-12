@@ -512,10 +512,46 @@ export function MoodEntryEditorScreen({
         <View className="gap-4">
           <View className="flex-row items-baseline justify-between">
             <SectionEyebrow title={t("mood.emotionsTitle")} optionalTag={t("mood.optionalTag")} />
+            {/* ☠️ SHUT WHILE THE READ BELOW IS IN FLIGHT (#2360), and the reason is the
+                PANEL's sizing, not anything on this screen. On web the manage-emotions panel
+                hugs its content by design (`VIEW_SIZING`, 2E/#905), so one opened onto a
+                pending read grows from a short card to a viewport-capped one the moment the
+                rows land — recentring the desktop card, growing the mobile drawer upward, and
+                carrying its own header and "Add emotion" button with it. ADR-0009 edge 5 put
+                that column in order (#2348), but edge 5 assumes a column of DEFINITE height,
+                which the web panel does not have; every cure at panel scale is either a
+                reversal of 2E or the guessed height edge 5 rejects by name.
+
+                The gate belongs here because this screen is the panel's only door, and
+                because the panel reads the SAME query key through the same hook — it is
+                pending exactly when `emotionsLoading` is true, so the answer is already in
+                hand at the moment of the tap. `test/manage-emotions-single-door.test.ts`
+                holds that one-door premise up; without it this argument quietly stops being
+                true. Costs the panel's sizing nothing.
+
+                ⚠️ This shuts the FIRST-LOAD path — the one that produced the defect — and
+                not every path. A read that ERRORS settles with no rows and `isLoading`
+                false, so the door opens on an empty panel, and a later successful refetch
+                grows it after all. That residue is ADR-0009 edge 1's ruling, not an
+                oversight: reservation belongs to the pending state, which "converts a
+                shift-on-success into a rarer shift-on-failure — a trade, not an
+                elimination". Do not read this gate as a promise the panel never settles.
+
+                `disabled` rather than a swap to a plain `View`: the link stays visible here
+                (unlike a reservation's stick), so it must announce that it is not yet live
+                rather than look identical and silently do nothing. It also takes the control
+                out of the tab order — react-native-web gives every `Pressable` `tabIndex=0`
+                UNLESS it is disabled, which is the same mechanism `ShowAllLinkStick` avoids
+                by not being a `Pressable` at all.
+
+                Opacity only, never a size or a swap: the gate must not itself move the row it
+                sits in. */}
             <Pressable
               onPress={() => setManageEmotionsOpen(true)}
+              disabled={emotionsLoading}
               accessibilityRole="button"
               accessibilityLabel={tMood("emotions.manage.title")}
+              className={cn(emotionsLoading && "opacity-50")}
             >
               <Text className="text-[12.5px] text-muted-foreground">
                 {tMood("emotions.manage.link")}
