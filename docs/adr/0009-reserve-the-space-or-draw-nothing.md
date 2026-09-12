@@ -122,9 +122,15 @@ holds six of the files this rule reaches.
    the tickets behind this ADR was derived from class strings rather than
    measured in a browser, and a number nobody re-measures is a number that goes
    stale silently. `ReservedSpace` in
-   `src/components/app/reserved-space.tsx` is that technique with the a11y
-   hiding and the fill token attached; `NotificationRowSkeleton` is the worked
-   example.
+   `src/components/app/reserved-space.tsx` packages it for the whole-region
+   case — one stick, one signal drawn over it — with the a11y hiding and the
+   fill token attached.
+
+   ⚠️ `NotificationRowSkeleton` is where the technique came from, and it still
+   builds its own: it interleaves a stick and a fill **per element** rather than
+   overlaying one on one, which `ReservedSpace` does not express. It shares the
+   fill token and nothing else, so a change to `ReservedSpace`'s hiding does not
+   reach it — touch both, or give `ReservedSpace` the per-element shape first.
 
 5. **When the final height genuinely is not knowable**, move the content to the
    **end of its scroll column** so nothing sits below it to push. This is not an

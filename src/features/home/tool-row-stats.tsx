@@ -43,12 +43,12 @@ import { useHomeToolStats } from "@/src/features/home/tool-stats-queries";
  *   ☠️ That is [ADR-0009](../../../docs/adr/0009-reserve-the-space-or-draw-nothing.md)'s
  *   **clause 1 only**, and this comment used to say "never a skeleton" — clause 1 stated as
  *   though it settled clause 2, which is the wording that propagated the collapse into Home.
- *   Clause 2 says reserve the space you will occupy; it is **not** applied to this slot, and
- *   the ADR names the reason: reservation belongs to the PENDING state, and `undefined` here
- *   covers a failed fetch with no cache as well as a pending read. Reserving unconditionally
- *   would leave eight permanently dead lines on Home — a worse surface than the shift it
- *   prevents. Honesty is kept; the layout half is a deliberate exception with a stated cost,
- *   not a contradiction of the rule.
+ *   Clause 2 — reserve the space you will occupy — binds the **pending** state, and this slot
+ *   has no pending state it can distinguish: `undefined` covers a failed fetch with no cache
+ *   and a read still in flight alike, so reserving on it would leave eight permanently dead
+ *   lines on Home, a worse surface than the shift. The rule is not waived here; it simply
+ *   does not reach a slot that cannot tell the two apart. Give the hook a state that can, and
+ *   clause 2 reaches this line the same day.
  * - **loaded and empty** → the shared `home.rows.empty`. One key for every tool: the card's
  *   own name already supplies the noun.
  * - **nothing scheduled today** → its own string. A user with seven habits and none due

@@ -19,12 +19,57 @@ import { ReservedSpace } from "@/src/components/app/reserved-space";
  * reserve the wrong width and re-wrap the run the moment the real chips arrived.
  */
 export const CHIP_FRAME = "flex-row items-center gap-1.5 rounded-full border px-3 py-1.5";
-export const CHIP_UNSELECTED_FRAME = "border-border bg-card";
-export const CHIP_SELECTED_FRAME = "border-primary bg-primary/10";
-export const CHIP_EMOJI_TYPE = "text-[14px] leading-none";
-export const CHIP_LABEL_TYPE = "text-[13px]";
-export const CHIP_SELECTED_LABEL_TYPE = "font-semibold text-primary-ink";
-export const CHIP_UNSELECTED_LABEL_TYPE = "text-foreground";
+const CHIP_UNSELECTED_FRAME = "border-border bg-card";
+const CHIP_SELECTED_FRAME = "border-primary bg-primary/10";
+const CHIP_EMOJI_TYPE = "text-[14px] leading-none";
+const CHIP_LABEL_TYPE = "text-[13px]";
+const CHIP_SELECTED_LABEL_TYPE = "font-semibold text-primary-ink";
+const CHIP_UNSELECTED_LABEL_TYPE = "text-foreground";
+
+/** The frame, for whichever element is carrying it — a `Pressable`, or a silhouette's `View`. */
+function chipFrameClassName(selected: boolean) {
+  return cn(CHIP_FRAME, selected ? CHIP_SELECTED_FRAME : CHIP_UNSELECTED_FRAME);
+}
+
+/**
+ * What is inside every chip: the optional glyph, then the label in the type its selection
+ * state dictates.
+ *
+ * Shared as MARKUP, not only as class names, and the distinction is the whole point. Pulling
+ * the strings into constants above stops the frame drifting; it does nothing about a
+ * silhouette that quietly stops rendering the emoji, where every class string still matches
+ * and the reserved width is 20px short anyway. One face, three frames.
+ *
+ * The glyph is decorative on all three: the label already carries the name, and announcing
+ * the emoji would read the emotion twice.
+ */
+function ChipFace({
+  label,
+  emoji,
+  selected,
+}: {
+  label: string;
+  emoji?: string;
+  selected: boolean;
+}) {
+  return (
+    <>
+      {emoji ? (
+        <Text aria-hidden className={CHIP_EMOJI_TYPE}>
+          {emoji}
+        </Text>
+      ) : null}
+      <Text
+        className={cn(
+          CHIP_LABEL_TYPE,
+          selected ? CHIP_SELECTED_LABEL_TYPE : CHIP_UNSELECTED_LABEL_TYPE,
+        )}
+      >
+        {label}
+      </Text>
+    </>
+  );
+}
 
 interface SelectableChipProps {
   label: string;
@@ -103,27 +148,13 @@ export function SelectableChip({
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onToggle}
       testID={testID}
-      className={cn(CHIP_FRAME, selected ? CHIP_SELECTED_FRAME : CHIP_UNSELECTED_FRAME)}
+      className={chipFrameClassName(selected)}
       // One owner of `onKeyDown`. RNW activates neither a checkbox nor a radio
       // on Space, so a chip outside a roving group needs its own handler; inside
       // one, the group's item props already carry it.
       {...(rovingProps ?? spaceKeyActivationProps(onToggle))}
     >
-      {emoji ? (
-        // Decorative: the label already carries the name, and announcing the
-        // glyph would read the emotion twice.
-        <Text aria-hidden className={CHIP_EMOJI_TYPE}>
-          {emoji}
-        </Text>
-      ) : null}
-      <Text
-        className={cn(
-          CHIP_LABEL_TYPE,
-          selected ? CHIP_SELECTED_LABEL_TYPE : CHIP_UNSELECTED_LABEL_TYPE,
-        )}
-      >
-        {label}
-      </Text>
+      <ChipFace label={label} emoji={emoji} selected={selected} />
     </Pressable>
   );
 }
@@ -142,13 +173,8 @@ export function SelectableChip({
  */
 export function StaticChip({ label, emoji }: { label: string; emoji?: string }) {
   return (
-    <View className={cn(CHIP_FRAME, CHIP_SELECTED_FRAME)}>
-      {emoji ? (
-        <Text aria-hidden className={CHIP_EMOJI_TYPE}>
-          {emoji}
-        </Text>
-      ) : null}
-      <Text className={cn(CHIP_LABEL_TYPE, CHIP_SELECTED_LABEL_TYPE)}>{label}</Text>
+    <View className={chipFrameClassName(true)}>
+      <ChipFace label={label} emoji={emoji} selected />
     </View>
   );
 }
@@ -203,19 +229,8 @@ export function ChipRunReservation({
         {chips.map((chip) => {
           const selected = selectedIds?.includes(chip.id) ?? false;
           return (
-            <View
-              key={chip.id}
-              className={cn(CHIP_FRAME, selected ? CHIP_SELECTED_FRAME : CHIP_UNSELECTED_FRAME)}
-            >
-              {chip.emoji ? <Text className={CHIP_EMOJI_TYPE}>{chip.emoji}</Text> : null}
-              <Text
-                className={cn(
-                  CHIP_LABEL_TYPE,
-                  selected ? CHIP_SELECTED_LABEL_TYPE : CHIP_UNSELECTED_LABEL_TYPE,
-                )}
-              >
-                {chip.label}
-              </Text>
+            <View key={chip.id} className={chipFrameClassName(selected)}>
+              <ChipFace label={chip.label} emoji={chip.emoji} selected={selected} />
             </View>
           );
         })}
