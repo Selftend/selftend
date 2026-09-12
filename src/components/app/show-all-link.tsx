@@ -1,10 +1,31 @@
 import { type Href } from "expo-router";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 
+import { cn } from "@/lib/utils";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+
+/** The door's frame, shared by the real door and its measuring stick below. */
+const DOOR_FRAME = "flex-row items-center gap-1";
+
+/**
+ * The door's contents - label then arrow - with no press behaviour of its own.
+ *
+ * It exists so {@link ShowAllLinkStick} is the same markup rather than a copy of it: a
+ * silhouette assembled by hand drifts silently, and a stick that is a line short is a
+ * layout jump dressed up as a loading state all over again (#981).
+ */
+function ShowAllLinkFace({ label }: { label: string }) {
+  return (
+    <>
+      <Text className="text-[13px] font-semibold text-primary-ink">{label}</Text>
+      {/* Decorative: `Icon` is aria-hidden, so the label alone is the accessible name. */}
+      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+    </>
+  );
+}
 
 /**
  * The shared "show all" door (#1375). Eight call sites so far: check-in's three,
@@ -72,12 +93,27 @@ export function ShowAllLink({ label, route }: { label: string; route: Href }) {
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={open}
       {...enterKeyActivationProps(open)}
-      className="flex-row items-center gap-1 active:opacity-70"
+      className={cn(DOOR_FRAME, "active:opacity-70")}
       role="link"
     >
-      <Text className="text-[13px] font-semibold text-primary-ink">{label}</Text>
-      {/* Decorative: `Icon` is aria-hidden, so the label alone is the accessible name. */}
-      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+      <ShowAllLinkFace label={label} />
     </Pressable>
+  );
+}
+
+/**
+ * The door's SPACE and none of its behaviour - a measuring stick for a loading
+ * reservation (ADR-0009, edge 4).
+ *
+ * A plain `View`, because **nothing inside a reservation may be reachable**: an invisible
+ * door still takes the Tab key and can navigate a keyboard user off the screen they are
+ * waiting on. `ReservedSpace`'s docblock carries the mechanism and the reason;
+ * `ChipRunReservation`'s pills are plain `View`s for the same one.
+ */
+export function ShowAllLinkStick({ label }: { label: string }) {
+  return (
+    <View className={DOOR_FRAME}>
+      <ShowAllLinkFace label={label} />
+    </View>
   );
 }

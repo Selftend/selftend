@@ -98,6 +98,14 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
 - [src/components/react-native-reusables/button.tsx](../src/components/react-native-reusables/button.tsx), [src/components/react-native-reusables/select.tsx](../src/components/react-native-reusables/select.tsx), [src/components/react-native-reusables/switch.tsx](../src/components/react-native-reusables/switch.tsx), [src/components/react-native-reusables/checkbox.tsx](../src/components/react-native-reusables/checkbox.tsx), and [src/components/react-native-reusables/radio-group.tsx](../src/components/react-native-reusables/radio-group.tsx) set baseline roles, states, and hit slop.
 - [src/components/react-native-reusables/native-only-animated-view.tsx](../src/components/react-native-reusables/native-only-animated-view.tsx) drops entering, exiting, and layout animations when reduced motion is enabled.
 - [src/components/app/accessible-card-link.tsx](../src/components/app/accessible-card-link.tsx) is the default pattern for card-shaped navigation actions.
+- [src/components/app/reserved-space.tsx](../src/components/app/reserved-space.tsx) holds the space a
+  pending surface will occupy (ADR-0009). It hides the invisible measuring stick from assistive
+  technology and takes no pointer events - but neither of those reaches the **Tab key**.
+  react-native-web gives every `Pressable` `tabIndex="0"` unless it is disabled, so a stick built
+  from the real interactive component stays focusable while invisible, inside `aria-hidden`: Tab
+  lands on nothing a sighted keyboard user can see, and Enter can navigate them off the screen they
+  are waiting on. **Build a stick from non-interactive twins**, as `ChipRunReservation`'s plain
+  `View` pills and `ShowAllLinkStick` (the "Show all" door's face, with no press behaviour) do.
 - Onboarding and avatar-crop modals switch from fade animation to no animation when reduced motion is enabled.
 - Required policy consent uses a full-screen gate instead of a modal so linked Privacy Policy and Terms pages remain readable and reachable.
 
