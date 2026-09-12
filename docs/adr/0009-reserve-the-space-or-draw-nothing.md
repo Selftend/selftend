@@ -194,9 +194,14 @@ editor was chosen because its shift is the input-integrity one.
   settle: the stick is built from the default set, which is what every
   first-ever user is seeded with. **A reduction, not an elimination** — edge 1's
   trade, stated again where it actually lands.
-- Three sites remain to convert: `mood-tracker-screen.tsx`,
-  `journal-list-screen.tsx`, `manage-emotions-modal.tsx` (the last under edge 5,
-  not edge 4). They are sliced separately and reuse `ReservedSpace`.
+- Three sites remained to convert when this was written, and all three now are.
+  `mood-tracker-screen.tsx` (#2346) and `journal-list-screen.tsx` (#2347) reuse
+  `ReservedSpace` under edge 4. `manage-emotions-modal.tsx` (#2348) does not,
+  and could not: it is edge 5's named instance, so "Add emotion" moved above the
+  grid and the grid went last in its scroll column, with nothing left below it
+  to push. The sweep is closed. ⚠️ The prediction in this bullet's first
+  draft — that all three would reuse `ReservedSpace` — was wrong about the one
+  site the edges themselves had already singled out.
 - ⚠️ **Replacing a spinner costs five test rewrites.** Five assertions pin
   `ActivityIndicator` by component type via `UNSAFE_getByType`
   (`act-committed-action-detail-screen.test.tsx`, `coping-plan.test.tsx` ×2,
