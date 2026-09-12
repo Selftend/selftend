@@ -140,6 +140,19 @@ holds six of the files this rule reaches.
    position cannot move: reserve one item's worth. **A guessed fixed height is
    rejected** — it is a layout shift with extra steps.
 
+   ⚠️ **Edge 5 assumes the column's CONTAINER has a definite height, and says so
+   only here** (#2360, found while building the instance above). Putting the
+   content last stops it pushing its siblings; it does nothing about a container
+   that is itself sized by that content, which then grows and carries everything
+   _above_ the content with it. The named instance is both cases at once: native
+   is a `pageSheet` at `flex-1` and genuinely fixed, while the same panel on web
+   hugs its content by design (2E/#905) and still settles. **Where the container
+   hugs, the cure is at the door, not in the column** — the surface that opens it
+   usually shares the same query and therefore already knows, at the moment of
+   the tap, whether it would open onto a pending read. Shut the door for that
+   window and the settle is unreachable; giving the container a height instead is
+   the guess this edge already rejects, one level up.
+
 6. **Rule R3 is the full-screen instance of clause 2, and is left alone.** A
    whole-screen stand-in reserves the whole screen by construction.
    `screen-state.tsx` already satisfies this ADR by another route; rewriting a

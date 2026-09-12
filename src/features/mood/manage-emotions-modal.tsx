@@ -578,15 +578,25 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                   one is "a layout shift with extra steps". Reasoning lives in the ADR;
                   what is local is the ordering constraint above.
 
-                  ⚠️ WHAT THIS DOES NOT FIX, ON WEB. Edge 5 assumes a column of definite
-                  height, which is true of the native `pageSheet` (`flex-1`) and NOT of
-                  the web panel: it hugs its content by design (`VIEW_SIZING`, #905/2E),
-                  so the panel itself still grows when the rows land — recentring the
-                  desktop card, growing the drawer upward — which moves the header and
-                  this Button with it. That is the panel's sizing, not this column's
-                  order, and the only cure at panel scale would be the fixed height edge
-                  5 rejects. Pre-existing and strictly reduced by the order above, not
-                  introduced by it; tracked separately rather than redesigned here. */}
+                  ⚠️ THE ORDER ABOVE IS ONLY HALF THE FIX, AND THE OTHER HALF IS NOT IN
+                  THIS FILE. Edge 5 assumes a column of definite height — true of the
+                  native `pageSheet` (`flex-1`), NOT of the web panel, which hugs its
+                  content by design (`VIEW_SIZING`, #905/2E). So on web the panel itself
+                  would grow when the rows land, recentring the desktop card and growing
+                  the drawer upward, carrying the header and this Button with it. Every
+                  cure at panel scale is either a reversal of 2E or the fixed height edge
+                  5 rejects.
+
+                  Ruled on #2360: the cure is at the DOOR. `mood-entry-editor-screen.tsx`
+                  is this panel's only opener and reads the same query key through the
+                  same hook, so it is pending exactly when this surface is; it shuts the
+                  "Manage" link for that window, and this panel therefore only ever opens
+                  onto rows. ☠️ That is what keeps `VIEW_SIZING` as it is — do not
+                  "finish" the job here by giving the panel a height or a `min-h`, and if
+                  a SECOND door to this panel is ever added it needs the same gate, or the
+                  settle comes back. The `isLoading` branch below stays regardless: the
+                  query key carries the user id, so a sign-out under an open panel makes
+                  it pending again. */}
               <View className={cn(FORM_COLUMN, "gap-4")} testID="manage-emotions-column">
                 <Button
                   variant="outline"
