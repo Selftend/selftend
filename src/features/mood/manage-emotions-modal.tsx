@@ -568,13 +568,35 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             ) : null}
 
             <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 pb-8">
-              <View className={cn(FORM_COLUMN, "gap-4")}>
+              {/* ☠️ ORDER IS LOAD-BEARING HERE: "Add emotion" above, the grid last.
+                  ADR-0009 clause 2 asks a pending surface to reserve the space it will
+                  occupy, and this is the one site in that sweep which genuinely cannot —
+                  the grid's height is the number of emotions the person keeps, and that
+                  is exactly what the query is about to report. Nothing already in hand
+                  decides it (the journal chart's range and the week block's seven days
+                  both did), and a stick built from `DEFAULT_EMOTIONS` would be a guess
+                  about a count that this surface, of all surfaces, exists to let people
+                  change. So it takes the ADR's other ruled technique, edge 5: the
+                  varying content sits at the END of its scroll column, and the collapse
+                  from spinner to rows has nothing below it to push. A guessed fixed
+                  height is rejected there by name — "a layout shift with extra steps".
+                  Anything added after the grid re-opens the defect. */}
+              <View className={cn(FORM_COLUMN, "gap-4")} testID="manage-emotions-column">
+                <Button
+                  variant="outline"
+                  onPress={() => setEditorState({ mode: "add" })}
+                  className="self-start border-dashed"
+                >
+                  <Icon name="add" className="size-4" />
+                  <Text>{t("emotions.manage.addButton")}</Text>
+                </Button>
+
                 {isLoading ? (
-                  <View className="items-center py-8">
+                  <View className="items-center py-8" testID="manage-emotions-grid-slot">
                     <ActivityIndicator />
                   </View>
                 ) : (
-                  <View>
+                  <View testID="manage-emotions-grid-slot">
                     {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
                         Flex alone re-derives which items share a line, from measurements it
                         rounds, so rows of near-identical height can group unpredictably.
@@ -620,15 +642,6 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                     <View className="border-t border-border" />
                   </View>
                 )}
-
-                <Button
-                  variant="outline"
-                  onPress={() => setEditorState({ mode: "add" })}
-                  className="self-start border-dashed"
-                >
-                  <Icon name="add" className="size-4" />
-                  <Text>{t("emotions.manage.addButton")}</Text>
-                </Button>
               </View>
             </AnimatedScrollView>
           </View>
