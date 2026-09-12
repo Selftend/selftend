@@ -1,8 +1,10 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable as mockPressable, Text as mockText } from "react-native";
+import { ActivityIndicator, Pressable as mockPressable, Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
+import { CHIP_FRAME } from "@/src/components/app/selectable-chip";
+import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { MoodEntryEditorScreen } from "@/src/features/mood/mood-entry-editor-screen";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
@@ -42,23 +44,30 @@ jest.mock("@/src/features/mood/queries", () => ({
   useSaveMoodLog: jest.fn(),
 }));
 
+// Flipped by the reservation suite below; every other test leaves it settled.
+let mockEmotionsLoading = false;
+
 // The emotions list is now rows-authoritative: an empty list yields an empty
 // grid. Return seeded default rows so the emotions section populates.
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => {
   const { DEFAULT_EMOTIONS: defaults } = require("@/src/constants/emotions");
   return {
     useEmotionPreferences: () => ({
-      data: defaults.map((e: { id: string }, i: number) => ({
-        id: e.id,
-        userId: "user-1",
-        emotionId: e.id,
-        name: null,
-        emoji: null,
-        position: i,
-        removed: false,
-        isCustom: false,
-      })),
-      isLoading: false,
+      // Pending means no rows AND `isLoading` - a list that is already there while the
+      // query claims to be loading is a state the screen never sees.
+      data: mockEmotionsLoading
+        ? undefined
+        : defaults.map((e: { id: string }, i: number) => ({
+            id: e.id,
+            userId: "user-1",
+            emotionId: e.id,
+            name: null,
+            emoji: null,
+            position: i,
+            removed: false,
+            isCustom: false,
+          })),
+      isLoading: mockEmotionsLoading,
     }),
     useEmotionUsageCounts: () => ({ data: {} }),
     useUpsertEmotionPreference: () => ({ mutate: jest.fn() }),
@@ -118,6 +127,7 @@ describe("MoodEntryEditorScreen", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEmotionsLoading = false;
     mockUseLocalSearchParams.mockReturnValue({});
     mockUseMoodLog.mockReturnValue({
       data: null,
@@ -468,6 +478,73 @@ describe("MoodEntryEditorScreen", () => {
     const tokens = String(screen.getByText("Happy").props.className).split(/\s+/);
     expect(tokens).toContain("text-primary-ink");
     expect(tokens).not.toContain("text-primary");
+  });
+
+  /**
+   * The emotion grid holds its space while the preferences query is in flight (#2345,
+   * ADR-0009). The defect it replaces was an input-integrity one: a bare ~20px spinner stood
+   * in for a ~272px run at 390dp, so the Notes field directly below it moved under the
+   * finger, and a tap meant for Notes landed on `sad`.
+   *
+   * ⚠️ The HEIGHT is not asserted here and cannot be. NativeWind resolves no geometry into
+   * `props.style` under jest, so a reserved-height assertion in this file would be vacuously
+   * green. `test/e2e/loading-reserves-space.e2e.test.ts` measures it in a real engine; what
+   * belongs here is the relation the height rests on, and the consequences of the stick
+   * being real content.
+   */
+  describe("while the emotion preferences are still loading", () => {
+    beforeEach(() => {
+      mockEmotionsLoading = true;
+    });
+
+    it("holds the run's space with the full default set rather than a bare spinner", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      // One silhouette per default emotion - the list every first-ever user is seeded with,
+      // and the one the ~250px shift was measured against. Counting them is what fails if
+      // the reservation is reduced back to a spinner.
+      const reserved = screen.UNSAFE_root.findAll(
+        (node) =>
+          typeof node.type === "string" &&
+          typeof node.props.className === "string" &&
+          node.props.className.includes(CHIP_FRAME),
+      );
+      expect(reserved).toHaveLength(DEFAULT_EMOTIONS.length);
+    });
+
+    it("names nothing a screen reader can hear, and offers nothing to press", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      // The stick holds real emotion names. Hidden, they are a height; unhidden, they are
+      // twenty-two words read out over a surface that is still loading - and on web an
+      // invisible chip is still perfectly clickable.
+      expect(screen.queryByLabelText("Happy")).toBeNull();
+      expect(screen.queryByText("Happy")).toBeNull();
+      expect(screen.getByText("Happy", { includeHiddenElements: true })).toBeTruthy();
+    });
+
+    it("still shows the loading signal, centred in the space it is holding", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      // The spinner is kept rather than swapped: five suites elsewhere pin `ActivityIndicator`
+      // by component type, and reserving space is not a reason to spend that bill here.
+      expect(screen.UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThan(0);
+    });
+
+    it("gives the space back to the real grid once the rows land", async () => {
+      const { rerender } = renderWithProviders(
+        <MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />,
+      );
+      expect(screen.queryByLabelText("Happy")).toBeNull();
+
+      mockEmotionsLoading = false;
+      rerender(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      // The settle is a swap, not an addition: exactly one "Happy" survives it, so the
+      // invisible run cannot be left underneath the real one doubling the grid's height.
+      expect(await screen.findByLabelText("Happy")).toBeTruthy();
+      expect(screen.queryAllByText("Happy", { includeHiddenElements: true })).toHaveLength(1);
+    });
   });
 
   it("renders the top bar and heading in create mode", async () => {

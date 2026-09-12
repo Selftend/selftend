@@ -35,9 +35,20 @@ import { useHomeToolStats } from "@/src/features/home/tool-stats-queries";
  * window; every lifetime number names none.
  *
  * Three states, not two:
- * - **loading** → `null`, an empty slot. Never a dash, never a skeleton. A loading surface
- *   never claims emptiness, and `undefined` from the query means "not loaded" — which
- *   includes a failed fetch with no cache, where "Nothing yet" would erase a real history.
+ * - **loading** → `null`, an empty slot. Never a dash, never "Nothing yet", never a figure
+ *   we do not have. A loading surface never claims emptiness, and `undefined` from the query
+ *   means "not loaded" — which includes a failed fetch with no cache, where claiming
+ *   emptiness would erase a real history.
+ *
+ *   ☠️ That is [ADR-0009](../../../docs/adr/0009-reserve-the-space-or-draw-nothing.md)'s
+ *   **clause 1 only**, and this comment used to say "never a skeleton" — clause 1 stated as
+ *   though it settled clause 2, which is the wording that propagated the collapse into Home.
+ *   Clause 2 says reserve the space you will occupy; it is **not** applied to this slot, and
+ *   the ADR names the reason: reservation belongs to the PENDING state, and `undefined` here
+ *   covers a failed fetch with no cache as well as a pending read. Reserving unconditionally
+ *   would leave eight permanently dead lines on Home — a worse surface than the shift it
+ *   prevents. Honesty is kept; the layout half is a deliberate exception with a stated cost,
+ *   not a contradiction of the rule.
  * - **loaded and empty** → the shared `home.rows.empty`. One key for every tool: the card's
  *   own name already supplies the noun.
  * - **nothing scheduled today** → its own string. A user with seven habits and none due

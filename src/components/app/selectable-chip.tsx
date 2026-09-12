@@ -4,6 +4,27 @@ import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import type { RovingItemProps } from "@/src/lib/roving-focus";
+import { ReservedSpace } from "@/src/components/app/reserved-space";
+
+/**
+ * The chip's frame and type, shared by the three things that have to be exactly the same
+ * size: the togglable chip, the read-only one, and the silhouette that holds a run's space
+ * while it loads. ADR-0009's reservation is only exact if the invisible copy is built from
+ * the same constants as the real chip — a second literal here is a drift waiting to happen,
+ * and `NotificationRowSkeleton` exists because a skeleton 20px short of its row is "a layout
+ * jump dressed up as a loading state" (#981).
+ *
+ * ☠️ `font-semibold` is part of the *selected* type, not decoration: a selected label is
+ * measurably wider than an unselected one, so a silhouette that ignored the selection would
+ * reserve the wrong width and re-wrap the run the moment the real chips arrived.
+ */
+export const CHIP_FRAME = "flex-row items-center gap-1.5 rounded-full border px-3 py-1.5";
+export const CHIP_UNSELECTED_FRAME = "border-border bg-card";
+export const CHIP_SELECTED_FRAME = "border-primary bg-primary/10";
+export const CHIP_EMOJI_TYPE = "text-[14px] leading-none";
+export const CHIP_LABEL_TYPE = "text-[13px]";
+export const CHIP_SELECTED_LABEL_TYPE = "font-semibold text-primary-ink";
+export const CHIP_UNSELECTED_LABEL_TYPE = "text-foreground";
 
 interface SelectableChipProps {
   label: string;
@@ -82,10 +103,7 @@ export function SelectableChip({
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onToggle}
       testID={testID}
-      className={cn(
-        "flex-row items-center gap-1.5 rounded-full border px-3 py-1.5",
-        selected ? "border-primary bg-primary/10" : "border-border bg-card",
-      )}
+      className={cn(CHIP_FRAME, selected ? CHIP_SELECTED_FRAME : CHIP_UNSELECTED_FRAME)}
       // One owner of `onKeyDown`. RNW activates neither a checkbox nor a radio
       // on Space, so a chip outside a roving group needs its own handler; inside
       // one, the group's item props already carry it.
@@ -94,14 +112,14 @@ export function SelectableChip({
       {emoji ? (
         // Decorative: the label already carries the name, and announcing the
         // glyph would read the emotion twice.
-        <Text aria-hidden className="text-[14px] leading-none">
+        <Text aria-hidden className={CHIP_EMOJI_TYPE}>
           {emoji}
         </Text>
       ) : null}
       <Text
         className={cn(
-          "text-[13px]",
-          selected ? "font-semibold text-primary-ink" : "text-foreground",
+          CHIP_LABEL_TYPE,
+          selected ? CHIP_SELECTED_LABEL_TYPE : CHIP_UNSELECTED_LABEL_TYPE,
         )}
       >
         {label}
@@ -124,13 +142,13 @@ export function SelectableChip({
  */
 export function StaticChip({ label, emoji }: { label: string; emoji?: string }) {
   return (
-    <View className="flex-row items-center gap-1.5 rounded-full border border-primary bg-primary/10 px-3 py-1.5">
+    <View className={cn(CHIP_FRAME, CHIP_SELECTED_FRAME)}>
       {emoji ? (
-        <Text aria-hidden className="text-[14px] leading-none">
+        <Text aria-hidden className={CHIP_EMOJI_TYPE}>
           {emoji}
         </Text>
       ) : null}
-      <Text className="text-[13px] font-semibold text-primary-ink">{label}</Text>
+      <Text className={cn(CHIP_LABEL_TYPE, CHIP_SELECTED_LABEL_TYPE)}>{label}</Text>
     </View>
   );
 }
@@ -143,4 +161,65 @@ interface ChipRunProps {
 /** A wrapping run of chips. One flat row-set — no columns, no headings. */
 export function ChipRun({ children, className }: ChipRunProps) {
   return <View className={cn("flex-row flex-wrap gap-2", className)}>{children}</View>;
+}
+
+interface ChipRunReservationProps {
+  /** The run's likeliest contents, used for their SIZE and never for their meaning. */
+  chips: { id: string; label: string; emoji?: string }[];
+  /** Mirrors the selected type, which is wider — see `CHIP_SELECTED_LABEL_TYPE`. */
+  selectedIds?: string[];
+  /** The visible loading signal, centred in the held space. Usually a spinner. */
+  overlay?: React.ReactNode;
+  className?: string;
+  testID?: string;
+}
+
+/**
+ * A chip run's SPACE, held while the chips that will fill it are still being fetched —
+ * ADR-0009 clause 2, applied to the one shape in this app whose height is a wrap rather
+ * than a count.
+ *
+ * The chips here are `View`s, not `SelectableChip`s, and that is deliberate twice over.
+ * They are not interactive, so an invisible tap target cannot exist; and they draw no
+ * fill, because **the number of chips is exactly the fact the query is going to tell us**.
+ * Twenty-two grey pills would say "twenty-two are coming" to a reader who has pruned the
+ * list to five — a claim, and clause 1 forbids claims a loading surface cannot back.
+ * The space is held, a spinner says it is loading, and nothing else is asserted.
+ *
+ * `ReservedSpace` takes care of the accessibility hiding, which matters more here than the
+ * pointer events: these labels are real words, and a screen reader would otherwise read the
+ * whole run out before it existed.
+ */
+export function ChipRunReservation({
+  chips,
+  selectedIds,
+  overlay,
+  className,
+  testID,
+}: ChipRunReservationProps) {
+  return (
+    <ReservedSpace overlay={overlay} className={className} testID={testID}>
+      <ChipRun>
+        {chips.map((chip) => {
+          const selected = selectedIds?.includes(chip.id) ?? false;
+          return (
+            <View
+              key={chip.id}
+              className={cn(CHIP_FRAME, selected ? CHIP_SELECTED_FRAME : CHIP_UNSELECTED_FRAME)}
+            >
+              {chip.emoji ? <Text className={CHIP_EMOJI_TYPE}>{chip.emoji}</Text> : null}
+              <Text
+                className={cn(
+                  CHIP_LABEL_TYPE,
+                  selected ? CHIP_SELECTED_LABEL_TYPE : CHIP_UNSELECTED_LABEL_TYPE,
+                )}
+              >
+                {chip.label}
+              </Text>
+            </View>
+          );
+        })}
+      </ChipRun>
+    </ReservedSpace>
+  );
 }

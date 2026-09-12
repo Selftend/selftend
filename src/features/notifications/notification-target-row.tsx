@@ -2,6 +2,7 @@ import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-na
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { LOADING_FILL } from "@/src/components/app/reserved-space";
 import { TimeField } from "@/src/components/app/time-field";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Switch } from "@/src/components/react-native-reusables/switch";
@@ -309,9 +310,11 @@ export function NotificationRowSkeleton({ target }: { target: NotificationTarget
       aria-hidden
       className={cn(ROW_FRAME, ROW_PADDING_Y)}
     >
-      {/* `bg-muted` measures 1.10:1 on a card and is therefore invisible (#725);
-          `muted-foreground/25` is 1.41 light / 1.68 dark - faint on purpose, but there. */}
-      <View className="size-5 rounded bg-muted-foreground/25" />
+      {/* The fill is `LOADING_FILL`, never a literal here: `bg-muted` measures 1.10:1 on a
+          card and is therefore invisible (#725), and it is the obviously-named token the
+          next person will reach for. ADR-0009 promoted that finding from this row's local
+          practice to the rule, so the value lives with the rule. */}
+      <View className={cn("size-5 rounded", LOADING_FILL)} />
       <View
         testID={`notification-row-skeleton-body-${target.key}`}
         className={rowBodyClassName(wide)}
@@ -327,19 +330,17 @@ export function NotificationRowSkeleton({ target }: { target: NotificationTarget
             {t(target.labelKey)}
           </Text>
           <View className="absolute inset-0 justify-center">
-            <View
-              className={cn("h-4 rounded bg-muted-foreground/25", wide ? "w-[150px]" : "w-1/3")}
-            />
+            <View className={cn("h-4 rounded", LOADING_FILL, wide ? "w-[150px]" : "w-1/3")} />
           </View>
         </View>
         {/* `h-9` is `TimeField compact`'s own height. It is the last thing in this box the
             row does not hand us directly, so a test pins it against the real control. */}
         <View
           testID={`notification-row-skeleton-time-${target.key}`}
-          className="h-9 w-16 rounded-md bg-muted-foreground/25"
+          className={cn("h-9 w-16 rounded-md", LOADING_FILL)}
         />
       </View>
-      <View className="h-[1.15rem] w-8 rounded-full bg-muted-foreground/25" />
+      <View className={cn("h-[1.15rem] w-8 rounded-full", LOADING_FILL)} />
     </View>
   );
 }
