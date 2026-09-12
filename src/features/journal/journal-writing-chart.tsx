@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ReservedSpace } from "@/src/components/app/reserved-space";
+import { SECTION_GAP } from "@/src/components/app/section";
 import { BarChart } from "@/src/components/charts/bar-chart";
 import { Text } from "@/src/components/react-native-reusables/text";
 import {
@@ -11,16 +13,6 @@ import {
   journalWritingUnit,
 } from "@/src/features/journal/journal-overview";
 import type { JournalWritingBucket, JournalWritingRange } from "@/src/features/journal/types";
-
-/**
- * The gap between the bars and the caption under them.
- *
- * It is the enclosing `Section`'s own `gap-4`, restated here because the two used to be
- * siblings inside the section and are now one block: matching it is what keeps the
- * caption where it has always sat. One constant, one block, both states - which is also
- * why the reservation cannot reserve a gap the real chart does not draw.
- */
-const CHART_GAP = "gap-4";
 
 /** Below this the chart's columns are wide enough for the roomier gap between them. */
 const DENSE_BUCKETS = 14;
@@ -37,18 +29,27 @@ const DENSE_BUCKETS = 14;
 export function JournalWritingChart({ buckets }: { buckets: readonly JournalWritingBucket[] }) {
   const { t, i18n } = useTranslation("journal");
 
+  // Two `Intl.DateTimeFormat` instances per column, up to thirty columns, on every render
+  // of the screen around it - and the reservation below draws a second set nobody reads.
+  // A pure function of the buckets and the language.
+  const bars = useMemo(
+    () =>
+      buckets.map((bucket, index, all) => ({
+        key: bucket.startDayKey,
+        value: bucket.wordCount,
+        label: journalWritingBarLabel(bucket, index, all.length, i18n.language),
+        accessibilityLabel: t("writing.barLabel", {
+          period: formatJournalWritingBucket(bucket, i18n.language),
+          count: bucket.wordCount,
+        }),
+      })),
+    [buckets, i18n.language, t],
+  );
+
   return (
-    <View className={CHART_GAP}>
+    <View className={SECTION_GAP}>
       <BarChart
-        bars={buckets.map((bucket, index, all) => ({
-          key: bucket.startDayKey,
-          value: bucket.wordCount,
-          label: journalWritingBarLabel(bucket, index, all.length, i18n.language),
-          accessibilityLabel: t("writing.barLabel", {
-            period: formatJournalWritingBucket(bucket, i18n.language),
-            count: bucket.wordCount,
-          }),
-        }))}
+        bars={bars}
         barAreaHeight={72}
         minBarHeight={8}
         zeroHeight={2}
@@ -102,12 +103,17 @@ export function JournalWritingChart({ buckets }: { buckets: readonly JournalWrit
  * collapses when the truth arrives and there is less of it than a chart.
  */
 export function JournalWritingChartReservation({ range }: { range: JournalWritingRange }) {
+  // Also what keeps the memo inside the chart worth having: a fresh array every render
+  // would rebuild every column's announcement, and these are the announcements nobody
+  // reads. The window moves at midnight, which no mounted reservation outlives.
+  const buckets = useMemo(() => journalWritingReservationBuckets(range), [range]);
+
   return (
     <ReservedSpace
       testID="journal-writing-reservation"
       overlay={<ActivityIndicator testID="journal-writing-loading" />}
     >
-      <JournalWritingChart buckets={journalWritingReservationBuckets(range)} />
+      <JournalWritingChart buckets={buckets} />
     </ReservedSpace>
   );
 }

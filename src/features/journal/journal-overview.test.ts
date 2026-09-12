@@ -207,9 +207,35 @@ describe("journalWritingReservationBuckets", () => {
   });
 
   /**
+   * ☠️ **The load-bearing half of the All-time guess, pinned at the rule it rests on.**
+   * Twelve monthly columns stand in for a count the RPC decides from how much history
+   * exists, and ADR-0009's edge 5 rejects a guessed height. This one is not a height
+   * guess - but only because {@link journalWritingBarLabel} draws labels for day buckets
+   * of seven and nothing else, so every column past that is the bar area alone and the
+   * count cannot reach the reserved height. That rule lives in another function, so a
+   * change there would make the guess load-bearing without touching this one.
+   */
+  it("cannot reserve a wrong height by guessing the count, whatever the unit", () => {
+    for (const unit of ["day", "week", "month", "year"] as const) {
+      const bucket = {
+        startDayKey: "2026-01-01",
+        endDayKey: "2026-01-31",
+        wordCount: 0,
+        unit,
+        rangeStartDayKey: "2025-06-01",
+        rangeEndDayKey: "2026-05-28",
+      };
+
+      for (const count of [8, 12, 13, 30, 90]) {
+        expect(journalWritingBarLabel(bucket, 0, count, "en")).toBeUndefined();
+      }
+    }
+  });
+
+  /**
    * How far back All time reaches is the one thing about the chart's shape that cannot be
-   * known before the read - and the one thing that does not change the height, since past
-   * seven buckets no column carries a label. A year of months, ending in this one.
+   * known before the read - and, by the rule above, the one thing that does not change the
+   * height. A year of months, ending in this one.
    */
   it("stands in for All time with a year of months, the last clipped to today", () => {
     const all = journalWritingReservationBuckets("all", THURSDAY);

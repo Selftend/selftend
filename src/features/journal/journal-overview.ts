@@ -174,6 +174,10 @@ export function journalWritingUnit(
  * thing that does not change the height being reserved - past seven buckets no
  * column carries a label (see {@link journalWritingBarLabel}), so every column is
  * the bar area and nothing else, and twelve of them are exactly as tall as ninety.
+ *
+ * ☠️ That makes this a guess about WIDTH, which ADR-0009 permits, rather than the
+ * guessed height its edge 5 rejects - and the difference rests on a rule in another
+ * function. `journal-overview.test.ts` pins it there, not here.
  */
 const ALL_TIME_RESERVATION_BUCKETS = 12;
 
@@ -219,51 +223,53 @@ export function journalWritingReservationBuckets(
 
   if (range === 7 || range === 30) {
     const dayKeys = lastNDayKeys(range, now);
-    return dayKeys.map((dayKey) =>
-      reservationBucket(dayKey, dayKey, "day", dayKeys[0]!, endDayKey),
-    );
+    const frame = reservationFrame("day", dayKeys[0]!, endDayKey);
+    return dayKeys.map((dayKey) => ({ startDayKey: dayKey, endDayKey: dayKey, ...frame }));
   }
 
   if (range === 90) {
     const startDayKey = addDaysToKey(endDayKey, -89);
+    const frame = reservationFrame("week", startDayKey, endDayKey);
     // Thirteen, the same arithmetic the RPC's generate_series does: one bucket per
     // seven days from the start, the last clipped to the end of the window.
     const count = Math.floor(dayKeyDiff(startDayKey, endDayKey) / 7) + 1;
     return Array.from({ length: count }, (_, index) => {
       const bucketStart = addDaysToKey(startDayKey, index * 7);
-      const bucketEnd = addDaysToKey(bucketStart, 6);
-      return reservationBucket(
-        bucketStart,
-        bucketEnd > endDayKey ? endDayKey : bucketEnd,
-        "week",
-        startDayKey,
-        endDayKey,
-      );
+      return {
+        startDayKey: bucketStart,
+        endDayKey: clipToWindow(addDaysToKey(bucketStart, 6), endDayKey),
+        ...frame,
+      };
     });
   }
 
   const end = parseLocalNoon(endDayKey);
   const firstMonth = end.getMonth() - (ALL_TIME_RESERVATION_BUCKETS - 1);
-  const rangeStartDayKey = monthStartKey(end.getFullYear(), firstMonth);
-  return Array.from({ length: ALL_TIME_RESERVATION_BUCKETS }, (_, index) => {
-    const bucketStart = monthStartKey(end.getFullYear(), firstMonth + index);
-    const bucketEnd = addDaysToKey(monthStartKey(end.getFullYear(), firstMonth + index + 1), -1);
-    return reservationBucket(
-      bucketStart,
-      bucketEnd > endDayKey ? endDayKey : bucketEnd,
-      "month",
-      rangeStartDayKey,
+  const frame = reservationFrame("month", monthStartKey(end.getFullYear(), firstMonth), endDayKey);
+  return Array.from({ length: ALL_TIME_RESERVATION_BUCKETS }, (_, index) => ({
+    startDayKey: monthStartKey(end.getFullYear(), firstMonth + index),
+    endDayKey: clipToWindow(
+      addDaysToKey(monthStartKey(end.getFullYear(), firstMonth + index + 1), -1),
       endDayKey,
-    );
-  });
+    ),
+    ...frame,
+  }));
 }
 
-function reservationBucket(
-  startDayKey: string,
-  endDayKey: string,
+/**
+ * Everything every bucket in one reservation shares, built once per range and spread into
+ * each. The four day keys of a bucket are all `string`, and named arguments are what stops
+ * a bucket's own bounds and the window's being transposed into each other silently.
+ */
+function reservationFrame(
   unit: JournalWritingBucketUnit,
   rangeStartDayKey: string,
   rangeEndDayKey: string,
-): JournalWritingBucket {
-  return { startDayKey, endDayKey, wordCount: 0, unit, rangeStartDayKey, rangeEndDayKey };
+): Pick<JournalWritingBucket, "wordCount" | "unit" | "rangeStartDayKey" | "rangeEndDayKey"> {
+  return { wordCount: 0, unit, rangeStartDayKey, rangeEndDayKey };
+}
+
+/** A bucket may run past the end of the window; the RPC clips it rather than covering days the range does not. */
+function clipToWindow(bucketEndDayKey: string, endDayKey: string): string {
+  return bucketEndDayKey > endDayKey ? endDayKey : bucketEndDayKey;
 }

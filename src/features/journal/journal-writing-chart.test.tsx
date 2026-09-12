@@ -10,32 +10,12 @@ import {
 } from "@/src/features/journal/journal-writing-chart";
 import { journalWritingReservationBuckets } from "@/src/features/journal/journal-overview";
 import type { JournalWritingRange } from "@/src/features/journal/types";
+import { interactiveNodes } from "@/test/interactive-props";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const THURSDAY = new Date("2026-05-28T12:00:00.000Z");
 beforeAll(() => jest.useFakeTimers({ now: THURSDAY }));
 afterAll(() => jest.useRealTimers());
-
-/**
- * What a host node carries when a pointer or a keyboard can reach it - probed off a real
- * `Pressable`'s rendered root, which carries all three.
- *
- * ☠️ `queryAllByRole("link", { includeHiddenElements: true })` is NOT a substitute: with a
- * role-carrying `Pressable` planted inside the stick it still returned `[]`, so it would
- * have been a guard that cannot fail. The test below plants one and proves this walk finds
- * it, because an assertion about an absence is worth only as much as its ability to find a
- * presence.
- */
-const INTERACTIVE_PROPS = ["onStartShouldSetResponder", "onClick", "focusable"] as const;
-
-function interactiveNodes(root: ReactTestInstance): ReactTestInstance[] {
-  return root.findAll(
-    (node) =>
-      typeof node.type === "string" &&
-      INTERACTIVE_PROPS.some((prop) => node.props[prop] !== undefined),
-    { deep: true },
-  );
-}
 
 /**
  * The day numbers under the columns, which only a seven-bucket range draws. Read off the
