@@ -5,7 +5,7 @@ import { create } from "zustand";
 /**
  * The bottom of the screen is the crowded end (#1339, spec §5.1): a soft
  * keyboard, the banner strips, the cookie banner, a form's sticky footer, the
- * RoutineFab, the reminder prompt card and the toast all want the same edge.
+ * RoutineFab, the starter-routine offer card and the toast all want the same edge.
  *
  * ☠️ A single flat maximum self-destructs. If `RoutineFab` both publishes and
  * consumes one shared number it publishes its own top edge, the max includes
@@ -19,7 +19,7 @@ export const INSET_LAYER = {
   keyboard: 0,
   /** In-flow strips: the banner strip, the cookie banner, a form's footer. */
   strip: 1,
-  /** Floaters: `RoutineFab`, `ReminderPromptCard`. */
+  /** Floaters: `RoutineFab`, `StarterOfferCard`. */
   floater: 2,
   /** The toast, one rung above all bottom furniture. */
   toast: 3,
@@ -155,7 +155,7 @@ export function useInsetPublisher(
         //
         // Two guards, because they cover different paths, and each is killed on
         // its own by a test. `isStale` closes the effect path - the cookie
-        // banner's, and the one RoutineFab and ReminderPromptCard take every
+        // banner's, and the one RoutineFab and StarterOfferCard take every
         // time they render null between appearances - where our cleanup has
         // already run and a late callback would resurrect the entry that detach
         // just cleared. The zero-box check below closes the `onLayout` path,
@@ -188,7 +188,7 @@ export function useInsetPublisher(
   useEffect(() => {
     if (!node) {
       // The host view can detach while the owner stays mounted — RoutineFab and
-      // ReminderPromptCard both render null between appearances. An
+      // StarterOfferCard both render null between appearances. An
       // unmount-only cleanup would leave their last edge published forever.
       useLayeredInsetStore.getState().clearInset(id);
       return;

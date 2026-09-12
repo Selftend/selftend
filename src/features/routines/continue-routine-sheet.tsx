@@ -8,7 +8,6 @@ import { TimeField } from "@/src/components/app/time-field";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { roundToNearestHalfHour } from "@/src/features/notifications/reminder-prompt";
 import { useUpdateRoutine } from "@/src/features/routines/queries";
 import { routeForTool } from "@/src/features/routines/tool-routes";
 import {
@@ -17,7 +16,7 @@ import {
 } from "@/src/features/routines/use-routines-today";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { getReminderTimeZone } from "@/src/lib/notifications";
-import { clampTime } from "@/src/utils/time";
+import { clampTime, roundToNearestHalfHour } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
 
 interface ContinueRoutineSheetProps {

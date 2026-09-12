@@ -18,7 +18,7 @@ import type {
   CommittedActionPatch,
 } from "@/src/features/act/types";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { ACT_HISTORY_PAGE_SIZE, actKeys } from "./keys";
 
 export function useCommittedActions(userId: string | null, status?: ActionStatus) {
@@ -131,7 +131,7 @@ export function useSaveCommittedAction(userId: string | null) {
     mutationFn: (input: CommittedActionInput) => saveCommittedAction(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
-      requestReminderPrompt("act");
+      noteToolSave();
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.committedActionListPrefix(userId) });
     },

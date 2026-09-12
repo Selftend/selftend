@@ -764,7 +764,7 @@ export default function ProtectedLayout() {
           {/* Banner strips anchor at the bottom of the content column (#660):
               the top of the screen belongs to the invisible header. The PADDED
               strip publishes its top edge into layer 1 of the inset ladder
-              (#1339), so bottom-floating widgets (reminder prompt card;
+              (#1339), so bottom-floating widgets (the starter-routine offer;
               RoutineFab, #670) and the toast ride above visible banners
               instead of covering their controls.
 
@@ -791,7 +791,7 @@ export default function ProtectedLayout() {
             </View>
           </View>
           {/* Corner-floating routine-progress handle: authenticated shell only,
-              bottom-right so it coexists with the bottom-center reminder prompt
+              bottom-right so it coexists with the bottom-center starter-routine offer
               card by construction. Renders nothing while no routine step is open. */}
           <RoutineFab />
           {/* The update offer (#1142 spec §3, superseding #388 §3's banner).

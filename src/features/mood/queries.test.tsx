@@ -15,7 +15,7 @@ import {
   useSaveMoodLog,
 } from "@/src/features/mood/queries";
 import * as repo from "@/src/features/mood/repository";
-import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
+import { useToolSaveStore } from "@/src/stores/tool-save-store";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 // Automock of the repository re-export barrel does not reliably yield callable
@@ -269,30 +269,30 @@ describe("useSaveMoodLog onSuccess guard", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Contextual reminder prompt wiring: a NEW mood log requests the one-time
-// prompt; editing an existing log does not.
+// Post-save signal wiring: a NEW mood log notes a completed save (the once-ever
+// starter-routine offer listens on it); editing an existing log does not.
 // ---------------------------------------------------------------------------
-describe("useSaveMoodLog reminder prompt wiring", () => {
+describe("useSaveMoodLog tool-save wiring", () => {
   beforeEach(() => {
-    useReminderPromptStore.getState().dismissReminderPrompt();
+    useToolSaveStore.setState({ saveCount: 0 });
   });
 
-  it("requests the mood reminder prompt after creating a log", async () => {
+  it("notes a save after creating a log", async () => {
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveMoodLog("u1"), { wrapper: wrap(client) });
 
     await result.current.mutateAsync({ input: { moodScore: 3 } as never });
 
-    expect(useReminderPromptStore.getState().request).toMatchObject({ targetKey: "mood" });
+    expect(useToolSaveStore.getState().saveCount).toBe(1);
   });
 
-  it("does not request the prompt when editing an existing log", async () => {
+  it("notes nothing when editing an existing log", async () => {
     const client = createTestQueryClient();
     const { result } = renderHook(() => useSaveMoodLog("u1"), { wrapper: wrap(client) });
 
     await result.current.mutateAsync({ input: { moodScore: 3 } as never, moodLogId: "edit-1" });
 
-    expect(useReminderPromptStore.getState().request).toBeNull();
+    expect(useToolSaveStore.getState().saveCount).toBe(0);
   });
 });
 

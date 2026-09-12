@@ -42,7 +42,7 @@ const TONE: Record<ToastTone, { bar: string; ink: string; icon: MaterialIconName
  * One number for the base case and for every offset above it, so the toast never
  * changes its distance from whatever it is standing on.
  *
- * It is 16 because `RoutineFab` and `ReminderPromptCard` are 16 above their own
+ * It is 16 because `RoutineFab` and `StarterOfferCard` are 16 above their own
  * rung too - but they each still spell their own literal, and unifying the three
  * is not this ticket's to do. Deliberately named for the toast rather than for
  * the ladder, so nobody imports it from here believing it is already shared.

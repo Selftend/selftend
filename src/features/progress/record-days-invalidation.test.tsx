@@ -56,8 +56,8 @@ const VIEWER_KEY = recordDaysKeys.forViewer(USER, OFFSET);
  */
 const UNREAD = undefined as never;
 
-jest.mock("@/src/stores/reminder-prompt-store", () => ({
-  requestReminderPrompt: jest.fn(),
+jest.mock("@/src/stores/tool-save-store", () => ({
+  noteToolSave: jest.fn(),
 }));
 
 jest.mock("@/src/features/progress/repository", () => ({

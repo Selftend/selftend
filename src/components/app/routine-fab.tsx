@@ -72,8 +72,8 @@ const COMPLETED_FADE_MS = 400;
 // count - exactly the routine the continue sheet opens pinned
 // (firstOpenRoutineView, shared with the sheet), not the cross-routine
 // total, which read as noise (#91). It sits in the
-// bottom-RIGHT corner so it can never collide with the bottom-CENTER one-time
-// reminder prompt card: coexistence by placement, no suppression, no
+// bottom-RIGHT corner so it can never collide with the bottom-CENTER
+// starter-routine offer card: coexistence by placement, no suppression, no
 // arbitration. The sheet stays mounted independently of the button so
 // completing the last step while it is open flips it to the gentle completion
 // state instead of yanking it away.

@@ -32,8 +32,8 @@ export const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TO
 
 /**
  * Records of the three prompting tools a routine cannot admit - worry, anger
- * and self-care. Their saves request the reminder prompt like every other
- * tool's, so they are in-app actions in the glossary's sense, and they count
+ * and self-care. Their saves note a completed save like every other tool's, so
+ * they are in-app actions in the glossary's sense, and they count
  * toward the second action (#1677, decided 2026-09-02): the offer is about
  * the person having acted twice, and the routine it offers is composed from
  * the STEPPABLE tools' records (#1954), never from these three - a routine

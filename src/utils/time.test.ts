@@ -5,6 +5,7 @@ import {
   formatTimeOfDay,
   fromTwelveHour,
   parseHHmm,
+  roundToNearestHalfHour,
   timeToDate,
   toTwelveHour,
   usesTwelveHourClock,
@@ -98,5 +99,33 @@ describe("toTwelveHour / fromTwelveHour", () => {
       const { hour: shown, meridiem } = toTwelveHour(hour);
       expect(fromTwelveHour(shown, meridiem)).toBe(hour);
     }
+  });
+});
+
+describe("roundToNearestHalfHour", () => {
+  it("rounds down when closer to the previous half hour", () => {
+    expect(roundToNearestHalfHour(new Date(2026, 6, 14, 14, 40))).toEqual({
+      hour: 14,
+      minute: 30,
+    });
+  });
+
+  it("rounds up when closer to the next half hour", () => {
+    expect(roundToNearestHalfHour(new Date(2026, 6, 14, 14, 50))).toEqual({ hour: 15, minute: 0 });
+  });
+
+  it("rounds up on the exact midpoint", () => {
+    expect(roundToNearestHalfHour(new Date(2026, 6, 14, 14, 15))).toEqual({
+      hour: 14,
+      minute: 30,
+    });
+  });
+
+  it("keeps an exact half hour unchanged", () => {
+    expect(roundToNearestHalfHour(new Date(2026, 6, 14, 9, 30))).toEqual({ hour: 9, minute: 30 });
+  });
+
+  it("wraps to midnight near the end of the day", () => {
+    expect(roundToNearestHalfHour(new Date(2026, 6, 14, 23, 50))).toEqual({ hour: 0, minute: 0 });
   });
 });

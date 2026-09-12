@@ -607,7 +607,7 @@ describe("RoutineFab", () => {
       // What a flat max would do: the FAB publishes its own top edge, reads it
       // back, moves up, publishes higher - forever. Layer 2 is invisible to a
       // layer-2 consumer, so this changes nothing at all.
-      publishBelow("reminder-prompt", INSET_LAYER.floater, 500);
+      publishBelow("starter-offer", INSET_LAYER.floater, 500);
       publishBelow("routine-fab-itself", INSET_LAYER.floater, 900);
 
       expect(hostBottom()).toBe(16);
