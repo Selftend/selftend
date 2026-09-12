@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import { ShowAllLink } from "./show-all-link";
+import { ShowAllLink, ShowAllLinkStick } from "./show-all-link";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
@@ -103,5 +103,43 @@ describe("ShowAllLink", () => {
       door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
       expect(mockRouter.push).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("ShowAllLinkStick", () => {
+  /**
+   * The whole point of the stick: it holds the door's space and is reachable by nothing.
+   *
+   * `ReservedSpace` hides its contents from the accessibility tree and takes no pointer
+   * events, and neither of those reaches the Tab key — react-native-web gives every
+   * `Pressable` `tabIndex="0"` unless it is disabled. A door built from the real
+   * component would therefore still be focusable while invisible, and pressing Enter on
+   * it would navigate a keyboard user off the screen they were waiting on.
+   */
+  it("is not a door — no role, no press, nothing to focus", () => {
+    render(<ShowAllLinkStick label="Show all history" />);
+
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Show all history").parent?.props.onClick).toBeUndefined();
+    expect(
+      screen.getByText("Show all history").parent?.props.onStartShouldSetResponder,
+    ).toBeUndefined();
+  });
+
+  /**
+   * ☠️ A stick that quietly drops the arrow reserves a glyph too little, and every
+   * assertion about class names and labels stays green while it does — the exact drift
+   * #2345 hit with an emoji. So this compares the two renders rather than describing
+   * either: both must draw the same face, because they are the same component.
+   */
+  it("draws the same face as the door it stands in for", () => {
+    const door = JSON.stringify(
+      render(<ShowAllLink label="Show all history" route="/tools/check-in/history" />).toJSON(),
+    );
+    const stick = JSON.stringify(render(<ShowAllLinkStick label="Show all history" />).toJSON());
+
+    const face = (tree: string) => JSON.parse(tree).children;
+    expect(face(stick)).toEqual(face(door));
   });
 });

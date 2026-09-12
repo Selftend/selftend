@@ -1,16 +1,20 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
+import { ReservedSpace } from "@/src/components/app/reserved-space";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { MoodHistoryRow } from "@/src/features/mood/mood-history-row";
-import { ShowAllLink } from "@/src/components/app/show-all-link";
+import { ShowAllLink, ShowAllLinkStick } from "@/src/components/app/show-all-link";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import {
+  buildWeekDays,
+  getTopEmotionsForWindow,
+  getWeekDeltaForWindow,
   logsOnDay,
   type EmotionCount,
   type WeekDay,
@@ -36,6 +40,16 @@ interface WeekHeroProps {
    * accessibility tree.
    */
   showHistoryLink?: boolean;
+  /**
+   * True when this hero is a measuring stick rather than the hero — the invisible copy
+   * {@link WeekHeroReservation} holds the space with. It is set by that component and
+   * nowhere else, and it does exactly one thing: the history door becomes an inert twin,
+   * because nothing inside a reservation may be reachable by keyboard.
+   *
+   * The day cells need no such switch. A stick's week has no entries, and an entry-less
+   * cell is already deliberately not interactive — see {@link WeekStripCell}.
+   */
+  inert?: boolean;
 }
 
 /**
@@ -126,6 +140,7 @@ export function WeekHero({
   topEmotions,
   logs,
   showHistoryLink = true,
+  inert = false,
 }: WeekHeroProps) {
   const { t, i18n } = useTranslation("mood");
   const { resolveEmotion } = useEmotionDisplay();
@@ -176,7 +191,11 @@ export function WeekHero({
 
       {showHistoryLink ? (
         <View className="flex-row justify-end">
-          <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
+          {inert ? (
+            <ShowAllLinkStick label={t("allHistory.link")} />
+          ) : (
+            <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
+          )}
         </View>
       ) : null}
 
@@ -218,6 +237,61 @@ export function WeekHero({
         </Text>
       </View>
     </View>
+  );
+}
+
+/**
+ * The week block's SPACE, held while the week's entries are still being fetched —
+ * ADR-0009 clause 2, in the shape clause 1 permits.
+ *
+ * What stood here was `<ActivityIndicator />` in a `py-8` box, roughly half the block's
+ * real height, so the trend and the two stats sections below snapped up as the screen
+ * settled and back down as the week landed. Cosmetic rather than the input-integrity
+ * defect the check-in editor had — nothing below is a tap target that moves under a
+ * finger — but the same mechanism and the same fix.
+ *
+ * **The stick is the hero itself, rendered with the very values it is being drawn with
+ * right now**: `weekLogs` is `undefined` while the fetch is in flight, and the three
+ * aggregations below are exactly what the screen has already derived from it. So no
+ * silhouette is maintained alongside the real thing, no height is measured, and nothing
+ * can drift — the reservation *is* the content, at `opacity-0`.
+ *
+ * It also cannot be handed a loaded week by mistake, which is what keeps it inert: it
+ * takes the window and derives the rest, so every cell has a count of zero and the only
+ * pressable in the block is the history door, which {@link WeekHero}'s `inert` swaps for
+ * a twin.
+ *
+ * ☠️ **No fill, only the spinner it replaces.** Grey bars in the strip would say seven
+ * days are coming and grey pills would say how many emotions — and how many, if any, is
+ * precisely what this query is about to answer. Clause 1 forbids a loading surface that
+ * kind of claim, so the space is held blank around a contentless signal (ADR-0009,
+ * edge 2). The same call the emotion grid made.
+ *
+ * ⚠️ **A reduction, not an elimination, and the residue is named rather than hidden.**
+ * The strip and the door are exact: seven columns whatever the week holds, one door or
+ * none by breakpoint. The *Felt most often* row is not. It is a wrap, and a week with
+ * emotions wraps further than the single "no emotions tagged yet" line the stick can
+ * honestly hold, so that row still settles on a narrow screen. Reserving for chips would
+ * mean inventing how many and how wide, and a guessed height is a layout shift with extra
+ * steps (ADR-0009, edge 5). The unmeasured half of a fix that removes the measured half
+ * is the trade edge 1 describes, not an oversight.
+ */
+export function WeekHeroReservation({
+  window,
+  showHistoryLink,
+}: Pick<WeekHeroProps, "window" | "showHistoryLink">) {
+  return (
+    <ReservedSpace testID="week-hero-reservation" overlay={<ActivityIndicator />}>
+      <WeekHero
+        window={window}
+        days={buildWeekDays(undefined, window)}
+        delta={getWeekDeltaForWindow(undefined, window)}
+        topEmotions={getTopEmotionsForWindow(undefined, window)}
+        logs={undefined}
+        showHistoryLink={showHistoryLink}
+        inert
+      />
+    </ReservedSpace>
   );
 }
 

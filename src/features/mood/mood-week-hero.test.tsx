@@ -1,6 +1,13 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { ActivityIndicator } from "react-native";
 
-import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import { LOADING_FILL } from "@/src/components/app/reserved-space";
+import {
+  formatWeekLabel,
+  WeekHero,
+  WeekHeroReservation,
+  WeekNavigator,
+} from "@/src/features/mood/mood-week-hero";
 import type { MoodLog } from "@/src/features/mood/types";
 import {
   buildWeekDays,
@@ -303,6 +310,84 @@ describe("WeekHero summary", () => {
     );
 
     expect(screen.queryByRole("link")).toBeNull();
+  });
+});
+
+/**
+ * ADR-0009 clause 2, on the week block. The stick is the hero itself at `opacity-0`, so
+ * there is no silhouette to keep in step and no pixel number to go stale — which is also
+ * why the assertions below are about what the stick IS rather than how tall it is.
+ *
+ * ⚠️ A height assertion here would be **vacuously green**: NativeWind resolves nothing
+ * into `props.style` under jest, so a reserved-height check passes without testing
+ * anything (`item-card.tsx`, and ADR-0009's Enforcement section). The one guard that runs
+ * in a real engine is `test/e2e/loading-reserves-space.e2e.test.ts`, deliberately kept to
+ * the one site whose shift lands a tap.
+ */
+describe("WeekHeroReservation", () => {
+  /**
+   * Clause 1. Everything in the stick is a real word — seven weekday letters, "Felt most
+   * often", "No emotions tagged yet" — and a week that has not loaded is not an empty
+   * week. Rendered visibly or read out, any of it would claim a fact this surface does
+   * not have.
+   */
+  it("says nothing: the whole stick is out of the accessibility tree", () => {
+    renderWithProviders(<WeekHeroReservation window={WINDOW} />);
+
+    expect(screen.queryByText("Felt most often")).toBeNull();
+    expect(screen.queryByText("No emotions tagged yet")).toBeNull();
+    expect(screen.queryByText("Show all history")).toBeNull();
+    expect(screen.getByTestId("week-hero-reservation")).toBeTruthy();
+  });
+
+  /**
+   * The reservation derives its own contents from the window, so it cannot be handed a
+   * loaded week by mistake — which is what keeps it inert. Seven columns whatever the
+   * week holds, and an entry-less cell is deliberately not interactive.
+   */
+  it("holds the strip's seven columns, and none of them is a control", () => {
+    renderWithProviders(<WeekHeroReservation window={WINDOW} />);
+
+    const cells = screen.getAllByRole("image", { includeHiddenElements: true });
+    expect(cells).toHaveLength(7);
+    expect(screen.queryAllByRole("button", { includeHiddenElements: true })).toHaveLength(0);
+  });
+
+  /**
+   * ☠️ The one thing in the block that IS a control. `ReservedSpace` hides its stick from
+   * assistive technology and takes no pointer events; neither reaches the Tab key, and
+   * react-native-web gives every `Pressable` `tabIndex="0"`. A real door here would be an
+   * invisible, focusable way off the screen the reader is waiting on.
+   */
+  it("reserves the history door's line without reserving a door", () => {
+    renderWithProviders(<WeekHeroReservation window={WINDOW} showHistoryLink />);
+
+    expect(screen.getByText("Show all history", { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryAllByRole("link", { includeHiddenElements: true })).toHaveLength(0);
+  });
+
+  // Wide layouts carry the door in the section's heading row instead, and the stick has
+  // to agree with the hero about that or it reserves a line the hero will not draw.
+  it("leaves the door's line out when the hero would not draw one", () => {
+    renderWithProviders(<WeekHeroReservation window={WINDOW} showHistoryLink={false} />);
+
+    expect(screen.queryByText("Show all history", { includeHiddenElements: true })).toBeNull();
+  });
+
+  /**
+   * ☠️ No fill, only the spinner it replaces. Seven grey bars would say seven days are
+   * coming and grey pills would say how many emotions — and how many, if any, is exactly
+   * what this query is about to answer (ADR-0009, edge 2). The same call the emotion grid
+   * made.
+   */
+  it("shows the spinner it stands in for, and draws no fill", () => {
+    const tree = renderWithProviders(<WeekHeroReservation window={WINDOW} />);
+
+    expect(tree.UNSAFE_getAllByType(ActivityIndicator)).toHaveLength(1);
+    const filled = tree
+      .UNSAFE_queryAllByProps({ className: expect.stringContaining(LOADING_FILL) })
+      .filter((node) => typeof node.type === "string");
+    expect(filled).toHaveLength(0);
   });
 });
 

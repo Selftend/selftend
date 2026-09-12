@@ -57,6 +57,16 @@ interface ReservedSpaceProps {
  * - ☠️ **It takes no pointer events.** `opacity-0` hides a control from the eye and from
  *   nothing else: on web an invisible `Pressable` is still perfectly clickable, which
  *   would turn a reservation meant to protect a tap into a way of stealing one.
+ *
+ * And one thing it CANNOT do for a caller, so the caller has to:
+ *
+ * - ☠️ **Neither of those reaches the Tab key.** react-native-web gives every `Pressable`
+ *   `tabIndex="0"` unless it is disabled, so an interactive stick stays focusable while
+ *   invisible — inside `aria-hidden`, which is worse than the shift it was reserving
+ *   against: Tab lands on nothing the reader can see, and Enter can take them off the
+ *   screen they are waiting on. **Build the stick from non-interactive twins.**
+ *   `ChipRunReservation`'s pills are plain `View`s and `ShowAllLinkStick` is the "Show
+ *   all" door's face with no press behaviour, both for exactly this reason.
  */
 export function ReservedSpace({ children, overlay, className, testID }: ReservedSpaceProps) {
   return (

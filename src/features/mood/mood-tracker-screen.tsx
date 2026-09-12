@@ -2,7 +2,6 @@ import { useFocusEffect } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   useWindowDimensions,
@@ -44,7 +43,12 @@ import {
   weekWindowFor,
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
-import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import {
+  formatWeekLabel,
+  WeekHero,
+  WeekHeroReservation,
+  WeekNavigator,
+} from "@/src/features/mood/mood-week-hero";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
@@ -526,9 +530,11 @@ export default function MoodTrackerScreen() {
                 ) : weekQuery.isError ? (
                   <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
                 ) : (
-                  <View className="items-center py-8">
-                    <ActivityIndicator />
-                  </View>
+                  // And it holds the block's space while it says nothing, so the trend
+                  // and the two stats sections below do not snap up and back down as the
+                  // week lands (ADR-0009 clause 2). The reservation derives its own
+                  // contents from the window - see `WeekHeroReservation`.
+                  <WeekHeroReservation window={weekWindow} showHistoryLink={!wideRows} />
                 )}
               </Section>
             ) : null}
