@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import { Platform } from "react-native";
+import type { ReactTestRendererJSON } from "react-test-renderer";
 
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { useEmotionUsageCounts } from "@/src/features/mood/emotion-preferences-queries";
@@ -59,11 +60,15 @@ function mockEmotionRow(emotionId: string, position: number) {
  */
 const mockFullEmotionList = ["anxious", "grateful", "sad"].map(mockEmotionRow);
 let mockEmotionList = mockFullEmotionList;
+let mockEmotionsLoading = false;
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
+  // ☠️ `undefined` while loading, never the rows: `useEmotionDisplay` derives the list
+  // from the persisted rows alone, so a fixture that keeps handing them over during the
+  // pending state renders the settled list and the collapse under test never happens.
   useEmotionPreferences: () => ({
-    data: mockEmotionList,
-    isLoading: false,
+    data: mockEmotionsLoading ? undefined : mockEmotionList,
+    isLoading: mockEmotionsLoading,
   }),
   useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3 } })),
   useUpsertEmotionPreference: () => ({ mutate: mockUpsertEmotion }),
@@ -128,6 +133,92 @@ function moveVia(emotionId: string, action: "moveEarlier" | "moveLater") {
   });
 }
 
+/** The slot holding the emotion grid, or the signal standing in for it while it loads. */
+const GRID_SLOT = "manage-emotions-grid-slot";
+
+type JsonTree = ReactTestRendererJSON | ReactTestRendererJSON[] | null;
+
+/**
+ * The first host node carrying `testID`, off the rendered JSON rather than off a
+ * `ReactTestInstance`.
+ *
+ * ☠️ The difference matters for what these cases assert, which is sibling ORDER: an
+ * instance tree still carries composite wrappers between a parent and the children it
+ * renders, and `.parent` there is the nearest HOST ancestor rather than the JSX one. In
+ * the JSON tree a node's `children` are exactly what the layout stacks, in the order it
+ * stacks them.
+ */
+function hostByTestID(node: JsonTree, testID: string): ReactTestRendererJSON | null {
+  if (!node) return null;
+  if (Array.isArray(node)) {
+    for (const entry of node) {
+      const found = hostByTestID(entry, testID);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (node.props?.testID === testID) return node;
+  for (const child of node.children ?? []) {
+    if (typeof child === "string") continue;
+    const found = hostByTestID(child, testID);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** The scroll column's own children, in the order it stacks them. */
+function columnChildren(): ReactTestRendererJSON[] {
+  const column = hostByTestID(screen.toJSON(), "manage-emotions-column");
+  expect(column).not.toBeNull();
+  return (column?.children ?? []).filter(
+    (child): child is ReactTestRendererJSON => typeof child !== "string",
+  );
+}
+
+/** Every Tailwind class inside `node`, its own included. */
+function classNamesWithin(node: ReactTestRendererJSON | null): string[] {
+  if (!node) return [];
+  const own = typeof node.props?.className === "string" ? node.props.className.split(/\s+/) : [];
+  const nested = (node.children ?? []).flatMap((child) =>
+    typeof child === "string" ? [] : classNamesWithin(child),
+  );
+  return [...own, ...nested].filter(Boolean);
+}
+
+/**
+ * Every fixed height claimed inside `node`, in BOTH spellings someone reaches for.
+ *
+ * ⚠️ A Tailwind class and an inline style have to be read separately, and the class is
+ * not the redundant half: NativeWind resolves no height into `props.style` under jest, so
+ * `h-[400px]` is invisible to a style-only check - while `style={{ height: 400 }}`, which
+ * is the other way a reviewer "stops the collapse", is invisible to a class-only one.
+ *
+ * Padding is deliberately NOT a fixed height: `py-8` around a contentless spinner claims
+ * nothing about how much content is coming, which is the distinction edge 5 draws.
+ */
+function fixedHeightsWithin(node: ReactTestRendererJSON | null): string[] {
+  if (!node) return [];
+
+  const classes = (
+    typeof node.props?.className === "string" ? node.props.className.split(/\s+/) : []
+  ).filter((name) => /^(min-|max-)?h-/.test(name) || name.startsWith("aspect-"));
+
+  const styles = [node.props?.style]
+    .flat(Infinity)
+    .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === "object")
+    .flatMap((entry) =>
+      (["height", "minHeight", "maxHeight"] as const)
+        .filter((key) => entry[key] !== undefined)
+        .map((key) => `style.${key}=${String(entry[key])}`),
+    );
+
+  const nested = (node.children ?? []).flatMap((child) =>
+    typeof child === "string" ? [] : fixedHeightsWithin(child),
+  );
+
+  return [...classes, ...styles, ...nested];
+}
+
 describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -144,6 +235,7 @@ describe("ManageEmotionsModal", () => {
     }
     mockReorderPending = false;
     mockEmotionList = mockFullEmotionList;
+    mockEmotionsLoading = false;
     mockUseEmotionUsageCounts.mockReturnValue({
       data: { anxious: 3 },
     } as unknown as ReturnType<typeof useEmotionUsageCounts>);
@@ -630,6 +722,81 @@ describe("ManageEmotionsModal", () => {
 
       expect(onClose).toHaveBeenCalledTimes(1);
       expect(screen.queryByText(SAVE_ERROR)).toBeNull();
+    });
+  });
+  /**
+   * ADR-0009 edge 5, and this surface is the ADR's named instance of it.
+   *
+   * The other three conversions in the sweep could reserve the space their pending
+   * content would occupy, because something already in hand decided its shape - the
+   * journal chart's range, the week block's seven days, the check-in editor's default
+   * emotion set. Here nothing does: the list is the PERSON'S, of whatever length they
+   * have edited it to, and it is exactly what the query is about to report. A stick
+   * built from the defaults would be a guess about the count, and a guessed height is
+   * "a layout shift with extra steps" - rejected at edge 5 by name.
+   *
+   * So the column takes the other ruled technique: the grid goes LAST, and nothing is
+   * left below it to push.
+   */
+  describe("the grid's place in the column (ADR-0009 edge 5)", () => {
+    it("puts the grid last in the scroll column, so nothing sits below it to push", () => {
+      open();
+
+      const children = columnChildren();
+
+      // More than one child, or "last" is a fact about a list of one and pins nothing.
+      expect(children.length).toBeGreaterThan(1);
+      expect(children[children.length - 1]?.props.testID).toBe(GRID_SLOT);
+    });
+
+    it("stands the loading signal in that same last slot, so its collapse pushes nothing", () => {
+      mockEmotionsLoading = true;
+      open();
+
+      // The fixture really is in the pending state: no row has rendered.
+      expect(screen.queryByLabelText("Edit Anxious")).toBeNull();
+
+      const children = columnChildren();
+
+      expect(children.length).toBeGreaterThan(1);
+      expect(children[children.length - 1]?.props.testID).toBe(GRID_SLOT);
+    });
+
+    it("keeps Add emotion above the grid, where the collapse cannot move it", () => {
+      open();
+
+      const children = columnChildren();
+      const addIndex = children.findIndex((child) => JSON.stringify(child).includes("Add emotion"));
+      const gridIndex = children.findIndex((child) => child.props.testID === GRID_SLOT);
+
+      expect(addIndex).toBeGreaterThanOrEqual(0);
+      expect(addIndex).toBeLessThan(gridIndex);
+    });
+
+    /** Moved, not demoted: the action still opens the add editor from where it now sits. */
+    it("leaves Add emotion working from its new place", () => {
+      open();
+
+      fireEvent.press(screen.getByText("Add emotion"));
+
+      expect(screen.getByLabelText("Name")).toBeTruthy();
+    });
+
+    /**
+     * The half of edge 5 a reviewer is most likely to "improve": reaching for a fixed
+     * height so the slot stops collapsing. The rule rejects it - a guessed height is a
+     * shift with extra steps, and it goes stale the first time the type scale or the
+     * locale moves.
+     */
+    it("gives the pending slot no fixed height, in either spelling", () => {
+      mockEmotionsLoading = true;
+      open();
+
+      const slot = hostByTestID(screen.toJSON(), GRID_SLOT);
+
+      // The walk reaches real nodes, so the absence below is an assertion that can fail.
+      expect(classNamesWithin(slot).length).toBeGreaterThan(0);
+      expect(fixedHeightsWithin(slot)).toEqual([]);
     });
   });
 });
