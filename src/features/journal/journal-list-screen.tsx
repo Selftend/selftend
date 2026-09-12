@@ -216,10 +216,10 @@ export default function JournalListScreen() {
                     </Button>
                   </View>
                 ) : !writingBuckets ? (
-                  // And it holds the chart's space while it says nothing, so the entries
-                  // list below does not rise and drop back as the buckets land (ADR-0009
-                  // clause 2). The reservation derives its own columns from the selected
-                  // range - see `JournalWritingChartReservation`.
+                  // The pending arm holds the chart's space while it says nothing, so the
+                  // entries list below does not rise and drop back as the buckets land
+                  // (ADR-0009 clause 2). The reservation derives its own columns from the
+                  // selected range - see `JournalWritingChartReservation`.
                   //
                   // This arm is what the two above leave: a read that did start and has
                   // not finished. A read that never started, or failed, answers with the
