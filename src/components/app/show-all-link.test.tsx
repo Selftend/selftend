@@ -106,25 +106,45 @@ describe("ShowAllLink", () => {
   });
 });
 
+/**
+ * The stick holds the door's space and is reachable by nothing — see `ReservedSpace`,
+ * which carries the full reason a reservation may never be built from the real component.
+ */
 describe("ShowAllLinkStick", () => {
-  /**
-   * The whole point of the stick: it holds the door's space and is reachable by nothing.
-   *
-   * `ReservedSpace` hides its contents from the accessibility tree and takes no pointer
-   * events, and neither of those reaches the Tab key — react-native-web gives every
-   * `Pressable` `tabIndex="0"` unless it is disabled. A door built from the real
-   * component would therefore still be focusable while invisible, and pressing Enter on
-   * it would navigate a keyboard user off the screen they were waiting on.
-   */
-  it("is not a door — no role, no press, nothing to focus", () => {
+  /** The single host root of a render, so the two below can compare like with like. */
+  const rootOf = (tree: ReturnType<ReturnType<typeof render>["toJSON"]>) => {
+    if (!tree || Array.isArray(tree)) throw new Error("expected one root element");
+    return tree;
+  };
+
+  it("is not a door — no link role, no button role", () => {
     render(<ShowAllLinkStick label="Show all history" />);
 
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText("Show all history").parent?.props.onClick).toBeUndefined();
-    expect(
-      screen.getByText("Show all history").parent?.props.onStartShouldSetResponder,
-    ).toBeUndefined();
+  });
+
+  /**
+   * ☠️ The role queries above cannot see the half that matters. What makes an invisible
+   * door dangerous is that it stays **focusable**: react-native-web gives every
+   * `Pressable` `tabIndex="0"` unless it is disabled, so Tab lands on nothing the reader
+   * can see and Enter takes them off the screen they are waiting on.
+   *
+   * So this names the props against the REAL door rather than from memory. If react-native
+   * or its web build renames what it hangs on a `Pressable`, the first expectation in each
+   * pair fails loudly instead of leaving the second vacuously green — the failure mode an
+   * absence-only assertion always has.
+   */
+  it("carries none of what makes the door pressable or focusable", () => {
+    const doorProps = rootOf(
+      render(<ShowAllLink label="Show all history" route="/tools/check-in/history" />).toJSON(),
+    ).props;
+    const stickProps = rootOf(render(<ShowAllLinkStick label="Show all history" />).toJSON()).props;
+
+    for (const prop of ["focusable", "onClick", "onStartShouldSetResponder"]) {
+      expect(doorProps).toHaveProperty(prop);
+      expect(stickProps).not.toHaveProperty(prop);
+    }
   });
 
   /**
@@ -134,12 +154,13 @@ describe("ShowAllLinkStick", () => {
    * either: both must draw the same face, because they are the same component.
    */
   it("draws the same face as the door it stands in for", () => {
-    const door = JSON.stringify(
+    const door = rootOf(
       render(<ShowAllLink label="Show all history" route="/tools/check-in/history" />).toJSON(),
     );
-    const stick = JSON.stringify(render(<ShowAllLinkStick label="Show all history" />).toJSON());
+    const stick = rootOf(render(<ShowAllLinkStick label="Show all history" />).toJSON());
 
-    const face = (tree: string) => JSON.parse(tree).children;
-    expect(face(stick)).toEqual(face(door));
+    expect(stick.children).toEqual(door.children);
+    // Not an empty-equals-empty pass: the face is a label and an arrow.
+    expect(stick.children).toHaveLength(2);
   });
 });

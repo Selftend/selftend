@@ -74,6 +74,7 @@ function renderHero(logs: MoodLog[] = WEEK_LOGS, window = WINDOW) {
       delta={NO_DELTA}
       topEmotions={[]}
       logs={logs}
+      inert={false}
     />,
   );
 }
@@ -235,6 +236,7 @@ describe("WeekHero day panel", () => {
         delta={NO_DELTA}
         topEmotions={[]}
         logs={[]}
+        inert={false}
       />,
     );
 
@@ -263,6 +265,7 @@ describe("WeekHero summary", () => {
         delta={{ current: 3.4, previous: 3.0, delta: 0.4 }}
         topEmotions={[]}
         logs={WEEK_LOGS}
+        inert={false}
       />,
     );
 
@@ -283,6 +286,7 @@ describe("WeekHero summary", () => {
         delta={NO_DELTA}
         topEmotions={[{ id: "anxious", count: 2 }]}
         logs={WEEK_LOGS}
+        inert={false}
       />,
     );
 
@@ -305,6 +309,7 @@ describe("WeekHero summary", () => {
         delta={NO_DELTA}
         topEmotions={[]}
         logs={WEEK_LOGS}
+        inert={false}
         showHistoryLink={false}
       />,
     );
@@ -354,10 +359,9 @@ describe("WeekHeroReservation", () => {
   });
 
   /**
-   * ☠️ The one thing in the block that IS a control. `ReservedSpace` hides its stick from
-   * assistive technology and takes no pointer events; neither reaches the Tab key, and
-   * react-native-web gives every `Pressable` `tabIndex="0"`. A real door here would be an
-   * invisible, focusable way off the screen the reader is waiting on.
+   * ☠️ The one thing in the block that IS a control, so it is the one that has to become
+   * a twin — `ReservedSpace`'s docblock carries why a reservation may hold no reachable
+   * element. The door's line still has to be held, or the stick is a row short.
    */
   it("reserves the history door's line without reserving a door", () => {
     renderWithProviders(<WeekHeroReservation window={WINDOW} showHistoryLink />);
@@ -379,15 +383,24 @@ describe("WeekHeroReservation", () => {
    * coming and grey pills would say how many emotions — and how many, if any, is exactly
    * what this query is about to answer (ADR-0009, edge 2). The same call the emotion grid
    * made.
+   *
+   * ☠️ The obvious spelling of this — `UNSAFE_queryAllByProps({ className:
+   * expect.stringContaining(LOADING_FILL) })` — is **vacuously green**, and was, until a
+   * review caught it. `findAllByProps` compares with `!==`, so an asymmetric matcher (an
+   * object) never equals a className (a string) and the query returns `[]` whatever the
+   * tree holds; painting all seven strip cells with the fill left it passing. Walk the
+   * tree and read the prop instead.
    */
   it("shows the spinner it stands in for, and draws no fill", () => {
     const tree = renderWithProviders(<WeekHeroReservation window={WINDOW} />);
 
     expect(tree.UNSAFE_getAllByType(ActivityIndicator)).toHaveLength(1);
-    const filled = tree
-      .UNSAFE_queryAllByProps({ className: expect.stringContaining(LOADING_FILL) })
-      .filter((node) => typeof node.type === "string");
-    expect(filled).toHaveLength(0);
+    const filled = tree.root.findAll(
+      (node) =>
+        typeof node.type === "string" && String(node.props.className ?? "").includes(LOADING_FILL),
+      { deep: true },
+    );
+    expect(filled).toEqual([]);
   });
 });
 

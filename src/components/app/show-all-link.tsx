@@ -105,15 +105,10 @@ export function ShowAllLink({ label, route }: { label: string; route: Href }) {
  * The door's SPACE and none of its behaviour - a measuring stick for a loading
  * reservation (ADR-0009, edge 4).
  *
- * A reservation built from the real `ShowAllLink` would hold the right space and open a
- * hole in the keyboard order: `ReservedSpace` hides its stick from the accessibility tree
- * and takes no pointer events, but neither of those reaches the Tab key, and
- * react-native-web gives **every** `Pressable` `tabIndex="0"` unless it is disabled. A
- * focusable invisible door inside `aria-hidden` is a worse defect than the shift it was
- * reserving against - it navigates a keyboard user off the screen they are waiting on.
- *
- * So the stick is a plain `View`, exactly as `ChipRunReservation`'s pills are, and for
- * exactly the same reason: **nothing in a reservation may be reachable.**
+ * A plain `View`, because **nothing inside a reservation may be reachable**: an invisible
+ * door still takes the Tab key and can navigate a keyboard user off the screen they are
+ * waiting on. `ReservedSpace`'s docblock carries the mechanism and the reason;
+ * `ChipRunReservation`'s pills are plain `View`s for the same one.
  */
 export function ShowAllLinkStick({ label }: { label: string }) {
   return (

@@ -42,14 +42,19 @@ interface WeekHeroProps {
   showHistoryLink?: boolean;
   /**
    * True when this hero is a measuring stick rather than the hero — the invisible copy
-   * {@link WeekHeroReservation} holds the space with. It is set by that component and
-   * nowhere else, and it does exactly one thing: the history door becomes an inert twin,
-   * because nothing inside a reservation may be reachable by keyboard.
+   * {@link WeekHeroReservation} holds the space with. It does exactly one thing: the
+   * history door becomes an inert twin, because nothing inside a reservation may be
+   * reachable by keyboard (see `ReservedSpace` for why).
+   *
+   * ☠️ **Required, deliberately.** The keyboard-safe value is the unusual one, so a
+   * default would make forgetting it silent — and forgetting it ships an invisible,
+   * focusable door inside `aria-hidden`. One component with two mounts and two audiences
+   * is fixed with a required prop, never with a default that one of them relies on.
    *
    * The day cells need no such switch. A stick's week has no entries, and an entry-less
    * cell is already deliberately not interactive — see {@link WeekStripCell}.
    */
-  inert?: boolean;
+  inert: boolean;
 }
 
 /**
@@ -140,7 +145,7 @@ export function WeekHero({
   topEmotions,
   logs,
   showHistoryLink = true,
-  inert = false,
+  inert,
 }: WeekHeroProps) {
   const { t, i18n } = useTranslation("mood");
   const { resolveEmotion } = useEmotionDisplay();
@@ -244,22 +249,22 @@ export function WeekHero({
  * The week block's SPACE, held while the week's entries are still being fetched —
  * ADR-0009 clause 2, in the shape clause 1 permits.
  *
- * What stood here was `<ActivityIndicator />` in a `py-8` box, roughly half the block's
+ * What stood here was `<ActivityIndicator />` in a `py-8` box, well short of the block's
  * real height, so the trend and the two stats sections below snapped up as the screen
  * settled and back down as the week landed. Cosmetic rather than the input-integrity
  * defect the check-in editor had — nothing below is a tap target that moves under a
  * finger — but the same mechanism and the same fix.
  *
- * **The stick is the hero itself, rendered with the very values it is being drawn with
- * right now**: `weekLogs` is `undefined` while the fetch is in flight, and the three
- * aggregations below are exactly what the screen has already derived from it. So no
- * silhouette is maintained alongside the real thing, no height is measured, and nothing
- * can drift — the reservation *is* the content, at `opacity-0`.
+ * **The stick is the hero itself**, at `opacity-0`, so no silhouette is maintained
+ * alongside the real thing, no height is measured, and nothing can drift — the
+ * reservation *is* the content.
  *
- * It also cannot be handed a loaded week by mistake, which is what keeps it inert: it
- * takes the window and derives the rest, so every cell has a count of zero and the only
- * pressable in the block is the history door, which {@link WeekHero}'s `inert` swaps for
- * a twin.
+ * It re-derives its own days, delta and emotions from `undefined` rather than taking the
+ * screen's, which produces the same three values (that is what the screen's memos hold
+ * while `weekLogs` is in flight) and buys one thing they could not: **it cannot be handed
+ * a loaded week by mistake.** So every cell has a count of zero, an entry-less cell is
+ * already not interactive, and the only pressable left in the block is the history door,
+ * which {@link WeekHero}'s `inert` swaps for a twin.
  *
  * ☠️ **No fill, only the spinner it replaces.** Grey bars in the strip would say seven
  * days are coming and grey pills would say how many emotions — and how many, if any, is
