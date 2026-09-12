@@ -58,9 +58,6 @@ export function useSaveWiseMindCheckin(userId: string | null) {
     mutationFn: (input: WiseMindCheckinInput) => saveWiseMindCheckin(userId!, input),
     meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
-      // The once-ever reminder offer rides any DBT save (spec §4). The store
-      // decides whether to show it and the shipped eligibility gates it; this
-      // only reports that a save happened.
       noteToolSave();
       if (!userId) return;
       await Promise.all([

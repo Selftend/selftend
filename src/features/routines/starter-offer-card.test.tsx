@@ -158,8 +158,8 @@ function setEligibleScenario() {
   return { preferences, prefsMutate, ...mutations };
 }
 
-/** A completed tool save, as every tool's `onSuccess` reports one. */
-function requestSave() {
+/** A completed tool save, exactly as every tool's `onSuccess` reports one. */
+function noteSave() {
   act(() => {
     useToolSaveStore.getState().noteToolSave();
   });
@@ -184,18 +184,15 @@ describe("StarterOfferCard", () => {
 
   it("shows the offer at the second action, on the FIRST save that qualifies", async () => {
     // ☠️ The first save is the property #2342 changed. This card used to call
-    // the reminder prompt's eligibility predicate as its own gate, so a tool
-    // never reminder-prompted - the state below, and every new user's state -
-    // meant the reminder card won the save and this offer waited for a later
-    // one. With the offer at the completion moment removed there is no second
-    // floater and nothing to defer to. The empty list is spelled out rather
-    // than left to the default: a gate on it reappearing is the regression.
-    setEligibleScenario();
-    setPreferences({ reminderPromptedTools: [] });
-    const prefsMutate = setUpdateMutation();
+    // the reminder prompt's eligibility predicate as its own gate, so a save
+    // for a tool never reminder-prompted - every new user's state - went to the
+    // reminder card and this offer waited for a later one. With the offer at
+    // the completion moment removed there is nothing to defer to, and the
+    // baseline scenario below is exactly that state: one save, and it shows.
+    const { prefsMutate } = setEligibleScenario();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
     // The composed steps are on the card, in kept-widget order.
@@ -212,7 +209,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -228,7 +225,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -244,7 +241,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -267,7 +264,7 @@ describe("StarterOfferCard", () => {
     setOfferOnlyRecords({ worry: [{ id: "worry-1" }] });
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -287,7 +284,7 @@ describe("StarterOfferCard", () => {
     >);
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -308,7 +305,7 @@ describe("StarterOfferCard", () => {
     });
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     await act(async () => {});
 
@@ -329,7 +326,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
     await waitFor(() => {
@@ -341,7 +338,7 @@ describe("StarterOfferCard", () => {
     const { prefsMutate, createRoutine, addStep } = setEligibleScenario();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     fireEvent.press(await screen.findByText("Keep"));
 
@@ -374,7 +371,7 @@ describe("StarterOfferCard", () => {
     const { prefsMutate, createRoutine } = setEligibleScenario();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave();
+    noteSave();
 
     fireEvent.press(await screen.findByText("Skip"));
 

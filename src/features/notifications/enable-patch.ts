@@ -12,11 +12,16 @@ import { getReminderTimeZone } from "@/src/lib/notifications";
  * reminder that silently never arrives, which is the least visible failure this feature has.
  *
  * The timestamp is only stamped on a CHANGE: re-stamping an existing yes would rewrite the
- * date of a decision the user already made. Nothing in the app reads these two columns back
- * since #2342 removed the offer at the completion moment, whose eligibility predicate was
- * their one reader - they are a consent trail now, written on every enable and read by
- * nobody. That is deliberate (ADR-0008): retiring a consent trail is a privacy call in its
- * own right, not a loose end of removing the prompt.
+ * date of a decision the user already made.
+ *
+ * ⚠️ The two columns are NOT the same kind of thing, and #2342 separated them further.
+ * `reminderConsent` is read at delivery time and stays load-bearing - do not retire it.
+ * `reminderConsentUpdatedAt` lost its only reader when the offer at the completion moment
+ * went: consent-false-with-a-timestamp was how that offer's eligibility predicate
+ * recognised a decline, and nothing else has ever read the date. It is kept as a consent
+ * trail (ADR-0008) - retiring one is a privacy call in its own right, not a loose end of
+ * removing a prompt - so the stamping rule above still has to hold even though no code
+ * currently looks at what it writes.
  */
 export function reminderConsentPatch(preferences: UserPreferences): Partial<UserPreferences> {
   return {

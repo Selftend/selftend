@@ -60,9 +60,6 @@ export function useSaveOppositeActionPlan(userId: string | null) {
     mutationFn: (input: OppositeActionPlanInput) => saveOppositeActionPlan(userId!, input),
     meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
-      // The once-ever reminder offer rides any DBT save (spec §4). The store
-      // decides whether to show it and the shipped eligibility gates it; this
-      // only reports that a save happened.
       noteToolSave();
       if (!userId) return;
       // An open plan marks no day, but the rule is coarse on purpose (#1906):

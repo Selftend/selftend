@@ -99,13 +99,18 @@ load-bearing.
   the reminder card began taking the first qualifying save for each of ten
   tools in turn. The deferral is deleted, not replaced with a fresh one: with
   one floater there is nothing to yield to.
-- **`reminderConsent` / `reminderConsentUpdatedAt` stay.** They record consent
-  to the reminder _channel_, not to this prompt, and are still written on every
-  target enable and by the routine editor. They become write-only, and a
-  consent trail nothing reads is still a consent trail; retiring one is a
-  privacy call in its own right, not a loose end of this change. The genuinely
-  dead half — a global decline branch nothing in the app could ever write —
-  dies for free with the predicate.
+- **`reminderConsent` / `reminderConsentUpdatedAt` stay**, and they are not the
+  same kind of thing. They record consent to the reminder _channel_, not to this
+  prompt, and are written on every target enable and by the routine editor.
+  ⚠️ **`reminderConsent` remains load-bearing**: `send-web-reminders` skips any
+  user whose consent is falsy, so it is a hard delivery gate read on every send,
+  and nothing here touches it. Only **`reminderConsentUpdatedAt`** is orphaned —
+  consent-false-with-a-timestamp was how the removed predicate recognised a
+  decline, and nothing else has ever read the date. It is kept anyway: a consent
+  trail nothing reads is still a consent trail, and retiring one is a privacy
+  call in its own right, not a loose end of this change. The genuinely dead half
+  — a global decline branch nothing in the app could ever write — dies for free
+  with the predicate.
 - **`reminder_prompted_tools` is dropped**, column and rows, once nothing writes
   it (#2343). It recorded only _"the app asked you"_: no user value, and with
   the offer gone, no reader. Data minimisation.
