@@ -148,11 +148,11 @@ type JsonTree = ReactTestRendererJSON | ReactTestRendererJSON[] | null;
  * the JSON tree a node's `children` are exactly what the layout stacks, in the order it
  * stacks them.
  */
-function findHost(node: JsonTree, testID: string): ReactTestRendererJSON | null {
+function hostByTestID(node: JsonTree, testID: string): ReactTestRendererJSON | null {
   if (!node) return null;
   if (Array.isArray(node)) {
     for (const entry of node) {
-      const found = findHost(entry, testID);
+      const found = hostByTestID(entry, testID);
       if (found) return found;
     }
     return null;
@@ -160,7 +160,7 @@ function findHost(node: JsonTree, testID: string): ReactTestRendererJSON | null 
   if (node.props?.testID === testID) return node;
   for (const child of node.children ?? []) {
     if (typeof child === "string") continue;
-    const found = findHost(child, testID);
+    const found = hostByTestID(child, testID);
     if (found) return found;
   }
   return null;
@@ -168,7 +168,7 @@ function findHost(node: JsonTree, testID: string): ReactTestRendererJSON | null 
 
 /** The scroll column's own children, in the order it stacks them. */
 function columnChildren(): ReactTestRendererJSON[] {
-  const column = findHost(screen.toJSON(), "manage-emotions-column");
+  const column = hostByTestID(screen.toJSON(), "manage-emotions-column");
   expect(column).not.toBeNull();
   return (column?.children ?? []).filter(
     (child): child is ReactTestRendererJSON => typeof child !== "string",
@@ -183,6 +183,40 @@ function classNamesWithin(node: ReactTestRendererJSON | null): string[] {
     typeof child === "string" ? [] : classNamesWithin(child),
   );
   return [...own, ...nested].filter(Boolean);
+}
+
+/**
+ * Every fixed height claimed inside `node`, in BOTH spellings someone reaches for.
+ *
+ * ⚠️ A Tailwind class and an inline style have to be read separately, and the class is
+ * not the redundant half: NativeWind resolves no height into `props.style` under jest, so
+ * `h-[400px]` is invisible to a style-only check - while `style={{ height: 400 }}`, which
+ * is the other way a reviewer "stops the collapse", is invisible to a class-only one.
+ *
+ * Padding is deliberately NOT a fixed height: `py-8` around a contentless spinner claims
+ * nothing about how much content is coming, which is the distinction edge 5 draws.
+ */
+function fixedHeightsWithin(node: ReactTestRendererJSON | null): string[] {
+  if (!node) return [];
+
+  const classes = (
+    typeof node.props?.className === "string" ? node.props.className.split(/\s+/) : []
+  ).filter((name) => /^(min-|max-)?h-/.test(name) || name.startsWith("aspect-"));
+
+  const styles = [node.props?.style]
+    .flat(Infinity)
+    .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === "object")
+    .flatMap((entry) =>
+      (["height", "minHeight", "maxHeight"] as const)
+        .filter((key) => entry[key] !== undefined)
+        .map((key) => `style.${key}=${String(entry[key])}`),
+    );
+
+  const nested = (node.children ?? []).flatMap((child) =>
+    typeof child === "string" ? [] : fixedHeightsWithin(child),
+  );
+
+  return [...classes, ...styles, ...nested];
 }
 
 describe("ManageEmotionsModal", () => {
@@ -754,15 +788,15 @@ describe("ManageEmotionsModal", () => {
      * shift with extra steps, and it goes stale the first time the type scale or the
      * locale moves.
      */
-    it("gives the pending slot no guessed height", () => {
+    it("gives the pending slot no fixed height, in either spelling", () => {
       mockEmotionsLoading = true;
       open();
 
-      const classNames = classNamesWithin(findHost(screen.toJSON(), GRID_SLOT));
+      const slot = hostByTestID(screen.toJSON(), GRID_SLOT);
 
-      // The walk reaches real nodes, so the absence below can fail.
-      expect(classNames.length).toBeGreaterThan(0);
-      expect(classNames.filter((name) => /^(min-|max-)?h-/.test(name))).toEqual([]);
+      // The walk reaches real nodes, so the absence below is an assertion that can fail.
+      expect(classNamesWithin(slot).length).toBeGreaterThan(0);
+      expect(fixedHeightsWithin(slot)).toEqual([]);
     });
   });
 });

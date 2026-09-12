@@ -568,19 +568,25 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             ) : null}
 
             <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 pb-8">
-              {/* ☠️ ORDER IS LOAD-BEARING HERE: "Add emotion" above, the grid last.
-                  ADR-0009 clause 2 asks a pending surface to reserve the space it will
-                  occupy, and this is the one site in that sweep which genuinely cannot —
-                  the grid's height is the number of emotions the person keeps, and that
-                  is exactly what the query is about to report. Nothing already in hand
-                  decides it (the journal chart's range and the week block's seven days
-                  both did), and a stick built from `DEFAULT_EMOTIONS` would be a guess
-                  about a count that this surface, of all surfaces, exists to let people
-                  change. So it takes the ADR's other ruled technique, edge 5: the
-                  varying content sits at the END of its scroll column, and the collapse
-                  from spinner to rows has nothing below it to push. A guessed fixed
-                  height is rejected there by name — "a layout shift with extra steps".
-                  Anything added after the grid re-opens the defect. */}
+              {/* ☠️ ORDER IS LOAD-BEARING: "Add emotion" above, the grid LAST, so the
+                  collapse from spinner to rows has nothing below it to push. Anything
+                  added after the grid re-opens the shift.
+
+                  This is ADR-0009 edge 5, which names this file: the grid's height is
+                  the number of emotions the person keeps, which is exactly what the
+                  query is about to report, so no reservation can be exact and a guessed
+                  one is "a layout shift with extra steps". Reasoning lives in the ADR;
+                  what is local is the ordering constraint above.
+
+                  ⚠️ WHAT THIS DOES NOT FIX, ON WEB. Edge 5 assumes a column of definite
+                  height, which is true of the native `pageSheet` (`flex-1`) and NOT of
+                  the web panel: it hugs its content by design (`VIEW_SIZING`, #905/2E),
+                  so the panel itself still grows when the rows land — recentring the
+                  desktop card, growing the drawer upward — which moves the header and
+                  this Button with it. That is the panel's sizing, not this column's
+                  order, and the only cure at panel scale would be the fixed height edge
+                  5 rejects. Pre-existing and strictly reduced by the order above, not
+                  introduced by it; tracked separately rather than redesigned here. */}
               <View className={cn(FORM_COLUMN, "gap-4")} testID="manage-emotions-column">
                 <Button
                   variant="outline"
