@@ -16,7 +16,8 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
+import { ChipRun, ChipRunReservation, SelectableChip } from "@/src/components/app/selectable-chip";
+import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
 import {
@@ -120,6 +121,48 @@ const EmotionGrid = memo(function EmotionGrid({
 });
 
 /**
+ * The emotion grid's SPACE, held while the preferences query is in flight (#2345, ADR-0009).
+ *
+ * The grid used to be replaced by a bare ~20px `ActivityIndicator`, and the Note field is its
+ * immediate next sibling, so every control below it jumped when the rows landed — **292px at
+ * 390dp, measured** by the e2e below against the unfixed code (y=609 → y=901), and on a
+ * first-ever user `listOrSeedEmotions` makes up to four sequential round trips before it
+ * happens. ☠️ **This is an input-integrity defect, not a cosmetic one.** In the user test
+ * that found it (#2327) a tap meant for Note landed on `sad`, index 11 of 22: the app took
+ * an action the person did not choose.
+ *
+ * The measuring stick is the DEFAULT set — the list every first-ever user is seeded with,
+ * and the one the defect was measured against — rendered invisibly through the chip's own
+ * frame constants, so the reservation is exact by construction and needs no pixel number.
+ * ⚠️ A user who has pruned or extended the list still sees a smaller settle. That is
+ * ADR-0009's own trade stated where it lands: a reduction, not an elimination.
+ *
+ * The spinner is kept, centred in the held space rather than standing in for it — which
+ * also means the five suites that pin `ActivityIndicator` by component type are untouched.
+ *
+ * ⚠️ The names come from `resolveEmotion`, which with no rows yet resolves each builtin to
+ * the same translated name and emoji the real chip will carry. Re-deriving them here from
+ * `DEFAULT_EMOTIONS` and a `t()` call would be a second implementation of that resolution,
+ * and the day the two disagreed the stick would silently be the wrong width.
+ */
+const EmotionGridReservation = memo(function EmotionGridReservation({
+  resolve,
+  selectedIds,
+}: {
+  resolve: (id: string) => EmotionDisplay;
+  selectedIds: string[];
+}) {
+  const chips = DEFAULT_EMOTIONS.map(({ id }) => {
+    const { name, emoji } = resolve(id);
+    return { id, label: name, emoji };
+  });
+
+  return (
+    <ChipRunReservation chips={chips} selectedIds={selectedIds} overlay={<ActivityIndicator />} />
+  );
+});
+
+/**
  * The design language's section eyebrow — 11px, 600, 0.1em-tracked uppercase —
  * with the quieter "— optional" tail rendered in normal case (design `2b`).
  * Replaces the sentence-case bold `Label`s the old shell used (#869).
@@ -206,7 +249,7 @@ export function MoodEntryEditorScreen({
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
-  const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
+  const { allEmotions, resolveEmotion, isLoading: emotionsLoading } = useEmotionDisplay();
 
   // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
   // (not the object) stops a later list/detail refetch - which produces a new object
@@ -480,7 +523,7 @@ export function MoodEntryEditorScreen({
             </Pressable>
           </View>
           {emotionsLoading ? (
-            <ActivityIndicator />
+            <EmotionGridReservation resolve={resolveEmotion} selectedIds={emotions} />
           ) : (
             <EmotionGrid emotions={allEmotions} selectedIds={emotions} onToggle={toggleEmotion} />
           )}

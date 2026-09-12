@@ -58,8 +58,11 @@ beforeEach(() => {
 
 describe("the three states", () => {
   it("renders no stat at all while the data is still loading", () => {
-    // Not a dash, not a skeleton, not "Nothing yet". `undefined` also covers a failed
-    // fetch with no cache, where claiming emptiness would erase a real history.
+    // Not a dash, not "Nothing yet", no figure we do not have - ADR-0009 clause 1.
+    // `undefined` also covers a failed fetch with no cache, where claiming emptiness would
+    // erase a real history - and that is the same reason clause 2 does not reach this slot:
+    // reservation binds the pending state, and this one cannot tell pending from failed.
+    // See the three states in tool-row-stats.tsx.
     useHomeToolStats.mockReturnValue({ data: undefined });
 
     renderStat("journal");
