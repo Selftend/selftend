@@ -6,7 +6,11 @@ export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 export type ButtonTourKey = string;
 
 // A notification target key ("mood", "cbt", ...) the one-time contextual
-// reminder prompt has already been shown for.
+// reminder prompt was shown for, back when there was one.
+//
+// ⚠️ Write-once history. The prompt was removed outright (#2342, ADR-0008), so
+// nothing appends to this list and nothing reads it; the column and the rows go
+// in #2343, and this type goes with them. Do not build anything on it.
 export type ReminderPromptedTool = string;
 
 export type GratitudeLevel = 1 | 2 | 3;
@@ -141,8 +145,9 @@ export interface UserPreferences {
   reminderPromptedTools: ReminderPromptedTool[];
   /**
    * The once-ever starter-routine offer at the second action (#1677) has been
-   * shown. Marked on show, mirroring `reminderPromptedTools`: navigating away
-   * counts as asked, and declining writes nothing further.
+   * shown. Marked on show: navigating away counts as asked, and declining
+   * writes nothing further. Since #2342 this is the only offer the post-save
+   * moment can raise, and it takes the first qualifying save.
    */
   starterRoutineOffered: boolean;
   breathSoundId: string;

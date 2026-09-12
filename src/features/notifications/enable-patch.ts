@@ -1,7 +1,6 @@
 import type { UserPreferences } from "@/src/features/modules/types";
 import type { NotificationTarget } from "@/src/features/notifications/registry";
 import { getReminderTimeZone } from "@/src/lib/notifications";
-import type { TimeOfDay } from "@/src/utils/time";
 
 /**
  * The consent half of enabling any reminder.
@@ -12,9 +11,12 @@ import type { TimeOfDay } from "@/src/utils/time";
  * (#981). It lives here rather than in three copies because a surface that forgets it ships a
  * reminder that silently never arrives, which is the least visible failure this feature has.
  *
- * The timestamp is only stamped on a CHANGE. Consent-false-with-a-timestamp is how
- * `isReminderPromptEligible` recognises a decline, so re-stamping an existing yes would be
- * rewriting the date of a decision the user already made.
+ * The timestamp is only stamped on a CHANGE: re-stamping an existing yes would rewrite the
+ * date of a decision the user already made. Nothing in the app reads these two columns back
+ * since #2342 removed the offer at the completion moment, whose eligibility predicate was
+ * their one reader - they are a consent trail now, written on every enable and read by
+ * nobody. That is deliberate (ADR-0008): retiring a consent trail is a privacy call in its
+ * own right, not a loose end of removing the prompt.
  */
 export function reminderConsentPatch(preferences: UserPreferences): Partial<UserPreferences> {
   return {
@@ -29,18 +31,19 @@ export function reminderConsentPatch(preferences: UserPreferences): Partial<User
  * Everything a "turn this reminder on" write needs: the target's enabled column, a fresh
  * device timezone, and consent.
  *
- * `time` is passed only when the surface picked one (the contextual prompt proposes a time);
- * the reminders screen leaves the stored hour/minute alone, since its own picker owns them.
+ * The hour and minute are deliberately not here. This used to take an optional `time` for
+ * the one surface that proposed one - the post-completion prompt, which offered the moment
+ * you finished, rounded. That surface is gone (#2342), and the only caller left is the
+ * reminders screen, which leaves the stored hour/minute alone because its own picker owns
+ * them. A parameter no caller passes is a branch no test can reach, so it goes with the card.
  */
 export function enableTargetPatch(
   preferences: UserPreferences,
   target: NotificationTarget,
-  time?: TimeOfDay,
 ): Partial<UserPreferences> {
   return {
     [target.enabledField]: true,
     [target.timezoneField]: getReminderTimeZone(),
-    ...(time ? { [target.hourField]: time.hour, [target.minuteField]: time.minute } : {}),
     ...reminderConsentPatch(preferences),
   };
 }

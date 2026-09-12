@@ -11,7 +11,7 @@ import {
   saveScript,
 } from "@/src/features/dbt/repository";
 import type { ScriptDoneInput, ScriptInput } from "@/src/features/dbt/types";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
@@ -78,7 +78,7 @@ export function useSaveScript(userId: string | null) {
       // The once-ever reminder offer rides any DBT save (spec §4). The store
       // decides whether to show it and the shipped eligibility gates it; this
       // only reports that a save happened.
-      requestReminderPrompt("dbt");
+      noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: dbtKeys.scriptList(userId) }),

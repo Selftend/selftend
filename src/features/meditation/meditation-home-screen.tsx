@@ -324,8 +324,10 @@ export default function MeditationHomeScreen() {
       });
       // The wizard's preferred time seeds the reminder columns but never ENABLES the
       // reminder (#981): enabling it here wrote no `reminder_consent` and armed no push
-      // channel, so the reminder it promised could not be delivered on any platform. The
-      // contextual prompt after the first session is what asks.
+      // channel, so the reminder it promised could not be delivered on any platform.
+      // Nothing asks for it either, here or after a session (ADR-0008) - the seeded time
+      // is simply what the picker starts on when the person goes looking, via the
+      // reminder bell on this screen or Settings › Reminders.
       await updatePreferences.mutateAsync({
         meditationReminderHour: preferredTime.hour,
         meditationReminderMinute: preferredTime.minute,

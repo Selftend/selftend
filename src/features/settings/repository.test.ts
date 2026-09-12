@@ -252,7 +252,12 @@ describe("act program preference flags", () => {
   });
 });
 
-describe("reminder prompt preference fields", () => {
+// The column mapping only. The surface that wrote this list - the post-save
+// reminder offer - is gone (#2342, ADR-0008), so nothing appends to it any
+// more; the column itself is dropped in #2343 and these three tests go with it.
+// Until then the mapping still has to round-trip, because the column is still
+// there and a preferences write still carries it.
+describe("reminder_prompted_tools column mapping (retiring, #2343)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

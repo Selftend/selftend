@@ -21,7 +21,7 @@ import type {
 } from "@/src/features/meditation/types";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const meditationKeys = {
@@ -130,7 +130,7 @@ export function useSaveMeditationSession(userId: string | null) {
   return useMutation({
     mutationFn: (input: MeditationSessionInput) => saveMeditationSession(userId!, input),
     onSuccess: async () => {
-      requestReminderPrompt("meditation");
+      noteToolSave();
       if (!userId) return;
       // Invalidate the whole meditation prefix rather than the list alone: logging a sit
       // moves the server-derived session count and median too, and invalidating only

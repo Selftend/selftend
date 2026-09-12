@@ -10,7 +10,7 @@ import {
   saveOppositeActionPlan,
 } from "@/src/features/dbt/repository";
 import type { OppositeActionDoneInput, OppositeActionPlanInput } from "@/src/features/dbt/types";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
@@ -63,7 +63,7 @@ export function useSaveOppositeActionPlan(userId: string | null) {
       // The once-ever reminder offer rides any DBT save (spec §4). The store
       // decides whether to show it and the shipped eligibility gates it; this
       // only reports that a save happened.
-      requestReminderPrompt("dbt");
+      noteToolSave();
       if (!userId) return;
       // An open plan marks no day, but the rule is coarse on purpose (#1906):
       // any write to a `record_days` source invalidates.

@@ -16,6 +16,20 @@ export function clampTime({ hour, minute }: TimeOfDay): TimeOfDay {
 }
 
 /**
+ * A Date's wall-clock time rounded to the nearest half hour; ties round up and
+ * the last half hour of the day wraps to midnight.
+ *
+ * Used to propose a default time from a moment the person just lived - the
+ * routine sheet offers the time they finished as the time to repeat at, rather
+ * than an hour the product picked.
+ */
+export function roundToNearestHalfHour(date: Date): TimeOfDay {
+  const totalMinutes = date.getHours() * 60 + date.getMinutes();
+  const rounded = (Math.round(totalMinutes / 30) * 30) % (24 * 60);
+  return { hour: Math.floor(rounded / 60), minute: rounded % 60 };
+}
+
+/**
  * `{ hour: 7, minute: 5 }` -> `"07:05"` (zero-padded, 24h).
  *
  * ☠️ A WIRE FORMAT, not a display format, and it must never become locale-aware:

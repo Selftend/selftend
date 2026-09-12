@@ -12,7 +12,7 @@ import { breathingSlugs } from "@/src/constants/breathing";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 /** Rows per page on the all-sessions screen. */
@@ -102,7 +102,7 @@ export function useSaveBreathingSession(userId: string | null) {
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
-      requestReminderPrompt("breathing");
+      noteToolSave();
       if (!userId) return;
       // Breathing, grounding, and mindfulness all persist into mindfulness_sessions, so a
       // save must refresh every view of that table, not just this namespace.

@@ -15,7 +15,7 @@ import { nextDescendingDayCursor, type DayRecordCursor } from "@/src/lib/descend
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { deviceTimeZone } from "@/src/utils/date";
 
 const sleepKeys = {
@@ -124,7 +124,7 @@ export function useSaveSleepLog(userId: string | null) {
       saveSleepLog(userId!, input, logId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (_data, { logId }) => {
-      if (!logId) requestReminderPrompt("sleep");
+      if (!logId) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: sleepKeys.all }),

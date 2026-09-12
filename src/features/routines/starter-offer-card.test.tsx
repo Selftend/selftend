@@ -15,7 +15,7 @@ import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useLayeredInsetStore } from "@/src/stores/layered-inset-store";
-import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
+import { useToolSaveStore } from "@/src/stores/tool-save-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -140,12 +140,11 @@ function setRoutineMutations() {
   return { createRoutine, addStep, deleteRoutine };
 }
 
-// The second-action baseline: two distinct tools have records, no routine
-// exists - so those two records both pass the gate and compose the starter
-// (#1954: one set, read twice) - and the reminder prompt was already asked for
-// the saved tool, so the save is the starter offer's.
+// The second-action baseline: two distinct tools have records and no routine
+// exists, so those two records both pass the gate and compose the starter
+// (#1954: one set, read twice). Since #2342 nothing else competes for the save.
 function setEligibleScenario() {
-  const preferences = setPreferences({ reminderPromptedTools: ["journal"] });
+  const preferences = setPreferences();
   const prefsMutate = setUpdateMutation();
   const mutations = setRoutineMutations();
   mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
@@ -159,9 +158,10 @@ function setEligibleScenario() {
   return { preferences, prefsMutate, ...mutations };
 }
 
-function requestSave(targetKey: "mood" | "journal" | "cbt" = "journal") {
+/** A completed tool save, as every tool's `onSuccess` reports one. */
+function requestSave() {
   act(() => {
-    useReminderPromptStore.getState().requestReminderPrompt(targetKey);
+    useToolSaveStore.getState().noteToolSave();
   });
 }
 
@@ -169,7 +169,7 @@ describe("StarterOfferCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     act(() => {
-      useReminderPromptStore.setState({ request: null, promptVisible: false });
+      useToolSaveStore.setState({ saveCount: 0 });
       useLayeredInsetStore.setState({ edges: {} });
     });
   });
@@ -182,11 +182,20 @@ describe("StarterOfferCard", () => {
     expect(screen.queryByText(OFFER_TITLE)).toBeNull();
   });
 
-  it("shows the offer at the second action and marks it offered on show", async () => {
-    const { prefsMutate } = setEligibleScenario();
+  it("shows the offer at the second action, on the FIRST save that qualifies", async () => {
+    // ☠️ The first save is the property #2342 changed. This card used to call
+    // the reminder prompt's eligibility predicate as its own gate, so a tool
+    // never reminder-prompted - the state below, and every new user's state -
+    // meant the reminder card won the save and this offer waited for a later
+    // one. With the offer at the completion moment removed there is no second
+    // floater and nothing to defer to. The empty list is spelled out rather
+    // than left to the default: a gate on it reappearing is the regression.
+    setEligibleScenario();
+    setPreferences({ reminderPromptedTools: [] });
+    const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
     // The composed steps are on the card, in kept-widget order.
@@ -197,29 +206,13 @@ describe("StarterOfferCard", () => {
     });
   });
 
-  it("yields the save to the reminder prompt", async () => {
-    // Same second-action state, but the saved tool was never reminder-prompted:
-    // the reminder prompt is eligible, so it wins this save outright.
-    setEligibleScenario();
-    setPreferences({ reminderPromptedTools: [] });
-    const prefsMutate = setUpdateMutation();
-
-    renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
-
-    await act(async () => {});
-
-    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
-    expect(prefsMutate).not.toHaveBeenCalled();
-  });
-
   it("never shows again once the offer was shown", async () => {
     setEligibleScenario();
-    setPreferences({ reminderPromptedTools: ["journal"], starterRoutineOffered: true });
+    setPreferences({ starterRoutineOffered: true });
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     await act(async () => {});
 
@@ -235,7 +228,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     await act(async () => {});
 
@@ -251,7 +244,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     await act(async () => {});
 
@@ -267,7 +260,6 @@ describe("StarterOfferCard", () => {
     // offer, composed from two kept widgets the person had never used; the offer
     // is now held until a second steppable tool has a record.
     setEligibleScenario();
-    setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
     mockUseRoutineToolRecords.mockReturnValue(
       readyRecords({ moodLogs: [{ dayKey: "2026-09-01" }] }),
@@ -275,7 +267,7 @@ describe("StarterOfferCard", () => {
     setOfferOnlyRecords({ worry: [{ id: "worry-1" }] });
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("cbt");
+    requestSave();
 
     await act(async () => {});
 
@@ -288,7 +280,6 @@ describe("StarterOfferCard", () => {
     // Mood + journal would qualify on their own, but worry's list has not arrived:
     // the readiness gate holds rather than deciding on a half-loaded shape.
     setEligibleScenario();
-    setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
     setOfferOnlyRecords();
     mockUseWorryEntries.mockReturnValue({ data: undefined } as unknown as ReturnType<
@@ -296,7 +287,7 @@ describe("StarterOfferCard", () => {
     >);
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("cbt");
+    requestSave();
 
     await act(async () => {});
 
@@ -308,7 +299,6 @@ describe("StarterOfferCard", () => {
     // Three second actions a routine cannot admit (#1954, spec §5.3): the count is 3,
     // the composition is null, and the offer must not render an empty routine.
     setEligibleScenario();
-    setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
     mockUseRoutineToolRecords.mockReturnValue(readyRecords());
     setOfferOnlyRecords({
@@ -318,7 +308,7 @@ describe("StarterOfferCard", () => {
     });
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("cbt");
+    requestSave();
 
     await act(async () => {});
 
@@ -339,7 +329,7 @@ describe("StarterOfferCard", () => {
     const prefsMutate = setUpdateMutation();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
     await waitFor(() => {
@@ -347,27 +337,11 @@ describe("StarterOfferCard", () => {
     });
   });
 
-  it("yields while the reminder prompt card is on screen", async () => {
-    setEligibleScenario();
-    act(() => {
-      useReminderPromptStore.getState().setPromptVisible(true);
-    });
-    const prefsMutate = setUpdateMutation();
-
-    renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
-
-    await act(async () => {});
-
-    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
-    expect(prefsMutate).not.toHaveBeenCalled();
-  });
-
   it("keeps the routine through the normal write path on accept, with no reminder", async () => {
     const { prefsMutate, createRoutine, addStep } = setEligibleScenario();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     fireEvent.press(await screen.findByText("Keep"));
 
@@ -400,7 +374,7 @@ describe("StarterOfferCard", () => {
     const { prefsMutate, createRoutine } = setEligibleScenario();
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave();
 
     fireEvent.press(await screen.findByText("Skip"));
 
