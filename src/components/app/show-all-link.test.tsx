@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import { ShowAllLink, ShowAllLinkStick } from "./show-all-link";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { INTERACTIVE_PROPS } from "@/test/interactive-props";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 /** The screen the door is pressed FROM — what the Origin should record. */
@@ -141,7 +142,7 @@ describe("ShowAllLinkStick", () => {
     ).props;
     const stickProps = rootOf(render(<ShowAllLinkStick label="Show all history" />).toJSON()).props;
 
-    for (const prop of ["focusable", "onClick", "onStartShouldSetResponder"]) {
+    for (const prop of INTERACTIVE_PROPS) {
       expect(doorProps).toHaveProperty(prop);
       expect(stickProps).not.toHaveProperty(prop);
     }
