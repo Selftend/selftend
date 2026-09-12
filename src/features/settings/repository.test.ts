@@ -252,45 +252,12 @@ describe("act program preference flags", () => {
   });
 });
 
-// The column mapping only. The surface that wrote this list - the post-save
-// reminder offer - is gone (#2342, ADR-0008), so nothing appends to it any
-// more; the column itself is dropped in #2343 and these three tests go with it.
-// Until then the mapping still has to round-trip, because the column is still
-// there and a preferences write still carries it.
-describe("reminder_prompted_tools column mapping (retiring, #2343)", () => {
+// What a preferences write puts on the wire. These two lived under the reminder
+// prompt's describe by accretion; the prompt's own column mapping went with the
+// column in #2343 (ADR-0008), and they are what was always general.
+describe("updateUserPreferences sends a patch, not a row", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it("defaults reminderPromptedTools to an empty list", () => {
-    expect(defaultUserPreferences.reminderPromptedTools).toEqual([]);
-  });
-
-  it("maps reminder_prompted_tools from the user_preferences row", async () => {
-    mockPreferenceSelect({
-      reminder_prompted_tools: ["mood", "cbt"],
-      user_id: "user-1",
-    });
-
-    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
-      reminderPromptedTools: ["mood", "cbt"],
-    });
-  });
-
-  it("includes reminder_prompted_tools when updating preferences", async () => {
-    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
-
-    await updateUserPreferences("user-1", {
-      ...defaultUserPreferences,
-      reminderPromptedTools: ["journal"],
-    });
-
-    expect(upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        reminder_prompted_tools: ["journal"],
-      }),
-      expect.anything(),
-    );
   });
 
   it("writes ONLY the patched columns - a partial patch must not carry the whole row", async () => {

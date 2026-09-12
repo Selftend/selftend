@@ -111,9 +111,13 @@ load-bearing.
   call in its own right, not a loose end of this change. The genuinely dead half
   — a global decline branch nothing in the app could ever write — dies for free
   with the predicate.
-- **`reminder_prompted_tools` is dropped**, column and rows, once nothing writes
-  it (#2343). It recorded only _"the app asked you"_: no user value, and with
-  the offer gone, no reader. Data minimisation.
+- **`reminder_prompted_tools` is dropped**, column and rows — done in #2343,
+  `20260915000000_drop_reminder_prompted_tools.sql`, which re-declares
+  `export_user_data` without it in the same migration. It recorded only _"the
+  app asked you"_: no user value, and with the offer gone, no reader. Data
+  minimisation. An older shipped build that still sends the column is not
+  broken by the drop — `updateUserPreferences` answers PGRST204 by dropping the
+  unknown key and re-upserting — so this did not have to wait on a release.
 - The post-save moment now carries **at most one offer, once ever** — the
   starter-routine offer — and nothing else.
 
