@@ -54,8 +54,9 @@ Two things to know when reading it:
   module-usage arms. Open-shape tables (weeks, feature names) print only what
   exists. Section 0 of each report carries the axis unconditionally. ⚠️ The one
   deliberate exception is an ordering the segment report has **withheld** for
-  failing its axis-coverage precondition: that prints no rows at all, and the
-  section above it says why.
+  failing its axis-coverage precondition: that prints a single
+  `(ordering withheld)` row naming the reason, and the section above it says
+  which axis failed.
 - **The split reads current account state, not state at signup.** Signing up
   from a guest session converts the same `auth.users` row in place, so a
   converted guest reads as `registered` across their whole history. The `guest`
@@ -447,7 +448,7 @@ How to read it, in the order the report prints:
 - **An ordering is unreadable unless its axis carries values.** Section 2 is that
   precondition, and it is checked **before** an ordering is printed rather than
   read as a caveat beside one: where it says an axis is not readable, that
-  section prints **no rows at all**. ☠️ **An axis carries values when at least
+  section prints **a single `(ordering withheld)` row** and no ordering at all. ☠️ **An axis carries values when at least
   two of its arms hold a mature user.** One arm is not a cross-tab, it is the
   population with a label on it — and one arm holding everybody is exactly what
   the concern axis was. Mature is the right population to count over because the
@@ -574,11 +575,35 @@ next digest, beside a release list naming the release responsible.
   month someone first completes a programme, it fires.
 
 **Silence is never allowed to mean anything.** Fixed-shape tables already print
-their zeros; **open-shape tables print an explicit "no rows" marker**; a thrown
+their zeros; **open-shape tables print an explicit `(no rows)` marker**; a thrown
 report prints its failure line. A section that prints literally nothing is then
 proof of a bug rather than a reading. This is what keeps the three states —
 _data_, _correctly empty_, _broken_ — distinguishable, and the first two of them
 used to look alike.
+
+Three things that fell out of building it:
+
+- ⚠️ **psql's own `(0 rows)` footer is not the marker and cannot replace it.** It
+  disappears under `-t`, and the digest renders rows into Markdown tables, so the
+  footer is not carried at all. The marker is a **row**, which survives every
+  rendering that shows rows.
+- ☠️ **A withheld ordering is a second kind of deliberate silence, and it speaks
+  too.** The segment report's two orderings are fixed-shape, but the
+  axis-coverage precondition suppresses them entirely; they print a single
+  `(ordering withheld)` row naming the reason rather than nothing at all.
+- ☠️ **`npm run analytics:<name>` used to exit 0 on a broken report.** The runner
+  did not set `ON_ERROR_STOP`, so psql reported a failing statement, carried on,
+  and returned success — the _broken_ state was the one that looked like the
+  other two. It is set now, so a broken report stops, says so, and exits
+  non-zero. The trade is deliberate: sections after a failure no longer print,
+  because a loud failure beats a silently missing table.
+
+Which sections are open-shape is not left to judgement. `test/integration/analytics-reports.integration.test.ts`
+carries a registry classifying **every** printed section of all three reports,
+and it is self-verifying in both directions: an open-shape section must print the
+marker over an empty population, a section claimed fixed-shape must still print
+its zeros there, and a section missing from the registry fails outright — which
+is what stops a later section being added and never swept.
 
 ⚠️ **Order is load-bearing, not cosmetic.** The release list and the first
 occurrences have to be read together — one says what changed, the other says

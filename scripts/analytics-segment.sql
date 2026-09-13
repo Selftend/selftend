@@ -485,7 +485,9 @@ from user_w4;
 \echo '=== 2) Axis coverage - the precondition on sections 3 and 4 ==='
 \echo '    CHECKED BEFORE AN ORDERING IS PRINTED, NOT READ AS A CAVEAT BESIDE ONE. An axis carries'
 \echo '    values only when at least TWO of its arms hold a mature user. Where readable is false,'
-\echo '    the ordering in that section is withheld entirely and the section prints no rows at all.'
+\echo '    the ordering in that section is withheld entirely: it prints one (ordering withheld) row'
+\echo '    naming the reason, and nothing rankable. Readability is decided PER AXIS, so one of the'
+\echo '    two sections below can print its ordering while the other is withheld.'
 \echo '    This is the check whose absence made the retired concern axis a FALSE GREEN rather than'
 \echo '    an honest silence: the gate in section 1 counts retention across the whole population,'
 \echo '    so it can open while every one of those users sits in a single arm.'
@@ -532,52 +534,78 @@ from axis_coverage order by axis;
 \echo '=== 3) W4 retention by locale (arms partition the population; every account appears exactly once) ==='
 \echo '    Ordered by retention rate: READ THE ORDERING, not the percentages.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
-\echo '    NO ROWS AT ALL means section 2 withheld this ordering; it does not mean nobody is retained.'
+\echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
+\echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
+\echo '    bug, never a reading.'
 \echo '    user_preferences.language is NOT NULL DEFAULT en, so the en arm holds both people using'
 \echo '    Selftend in English and people who never touched the setting. bg is the arm carrying an'
 \echo '    unambiguous affirmative signal - read the axis as bg-versus-the-rest.'
-select l.account,
-       ll.arm,
-       pg_temp.k_count(count(ul.user_id)) as users,
-       pg_temp.k_count(count(ul.user_id) filter (where w.w4_mature)) as w4_mature,
-       pg_temp.k_count(count(ul.user_id) filter (where w.w4_mature and w.w4_retained)) as w4_retained,
-       pg_temp.k_pct(count(ul.user_id) filter (where w.w4_mature and w.w4_retained),
-                     count(ul.user_id) filter (where w.w4_mature)) as w4_pct
-from account_labels l
-cross join locale_labels ll
-left join user_locale ul on ul.account = l.account and ul.arm = ll.arm
-left join user_w4 w on w.user_id = ul.user_id
-where (select ac.readable from axis_coverage ac where ac.axis = 'locale')
-group by l.account, ll.arm, ll.arm_order
-order by l.account,
+with section_rows as (
+  select l.account,
+         ll.arm,
+         pg_temp.k_count(count(ul.user_id)) as users,
+         pg_temp.k_count(count(ul.user_id) filter (where w.w4_mature)) as w4_mature,
+         pg_temp.k_count(count(ul.user_id) filter (where w.w4_mature and w.w4_retained)) as w4_retained,
+         pg_temp.k_pct(count(ul.user_id) filter (where w.w4_mature and w.w4_retained),
+                       count(ul.user_id) filter (where w.w4_mature)) as w4_pct,
          (count(ul.user_id) filter (where w.w4_mature and w.w4_retained))::numeric
-           / nullif(count(ul.user_id) filter (where w.w4_mature), 0) desc nulls last,
-         ll.arm_order;
+           / nullif(count(ul.user_id) filter (where w.w4_mature), 0) as sort_rate,
+         ll.arm_order as sort_arm
+  from account_labels l
+  cross join locale_labels ll
+  left join user_locale ul on ul.account = l.account and ul.arm = ll.arm
+  left join user_w4 w on w.user_id = ul.user_id
+  where (select ac.readable from axis_coverage ac where ac.axis = 'locale')
+  group by l.account, ll.arm, ll.arm_order
+)
+select account, arm, users, w4_mature, w4_retained, w4_pct
+from (
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+    from section_rows
+  union all
+  select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
+         null, null, null, null, null, null, 1
+   where not exists (select 1 from section_rows)
+) t
+order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
 
 \echo
 \echo '=== 4) W4 retention by module usage (arms partition the population; every account appears exactly once) ==='
 \echo '    Ordered by retention rate: READ THE ORDERING, not the percentages.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
-\echo '    NO ROWS AT ALL means section 2 withheld this ordering; it does not mean nobody is retained.'
+\echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
+\echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
+\echo '    bug, never a reading.'
 \echo '    The arm is measured over THE FIRST 28 DAYS AFTER SIGNUP, the window ending where the W4'
 \echo '    window begins, so the axis is prior to the outcome instead of partly being it. An account'
 \echo '    younger than 28 days carries a provisional arm and is excluded from the rate by maturity.'
 \echo '    other module only should always be empty: it means content_events grew a module the arm'
 \echo '    list above does not name.'
-select l.account,
-       ml.arm,
-       pg_temp.k_count(count(um.user_id)) as users,
-       pg_temp.k_count(count(um.user_id) filter (where w.w4_mature)) as w4_mature,
-       pg_temp.k_count(count(um.user_id) filter (where w.w4_mature and w.w4_retained)) as w4_retained,
-       pg_temp.k_pct(count(um.user_id) filter (where w.w4_mature and w.w4_retained),
-                     count(um.user_id) filter (where w.w4_mature)) as w4_pct
-from account_labels l
-cross join module_labels ml
-left join user_modules um on um.account = l.account and um.arm = ml.arm
-left join user_w4 w on w.user_id = um.user_id
-where (select ac.readable from axis_coverage ac where ac.axis = 'module usage')
-group by l.account, ml.arm, ml.arm_order
-order by l.account,
+with section_rows as (
+  select l.account,
+         ml.arm,
+         pg_temp.k_count(count(um.user_id)) as users,
+         pg_temp.k_count(count(um.user_id) filter (where w.w4_mature)) as w4_mature,
+         pg_temp.k_count(count(um.user_id) filter (where w.w4_mature and w.w4_retained)) as w4_retained,
+         pg_temp.k_pct(count(um.user_id) filter (where w.w4_mature and w.w4_retained),
+                       count(um.user_id) filter (where w.w4_mature)) as w4_pct,
          (count(um.user_id) filter (where w.w4_mature and w.w4_retained))::numeric
-           / nullif(count(um.user_id) filter (where w.w4_mature), 0) desc nulls last,
-         ml.arm_order;
+           / nullif(count(um.user_id) filter (where w.w4_mature), 0) as sort_rate,
+         ml.arm_order as sort_arm
+  from account_labels l
+  cross join module_labels ml
+  left join user_modules um on um.account = l.account and um.arm = ml.arm
+  left join user_w4 w on w.user_id = um.user_id
+  where (select ac.readable from axis_coverage ac where ac.axis = 'module usage')
+  group by l.account, ml.arm, ml.arm_order
+)
+select account, arm, users, w4_mature, w4_retained, w4_pct
+from (
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+    from section_rows
+  union all
+  select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
+         null, null, null, null, null, null, 1
+   where not exists (select 1 from section_rows)
+) t
+order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;

@@ -951,8 +951,19 @@ describe("aggregate analytics reports (integration)", () => {
       // The shipped sections, run verbatim over a population these fixtures
       // control exactly. An ordering of one arm is not an ordering, and printing
       // it beside an open gate is what would be read as a segment finding.
-      expect(queryWithinCohort("segment", section("segment", 3))).toEqual([]);
-      expect(queryWithinCohort("segment", section("segment", 4))).toEqual([]);
+      //
+      // ⚠️ This assertion was `toEqual([])` when #2377 wrote it. #2378 changed
+      // the BEHAVIOUR deliberately - silence is never allowed to mean anything,
+      // so a withheld ordering now prints one row saying it was withheld rather
+      // than nothing at all. The assertion is updated to match a change that was
+      // intended, and it is STRICTER than the one it replaces: it pins the row
+      // count AND the marker AND the reason, where `[]` pinned only emptiness.
+      for (const number of [3, 4]) {
+        const rows = queryWithinCohort("segment", section("segment", number));
+        expect(rows).toHaveLength(1);
+        expect(rows[0][0]).toBe("(ordering withheld)");
+        expect(rows[0][1]).toContain("fewer than two arms");
+      }
     });
 
     it("prints the orderings again as soon as a second arm holds a mature user", () => {
@@ -1944,6 +1955,225 @@ describe("aggregate analytics reports (integration)", () => {
       // consented prints `<5` because that is a slice. A guest arm of zero
       // would have asserted nothing - `k_count(0)` is "0" either way.
       expect(reminders().get("guest")).toEqual(["2", "<5", "-"]);
+    });
+  });
+
+  describe("silence is never allowed to mean anything", () => {
+    // ☠️ #2378, and it is a pass over all three reports rather than one feature.
+    // Fixed-shape tables print their zeros, because an empty arm is information.
+    // Open-shape tables print only what exists - so a section that printed
+    // nothing could be NO DATA, CORRECTLY EMPTY, or BROKEN, and a reader could
+    // not tell which. Every open-shape section now prints an explicit marker, so
+    // a section printing literally nothing is proof of a bug rather than a
+    // reading (docs/analytics.md, "Silence is never allowed to mean anything").
+    //
+    // ⚠️ psql's own "(0 rows)" footer is NOT this marker and cannot replace it:
+    // it vanishes under `-t` (which this suite uses), and the monthly digest
+    // renders rows into Markdown tables, so a footer is not carried at all. The
+    // marker is a ROW, which survives every rendering that shows rows.
+
+    /** An open-shape section: prints only what exists, so it must mark emptiness. */
+    const OPEN = "OPEN";
+    /**
+     * A fixed-shape section whose ordering #2377 withholds entirely when the
+     * axis-coverage precondition fails. ☠️ Not part of the open-shape pass - it
+     * is here because that withholding is a SECOND kind of deliberate silence,
+     * and this rule reaches it too. A withheld ordering must say it was withheld.
+     */
+    const WITHHELD = "WITHHELD";
+
+    const NO_ROWS = "(no rows)";
+    const ORDERING_WITHHELD = "(ordering withheld)";
+
+    /**
+     * How many columns each restructured section PRINTS.
+     *
+     * ☠️ This is a k=5 guard, not a tidiness one. Unioning a marker row in
+     * forced every restructured section to carry its ordering in a `sort_*`
+     * column, and those keys are RAW counts and RAW rates - exactly the numbers
+     * `pg_temp.k_count` and `k_pct` exist to hide. They are safe only because
+     * they live in the inner subquery and the ORDER BY, never in the outer
+     * select list, which is one keystroke from being wrong and reads almost
+     * identically. A leaked key shows up here as an extra column.
+     *
+     * ⚠️ Do not "simplify" this into a grep for `sort_` in the report output.
+     * That was tried and it is VACUOUS: runSql passes `-tA`, so psql prints no
+     * column headers at all, and a leaked key is just another bare number.
+     */
+    const PRINTED_COLUMNS: Record<string, number> = {
+      "engagement:2": 6,
+      "engagement:3": 7,
+      "engagement:5": 4,
+      "onboarding:1": 3,
+      "onboarding:2": 5,
+      "onboarding:3": 3,
+      "onboarding:5": 4,
+      "segment:3": 6,
+      "segment:4": 6,
+    };
+
+    /**
+     * Every printed section of every report, classified. A value other than
+     * OPEN/WITHHELD is the reason the section is fixed-shape, and that reason is
+     * TESTED rather than trusted: a fixed-shape section must still print rows
+     * over an empty population, so a misclassification fails below instead of
+     * quietly exempting a section from the rule.
+     *
+     * ☠️ A section missing from this registry fails the enumeration test. That
+     * is the point - #2378 exists because sections were added over time and the
+     * open-shape ones were never swept.
+     */
+    const SECTIONS: Record<string, Record<string, string>> = {
+      engagement: {
+        provenance: "one aggregate row over the whole population, always exactly one",
+        "0": "cross-joins account_labels, so both account types print",
+        "1": "cross-joins account_labels",
+        "2": OPEN, // weeks
+        "3": OPEN, // signup-week cohorts
+        "4": "cross-joins a literal module list with account_labels",
+        "5": OPEN, // core tool feature names
+        "6": "cross-joins account_labels",
+        "7": "cross-joins a literal programme_labels list (#2375)",
+        "8": "cross-joins account_labels",
+      },
+      onboarding: {
+        provenance: "one aggregate row over the whole population, always exactly one",
+        "0": "cross-joins account_labels, so both account types print",
+        "1": OPEN, // weeks
+        "2": OPEN, // weeks
+        "3": OPEN, // completion modes, which come and go with the product
+        "4": "cross-joins a literal conversion arm list; the rate is one aggregate row (#2376)",
+        "5": OPEN, // favourite kinds and keys
+      },
+      segment: {
+        provenance: "one aggregate row over the whole population, always exactly one",
+        "0": "cross-joins account_labels, so both account types print",
+        "1": "cross-joins account_labels; the gate row is one aggregate row",
+        "2": "one row per axis, from a literal list of two",
+        "3": WITHHELD,
+        "4": WITHHELD,
+      },
+    };
+
+    /** The section labels a report actually prints, read from its `\\echo` headings. */
+    function printedSections(name: string): string[] {
+      return reportSql(name)
+        .split("\n")
+        .filter((line) => line.startsWith("\\echo '=== "))
+        .map((line) => {
+          const numbered = /^\\echo '=== (\d+)\)/.exec(line);
+          if (numbered) return numbered[1];
+          if (line.startsWith("\\echo '=== Population provenance")) return "provenance";
+          throw new Error(`${name}: unrecognised section heading ${line}`);
+        })
+        .sort();
+    }
+
+    /**
+     * One section's statements, run with the report's population narrowed to
+     * NOBODY. That is the state every open-shape section must survive, and the
+     * state in which a fixed-shape section must still print its zeros.
+     */
+    function queryWithNoPopulation(name: string, sql: string): string[][] {
+      return rowsAfterMarker(definitionsWithPopulation(name, "false"), sql, name);
+    }
+
+    function statementsOf(name: string, label: string): string {
+      return label === "provenance" ? provenanceStatement(name) : section(name, Number(label));
+    }
+
+    for (const [name, registry] of Object.entries(SECTIONS)) {
+      it(`analytics-${name}.sql: every printed section is classified`, () => {
+        // Guards the guard. A section added later is invisible to this rule
+        // until somebody says which kind it is, which is exactly how the
+        // open-shape sections went unswept until #2378.
+        //
+        // ⚠️ Not total, and the limit is worth knowing: this keys off `\echo`
+        // headings, so a statement appended AFTER the last heading folds into
+        // the section above it and escapes classification entirely. Every
+        // printed statement in all three reports currently sits under a heading.
+        // Give a new one its own heading, or it is not swept.
+        expect(printedSections(name)).toEqual(Object.keys(registry).sort());
+      });
+
+      for (const [label, kind] of Object.entries(registry)) {
+        const title = label === "provenance" ? "the provenance block" : `section ${label}`;
+
+        if (kind === OPEN) {
+          it(`analytics-${name}.sql: ${title} says so when it has no rows`, () => {
+            const rows = queryWithNoPopulation(name, statementsOf(name, label));
+            expect(rows).toHaveLength(1);
+            expect(rows[0][0]).toBe(NO_ROWS);
+            expect(rows[0]).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+          });
+
+          it(`analytics-${name}.sql: ${title} prints no ordering key beside its rows`, () => {
+            // See PRINTED_COLUMNS: the sort key is a raw count, so a leak into
+            // the printed columns would hand back the number k=5 suppressed.
+            // Run over the WHOLE population, where a leaked key actually holds a
+            // value rather than the marker row's null.
+            const rows = queryWithin(name, statementsOf(name, label));
+            expect(rows.length).toBeGreaterThan(0);
+            for (const row of rows) {
+              expect(row).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+            }
+          });
+          continue;
+        }
+
+        if (kind === WITHHELD) {
+          it(`analytics-${name}.sql: ${title} says its ordering was withheld`, () => {
+            // Zero accounts means zero arms hold a mature user, so section 2
+            // withholds - and the section must say that rather than print
+            // nothing, which would be indistinguishable from a broken query.
+            const rows = queryWithNoPopulation(name, statementsOf(name, label));
+            expect(rows).toHaveLength(1);
+            expect(rows[0][0]).toBe(ORDERING_WITHHELD);
+            expect(rows[0][1]).toContain("section 2");
+            expect(rows[0]).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+          });
+
+          it(`analytics-${name}.sql: ${title} prints no ordering key beside its rows`, () => {
+            // See PRINTED_COLUMNS. These two carry a raw RATE as their sort key,
+            // which is worse than a raw count: it is the percentage k_pct
+            // withholds, at full precision.
+            const rows = queryWithin(name, statementsOf(name, label));
+            expect(rows.length).toBeGreaterThan(0);
+            for (const row of rows) {
+              expect(row).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+            }
+          });
+          continue;
+        }
+
+        it(`analytics-${name}.sql: ${title} prints its zeros (${kind})`, () => {
+          // ☠️ This is what makes the registry's reasons real rather than
+          // decorative: a section claimed fixed-shape must actually print rows
+          // when nobody exists. Misclassifying an open-shape section as fixed
+          // would otherwise exempt it from the rule silently.
+          const rows = queryWithNoPopulation(name, statementsOf(name, label));
+          expect(rows.length).toBeGreaterThan(0);
+          expect(rows.map((row) => row[0])).not.toContain(NO_ROWS);
+          expect(rows.map((row) => row[0])).not.toContain(ORDERING_WITHHELD);
+        });
+      }
+    }
+
+    /** Everything the report PRINTS: from its first heading to the end of the file. */
+    function printedPart(name: string): string {
+      const source = reportSql(name);
+      return source.slice(source.indexOf("\n\\echo"));
+    }
+
+    it("every report still executes end to end against a population of nobody", () => {
+      // The acceptance criterion in as many words: all three reports run green
+      // over a cohort with no data. The per-section tests above run statements
+      // in isolation; this runs the shipped files whole.
+      for (const name of REPORTS) {
+        expect(() =>
+          runSql(`${definitionsWithPopulation(name, "false")}\n${printedPart(name)}`),
+        ).not.toThrow();
+      }
     });
   });
 
