@@ -129,6 +129,16 @@ It applies to slices only, **never to whole-population counts** — without that
 carve-out a blanket rule would print `<5` over the very trend the digest exists
 to show.
 
+A cell is a **slice** when it counts the people who _did_ something (activated,
+completed, retained, used a module, picked a widget) or who _carry_ some
+property (a concern arm, a completion mode); every percentage taken over such a
+cell is a slice too. A cell is a **whole-population count** when it counts the
+population itself: how many accounts there are, how many of each type, how many
+arrived in a given week, how big a signup cohort is. Arrival time is the trend
+axis, not an attribute, so the weekly figures print raw beside suppressed
+columns — which is the carve-out doing exactly what it is for. The rule and its
+reasoning live in one shared SQL block carried by all three reports.
+
 Two blocks are exempt, and the reasons are recorded so neither exemption is
 mistaken for an oversight:
 

@@ -61,12 +61,65 @@
 create temp view accounts as
   select id as user_id,
          created_at,
+         -- `email` is carried for the population-provenance block below and for
+         -- nothing else. It is never selected into a printed row - every report
+         -- is aggregate-only (docs/analytics.md), so no address ever leaves the
+         -- database. It is read here rather than in that block because a report
+         -- reads auth.users exactly once; test/analytics-shared-sql.test.ts
+         -- allows exactly one such line per file, and this is it.
+         email,
          case when coalesce(is_anonymous, false) then 'guest' else 'registered' end as account
   from auth.users;
 
 -- Both labels, so section 0 prints the guest population even while it is zero.
 create temp view account_labels(account) as values ('registered'), ('guest');
 -- <<< shared:accounts
+
+-- >>> shared:k_suppression
+-- k=5 cell suppression. Byte-identical in all three reports;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ☠️ This is a FALSE-PRECISION control first and a privacy control second: a
+-- printed "67%" that means two users out of three is the number that gets
+-- believed. A count of 1..4 prints `<5`; a percentage whose numerator or
+-- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
+-- information, and it discloses nothing.
+--
+-- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
+-- `<5`"). The rule governs any cell that SLICES the population — a cell that
+-- counts the people who did something (activated, completed, retained, used a
+-- module, picked a widget) or who carry some property (a concern arm, a
+-- completion mode) — and every percentage taken over such a cell.
+--
+-- It never governs a WHOLE-POPULATION count: how many accounts there are, how
+-- many of each type, how many arrived in a given week, how big a signup cohort
+-- is. Those are the population itself and the trend over it, they attribute
+-- nothing to anybody, and without that carve-out the rule would print `<5`
+-- over the very trend the monthly digest exists to show.
+--
+-- Two blocks are exempt, each carrying its recorded reason: the
+-- population-provenance block below, and the first-occurrences section (which
+-- prints facts, never counts, so it has no cell to suppress).
+create function pg_temp.k_count(n bigint) returns text
+  language sql immutable
+  as $$
+    select case
+      when coalesce(n, 0) = 0 then '0'
+      when n < 5 then '<5'
+      else n::text
+    end
+  $$;
+
+create function pg_temp.k_pct(num bigint, den bigint) returns text
+  language sql immutable
+  as $$
+    select case
+      when coalesce(den, 0) < 5 then '-'
+      when coalesce(num, 0) between 1 and 4 then '-'
+      else round(100.0 * coalesce(num, 0) / den, 1)::text || '%'
+    end
+  $$;
+-- <<< shared:k_suppression
 
 -- The block below is byte-identical in analytics-segment.sql;
 -- test/analytics-shared-sql.test.ts fails if they drift. A new content table
@@ -116,6 +169,63 @@ create temp view first_content as
   left join content_events c on c.user_id = a.user_id
   group by 1, 2, 3;
 
+-- >>> shared:population_provenance
+-- Who is in this population (docs/analytics.md, "Who is in the population").
+-- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
+-- if they drift, and each report prints it separately and deliberately: every
+-- report runs independently, so a surviving one must carry its own population
+-- statement when another throws.
+--
+-- The `accounts` view has no WHERE, so every figure in every report includes
+-- the project's own accounts. Excluding them was refused; what ships instead is
+-- a measurement of how many of them there are.
+--
+-- ☠️ THIS BLOCK IS EXEMPT FROM THE k=5 RULE ABOVE, and BOTH reasons are
+-- recorded here so the exemption can never be mistaken for an oversight:
+--
+--   * it counts THE PROJECT'S OWN accounts, so the privacy rationale does not
+--     apply to it at all; and
+--   * an upper bound is already the anti-false-precision form, so the
+--     false-precision rationale is not merely absent but inverted.
+--
+-- Without the exemption the number would vanish behind `<5` precisely as
+-- cleanup succeeded and it finally became good news, leaving a reader unable to
+-- tell "almost none" from "withheld". The counts below are therefore raw.
+--
+-- ⚠️ Not the same thing as `=== 0) Population split` below. That one is about
+-- account TYPE (registered or guest); this one is about account PROVENANCE
+-- (ours or theirs). Two different questions, one overloaded word.
+\set owner_email 'vasil.yoshev@gmail.com'
+
+\echo
+\echo '=== Population provenance (how much of this population belongs to the project itself; raw counts, exempt from k=5 - the SQL comment says why) ==='
+\echo '    owner_exact          EXACT. Accounts on the owner address, plus-tags of it included. A stranger cannot hold it.'
+\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test string.'
+\echo '                         A real person may plus-tag their own mail, and demo and test are ordinary words.'
+\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL. A guest account has no email, by construction, so nothing'
+\echo '                         separates a guest minted by a user test from a stranger who tapped the button.'
+\echo '    AGENTS.md requires deleting throwaway test accounts, so a large bound is a record of cleanup left undone.'
+select count(*) filter (where p.owner_address)                              as owner_exact,
+       count(*) filter (where p.owner_address or p.plus_tagged or p.marked) as internal_upper_bound,
+       count(*) filter (where a.account = 'registered')                     as registered_accounts,
+       count(*) filter (where a.account = 'guest')                          as guest_accounts
+from accounts a
+cross join lateral (
+  -- The local part with any plus tag stripped, put back on its own domain:
+  -- a plus tag of the owner address IS the owner address. ☠️ The inner
+  -- split_part is load-bearing - split_part(addr, '+', 1) on an UNTAGGED
+  -- address returns the whole thing, domain included, and the owner would then
+  -- be the only account the exact count missed.
+  select split_part(split_part(lower(coalesce(a.email, '')), '@', 1), '+', 1)
+           || '@' || split_part(lower(coalesce(a.email, '')), '@', 2)
+         = lower(:'owner_email')                                      as owner_address,
+         split_part(lower(coalesce(a.email, '')), '@', 1) like '%+%'  as plus_tagged,
+         (coalesce(a.email, '') <> ''
+            and (lower(a.email) like '%demo%'
+              or lower(a.email) like '%test%'))                       as marked
+) p;
+-- <<< shared:population_provenance
+
 \echo
 \echo '=== 0) Population split (every table below carries this axis) ==='
 select l.account,
@@ -127,16 +237,19 @@ group by 1 order by 2 desc, 1;
 
 \echo
 \echo '=== 1) Activation summary (72h metrics count only signups older than 72h) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    `signups` and `signups_72h_mature` are whole-population counts and print raw.'
 select l.account,
        count(f.id) as signups,
-       count(f.first_content_at) as activated,
-       round(100.0 * count(f.first_content_at) / nullif(count(f.id), 0), 1) as activated_pct,
+       pg_temp.k_count(count(f.first_content_at)) as activated,
+       pg_temp.k_pct(count(f.first_content_at), count(f.id)) as activated_pct,
        count(f.id) filter (where f.signup_at <= now() - interval '72 hours') as signups_72h_mature,
-       count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
-                             and f.signup_at <= now() - interval '72 hours') as activated_within_72h,
-       round(100.0 * count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
-                                           and f.signup_at <= now() - interval '72 hours')
-             / nullif(count(f.id) filter (where f.signup_at <= now() - interval '72 hours'), 0), 1)
+       pg_temp.k_count(count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
+                                             and f.signup_at <= now() - interval '72 hours'))
+         as activated_within_72h,
+       pg_temp.k_pct(count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
+                                           and f.signup_at <= now() - interval '72 hours'),
+                     count(f.id) filter (where f.signup_at <= now() - interval '72 hours'))
          as activated_72h_pct
 from account_labels l
 left join first_content f on f.account = l.account
@@ -144,12 +257,14 @@ group by 1 order by 1;
 
 \echo
 \echo '=== 2) Activation by signup week, last 12 weeks ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 select account,
        date_trunc('week', signup_at)::date as week,
        count(*) as signups,
-       count(first_content_at) as activated,
-       round(100.0 * count(first_content_at) / count(*), 1) as activated_pct,
-       count(*) filter (where first_content_at <= signup_at + interval '72 hours')
+       pg_temp.k_count(count(first_content_at)) as activated,
+       pg_temp.k_pct(count(first_content_at), count(*)) as activated_pct,
+       pg_temp.k_count(count(*) filter (where first_content_at <= signup_at + interval '72 hours'))
          as activated_within_72h
 from first_content
 where signup_at >= date_trunc('week', now()) - interval '11 weeks'
@@ -157,6 +272,8 @@ group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
+\echo '    `-` = percentage withheld because a contributing cell rests on fewer than five users.'
+\echo '    `cohort_size` is how many people arrived that week - a whole-population count - and prints raw.'
 with flags as (
   select a.account,
          date_trunc('week', a.created_at)::date as signup_week,
@@ -176,27 +293,28 @@ with flags as (
 select account,
        signup_week,
        count(*) as cohort_size,
-       round(100.0 * count(*) filter (where w1)
-             / nullif(count(*) filter (where signup_at <= now() - interval '14 days'), 0), 1) as w1_pct,
-       round(100.0 * count(*) filter (where w2)
-             / nullif(count(*) filter (where signup_at <= now() - interval '21 days'), 0), 1) as w2_pct,
-       round(100.0 * count(*) filter (where w3)
-             / nullif(count(*) filter (where signup_at <= now() - interval '28 days'), 0), 1) as w3_pct,
-       round(100.0 * count(*) filter (where w4)
-             / nullif(count(*) filter (where signup_at <= now() - interval '35 days'), 0), 1) as w4_pct
+       pg_temp.k_pct(count(*) filter (where w1),
+                     count(*) filter (where signup_at <= now() - interval '14 days')) as w1_pct,
+       pg_temp.k_pct(count(*) filter (where w2),
+                     count(*) filter (where signup_at <= now() - interval '21 days')) as w2_pct,
+       pg_temp.k_pct(count(*) filter (where w3),
+                     count(*) filter (where signup_at <= now() - interval '28 days')) as w3_pct,
+       pg_temp.k_pct(count(*) filter (where w4),
+                     count(*) filter (where signup_at <= now() - interval '35 days')) as w4_pct
 from flags
 where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
 group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 4) Module usage (cbt, meditation, gratitude, act, dbt; distinct users with >=1 record, pct of that account population) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 -- A content row is the only adoption signal the schema carries. This table
 -- used to add "enabled" and "enabled-but-never-used" columns read from
 -- `user_preferences.enabled_modules`, an array that gates nothing (#1672; the
 -- history is in docs/analytics.md, under this report).
 -- test/analytics-shared-sql.test.ts keeps the column out.
 with totals as (
-  select l.account, count(a.user_id)::numeric as all_users
+  select l.account, count(a.user_id) as all_users
   from account_labels l
   left join accounts a on a.account = l.account
   group by 1
@@ -210,8 +328,8 @@ used as (
 )
 select t.account,
        mods.module,
-       coalesce(u.used_users, 0) as users,
-       round(100.0 * coalesce(u.used_users, 0) / nullif(t.all_users, 0), 1) as users_pct
+       pg_temp.k_count(coalesce(u.used_users, 0)) as users,
+       pg_temp.k_pct(coalesce(u.used_users, 0), t.all_users) as users_pct
 from (values ('cbt'), ('meditation'), ('gratitude'), ('act'), ('dbt')) as mods(module)
 cross join totals t
 left join used u on u.module = mods.module and u.account = t.account
@@ -219,18 +337,22 @@ order by t.account, mods.module;
 
 \echo
 \echo '=== 5) Core tool usage (per feature; distinct users with >=1 record, pct of that account population) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
 select a.account,
        c.feature,
-       count(distinct c.user_id) as users,
-       round(100.0 * count(distinct c.user_id)
-             / nullif((select count(*) from accounts x where x.account = a.account), 0), 1) as users_pct
+       pg_temp.k_count(count(distinct c.user_id)) as users,
+       pg_temp.k_pct(count(distinct c.user_id),
+                     (select count(*) from accounts x where x.account = a.account)) as users_pct
 from content_events c
 join accounts a on a.user_id = c.user_id
 where c.module = 'core'
-group by 1, 2 order by 3 desc, 2, 1;
+group by 1, 2 order by count(distinct c.user_id) desc, 2, 1;
 
 \echo
 \echo '=== 6) Asked, never attested (accounts the age gate scopes as new - created at or after AGE_GATE_INTRODUCED_AT - that never wrote a verdict) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    `accounts_since_cutoff` is how many accounts the window holds - a whole-population count - and prints raw.'
 -- #1978, the evidence #1936 reopens the gate's placement on. The person counted
 -- here met the age gate on an account the gate treats as new and did not get
 -- past it:
@@ -272,9 +394,10 @@ select l.account,
        :'age_gate_cutoff_source' as cutoff_source,
        :'age_gate_cutoff' as cutoff_at,
        count(a.user_id) as accounts_since_cutoff,
-       count(a.user_id) filter (where p.age_floor_met is null) as asked_never_attested,
-       round(100.0 * count(a.user_id) filter (where p.age_floor_met is null)
-             / nullif(count(a.user_id), 0), 1) as asked_never_attested_pct
+       pg_temp.k_count(count(a.user_id) filter (where p.age_floor_met is null))
+         as asked_never_attested,
+       pg_temp.k_pct(count(a.user_id) filter (where p.age_floor_met is null),
+                     count(a.user_id)) as asked_never_attested_pct
 from account_labels l
 left join accounts a
        on a.account = l.account

@@ -15,10 +15,24 @@ import * as path from "node:path";
 
 const SCRIPTS_DIR = path.resolve(__dirname, "..", "scripts");
 
+const ALL_REPORTS = [
+  "analytics-engagement.sql",
+  "analytics-onboarding.sql",
+  "analytics-segment.sql",
+];
+
 /** Which report files must carry each shared block. */
 const EXPECTED_BLOCKS: Record<string, string[]> = {
-  accounts: ["analytics-engagement.sql", "analytics-onboarding.sql", "analytics-segment.sql"],
+  accounts: ALL_REPORTS,
   content_events: ["analytics-engagement.sql", "analytics-segment.sql"],
+  // k=5 cell suppression governs all three reports, not just the segment one
+  // where it was first implemented (#2373, docs/analytics.md).
+  k_suppression: ALL_REPORTS,
+  // Who is in the population: the owner count, the heuristic upper bound, and
+  // the standing line that the guest arm is not identifiable at all. Printed by
+  // each report separately and deliberately - every report runs independently,
+  // so a surviving one must carry its own population statement.
+  population_provenance: ALL_REPORTS,
 };
 
 const START = /^-- >>> shared:([a-z_]+)$/;
@@ -133,6 +147,65 @@ describe("analytics reports never read enabled_modules as an axis", () => {
       expect(sqlLinesMatching(file, /enabled_modules/)).toEqual([]);
     });
   }
+});
+
+describe("k=5 cell suppression is defined once, for all three reports", () => {
+  // #2373. The rule used to live in analytics-segment.sql alone, so the other
+  // two reports printed raw counts and nothing said so. A second definition
+  // anywhere is how they would drift apart again.
+  for (const file of reportFiles()) {
+    it(`${file} defines k_count and k_pct only inside shared:k_suppression`, () => {
+      const shared = blocksByFile.get(file)?.get("k_suppression") ?? "";
+      expect(shared).toContain("create function pg_temp.k_count");
+      expect(shared).toContain("create function pg_temp.k_pct");
+
+      const outsideTheBlock = fs
+        .readFileSync(path.join(SCRIPTS_DIR, file), "utf8")
+        .replace(shared, "");
+      expect(outsideTheBlock).not.toContain("create function pg_temp.k_");
+    });
+
+    it(`${file} puts its slicing cells through the helpers`, () => {
+      // Not a count of call sites - that would go stale on every edit - but the
+      // claim that every report actually suppresses something. A report with
+      // the block and no call site is the failure mode this catches: the
+      // helpers present, the cells still raw.
+      expect(sqlLinesMatching(file, /pg_temp\.k_(count|pct)\(/).length).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe("the population-provenance block is exempt from k=5, with both reasons recorded", () => {
+  // ☠️ #2373. This block counts the project's OWN accounts and prints an upper
+  // bound, so both rationales behind k=5 are void here - one does not apply,
+  // the other is inverted. Suppressing it would hide the number precisely as
+  // cleanup succeeded and it finally became good news, leaving a reader unable
+  // to tell "almost none" from "withheld".
+  const block = blocksByFile.get("analytics-engagement.sql")?.get("population_provenance") ?? "";
+  const sql = block
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
+
+  it("prints raw counts, never suppressed ones", () => {
+    expect(sql).toContain("count(*) filter (where p.owner_address)");
+    expect(sql).not.toContain("pg_temp.k_");
+  });
+
+  it("records both reasons for the exemption beside it", () => {
+    expect(block).toContain("EXEMPT FROM THE k=5 RULE");
+    expect(block).toContain("PROJECT'S OWN accounts");
+    expect(block).toContain("upper bound is already the anti-false-precision form");
+  });
+
+  it("labels the wider count as a bound and never as a point estimate", () => {
+    expect(block).toContain("AN UPPER BOUND, never a point estimate");
+  });
+
+  it("states that the guest arm cannot be identified at all", () => {
+    expect(block).toContain("NOT IDENTIFIABLE AT ALL");
+    expect(block).toContain("no email");
+  });
 });
 
 describe("analytics reports carry the account split", () => {
