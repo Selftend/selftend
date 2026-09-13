@@ -337,6 +337,28 @@ function insertIdentities(rows: { userId: string; createdAtSql: string; provider
   `);
 }
 
+/**
+ * Section 4 of the onboarding report is two statements: the arm table, then the
+ * rate. Both describes below need them apart — running the section whole folds
+ * the rate row in among the arms.
+ *
+ * ⚠️ Split on `;`, which survives only because `section()` drops the `\echo`
+ * lines, and those legends contain semicolons. Rewrite one legend as a `--`
+ * comment and this silently returns the wrong statement, so the count is
+ * asserted rather than assumed.
+ */
+function conversionStatements(): string[] {
+  const statements = section("onboarding", 4)
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "");
+  expect(statements).toHaveLength(2);
+  return statements.map((statement) => `${statement};`);
+}
+
+const conversionArmTable = () => conversionStatements()[0];
+const conversionRate = () => conversionStatements()[1];
+
 /** A pinned tool or module, as the favourites section reads them. */
 function insertFavourites(rows: { userId: string; kind: string; key: string }[]) {
   const values = rows.map((row) => `('${row.userId}', '${row.kind}', '${row.key}')`).join(",\n");
@@ -1343,32 +1365,15 @@ describe("aggregate analytics reports (integration)", () => {
       return new Map(
         queryWithinCohort(
           "onboarding",
-          `select user_id, arm from account_origin_arms order by user_id;`,
+          `select user_id, arm from conversion_arms order by user_id;`,
         ).map(([user, arm]) => [user, arm]),
       );
-    }
-
-    /**
-     * Section 4's two statements, separately. ⚠️ Running the section whole puts
-     * the rate row's first column into the arm table's keys, which is how this
-     * was first written and why the guard below is here.
-     */
-    function conversionStatements(): string[] {
-      const statements = section("onboarding", 4)
-        .split(";")
-        .map((statement) => statement.trim())
-        .filter((statement) => statement !== "");
-      expect(statements).toHaveLength(2);
-      return statements.map((statement) => `${statement};`);
     }
 
     /** Section 4's printed arm table. */
     function printedArms(): Map<string, string> {
       return new Map(
-        queryWithinCohort("onboarding", conversionStatements()[0]).map(([arm, users]) => [
-          arm,
-          users,
-        ]),
+        queryWithinCohort("onboarding", conversionArmTable()).map(([arm, users]) => [arm, users]),
       );
     }
 
@@ -1440,7 +1445,7 @@ describe("aggregate analytics reports (integration)", () => {
       // up in the arm that exists to catch disagreement.
       const [row] = queryWithinCohort(
         "onboarding",
-        `select count(*), count(arm), count(distinct user_id) from account_origin_arms;`,
+        `select count(*), count(arm), count(distinct user_id) from conversion_arms;`,
       );
       // Fifteen accounts, fifteen arms, nobody counted twice and nobody null.
       expect(row).toEqual(["15", "15", "15"]);
@@ -1455,18 +1460,18 @@ describe("aggregate analytics reports (integration)", () => {
         "guest (unconverted)",
         "converted guest",
         "registered at mint",
-        "registered, no identity (CONTRADICTION)",
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
       ]);
       expect(arms.get("guest (unconverted)")).toBe("5");
       expect(arms.get("converted guest")).toBe("7");
-      expect(arms.get("registered, no identity (CONTRADICTION)")).toBe("0");
+      expect(arms.get("is_anonymous disagrees with the identity record (CONTRADICTION)")).toBe("0");
     });
 
     it("rates conversion over mature guest-origin accounts, and excludes a late one", () => {
       // Twelve guest-origin accounts, all past seven days. Six converted inside
       // the window; the day-nine conversion is real and is deliberately not in
       // the numerator, because the window asks about the first week.
-      const [row] = queryWithinCohort("onboarding", conversionStatements()[1]);
+      const [row] = queryWithinCohort("onboarding", conversionRate());
       expect(row).toEqual(["12", "6", "50.0%"]);
     });
   });
@@ -1478,22 +1483,48 @@ describe("aggregate analytics reports (integration)", () => {
     beforeAll(() => {
       deleteSuiteUsers();
       insertAuthUsers([
+        // Two accounts that say they are registered and hold no identity.
         { id: userId(140), createdAtSql: "now() - interval '40 days'" },
         { id: userId(141), createdAtSql: "now() - interval '40 days'" },
+        // ☠️ And one of the MIRROR shape: a guest that holds an identity. An
+        // earlier version of the arms filed this as `converted guest` - a
+        // disagreement absorbed into a plausible-looking neighbour, which is
+        // the failure this arm exists to prevent.
+        {
+          id: userId(142),
+          createdAtSql: "now() - interval '40 days'",
+          isAnonymous: true,
+        },
       ]);
-      // Deliberately no identities.
+      insertIdentities([{ userId: userId(142), createdAtSql: "now() - interval '38 days'" }]);
     });
 
     afterAll(deleteSuiteUsers);
 
+    it("catches a guest that holds an identity, not only the reverse", () => {
+      const arms = new Map(
+        queryWithinCohort(
+          "onboarding",
+          `select user_id, arm from conversion_arms order by user_id;`,
+        ).map(([user, arm]) => [user, arm]),
+      );
+      expect(arms.get(userId(142))).toBe(
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
+      );
+      expect(arms.get(userId(140))).toBe(
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
+      );
+    });
+
     it("fills when the two definitions of guest drift apart", () => {
       // Only the arm table, not the rate statement that follows it in the
       // section - running both would fold the rate row in among the arms.
-      const armTable = `${section("onboarding", 4).split(";")[0]};`;
       const rows = new Map(
-        queryWithinCohort("onboarding", armTable).map(([arm, users]) => [arm, users]),
+        queryWithinCohort("onboarding", conversionArmTable()).map(([arm, users]) => [arm, users]),
       );
-      expect(rows.get("registered, no identity (CONTRADICTION)")).toBe("<5");
+      expect(rows.get("is_anonymous disagrees with the identity record (CONTRADICTION)")).toBe(
+        "<5",
+      );
       // And nobody is quietly filed elsewhere to make the total look right.
       expect(rows.get("guest (unconverted)")).toBe("0");
       expect(rows.get("converted guest")).toBe("0");
@@ -1534,8 +1565,16 @@ describe("aggregate analytics reports (integration)", () => {
       expect(rows.get("registered/tool/mood")).toBe("5");
       expect(rows.get("registered/module/cbt")).toBe("<5");
       expect(rows.get("guest/tool/journal")).toBe("<5");
-      // Open shape: nothing pinned `sleep`, so there is no row for it at all.
-      expect(rows.has("registered/tool/sleep")).toBe(false);
+      // ☠️ Exactly these three rows and no others. Asserting only that an
+      // unpinned key is absent would assert nothing - section 5 has no label
+      // table, so a key nobody pinned can never appear and the check could not
+      // fail. The claim worth making is that the section emits one row per
+      // (account, kind, key) that exists and invents none.
+      expect([...rows.keys()].sort()).toEqual([
+        "guest/tool/journal",
+        "registered/module/cbt",
+        "registered/tool/mood",
+      ]);
     });
   });
 

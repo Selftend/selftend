@@ -77,8 +77,9 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
--- module, picked a widget) or who carry some property (a concern arm, a
--- completion mode) — and every percentage taken over such a cell.
+-- module, converted from guest) or who carry some property (a concern arm, a
+-- completion mode, a pinned favourite) — and every percentage taken over such a
+-- cell.
 --
 -- It never governs a WHOLE-POPULATION count: how many accounts there are, how
 -- many of each type, how many arrived in a given week, how big a signup cohort
@@ -124,23 +125,56 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
 -- ⚠️ `auth.identities` is a different table from `auth.users`, which every
 -- report reads exactly once through the shared `accounts` view; this join does
 -- not disturb that.
-create temp view account_origin_arms as
+--
+-- ⚠️ `user_id` and `first_identity_at` are carried per row so the arms can be
+-- computed and so a test can assert which arm one fixture lands in. Neither is
+-- ever selected into a printed row - every section below counts them and prints
+-- the count, because the reports are aggregate-only (docs/analytics.md).
+--
+-- ⚠️ NO PROVIDER FILTER, deliberately, and this is the line to revisit if the
+-- arms ever look wrong: today GoTrue writes no identity row for an anonymous
+-- sign-in, so "holds an identity" and "is registered" mean the same thing. If
+-- that ever changes, every guest acquires an identity at mint, the guest arm
+-- empties into `registered at mint`, and the contradiction arm stays at zero
+-- while saying nothing is wrong.
+create temp view conversion_arms as
   select a.user_id,
          a.account,
          a.created_at,
          fi.first_identity_at,
          (a.created_at <= now() - interval '7 days') as mature,
+         -- Was this account minted WITHOUT an identity, with both definitions
+         -- agreeing that it was? That is the cohort the rate is taken over, and
+         -- it is a fact about the row rather than a string match on an arm's
+         -- printed label.
+         --
+         -- ⚠️ Both halves are required. "No identity yet" alone would sweep in
+         -- an account that claims to be registered while holding none - the
+         -- contradiction shape - and put a row into the denominator on the
+         -- strength of a disagreement nobody has looked at.
+         ((fi.first_identity_at is null and a.account = 'guest')
+            or (fi.first_identity_at is not null and a.account = 'registered'
+                and fi.first_identity_at > a.created_at + interval '1 second'))
+           as guest_origin,
          (fi.first_identity_at is not null
             and fi.first_identity_at > a.created_at + interval '1 second'
             and fi.first_identity_at <= a.created_at + interval '7 days') as converted_within_window,
+         -- ☠️ THE CONTRADICTION ARM CATCHES BOTH DIRECTIONS, and the arms are
+         -- written to fall through to it rather than into a plausible-looking
+         -- neighbour. An account claiming to be registered while holding no
+         -- identity is the obvious drift; a GUEST that holds one is the mirror
+         -- of it, and an earlier shape of this case silently filed that one as
+         -- `converted guest` - a disagreement absorbed into a normal arm is
+         -- exactly what this arm exists to prevent.
          case
            when fi.first_identity_at is null and a.account = 'guest'
              then 'guest (unconverted)'
-           when fi.first_identity_at is null
-             then 'registered, no identity (CONTRADICTION)'
-           when fi.first_identity_at > a.created_at + interval '1 second'
+           when fi.first_identity_at is not null and a.account = 'registered'
+                and fi.first_identity_at > a.created_at + interval '1 second'
              then 'converted guest'
-           else 'registered at mint'
+           when fi.first_identity_at is not null and a.account = 'registered'
+             then 'registered at mint'
+           else 'is_anonymous disagrees with the identity record (CONTRADICTION)'
          end as arm
   from accounts a
   left join (
@@ -155,7 +189,7 @@ create temp view conversion_arm_labels(arm, arm_order) as values
   ('guest (unconverted)', 1),
   ('converted guest', 2),
   ('registered at mint', 3),
-  ('registered, no identity (CONTRADICTION)', 4);
+  ('is_anonymous disagrees with the identity record (CONTRADICTION)', 4);
 
 
 -- >>> shared:population_provenance
@@ -244,8 +278,9 @@ group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 2) Introduction completion by signup week (completed vs not) ==='
-\echo '    COMPLETION, not conversion. CONTEXT.md reserves `conversion` for guest -> registered, which is'
-\echo '    section 4 of this same report; using one word for two funnel steps is how they get confused.'
+\echo '    COMPLETION means finishing the one-panel introduction, and nothing else. The guest-to-registered'
+\echo '    funnel is section 4, and CONTEXT.md reserves its own word for it: one word over two funnel steps'
+\echo '    is how the two got confused, in the one report that measures both.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 select a.account,
@@ -277,8 +312,10 @@ group by 1, 2 order by count(*) desc, 1, 2;
 \echo '    STANDING NOTE: a conversion count below five is withheld and prints `<5`. That is the floor doing its'
 \echo '    job, not an absence - read it as "between one and four", never as "none". A true zero prints as 0.'
 \echo '    The four arms partition the whole population: every account is in exactly one.'
-\echo '    ☠️ The last arm must always be EMPTY. An entry in it means `is_anonymous` and the identity record'
-\echo '    disagree about who is a guest - a drift between two definitions of the same word, not a user story.'
+\echo '    ☠️ The last arm must always be EMPTY. An entry means `is_anonymous` and the identity record disagree'
+\echo '    about who is a guest - EITHER WAY ROUND: registered while holding no identity, or a guest holding'
+\echo '    one. That is a drift between two definitions of the same word, never a count of people to read as'
+\echo '    behaviour. Everyone else is in exactly one of the three arms above it.'
 -- ☠️ THIS IS THE PROJECT'S OWN DEFINITION EXECUTED, NOT A PROXY (#2366).
 -- CONTEXT.md defines conversion as attaching the first sign-in identity, and a
 -- registered account as one holding at least one. `auth.identities` records
@@ -313,7 +350,7 @@ group by 1, 2 order by count(*) desc, 1, 2;
 select l.arm,
        pg_temp.k_count(count(o.user_id)) as users
 from conversion_arm_labels l
-left join account_origin_arms o on o.arm = l.arm
+left join conversion_arms o on o.arm = l.arm
 group by l.arm, l.arm_order
 order by l.arm_order;
 
@@ -327,13 +364,26 @@ order by l.arm_order;
 -- the window asks how many convert within a week, which is the only version of
 -- the question that can be answered at a fixed age. The arms above hold the
 -- lifetime count.
+--
+-- ☠️ THIS RATE DRIFTS UPWARD OVER TIME, AND NOTHING IN IT WILL SAY SO.
+-- `cleanup_dormant_guest_accounts` (20260826010000) deletes accounts `where
+-- u.is_anonymous` after 12 months of dormancy - that is, it deletes UNCONVERTED
+-- guests and never converted ones. So the denominator loses its non-converters
+-- as they age out while the numerator keeps everything, and a rising rate may
+-- be the cleanup rather than the product. Compare cohorts of similar age before
+-- reading a trend here.
+--
+-- ⚠️ An account in the contradiction arm is in neither the numerator nor the
+-- denominator: `guest_origin` asks about the identity record, and that arm is
+-- precisely where the identity record and `is_anonymous` disagree. While the
+-- arm is empty - which it must be - this changes nothing.
 select count(*) filter (where mature) as guest_origin_mature,
        pg_temp.k_count(count(*) filter (where mature and converted_within_window))
          as converted_within_7d,
        pg_temp.k_pct(count(*) filter (where mature and converted_within_window),
                      count(*) filter (where mature)) as conversion_pct
-from account_origin_arms
-where arm in ('guest (unconverted)', 'converted guest');
+from conversion_arms
+where guest_origin;
 
 \echo
 \echo '=== 5) Favourites (kind and key; the live successor to the retired widget picks) ==='
