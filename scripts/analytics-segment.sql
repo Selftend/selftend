@@ -11,10 +11,14 @@
 -- migration that added `initial_concerns` and the commit that removed the code
 -- writing it are both contained in tag v0.18.0 — the column reached users in the
 -- very build that stopped asking, so the arms were dead on arrival rather than
--- closed later. All ten died together: `skipped` and `finished-with-none` needed
--- the column non-null-but-empty, and with it null everywhere the `unknown`
--- branch shadowed them. The COLUMN IS KEPT — dropping it changes nothing
--- observable and would cost an INTENTIONALLY_DROPPED entry in the export gate.
+-- closed later. All NINE non-`unknown` arms died together: `skipped` and
+-- `finished-with-none` needed the column non-null-but-empty, and with it null
+-- everywhere the `unknown` branch shadowed them. ⚠️ `unknown` is the tenth and
+-- it did not die - it is the arm that held every account, which is precisely
+-- what made the table look populated while carrying no axis at all.
+--
+-- The COLUMN IS KEPT — dropping it changes nothing observable and would cost an
+-- INTENTIONALLY_DROPPED entry in the export gate.
 -- It is simply not an axis, and its schema comment was corrected in the same
 -- change (20260916000000_initial_concerns_comment_correction.sql) so the next
 -- reader measures the column rather than believing what the comment claims.
@@ -69,6 +73,8 @@
 -- always A documented path rather than the only one. The two dates above are
 -- obligations, not a cadence, and they stand on their own.
 
+-- The block below is byte-identical in analytics-onboarding.sql and
+-- analytics-engagement.sql; test/analytics-shared-sql.test.ts fails if they drift.
 -- >>> shared:accounts
 create temp view accounts as
   select id as user_id,
@@ -141,6 +147,11 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
   $$;
 -- <<< shared:k_suppression
 
+-- The block below is byte-identical in analytics-engagement.sql;
+-- test/analytics-shared-sql.test.ts fails if they drift. A new content table
+-- must be added to both, or this report silently under-counts retention - and
+-- since #2377 it also under-counts module BREADTH, so a missing table can move
+-- an account between arms of section 4 as well as out of the retained count.
 -- >>> shared:content_events
 create temp view content_events as
   -- core tools, grouped as 'core'. Nothing below is gated: every tool is on the
@@ -283,8 +294,14 @@ create temp view user_modules as
          a.account,
          case
            when u.modules_used > 1 then 'several modules'
+           -- ⚠️ The named modules are NOT listed again here. `module_labels`
+           -- above is the single place this file writes them down, and this
+           -- asks that list whether it has an arm for the module rather than
+           -- repeating its contents - a second copy is how the two would drift
+           -- and start filing a real module under the residue below.
            when u.modules_used = 1
-             and u.single_module in ('cbt', 'meditation', 'gratitude', 'act', 'dbt')
+             and exists (select 1 from module_labels ml
+                          where ml.arm = u.single_module || ' only')
              then u.single_module || ' only'
            when u.modules_used = 1 then 'other module only'
            when u.core_rows > 0 then 'core tools only'
@@ -431,7 +448,7 @@ left join accounts a on a.account = l.account
 group by 1 order by 2 desc, 1;
 
 \echo
-\echo '=== 1) Gate status - sections 3 and 4 are not readable until 30 W4-retained users exist ==='
+\echo '=== 1) Gate status - 30 W4-retained users, the first of TWO conditions on sections 3 and 4 ==='
 \echo '    (whole-population counts, deliberately not k-suppressed: the point is to see how far off the gate is)'
 \echo '    This is ONE of the two conditions. Section 2 carries the other, and an open gate does'
 \echo '    not imply a readable cross-tab: see the comment above the axis_coverage view.'
@@ -473,10 +490,45 @@ from user_w4;
 \echo '    an honest silence: the gate in section 1 counts retention across the whole population,'
 \echo '    so it can open while every one of those users sits in a single arm.'
 \echo '    Counts ARMS, never people, so there is no cell here for the k=5 rule to suppress.'
+\echo '    Coverage is computed over the WHOLE population, not per account type, while sections 3'
+\echo '    and 4 print both. So an axis covered by registered accounts alone still prints a guest'
+\echo '    ordering whose arms are all one arm. That is deliberate - the segment question is about'
+\echo '    the population, and forking the precondition per account type would make readable mean'
+\echo '    two different things - but read a guest ordering beside a small guest population with that'
+\echo '    in mind. Tracked as issue 2389, not as a defect in the precondition.'
 select axis, arms_total, arms_with_mature_users, readable
 from axis_coverage order by axis;
 
 \echo
+-- ☠️ WHAT THE k=5 FLOOR DOES AND DOES NOT GUARANTEE IN SECTIONS 3 AND 4, so
+-- that a later reader neither mistakes it for a guarantee nor tears it out as
+-- theatre. Both are wrong; the truth is in between and it is worth ten lines.
+--
+-- These arms PARTITION the population, and section 1 prints `users`,
+-- `w4_mature_users` and `w4_retained_users` RAW per account type (its carve-out,
+-- with its own reasons recorded beside it). An exhaustive partition of a raw
+-- total leaks any SINGLE hidden cell by subtraction: the total minus the arms
+-- that printed recovers the one that did not. Where two or more arms are
+-- suppressed only their SUM is recoverable, which is the floor working.
+--
+-- ⚠️ THE LOCALE AXIS IS THE BAD CASE, and it is the ordinary case rather than a
+-- corner. `other locale` is unreachable while the CHECK constraint allows only
+-- en and bg, and an empty arm prints `0` rather than `<5` by deliberate design
+-- of the shared block above - so the axis typically has two populated arms and
+-- two visible zeros, and a suppressed `bg` is recoverable exactly. That is the
+-- same arithmetic the section 1 carve-out calls theatre.
+--
+-- It is recorded rather than fixed, and the reason is that every available fix
+-- is worse: section 1 cannot be suppressed without blinding the gate, an empty
+-- arm may not print `<5` without forking the shared rule, and dropping the count
+-- columns would leave an ordering with no weight beside it. ⚠️ THIS IS NOT
+-- SPECIFIC TO THIS FILE - section 4 of analytics-onboarding.sql partitions the
+-- population the same way, so the property is general to these reports and the
+-- decision about it is not this section's to make alone. Tracked as issue 2388.
+--
+-- What survives is real: the floor still stops a small cell being read casually,
+-- and it still holds wherever more than one arm is small. Do not read it as a
+-- privacy guarantee on a two-arm axis.
 \echo '=== 3) W4 retention by locale (arms partition the population; every account appears exactly once) ==='
 \echo '    Ordered by retention rate: READ THE ORDERING, not the percentages.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'

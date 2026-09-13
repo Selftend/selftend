@@ -761,7 +761,13 @@ describe("aggregate analytics reports (integration)", () => {
             and conname = 'user_preferences_language_check';`,
       ).trim();
       const allowed = [...constraint.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]).sort();
-      expect(allowed).toEqual(["bg", "en"]);
+      // Guards the guard, and nothing more: it says the constraint was parsed at
+      // all. ☠️ It deliberately does NOT pin the list to a literal - doing that
+      // would make the loop below check `locale_labels` against a literal
+      // sitting beside it rather than against the schema, and adding a language
+      // WITH its arm would then fail for the wrong reason.
+      expect(allowed.length).toBeGreaterThanOrEqual(2);
+      expect(allowed).toContain("bg");
 
       const arms = queryWithin("segment", `select arm from locale_labels order by arm_order;`).map(
         ([arm]) => arm,
@@ -870,11 +876,25 @@ describe("aggregate analytics reports (integration)", () => {
       // reads as a defect. The arm list is a literal on purpose (deriving it
       // from the data would make section 4 print nothing on an empty database),
       // so this is what keeps the literal honest.
-      const modules = queryWithin(
-        "segment",
-        `select distinct module from content_events where module <> 'core' order by 1;`,
-      ).map(([module]) => module);
-      expect(modules.length).toBeGreaterThan(0);
+      //
+      // ☠️ The module list is read from the shipped BLOCK TEXT, never from
+      // `select distinct module from content_events`. That query returns only
+      // the modules some fixture happened to write, so a module with no rows
+      // would be waved through by an assertion that looked identical - this
+      // suite writes gratitude, meditation and act, and cbt and dbt would have
+      // gone unchecked.
+      const modules = [
+        ...new Set(
+          [
+            ...sharedBlock("segment", "content_events").matchAll(
+              /(?:created_at|completed_at), '(\w+)'/g,
+            ),
+          ]
+            .map((match) => match[1])
+            .filter((module) => module !== "core"),
+        ),
+      ].sort();
+      expect(modules).toEqual(["act", "cbt", "dbt", "gratitude", "meditation"]);
 
       const arms = queryWithin("segment", `select arm from module_labels order by arm_order;`).map(
         ([arm]) => arm,
@@ -982,9 +1002,10 @@ describe("aggregate analytics reports (integration)", () => {
     it("keeps the column, which is not the same as reading it", () => {
       // Dropping it changes nothing observable and would cost an
       // INTENTIONALLY_DROPPED entry in the export gate, so the decision was to
-      // keep it and stop cohorting by it. Both halves are asserted: a later
-      // change that drops the column, and one that re-adopts it as an axis,
-      // fail here.
+      // keep it and stop cohorting by it. ⚠️ Only the KEEPING half is asserted
+      // here. The other half - that no report re-adopts the column as an axis -
+      // is a source ban in test/analytics-shared-sql.test.ts, and this test
+      // would pass just as well if it were removed.
       const [row] = runSql(
         `select count(*) from information_schema.columns
           where table_schema = 'public' and table_name = 'user_preferences'
