@@ -35,8 +35,14 @@
 -- from a guest session converts the same `auth.users` row in place
 -- (`isConversion` in src/components/app/sign-up-form.tsx), so a converted guest
 -- counts as `registered` for their whole history, retroactively. The `guest`
--- rows are therefore unconverted guests only, and conversion is invisible here
--- by construction.
+-- rows are therefore unconverted guests only.
+--
+-- ⚠️ That makes the ACCOUNT AXIS blind to conversion - it is not, and never
+-- was, unmeasurable. Section 4 measures it directly from the identity clock,
+-- which records the instant the account stopped being a guest. So read a
+-- guest-versus-registered gap in the tables above knowing the guest arm is a
+-- residue and the registered arm is what absorbs its successes, and read
+-- section 4 for the movement between them.
 
 -- The block below is byte-identical in analytics-engagement.sql and
 -- analytics-segment.sql; test/analytics-shared-sql.test.ts fails if they drift.
@@ -110,6 +116,47 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
     end
   $$;
 -- <<< shared:k_suppression
+
+-- The identity clock (#2366, #2376). One row per account, carrying the instant
+-- its first sign-in identity was attached - which is what makes a conversion
+-- visible at all. Read the ☠️ notes on section 4 before touching the threshold.
+--
+-- ⚠️ `auth.identities` is a different table from `auth.users`, which every
+-- report reads exactly once through the shared `accounts` view; this join does
+-- not disturb that.
+create temp view account_origin_arms as
+  select a.user_id,
+         a.account,
+         a.created_at,
+         fi.first_identity_at,
+         (a.created_at <= now() - interval '7 days') as mature,
+         (fi.first_identity_at is not null
+            and fi.first_identity_at > a.created_at + interval '1 second'
+            and fi.first_identity_at <= a.created_at + interval '7 days') as converted_within_window,
+         case
+           when fi.first_identity_at is null and a.account = 'guest'
+             then 'guest (unconverted)'
+           when fi.first_identity_at is null
+             then 'registered, no identity (CONTRADICTION)'
+           when fi.first_identity_at > a.created_at + interval '1 second'
+             then 'converted guest'
+           else 'registered at mint'
+         end as arm
+  from accounts a
+  left join (
+    select user_id, min(created_at) as first_identity_at
+    from auth.identities
+    group by 1
+  ) fi on fi.user_id = a.user_id;
+
+-- Fixed shape: all four arms print, zeros included, so the contradiction arm is
+-- visible as a zero rather than absent as a row.
+create temp view conversion_arm_labels(arm, arm_order) as values
+  ('guest (unconverted)', 1),
+  ('converted guest', 2),
+  ('registered at mint', 3),
+  ('registered, no identity (CONTRADICTION)', 4);
+
 
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
@@ -196,7 +243,9 @@ where created_at >= date_trunc('week', now()) - interval '11 weeks'
 group by 1, 2 order by 2 desc, 1;
 
 \echo
-\echo '=== 2) Onboarding conversion by signup week (completed vs not) ==='
+\echo '=== 2) Introduction completion by signup week (completed vs not) ==='
+\echo '    COMPLETION, not conversion. CONTEXT.md reserves `conversion` for guest -> registered, which is'
+\echo '    section 4 of this same report; using one word for two funnel steps is how they get confused.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 select a.account,
@@ -223,10 +272,88 @@ where p.app_onboarding_completed
 group by 1, 2 order by count(*) desc, 1, 2;
 
 \echo
-\echo '=== 5) Home widget selection still written by pre-Favourites native builds (#1958: the current app neither reads nor seeds this table) ==='
-\echo '    `<5` = k=5 suppressed count. A widget pick is a property someone carries, so these cells are slices.'
+\echo '=== 4) Guest-to-registered conversion (the identity clock; 7-day maturity window) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    STANDING NOTE: a conversion count below five is withheld and prints `<5`. That is the floor doing its'
+\echo '    job, not an absence - read it as "between one and four", never as "none". A true zero prints as 0.'
+\echo '    The four arms partition the whole population: every account is in exactly one.'
+\echo '    ☠️ The last arm must always be EMPTY. An entry in it means `is_anonymous` and the identity record'
+\echo '    disagree about who is a guest - a drift between two definitions of the same word, not a user story.'
+-- ☠️ THIS IS THE PROJECT'S OWN DEFINITION EXECUTED, NOT A PROXY (#2366).
+-- CONTEXT.md defines conversion as attaching the first sign-in identity, and a
+-- registered account as one holding at least one. `auth.identities` records
+-- exactly that, with its own `created_at`: `auth.users.is_anonymous` is the bit,
+-- the identity row is the bit PLUS the instant it flipped.
+--
+-- ☠️ THE THRESHOLD IS ONE SECOND, and it separates "same transaction" from "a
+-- separate act" - not "fast" from "slow". Measured: a born-registered identity
+-- lands within 0.080s of its user row, every time, across email, google and
+-- apple. A conversion needs a form submit or an OAuth round trip after a human
+-- decision, so it cannot land inside a second. Do NOT widen this to a minute: a
+-- guest who arrives by the web CTA can convert within seconds of being minted,
+-- and a wide threshold eats precisely those.
+--
+-- `min(created_at)` and not any identity, so that linking a second provider
+-- years later - on either kind of account - is never read as a conversion.
+--
+-- ☠️ It reads the whole population retroactively, so there is no start date and
+-- no unmeasured backlog: conversions before anonymous sign-in went live are
+-- STRUCTURALLY ZERO, not missing. `account_origin` is not the key and is not
+-- needed here - which door somebody arrived through is an arrivals question and
+-- belongs to docs/measurement.md.
+--
+-- ⚠️ THIS RESTS ON `enable_confirmations = false` (#489). If confirmations are
+-- ever switched on, RE-VERIFY whether the email identity is written at signup
+-- or at confirmation before trusting a single number here: if it moves to
+-- confirmation, every ordinary signup starts reading as a conversion.
+--
+-- ⚠️ Deliberately in this report and not the engagement one, and deliberately
+-- not in the shared `accounts` view - that keeps the shared block byte-identical
+-- across all three files and leaves the segment report untouched.
+select l.arm,
+       pg_temp.k_count(count(o.user_id)) as users
+from conversion_arm_labels l
+left join account_origin_arms o on o.arm = l.arm
+group by l.arm, l.arm_order
+order by l.arm_order;
+
+\echo
+\echo '    The rate, over guest-origin accounts old enough to have had the whole 7 days:'
+-- The denominator is every account that was minted WITHOUT an identity and has
+-- since had a full seven days - a whole-population count, so it prints raw. The
+-- numerator counts the people who did something, so it goes through the floor.
+--
+-- ⚠️ Converting on day nine is a real conversion and is NOT in this numerator:
+-- the window asks how many convert within a week, which is the only version of
+-- the question that can be answered at a fixed age. The arms above hold the
+-- lifetime count.
+select count(*) filter (where mature) as guest_origin_mature,
+       pg_temp.k_count(count(*) filter (where mature and converted_within_window))
+         as converted_within_7d,
+       pg_temp.k_pct(count(*) filter (where mature and converted_within_window),
+                     count(*) filter (where mature)) as conversion_pct
+from account_origin_arms
+where arm in ('guest (unconverted)', 'converted guest');
+
+\echo
+\echo '=== 5) Favourites (kind and key; the live successor to the retired widget picks) ==='
+\echo '    `<5` = k=5 suppressed count. Which tool somebody pinned is a property they carry, so these are slices.'
 \echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
-select a.account, w.widget_id, pg_temp.k_count(count(*)) as users
-from public.widget_preferences w
-join accounts a on a.user_id = w.user_id
-group by 1, 2 order by count(*) desc, 2, 1;
+-- ☠️ This slot used to report `widget_preferences`, and that section is GONE
+-- rather than moved (#1958). The table fails the same test `enabled_modules`
+-- failed: the current app neither reads nor seeds it. ⚠️ It is NOT frozen
+-- residue, which would be the safer failure - pre-Favourites native builds still
+-- write it, so a section over it would print LIVE data about a removed feature
+-- as though it were current behaviour, which is worse than printing nothing.
+--
+-- Favourites is the live successor and was reported nowhere until now. Open
+-- shape: kinds and keys come and go with the product, so only what exists
+-- prints.
+select a.account,
+       f.kind,
+       f.key,
+       pg_temp.k_count(count(distinct f.user_id)) as users
+from public.favorites f
+join accounts a on a.user_id = f.user_id
+group by 1, 2, 3
+order by count(distinct f.user_id) desc, 2, 3, 1;

@@ -149,6 +149,47 @@ describe("analytics reports never read enabled_modules as an axis", () => {
   }
 });
 
+describe("analytics reports never read widget_preferences", () => {
+  // ☠️ #2376. `widget_preferences` fails the same test `enabled_modules` failed:
+  // the current app neither reads nor seeds it (#1958). ⚠️ And it is NOT frozen
+  // residue, which would be the safer failure - pre-Favourites native builds
+  // still write it, so a section over it prints LIVE data about a removed
+  // feature as though it were current behaviour. Favourites is the live
+  // successor and took the slot.
+  for (const file of reportFiles()) {
+    it(`${file} does not read widget_preferences`, () => {
+      expect(sqlLinesMatching(file, /widget_preferences/)).toEqual([]);
+    });
+  }
+
+  it("reads the live successor instead", () => {
+    // Guards the guard: deleting the section satisfies the ban just as well as
+    // replacing it, and that is the other way to lose the measurement.
+    expect(
+      sqlLinesMatching("analytics-onboarding.sql", /public\.favorites/).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe("the onboarding report keeps completion and conversion apart", () => {
+  // #2376. `CONTEXT.md` reserves CONVERSION for guest -> registered. This report
+  // used the same word for finishing the introduction, which is a different
+  // funnel step - and it is the one report that now measures both, so the two
+  // words have to stay on their own sections.
+  const source = fs.readFileSync(path.join(SCRIPTS_DIR, "analytics-onboarding.sql"), "utf8");
+  const heading = (n: number) =>
+    source.split("\n").find((line) => line.startsWith(`\\echo '=== ${n})`)) ?? "";
+
+  it("calls finishing the introduction completion", () => {
+    expect(heading(2)).toContain("completion");
+    expect(heading(2).toLowerCase()).not.toContain("conversion");
+  });
+
+  it("keeps the word conversion for guest to registered", () => {
+    expect(heading(4)).toContain("Guest-to-registered conversion");
+  });
+});
+
 describe("analytics reports never read notifications_enabled_global", () => {
   // ☠️ #2375, and it is the `enabled_modules` mistake (#1672) waiting to happen
   // on a newer column. `notifications_enabled_global` DEFAULTS TO TRUE and is
