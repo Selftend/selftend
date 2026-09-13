@@ -570,9 +570,40 @@ next digest, beside a release list naming the release responsible.
   later reader should not restore the timestamp as a helpful detail.
 - **The watch list is the fixed-shape rows the reports already print**: each
   account type, each module, each core tool, each programme milestone, reminder
-  consent, age-gate attestation, first conversion. ⚠️ A programme funnel reading
-  all zeros is therefore **the watch list working**, not an embarrassment — the
-  month someone first completes a programme, it fires.
+  consent, first conversion. ⚠️ A programme funnel reading all zeros is therefore
+  **the watch list working**, not an embarrassment — the month someone first
+  completes a programme, it fires.
+
+☠️ **Two facts on that list turned out to be undatable, and they are excluded
+rather than faked.** Found while building it, not while specifying it:
+
+- **Age-gate attestation.** `user_preferences.age_floor_met` is a boolean with
+  **no timestamp column anywhere** — there is no `age_floor_met_at`. Dating it
+  from `app_onboarding_completed_at` would be a different event wearing this
+  one's name. It costs little: the gate shipped 2026-09-05 and attestations
+  already exist, so its first occurrence is in the past and could never fire in
+  a future digest anyway.
+- **Per-phase programme milestones.** The funnel's _reached phase N_ steps come
+  from `*_program_phase_index`, and `*_program_phase_started_at` holds only the
+  **current** phase's start — it is overwritten on every advance. _Started_,
+  _completed_ and _graduation dismissed_ each have their own column and are
+  covered.
+
+⚠️ **And a caveat on every fact dated from `user_preferences`: those columns are
+state, not events.** `abandonProgram` nulls `*_program_started_at`, replay clears
+`*_program_completed_at`, and `reminder_consent_updated_at` holds the time of the
+_last_ change — so a consent later revoked is invisible. A `min()` over current
+state can be later than the truth, so a fact can fire a month late, or not yet at
+all if everyone who held it has since reverted. Facts dated from append-only rows
+(`auth.users`, `content_events`, `auth.identities`) are exact. This is the same
+state-versus-event limit the programme funnel carries, reaching one section
+further.
+
+⚠️ **Order within the engagement report**, which this document previously left
+unstated: the population block prints first, then first occurrences, then section 0. The population block frames every count below it, and first occurrences are
+**facts rather than counts**, so the provenance caveat does not bear on them —
+and the block's `\set` has to stay inside the report's definitions for the test
+harness to run sections in isolation.
 
 **Silence is never allowed to mean anything.** Fixed-shape tables already print
 their zeros; **open-shape tables print an explicit `(no rows)` marker**; a thrown

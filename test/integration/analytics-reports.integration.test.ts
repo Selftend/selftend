@@ -70,10 +70,18 @@ function definitions(name: string): string {
  * and an empty body asserts nothing.
  */
 function section(name: string, number: number): string {
+  return sectionByHeading(name, `\\echo '=== ${number})`, `section ${number}`);
+}
+
+/**
+ * A printed section addressed by the start of its heading line, so a section
+ * with no number - the first-occurrences section (#2379) - can be run too.
+ */
+function sectionByHeading(name: string, headingStart: string, label: string): string {
   const lines = reportSql(name).split("\n");
   const isHeading = (line: string) => /^\\echo '=== /.test(line);
-  const start = lines.findIndex((line) => line.startsWith(`\\echo '=== ${number})`));
-  if (start === -1) throw new Error(`analytics-${name}.sql has no section ${number}`);
+  const start = lines.findIndex((line) => line.startsWith(headingStart));
+  if (start === -1) throw new Error(`analytics-${name}.sql has no ${label}`);
   const body: string[] = [];
   for (const line of lines.slice(start + 1)) {
     if (isHeading(line)) break;
@@ -81,9 +89,18 @@ function section(name: string, number: number): string {
     body.push(line);
   }
   if (body.join("").trim() === "") {
-    throw new Error(`analytics-${name}.sql section ${number} has no statements`);
+    throw new Error(`analytics-${name}.sql ${label} has no statements`);
   }
   return body.join("\n");
+}
+
+/** The first-occurrences section of the engagement report (#2379). */
+function firstOccurrencesSection(): string {
+  return sectionByHeading(
+    "engagement",
+    "\\echo '=== First occurrences",
+    "first-occurrences section",
+  );
 }
 
 /**
@@ -1958,6 +1975,196 @@ describe("aggregate analytics reports (integration)", () => {
     });
   });
 
+  describe("engagement report: first occurrences", () => {
+    // ☠️ #2379. The section the whole monthly digest exists for, and the one most
+    // likely to be deleted as decoration. It answers a failure that a digest of
+    // NUMBERS cannot: on 2026-09-02 anonymous sign-in went live and "signups"
+    // quietly became "visitors who tapped a button". Activation collapsing is
+    // exactly what numbers would have shown, and the honest reading of those
+    // numbers - "activation is down" - would have been wrong. Only a regime
+    // change makes that visible, and zero-to-non-zero is the one boundary that
+    // needs no threshold to detect.
+    //
+    // Verified against production while building: the first guest account AND
+    // the first guest-to-registered conversion both fall inside September 2026,
+    // so the very next digest would have fired both, beside a release list
+    // naming the release responsible. (Figures stay out of the repo.)
+
+    /** The fixtures all sit in March 2026, so the window under test is exact. */
+    const MARCH = "'2026-03-01T00:00:00Z'";
+    const APRIL = "'2026-04-01T00:00:00Z'";
+    const MAY = "'2026-05-01T00:00:00Z'";
+    const IN_MARCH = "'2026-03-15T12:00:00Z'";
+
+    /**
+     * The shipped section, run over this suite's fixtures with the covered
+     * period moved to a window the test chooses.
+     *
+     * ☠️ `digest_period` is replaced, never the section's own logic: a fact is
+     * "first" relative to ALL of history, and the window only decides whether to
+     * print it. Rewriting that in the test would prove nothing about the file.
+     */
+    function firstOccurrences(startSql: string, endSql: string): string[][] {
+      const prelude =
+        `${cohortDefinitions("engagement")}\n` +
+        `create or replace temp view digest_period as\n` +
+        `  select ${startSql}::timestamptz as period_start,\n` +
+        `         ${endSql}::timestamptz as period_end;\n`;
+      return rowsAfterMarker(prelude, firstOccurrencesSection(), "engagement");
+    }
+
+    /** Just the fact strings. */
+    const factsIn = (startSql: string, endSql: string) =>
+      firstOccurrences(startSql, endSql).map((row) => row[0]);
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+
+      // 70 registered, 71 a guest. ☠️ Fixed instants throughout: two runSql
+      // calls are two `now()` snapshots, and a fixture that must land inside a
+      // named month cannot be relative to either of them.
+      insertAuthUsers([
+        { id: userId(70), createdAtSql: IN_MARCH },
+        { id: userId(71), createdAtSql: IN_MARCH, isAnonymous: true },
+      ]);
+      insertModuleContent([{ id: userId(70), module: "gratitude", createdAtSql: IN_MARCH }]);
+      insertMoodLogs([{ id: userId(70), createdAtSql: IN_MARCH }]);
+      // A conversion: an identity attached well after the account was minted.
+      insertIdentities([{ userId: userId(71), createdAtSql: "'2026-03-20T09:00:00Z'" }]);
+      runSql(`
+        insert into public.user_preferences
+          (user_id, reminder_consent, reminder_consent_updated_at, cbt_program_started_at)
+        values ('${userId(70)}', true, '2026-03-18T10:00:00Z', '2026-03-19T10:00:00Z');
+      `);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("fires each fact in the month it first occurred", () => {
+      const facts = factsIn(MARCH, APRIL);
+      expect(facts).toContain("a registered account exists");
+      expect(facts).toContain("a guest account exists");
+      expect(facts).toContain("the gratitude module has been used");
+      expect(facts).toContain("the mood tool has been used");
+      expect(facts).toContain("cbt programme: somebody has started it");
+      expect(facts).toContain("somebody has consented to reminders");
+      expect(facts).toContain("a guest account has converted to registered");
+    });
+
+    it("☠️ never fires the same fact twice, however long it stays true", () => {
+      // The whole claim to being incapable of alert fatigue. Everything above is
+      // still true in April - the accounts still exist, the module is still
+      // used - and none of it is new, so none of it prints.
+      expect(factsIn(APRIL, MAY)).toEqual(["(no rows)"]);
+    });
+
+    it("prints as EMPTY rather than absent when nothing was new", () => {
+      // #2378's rule applied to the section that needs it most: an empty month
+      // is the ordinary case here, and a section printing literally nothing
+      // would be indistinguishable from one that threw.
+      const rows = firstOccurrences(APRIL, MAY);
+      expect(rows).toHaveLength(1);
+      expect(rows[0][0]).toBe("(no rows)");
+    });
+
+    it("never fires a fact for something that has not happened", () => {
+      // The watch list is the point: a programme nobody has completed prints
+      // nothing, and will fire the month somebody does.
+      const facts = factsIn(MARCH, APRIL);
+      expect(facts).not.toContain("cbt programme: somebody has completed it");
+      expect(facts).not.toContain("the dbt module has been used");
+      expect(facts).not.toContain("act programme: somebody has started it");
+    });
+
+    it("☠️ prints facts only - never a date, never a count", () => {
+      // A first occurrence is n=1 by definition, so a count would always be 1,
+      // and THE DATE IS THE PART THAT WOULD INDIVIDUATE: an instant belonging to
+      // one identifiable person, in a section whose whole defence is that it
+      // prints no per-user data. A later reader will want to restore the
+      // timestamp as a helpful detail; this is what stops it landing quietly.
+      const rows = firstOccurrences(MARCH, APRIL);
+      expect(rows.length).toBeGreaterThan(1);
+      for (const row of rows) {
+        expect(row).toHaveLength(1);
+        expect(row[0]).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+        expect(row[0]).not.toMatch(/\d{2}:\d{2}/);
+      }
+    });
+
+    it("covers every fixed-shape row the three reports print", () => {
+      // ☠️ The watch list is the acceptance criterion, and a list that quietly
+      // lost an entry would simply never fire for it - silently, forever. So the
+      // whole list is pinned, not sampled.
+      const all = queryWithin("engagement", `select fact from first_occurrences order by 1;`).map(
+        ([fact]) => fact,
+      );
+      expect(all.sort()).toEqual(
+        [
+          "a guest account exists",
+          "a registered account exists",
+          "a guest account has converted to registered",
+          "somebody has consented to reminders",
+          ...["cbt", "meditation", "gratitude", "act", "dbt"].map(
+            (module) => `the ${module} module has been used`,
+          ),
+          ...["mood", "journal", "sleep", "habits", "mindfulness"].map(
+            (tool) => `the ${tool} tool has been used`,
+          ),
+          ...["cbt", "act", "dbt"].flatMap((programme) => [
+            `${programme} programme: somebody has started it`,
+            `${programme} programme: somebody has completed it`,
+            `${programme} programme: somebody has dismissed its graduation`,
+          ]),
+        ].sort(),
+      );
+    });
+
+    it("watches every module and core tool content_events can emit", () => {
+      // ☠️ Read from the shipped block text, never from `select distinct`: the
+      // watch list must cover a module NOBODY HAS USED YET, which is precisely
+      // the row that has no data to be derived from. Deriving it would shrink
+      // the list to what has already happened - the opposite of a watch list.
+      const block = sharedBlock("engagement", "content_events");
+      const emitted = [...block.matchAll(/(?:created_at|completed_at), '(\w+)', '(\w+)'/g)];
+      const modules = [...new Set(emitted.map((m) => m[1]).filter((module) => module !== "core"))];
+      const coreTools = [...new Set(emitted.filter((m) => m[1] === "core").map((m) => m[2]))];
+      expect(modules.length).toBeGreaterThan(0);
+      expect(coreTools.length).toBeGreaterThan(0);
+
+      const all = queryWithin("engagement", `select fact from first_occurrences;`).map(
+        ([fact]) => fact,
+      );
+      for (const module of modules) expect(all).toContain(`the ${module} module has been used`);
+      for (const tool of coreTools) expect(all).toContain(`the ${tool} tool has been used`);
+    });
+
+    it("records why the two undatable facts are excluded rather than faked", () => {
+      // ☠️ `age_floor_met` is a boolean with NO timestamp column anywhere, and
+      // `*_program_phase_started_at` holds only the CURRENT phase's start. Both
+      // facts are in the ticket's watch list and NEITHER can be dated. An
+      // exclusion with no recorded reason is indistinguishable from an omission,
+      // and this is the repo where an undecided exemption has bitten before.
+      const source = reportSql("engagement");
+      expect(source).toContain("TWO FACTS THE SCHEMA CANNOT DATE");
+      expect(source).toContain("age_floor_met_at");
+      expect(source).toContain("PER-PHASE PROGRAMME MILESTONES");
+      // And the state-not-event caveat that applies to the rest.
+      expect(source).toContain("STATE, NOT EVENTS");
+    });
+
+    it("is computed by the report, not assembled by anything else", () => {
+      // ☠️ The acceptance criterion, and it is structural: the integration suite
+      // executes this FILE on every CI run, so the section sits inside the drift
+      // guard. Anything a workflow built would be outside every guard the
+      // repository has.
+      expect(reportSql("engagement")).toContain("=== First occurrences");
+      expect(reportSql("engagement")).toContain("create temp view first_occurrences");
+      for (const other of ["onboarding", "segment"] as const) {
+        expect(reportSql(other)).not.toContain("first_occurrences");
+      }
+    });
+  });
+
   describe("silence is never allowed to mean anything", () => {
     // ☠️ #2378, and it is a pass over all three reports rather than one feature.
     // Fixed-shape tables print their zeros, because an empty arm is information.
@@ -2001,6 +2208,7 @@ describe("aggregate analytics reports (integration)", () => {
      * column headers at all, and a leaked key is just another bare number.
      */
     const PRINTED_COLUMNS: Record<string, number> = {
+      "engagement:first_occurrences": 1,
       "engagement:2": 6,
       "engagement:3": 7,
       "engagement:5": 4,
@@ -2026,6 +2234,10 @@ describe("aggregate analytics reports (integration)", () => {
     const SECTIONS: Record<string, Record<string, string>> = {
       engagement: {
         provenance: "one aggregate row over the whole population, always exactly one",
+        // ☠️ #2379. Open shape, and the ONE section where an empty month is the
+        // ordinary case rather than a worry: a fact fires once and never again,
+        // so the list shrinks toward nothing on purpose.
+        first_occurrences: OPEN,
         "0": "cross-joins account_labels, so both account types print",
         "1": "cross-joins account_labels",
         "2": OPEN, // weeks
@@ -2064,6 +2276,7 @@ describe("aggregate analytics reports (integration)", () => {
           const numbered = /^\\echo '=== (\d+)\)/.exec(line);
           if (numbered) return numbered[1];
           if (line.startsWith("\\echo '=== Population provenance")) return "provenance";
+          if (line.startsWith("\\echo '=== First occurrences")) return "first_occurrences";
           throw new Error(`${name}: unrecognised section heading ${line}`);
         })
         .sort();
@@ -2079,7 +2292,9 @@ describe("aggregate analytics reports (integration)", () => {
     }
 
     function statementsOf(name: string, label: string): string {
-      return label === "provenance" ? provenanceStatement(name) : section(name, Number(label));
+      if (label === "provenance") return provenanceStatement(name);
+      if (label === "first_occurrences") return firstOccurrencesSection();
+      return section(name, Number(label));
     }
 
     for (const [name, registry] of Object.entries(SECTIONS)) {
@@ -2097,7 +2312,12 @@ describe("aggregate analytics reports (integration)", () => {
       });
 
       for (const [label, kind] of Object.entries(registry)) {
-        const title = label === "provenance" ? "the provenance block" : `section ${label}`;
+        const title =
+          label === "provenance"
+            ? "the provenance block"
+            : label === "first_occurrences"
+              ? "the first-occurrences section"
+              : `section ${label}`;
 
         if (kind === OPEN) {
           it(`analytics-${name}.sql: ${title} says so when it has no rows`, () => {
