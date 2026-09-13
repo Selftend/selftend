@@ -192,24 +192,31 @@ in the integration suite because that check needs a database —
 `test/export-user-data-monotonic.test.ts` says in as many words that it cannot
 do this from migration files alone.
 
-☠️ **Open question the gate exposed: eleven tables are undecided, not excluded.**
-Building it turned up far more than the three missing tables it was written for.
-Twenty-five relations carry a `user_id` without being content, and fourteen of
-those are settled by the rule above — identity, settings, delivery plumbing,
-authored configuration, programme progress state. The other eleven are not:
-`core_beliefs`, `challenge_plans`, `recovery_plans`, `procrastination_tasks`,
-`task_steps`, `stage_practice_notes`, `act_value_entries`, `values_profile`,
-`act_action_steps`, `exposure_hierarchies` and `exposure_items` are each the
-**output of an exercise rather than a setting**, so the authored-configuration
-rule does not reach them and calling them excluded would be writing a false
-reason into the registry. They sit in it marked `UNDECIDED`.
+☠️ **The gate found far more than three missing tables, and forced a second
+rule.** Twenty-eight relations were unaccounted for, not three. Fourteen are
+settled by the rule above — identity, settings, delivery plumbing, authored
+configuration, programme progress state. Eleven more were not, because each is
+the **output of an exercise rather than a setting**, so authored-configuration
+does not reach them; and unlike a routine, **nothing else records the doing**,
+so excluding them would drop the signal rather than relocate it. They are now
+read: `core_beliefs`, `challenge_plans`, `recovery_plans`,
+`procrastination_tasks`, `values_profile` and `exposure_hierarchies` under
+`cbt`, `act_value_entries` under `act`, `stage_practice_notes` under
+`meditation`. Each module label is the route the feature lives on, not a
+judgement about what it resembles.
 
-Deferring is safe **today and only today**: all eleven held zero rows in
-production when this was measured (2026-09-13), so the classification moves no
-number. It moves one the day somebody uses the feature — a person doing belief
-work or building an exposure ladder would not read as activated. That is why
-this is recorded as an open question and not left to silence, which is the
-failure the gate exists to end.
+**A child row is not a second act.** `task_steps`, `exposure_items` and
+`act_action_steps` are exempt for one reason: the parent row already records
+that the person did the exercise, and counting its children would count a single
+act as many times as it happened to have parts — someone who broke a task into
+nine steps would read as nine times as engaged as someone who broke it into one.
+
+⚠️ **No exemption may say "undecided".** That was tried and rejected while
+building the gate: an exemption that defers the question is the silence the gate
+exists to end, because the completeness check treats the table as accounted for
+while no report reads it. Nor can deferral be made safe by asserting the tables
+stay empty — the demo seed writes to all of them, so that assertion can never
+pass. Either a table is read, or its reason is real. A test enforces this.
 
 The **programme funnel** covers CBT, ACT and DBT: started, phase reached,
 completed, graduation dismissed. Every column already exists and is written for

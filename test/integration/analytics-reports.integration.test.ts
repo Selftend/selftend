@@ -347,24 +347,15 @@ describe("aggregate analytics reports (integration)", () => {
       // Not a use of a tool at all.
       feedback_submissions: "a message to the project, not use of a self-help tool",
 
-      // ⚠️ UNDECIDED, NOT RULED NOT-CONTENT. Every one of these is shaped like
-      // content - it is the output of an exercise, not a setting - but #2374
-      // ruled on three tables only, and counting these would change who reads
-      // as activated. Deferred deliberately, and safely: all eleven hold ZERO
-      // rows in production, measured 2026-09-13, so the classification moves no
-      // number today. It moves one the day someone uses the feature, which is
-      // why this is an open question and not a decision.
-      core_beliefs: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      challenge_plans: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      recovery_plans: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      procrastination_tasks: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      task_steps: "UNDECIDED; child rows of procrastination_tasks; empty in production",
-      stage_practice_notes: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      act_value_entries: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      values_profile: "UNDECIDED (#2374 ruled on three tables only); empty in production",
-      act_action_steps: "UNDECIDED; child rows of act_committed_actions; empty in production",
-      exposure_hierarchies: "UNDECIDED; the ladder, where exposure_sessions is the doing",
-      exposure_items: "UNDECIDED; child rows of exposure_hierarchies; empty in production",
+      // ☠️ CHILD ROWS OF AN ACT THAT IS ALREADY COUNTED. Not a second rule -
+      // the same one, applied one level down. The parent row records that the
+      // person did the exercise; counting its children would count a single act
+      // as many times as it happened to have parts, so someone who broke a task
+      // into nine steps would read as nine times as engaged as someone who
+      // broke it into one.
+      task_steps: "child rows of procrastination_tasks, which is counted",
+      exposure_items: "child rows of exposure_hierarchies, which is counted",
+      act_action_steps: "child rows of act_committed_actions, which is counted",
     };
 
     /**
@@ -445,6 +436,24 @@ describe("aggregate analytics reports (integration)", () => {
         .filter((table) => !covered.includes(table) && !(table in NOT_CONTENT))
         .sort();
       expect(unaccounted).toEqual([]);
+    });
+
+    it("carries no exemption that defers the question instead of answering it", () => {
+      // ☠️ An exemption that says "undecided" is not an exemption, it is the
+      // silence this gate exists to end: the completeness check above would
+      // treat the table as accounted for while no report reads it, so
+      // activation, retention and module usage would undercount the moment
+      // somebody used the feature - and nothing would say so.
+      //
+      // ⚠️ Deferring cannot be made safe by asserting the tables stay empty,
+      // which was tried: the demo seed writes to every one of them, so that
+      // assertion can never pass locally or in CI. Either a table is read, or
+      // its reason is real.
+      const deferred = Object.entries(NOT_CONTENT)
+        .filter(([, reason]) => /undecided|unclear|tbd|for now/i.test(reason))
+        .map(([table]) => table)
+        .sort();
+      expect(deferred).toEqual([]);
     });
 
     it("keeps no exemption that has stopped being needed", () => {
