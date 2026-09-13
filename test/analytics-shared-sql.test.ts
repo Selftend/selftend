@@ -149,6 +149,33 @@ describe("analytics reports never read enabled_modules as an axis", () => {
   }
 });
 
+describe("analytics reports never read notifications_enabled_global", () => {
+  // ☠️ #2375, and it is the `enabled_modules` mistake (#1672) waiting to happen
+  // on a newer column. `notifications_enabled_global` DEFAULTS TO TRUE and is
+  // true for very nearly everyone, so a report that counted it would measure a
+  // default and call it adoption. `reminder_consent` defaults to FALSE and is
+  // set only by someone choosing it - it is the column that varies, and the one
+  // that evidences the quiet-by-default guardrail actually holding.
+  //
+  // Reminder adoption is the section most at risk of being "improved" into
+  // uselessness by a later reader who notices the consent number is small and
+  // the global number is big, and swaps one for the other. This is what stops
+  // that being a convention someone has to remember.
+  for (const file of reportFiles()) {
+    it(`${file} does not read notifications_enabled_global`, () => {
+      expect(sqlLinesMatching(file, /notifications_enabled_global/)).toEqual([]);
+    });
+  }
+
+  it("still reads the column that does vary", () => {
+    // Guards the guard: the ban above is satisfied just as well by reporting no
+    // reminder figure at all, which is the other way to lose this measurement.
+    expect(sqlLinesMatching("analytics-engagement.sql", /reminder_consent/).length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
 describe("k=5 cell suppression is defined once, for all three reports", () => {
   // #2373. The rule used to live in analytics-segment.sql alone, so the other
   // two reports printed raw counts and nothing said so. A second definition

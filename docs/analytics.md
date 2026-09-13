@@ -224,6 +224,30 @@ the whole population; none of it was reported anywhere until now, which is an
 odd gap for the part of the product `AGENTS.md` names as core MVP alongside the
 everyday tools. It collects nothing new.
 
+Three details decided while building it (#2375), recorded here because the
+report is read by people who did not write it:
+
+- **_Phase reached_ prints one row per phase**, not one row. A funnel is a
+  sequence, and the drop-off between phase 2 and phase 3 is the thing worth
+  seeing. Reaching phase 1 _is_ starting, so the phase steps begin at 2, and
+  each programme prints as many as it has — CBT five, ACT and DBT four.
+  `test/analytics-programme-phases.test.ts` holds the report's phase counts
+  equal to the length of the programme arrays in
+  `src/features/<module>/program-definition.ts`, so a programme that grows a
+  phase cannot quietly lose its last funnel step.
+- **Its percentages are a share of starters, not of the account population**,
+  and it is the only section that re-bases. Every other percentage in these
+  reports is a share of that account type's population. Drop-off is the question
+  a funnel answers, and a share of everyone answers a different one.
+- ☠️ **It cannot see abandonment, and must not be described as if it can.** The
+  columns are current state, not events: abandoning writes `started_at = null`
+  and leaves `phase_index`, so a person who quit part way is counted at no step
+  and is absent from the denominator too. The table is a snapshot of runs in
+  progress and runs completed, so the drop-off it shows is **optimistic**.
+  Replaying clears `completed_at`, so a graduate who begins again stops counting
+  as completed. Fixing this means changing what the app writes, not what the
+  report reads.
+
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
 `notifications_enabled_global`**, which defaults to true and is true for nearly
@@ -606,18 +630,30 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 >
 > **Restated on stronger evidence, and still deferred. No trigger is named.**
 > ☠️ "In-flow abandonment" was **two different questions under one name**.
-> Abandonment at the level of a **programme phase** is answerable today and needs
+> Progress at the level of a **programme phase** is answerable today and needs
 > no events at all — `*_program_started_at`, `*_program_phase_index`,
 > `*_program_completed_at` and their siblings are written for the whole
 > population — and it is now a reported section. Only abandonment **inside a
 > single wizard form** needs client-side events.
 >
+> ⚠️ **Correction, made while building the funnel (#2375): it does not show
+> abandonment, and the sentence that said so was wrong.** The programme columns
+> are **current state, not events**. `abandonProgram` writes `started_at = null`
+> and leaves `phase_index` where it was, so quitting does not merely go
+> unreported — it is **erased**, and the person leaves the numerator and the
+> denominator together. Someone who stopped at phase 3 is indistinguishable from
+> someone who never began, and the drop-off the funnel prints is therefore
+> optimistic. Replaying clears `completed_at` the same way.
+>
 > That leaves in-wizard abandonment and seen-but-unused discovery as the genuine
-> candidates, and **neither is named as a trigger**: the strongest of them
-> dissolved into a Phase 1 question. Before anyone reaches for an event library
-> to learn where people stall, **read the programme funnel** — it already shows
-> how far people get. A named trigger is a loaded gun for the next reader, and
-> nothing here warrants leaving one out.
+> candidates, and **neither is named as a trigger**. Before anyone reaches for an
+> event library to learn where people stall, **read the programme funnel** — it
+> shows how far the people still in a programme have got, which is less than the
+> question but is not nothing, and it costs no new collection. ☠️ **Recording
+> abandonment properly is a change to what the app writes, not to what the
+> report reads**, so it is not an argument for client-side events either. A named
+> trigger is a loaded gun for the next reader, and nothing here warrants leaving
+> one out.
 
 #### Tool options (self-hostable, privacy-respecting)
 
