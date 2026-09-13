@@ -15,9 +15,16 @@ import { runSql } from "./helpers";
 // is the whole gate for that class of rot.
 //
 // The rest of the suite covers the segment report's judgement calls (#1613,
-// decided on #1605): which arm a user lands in, the signup-anchored W4 window,
-// and k=5 cell suppression. Those are read as evidence about who Selftend is
-// for, so getting a user into the wrong arm is worse than a crash.
+// decided on #1605, re-based on #2365/#2377): which arm a user lands in on each
+// of its two axes, the signup-anchored W4 window, the axis-coverage
+// precondition, and k=5 cell suppression. Those are read as evidence about who
+// Selftend is for, so getting a user into the wrong arm is worse than a crash.
+//
+// ☠️ The axis-coverage suite is the one to read first if you are changing that
+// report. It pins a FALSE GREEN, not a crash: the gate counts retention across
+// the whole population, so it can open while every retained user sits in a
+// single arm, and the cross-tab would then be declared readable over an empty
+// table. That is what the retired concern axis did for a year.
 //
 // Rows are inserted straight into the auth schema via runSql (no API can write
 // auth.users.created_at), following guest-dormancy-cleanup.integration.test.ts.
@@ -202,27 +209,63 @@ function insertAuthUser(options: AuthUserFixture) {
   insertAuthUsers([options]);
 }
 
-function insertPreferences(options: {
-  id: string;
-  initialConcernsSql: string;
-  viaSql: string;
-  completed: boolean;
-}) {
-  runSql(`
-    insert into public.user_preferences (
-      user_id, app_onboarding_completed, app_onboarding_completed_via, initial_concerns
-    ) values (
-      '${options.id}', ${options.completed}, ${options.viaSql}, ${options.initialConcernsSql}
-    );
-  `);
+/**
+ * `user_preferences` rows carrying a language — the segment report's locale
+ * axis (#2377).
+ *
+ * ☠️ `language` is NOT NULL DEFAULT 'en', so a preferences row written without
+ * one does not carry an absent locale, it carries an `en` one. The only way an
+ * account holds no locale at all is to have no preferences row, which is why
+ * some fixtures below deliberately get none.
+ */
+function insertLanguages(rows: { id: string; languageSql: string }[]) {
+  const values = rows.map((row) => `('${row.id}', ${row.languageSql})`).join(",\n");
+  runSql(`insert into public.user_preferences (user_id, language) values ${values};`);
 }
 
 /** A content row at a chosen moment; mood_logs is written through its INSTEAD OF trigger. */
 function insertMoodLog(id: string, createdAtSql: string) {
+  insertMoodLogs([{ id, createdAtSql }]);
+}
+
+/**
+ * Many mood logs in one round trip. Every runSql call is a `docker exec`, and
+ * the axis-coverage fixtures below need thirty of these to push the gate open.
+ * A multi-row insert still fires the INSTEAD OF trigger once per row.
+ */
+function insertMoodLogs(rows: { id: string; createdAtSql: string }[]) {
+  const values = rows
+    .map((row) => `('${row.id}', 3, ${row.createdAtSql}, ${row.createdAtSql})`)
+    .join(",\n");
   runSql(`
     insert into public.mood_logs (user_id, mood_score, created_at, logged_at)
-    values ('${id}', 3, ${createdAtSql}, ${createdAtSql});
+    values ${values};
   `);
+}
+
+/**
+ * One content row in a chosen MODULE at a chosen moment — the segment report's
+ * module-usage axis (#2377). The three tables below are the cheapest row in
+ * their module: every other column is nullable or defaulted.
+ *
+ * ☠️ `created_at` is passed explicitly on every one of them. The axis is
+ * measured over the account's first 28 days, so a fixture that let the column
+ * default to `now()` would be testing the window with a value that always sits
+ * outside it for a backdated account.
+ */
+const MODULE_CONTENT: Record<string, (id: string, createdAtSql: string) => string> = {
+  gratitude: (id, at) =>
+    `insert into public.gratitude_entries (user_id, item_1, created_at) values ('${id}', 'a warm cup', ${at});`,
+  meditation: (id, at) =>
+    `insert into public.meditation_sessions (user_id, duration_minutes, created_at) values ('${id}', 10, ${at});`,
+  act: (id, at) =>
+    `insert into public.act_choice_points (user_id, created_at) values ('${id}', ${at});`,
+};
+
+function insertModuleContent(
+  rows: { id: string; module: keyof typeof MODULE_CONTENT; createdAtSql: string }[],
+) {
+  runSql(rows.map((row) => MODULE_CONTENT[row.module](row.id, row.createdAtSql)).join("\n"));
 }
 
 /** A preferences row whose only interesting column is the enabled_modules array. */
@@ -370,6 +413,14 @@ function deleteSuiteUsers() {
     `delete from public.gratitude_entries_data where user_id::text like '${TEST_UUID_PREFIX}-%';`,
   );
   runSql(`delete from public.mood_logs_data where user_id::text like '${TEST_UUID_PREFIX}-%';`);
+  // The module-usage axis fixtures. act_choice_points is a decrypt-on-read view,
+  // so its storage half is what deletes; meditation_sessions is a plain table.
+  runSql(
+    `delete from public.act_choice_points_data where user_id::text like '${TEST_UUID_PREFIX}-%';`,
+  );
+  runSql(
+    `delete from public.meditation_sessions where user_id::text like '${TEST_UUID_PREFIX}-%';`,
+  );
   runSql(`delete from public.user_preferences where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from public.favorites where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   // Explicit rather than left to the cascade: an identity outliving its user
@@ -602,126 +653,367 @@ describe("aggregate analytics reports (integration)", () => {
     });
   });
 
-  describe("segment report: which arm a user lands in", () => {
+  describe("segment report: the locale axis", () => {
+    // #2377. Locale replaced concern-at-intake, which #2365 measured had never
+    // held a value for a single account. Unlike the concern arms, these
+    // PARTITION the population - every account lands in exactly one - so the
+    // claim to police is not overlap but totality: nobody may be dropped.
     beforeAll(() => {
       deleteSuiteUsers();
       const createdAt = "now() - interval '40 days'";
 
-      // 1: two concerns at intake -> two arms, because arms overlap.
-      insertAuthUser({ id: userId(1), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(1),
-        initialConcernsSql: `array['sleep','habits']`,
-        viaSql: `'finish'`,
-        completed: true,
-      });
-
-      // 2 and 3: both have an EMPTY initial_concerns, and only
-      // app_onboarding_completed_via can tell them apart.
-      insertAuthUser({ id: userId(2), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(2),
-        initialConcernsSql: `array[]::text[]`,
-        viaSql: `'skip'`,
-        completed: true,
-      });
-      insertAuthUser({ id: userId(3), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(3),
-        initialConcernsSql: `array[]::text[]`,
-        viaSql: `'finish'`,
-        completed: true,
-      });
-
-      // 4: empty concerns written with no completion mode (the empty-Home
-      // suggestion flow). Neither zero arm may claim this user.
-      insertAuthUser({ id: userId(4), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(4),
-        initialConcernsSql: `array[]::text[]`,
-        viaSql: "null",
-        completed: false,
-      });
-
-      // 5: no user_preferences row at all. 6: a row that predates the column.
-      insertAuthUser({ id: userId(5), createdAtSql: createdAt });
-      insertAuthUser({ id: userId(6), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(6),
-        initialConcernsSql: "null",
-        viaSql: `'finish'`,
-        completed: true,
-      });
-
-      // 7: a key no client ships. The RPC does not validate concern keys, so
-      // section 4 is the only thing standing between this and a silent drop.
-      insertAuthUser({ id: userId(7), createdAtSql: createdAt });
-      insertPreferences({
-        id: userId(7),
-        initialConcernsSql: `array['not-a-real-concern']`,
-        viaSql: `'finish'`,
-        completed: true,
-      });
-
-      // 8: a guest, so the account axis is exercised on real rows.
-      insertAuthUser({ id: userId(8), createdAtSql: createdAt, isAnonymous: true });
-      insertPreferences({
-        id: userId(8),
-        initialConcernsSql: `array['low-mood']`,
-        viaSql: `'finish'`,
-        completed: true,
-      });
+      // 40, 41: English. 42, 43: Bulgarian, the arm carrying the only
+      // unambiguous affirmative signal on this axis.
+      // 44: a preferences row written without a language. ☠️ NOT an absent
+      //     locale - the column is NOT NULL DEFAULT 'en', so this row reads as
+      //     English, and it is the fixture that stops anyone believing the `en`
+      //     arm means somebody chose English.
+      // 45: NO preferences row at all, the only shape that carries no locale.
+      // 46: a guest, so the account axis is exercised on real rows.
+      insertAuthUsers(
+        [40, 41, 42, 43, 44, 45, 46].map((n) => ({
+          id: userId(n),
+          createdAtSql: createdAt,
+          isAnonymous: n === 46,
+        })),
+      );
+      insertLanguages([
+        { id: userId(40), languageSql: `'en'` },
+        { id: userId(41), languageSql: `'en'` },
+        { id: userId(42), languageSql: `'bg'` },
+        { id: userId(43), languageSql: `'bg'` },
+        { id: userId(46), languageSql: `'bg'` },
+      ]);
+      runSql(`insert into public.user_preferences (user_id) values ('${userId(44)}');`);
     });
 
     afterAll(deleteSuiteUsers);
 
-    it("puts each user in the arms their intake record earns", () => {
+    it("puts each account in the arm its preferences row earns", () => {
       const rows = queryWithin(
         "segment",
-        `select account, arm, count(*) from user_arms
+        `select account, arm, count(*) from user_locale
           where user_id::text like '${TEST_UUID_PREFIX}-%'
           group by 1, 2 order by 1, 2;`,
       );
       expect(rows).toEqual([
-        ["guest", "low-mood", "1"],
-        ["registered", "finished-with-none", "1"],
-        ["registered", "habits", "1"],
-        ["registered", "not-a-real-concern", "1"],
-        ["registered", "skipped", "1"],
-        ["registered", "sleep", "1"],
-        ["registered", "unknown", "2"],
-        ["registered", "zero-concerns-no-mode", "1"],
+        ["guest", "bg", "1"],
+        ["registered", "bg", "2"],
+        // 40, 41 and 44 - the defaulted row is indistinguishable from a chosen one.
+        ["registered", "en", "3"],
+        ["registered", "no preferences row", "1"],
       ]);
     });
 
-    it("counts a multi-concern user once per arm, so arm rows exceed users", () => {
+    it("never reads a defaulted language as a chosen one", () => {
+      // ☠️ The #1672 shape on a newer column: `enabled_modules` gates nothing and
+      // a report that read it measured a default and called it adoption. This
+      // axis cannot avoid the default - `language` has no null state to
+      // distinguish one - so what is asserted instead is that the report never
+      // claims otherwise. User 44 wrote no language and is counted as English;
+      // the legend on section 3 says so in as many words.
       const [row] = queryWithin(
         "segment",
-        `select count(distinct user_id), count(*) from user_arms
-          where user_id::text like '${TEST_UUID_PREFIX}-%';`,
+        `select arm from user_locale where user_id = '${userId(44)}';`,
       );
-      // 8 users, 9 arm rows: user 1 declared two concerns.
-      expect(row).toEqual(["8", "9"]);
+      expect(row).toEqual(["en"]);
+      const legend = reportSql("segment");
+      expect(legend).toContain("NOT NULL DEFAULT en");
+      expect(legend).toContain("bg-versus-the-rest");
     });
 
-    it("surfaces an unrecognised concern key instead of dropping it", () => {
-      const rows = queryWithin(
+    it("gives an account with no preferences row its own arm, never English", () => {
+      const [row] = queryWithin(
         "segment",
-        `select ua.arm from user_arms ua
-          where ua.user_id::text like '${TEST_UUID_PREFIX}-%'
-            and not exists (select 1 from arm_labels al where al.arm = ua.arm);`,
+        `select arm from user_locale where user_id = '${userId(45)}';`,
       );
-      expect(rows).toEqual([["not-a-real-concern"]]);
+      expect(row).toEqual(["no preferences row"]);
     });
 
-    it("never files a zero-concern user under a concern arm", () => {
-      const rows = queryWithin(
+    it("partitions the population: every account in exactly one arm", () => {
+      // ☠️ This is the structural guard that replaced the retired overlap check
+      // and unknown-keys guard in one. The concern arms overlapped and could
+      // also drop a user whose key was not in the label list; a partition can do
+      // neither, and this is the assertion that says so rather than the comment.
+      const [row] = queryWithin(
         "segment",
-        `select count(*) from user_arms
-          where user_id::text in ('${userId(2)}', '${userId(3)}', '${userId(4)}')
-            and arm in ('anxious-thoughts','low-mood','stress-overwhelm','sleep','habits','reflection');`,
+        `select (select count(*) from accounts where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(*) from user_locale where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(distinct user_id) from user_locale
+                  where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(*) from user_locale ul
+                  where ul.user_id::text like '${TEST_UUID_PREFIX}-%'
+                    and not exists (select 1 from locale_labels ll where ll.arm = ul.arm));`,
       );
-      expect(rows).toEqual([["0"]]);
+      // 7 accounts, 7 arm rows, 7 distinct people, 0 rows outside the label list.
+      expect(row).toEqual(["7", "7", "7", "0"]);
+    });
+
+    it("names an arm for every language the check constraint allows", () => {
+      // ☠️ The residue arm cannot be reached by a fixture - the CHECK constraint
+      // refuses any value but en and bg - so what is testable is the agreement
+      // between the two lists. Widening the constraint without widening
+      // locale_labels is exactly how a locale would start falling through to
+      // `other locale` and be read as a defect rather than a new language.
+      const constraint = runSql(
+        `select pg_get_constraintdef(oid) from pg_constraint
+          where conrelid = 'public.user_preferences'::regclass
+            and conname = 'user_preferences_language_check';`,
+      ).trim();
+      const allowed = [...constraint.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]).sort();
+      // Guards the guard, and nothing more: it says the constraint was parsed at
+      // all. ☠️ It deliberately does NOT pin the list to a literal - doing that
+      // would make the loop below check `locale_labels` against a literal
+      // sitting beside it rather than against the schema, and adding a language
+      // WITH its arm would then fail for the wrong reason.
+      expect(allowed.length).toBeGreaterThanOrEqual(2);
+      expect(allowed).toContain("bg");
+
+      const arms = queryWithin("segment", `select arm from locale_labels order by arm_order;`).map(
+        ([arm]) => arm,
+      );
+      for (const language of allowed) expect(arms).toContain(language);
+    });
+  });
+
+  describe("segment report: the module-usage axis", () => {
+    // #2377. The behavioural half of the re-based cross-tab, read from the
+    // `content_events` view the report already builds, so it still collects
+    // nothing new.
+    beforeAll(() => {
+      deleteSuiteUsers();
+      const createdAt = "now() - interval '40 days'";
+      const day5 = "now() - interval '35 days'";
+
+      insertAuthUsers(
+        [50, 51, 52, 53, 54, 55, 56].map((n) => ({ id: userId(n), createdAtSql: createdAt })),
+      );
+
+      // 50: one module. 51: two modules -> cannot be attributed to either.
+      // 52: core tools only - `core` is the tools grid every account has, and it
+      //     never counts toward breadth.
+      // 53: nothing at all.
+      // 54: a module row on day 30, INSIDE the W4 window. ☠️ The arm is measured
+      //     over days 0..28, so this user is `no content` however much they did
+      //     in week four - which is the whole point of the window: the axis must
+      //     be prior to the outcome, not partly be it.
+      // 55: a module row on day 27, one day inside the window's upper edge.
+      // 56: core on day 5 and a module on day 30 - core-only at axis time.
+      insertModuleContent([
+        { id: userId(50), module: "gratitude", createdAtSql: day5 },
+        { id: userId(51), module: "gratitude", createdAtSql: day5 },
+        { id: userId(51), module: "meditation", createdAtSql: day5 },
+        { id: userId(54), module: "act", createdAtSql: "now() - interval '10 days'" },
+        { id: userId(55), module: "act", createdAtSql: "now() - interval '13 days'" },
+        { id: userId(56), module: "act", createdAtSql: "now() - interval '10 days'" },
+      ]);
+      insertMoodLogs([
+        { id: userId(52), createdAtSql: day5 },
+        { id: userId(56), createdAtSql: day5 },
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    function armOf(n: number): string {
+      const [row] = queryWithin(
+        "segment",
+        `select arm from user_modules where user_id = '${userId(n)}';`,
+      );
+      return row[0];
+    }
+
+    it("files a single-module account under that module", () => {
+      expect(armOf(50)).toBe("gratitude only");
+    });
+
+    it("refuses to attribute a two-module account to either of them", () => {
+      // Picking the most-used would be a tie-break rule, and a tie-break is an
+      // artefact rather than a stated priority - the reason #1605 rejected
+      // first-pick-only on the axis this one replaced.
+      expect(armOf(51)).toBe("several modules");
+    });
+
+    it("keeps core tools out of module breadth, on their own arm", () => {
+      expect(armOf(52)).toBe("core tools only");
+      expect(armOf(56)).toBe("core tools only");
+    });
+
+    it("gives an account with no content at all its own arm", () => {
+      expect(armOf(53)).toBe("no content");
+    });
+
+    it("☠️ measures the arm over the first 28 days, never over the W4 window", () => {
+      // User 54's only module row is on day 30 - inside the retention window.
+      // Counting it would make the axis partly the outcome: module usage IS
+      // content rows and retention IS a content row in days 28..35, so an
+      // all-time axis would rank `several modules` above `no content` almost
+      // mechanically. User 55, one day inside the upper edge, pins the boundary
+      // in the other direction - without them, narrowing the window is invisible.
+      expect(armOf(54)).toBe("no content");
+      expect(armOf(55)).toBe("act only");
+      expect(armOf(56)).toBe("core tools only");
+    });
+
+    it("partitions the population: every account in exactly one arm", () => {
+      const [row] = queryWithin(
+        "segment",
+        `select (select count(*) from accounts where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(*) from user_modules where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(distinct user_id) from user_modules
+                  where user_id::text like '${TEST_UUID_PREFIX}-%'),
+                (select count(*) from user_modules um
+                  where um.user_id::text like '${TEST_UUID_PREFIX}-%'
+                    and not exists (select 1 from module_labels ml where ml.arm = um.arm));`,
+      );
+      expect(row).toEqual(["7", "7", "7", "0"]);
+    });
+
+    it("names an arm for every module content_events can emit", () => {
+      // ☠️ `other module only` should always be empty, and it is empty only
+      // while the two lists agree. Adding a module to content_events without
+      // adding its arm would quietly file those people under a residue that
+      // reads as a defect. The arm list is a literal on purpose (deriving it
+      // from the data would make section 4 print nothing on an empty database),
+      // so this is what keeps the literal honest.
+      //
+      // ☠️ The module list is read from the shipped BLOCK TEXT, never from
+      // `select distinct module from content_events`. That query returns only
+      // the modules some fixture happened to write, so a module with no rows
+      // would be waved through by an assertion that looked identical - this
+      // suite writes gratitude, meditation and act, and cbt and dbt would have
+      // gone unchecked.
+      const modules = [
+        ...new Set(
+          [
+            ...sharedBlock("segment", "content_events").matchAll(
+              /(?:created_at|completed_at), '(\w+)'/g,
+            ),
+          ]
+            .map((match) => match[1])
+            .filter((module) => module !== "core"),
+        ),
+      ].sort();
+      expect(modules).toEqual(["act", "cbt", "dbt", "gratitude", "meditation"]);
+
+      const arms = queryWithin("segment", `select arm from module_labels order by arm_order;`).map(
+        ([arm]) => arm,
+      );
+      for (const module of modules) expect(arms).toContain(`${module} only`);
+    });
+  });
+
+  describe("segment report: the axis-coverage precondition", () => {
+    // ☠️☠️ #2377, and the reason the retired concern axis was worse than an
+    // unreadable report. Section 1's gate counts W4-retained users across the
+    // WHOLE population, never across axis-bearing ones - so with the concern
+    // column null on every row, every account sat in the `unknown` arm and the
+    // gate could still open and declare the cross-tab readable OVER AN EMPTY
+    // TABLE. A FALSE GREEN. An unreachable gate is at least honestly silent.
+    //
+    // The fixture below is that exact shape, minimised: thirty accounts, all
+    // retained, all mature, and every one of them in a single arm of both axes.
+    const FALSE_GREEN = Array.from({ length: 30 }, (_, index) => 60 + index);
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      // No preferences row for any of them, so all thirty share the locale arm
+      // `no preferences row`; their only content is a mood log on day 30, which
+      // is inside the W4 window and therefore outside the module axis's own
+      // window, so all thirty also share the module arm `no content`.
+      insertAuthUsers(
+        FALSE_GREEN.map((n) => ({ id: userId(n), createdAtSql: "now() - interval '40 days'" })),
+      );
+      insertMoodLogs(
+        FALSE_GREEN.map((n) => ({ id: userId(n), createdAtSql: "now() - interval '10 days'" })),
+      );
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("opens the gate — this is the green that was false", () => {
+      const [row] = queryWithinCohort(
+        "segment",
+        `select count(*) filter (where w4_mature and w4_retained) >= 30 from user_w4;`,
+      );
+      expect(row).toEqual(["t"]);
+    });
+
+    it("reports both axes as carrying no values, with the gate open", () => {
+      const rows = queryWithinCohort("segment", section("segment", 2));
+      expect(rows).toEqual([
+        ["locale", "4", "1", "f"],
+        ["module usage", "9", "1", "f"],
+      ]);
+    });
+
+    it("☠️ withholds both orderings entirely rather than printing one arm", () => {
+      // The shipped sections, run verbatim over a population these fixtures
+      // control exactly. An ordering of one arm is not an ordering, and printing
+      // it beside an open gate is what would be read as a segment finding.
+      expect(queryWithinCohort("segment", section("segment", 3))).toEqual([]);
+      expect(queryWithinCohort("segment", section("segment", 4))).toEqual([]);
+    });
+
+    it("prints the orderings again as soon as a second arm holds a mature user", () => {
+      // Guards the guard: a precondition that never opens would satisfy the
+      // assertions above just as well, and would be the other way to lose the
+      // report. One Bulgarian account and one gratitude record are the whole
+      // difference between withheld and readable.
+      insertAuthUser({ id: userId(99), createdAtSql: "now() - interval '40 days'" });
+      insertLanguages([{ id: userId(99), languageSql: `'bg'` }]);
+      insertModuleContent([
+        { id: userId(99), module: "gratitude", createdAtSql: "now() - interval '35 days'" },
+      ]);
+      try {
+        expect(queryWithinCohort("segment", section("segment", 2))).toEqual([
+          ["locale", "4", "2", "t"],
+          ["module usage", "9", "2", "t"],
+        ]);
+        expect(queryWithinCohort("segment", section("segment", 3)).length).toBeGreaterThan(0);
+        expect(queryWithinCohort("segment", section("segment", 4)).length).toBeGreaterThan(0);
+      } finally {
+        runSql(
+          `delete from public.gratitude_entries_data where user_id = '${userId(99)}';
+           delete from public.user_preferences where user_id = '${userId(99)}';
+           delete from auth.users where id = '${userId(99)}';`,
+        );
+      }
+    });
+  });
+
+  describe("segment report: the retired concern axis stays retired", () => {
+    it("☠️ carries the schema comment production supports, not the one it disproved", () => {
+      // #2377. The old comment said the column is "written once by
+      // apply_widget_recommendations". Production has never held a value in it,
+      // and a report believed the comment for a year. The correction is a
+      // migration, so nothing else in the repo would notice it being reverted.
+      const comment = runSql(
+        `select col_description('public.user_preferences'::regclass, attnum)
+           from pg_attribute
+          where attrelid = 'public.user_preferences'::regclass
+            and attname = 'initial_concerns';`,
+      ).trim();
+      expect(comment).toContain("MEASURED EMPTY IN PRODUCTION");
+      expect(comment).toContain("DO NOT COHORT ANYTHING BY THIS COLUMN");
+      expect(comment).not.toMatch(/written once by apply_widget_recommendations/);
+    });
+
+    it("keeps the column, which is not the same as reading it", () => {
+      // Dropping it changes nothing observable and would cost an
+      // INTENTIONALLY_DROPPED entry in the export gate, so the decision was to
+      // keep it and stop cohorting by it. ⚠️ Only the KEEPING half is asserted
+      // here. The other half - that no report re-adopts the column as an axis -
+      // is a source ban in test/analytics-shared-sql.test.ts, and this test
+      // would pass just as well if it were removed.
+      const [row] = runSql(
+        `select count(*) from information_schema.columns
+          where table_schema = 'public' and table_name = 'user_preferences'
+            and column_name = 'initial_concerns';`,
+      )
+        .trim()
+        .split("\n");
+      expect(row).toBe("1");
     });
   });
 
