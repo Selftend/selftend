@@ -50,9 +50,12 @@ production toggle went live 2026-09-02 (#1674).
 Two things to know when reading it:
 
 - **Fixed-shape tables print both populations always**, zeros included — the two
-  account types, the four modules, the ten concern arms. Open-shape tables
-  (weeks, widget ids, feature names) print only what exists. Section 0 of each
-  report carries the axis unconditionally.
+  account types, the five modules, the four locale arms and the nine
+  module-usage arms. Open-shape tables (weeks, feature names) print only what
+  exists. Section 0 of each report carries the axis unconditionally. ⚠️ The one
+  deliberate exception is an ordering the segment report has **withheld** for
+  failing its axis-coverage precondition: that prints no rows at all, and the
+  section above it says why.
 - **The split reads current account state, not state at signup.** Signing up
   from a guest session converts the same `auth.users` row in place, so a
   converted guest reads as `registered` across their whole history. The `guest`
@@ -131,7 +134,7 @@ to show.
 
 A cell is a **slice** when it counts the people who _did_ something (activated,
 completed, retained, used a module, converted from guest) or who _carry_ some
-property (a concern arm, a completion mode, a pinned favourite); every
+property (a locale arm, a completion mode, a pinned favourite); every
 percentage taken over such a cell is a slice too. A cell is a
 **whole-population count** when it counts the population itself: how many
 accounts there are, how many of each type, how many arrived in a given week, how
@@ -366,15 +369,16 @@ non-`unknown` arms died together: `skipped` and `finished-with-none` need the
 column to be non-null-but-empty, and with it null everywhere the `unknown`
 branch shadows them.
 
-⚠️ **The failure this hid was worse than an unreadable report.** Section 1's
-gate counted W4-retained users across the **whole population** rather than
-across axis-bearing users, so the gate could open on `unknown` users and declare
-section 2 readable **over an empty table** — a false green. An unreachable gate
-is at least honestly silent. The fix is an **axis-coverage precondition**:
-section 2 is unreadable unless the axis it cohorts by actually carries values.
-The gate number itself is untouched, deliberately — the file reuses #1598's
-warrant-to-continue number, and forking it would give that number a second
-meaning.
+⚠️ **The failure this hid was worse than an unreadable report.** The gate counts
+W4-retained users across the **whole population** rather than across axis-bearing
+users, so it could open on `unknown` users and declare the cross-tab readable
+**over an empty table** — a false green. An unreachable gate is at least honestly
+silent. The fix is an **axis-coverage precondition**, which is now a printed
+section of its own: an ordering is unreadable unless the axis it cohorts by
+actually carries values, and it is withheld rather than annotated. The gate
+itself is untouched, deliberately — the file reuses #1598's warrant-to-continue
+number, and forking it would give that number a second meaning, so what was added
+is a second condition beside it rather than a change to it.
 
 **Locale** answers the objection [positioning.md](positioning.md) raises against
 it rather than waving it past: that document warns _an attribute is not a
@@ -383,6 +387,36 @@ from an attribute. Cohorting retention by one and reading what comes back is the
 legitimate empirical route, and the same document names Bulgarian the strongest
 segment candidate. **Module usage** needs no such argument: it is behavioural,
 and it comes from the `content_events` view this report already builds.
+
+Three things about the two axes that are decisions, not implementation detail:
+
+- ☠️ **Both axes partition the population** — every account lands in exactly one
+  arm of each, and each arm list ends in a residue (`other locale`,
+  `no preferences row`; `other module only`, `no content`) so that no account can
+  be dropped by a join and none can be silently absorbed into a real arm. This is
+  what retired the old overlap check and unknown-keys guard, which existed only
+  because the concern arms overlapped and could drop an unrecognised key. The
+  integration suite asserts the partition directly, which is a stronger claim
+  than either section made.
+- ☠️ **The `en` arm holds a default.** `user_preferences.language` is
+  `NOT NULL DEFAULT 'en'`, so an account that never touched the setting reads as
+  English and is indistinguishable from one that chose it. This is not the
+  `enabled_modules` mistake — the app pushes the locale it is actually running
+  in, from device detection on a fresh install or an explicit pick, so `en` does
+  mean the app is in English for that person — but **read the axis as
+  bg-versus-the-rest**, never as a declared-preference split. `bg` is the only
+  arm carrying an unambiguous affirmative signal, and it is the one
+  [positioning.md](positioning.md) is waiting on. The column is also current
+  state: switching language rewrites it, and no history survives.
+- ☠️ **The module-usage arm is measured over the account's first 28 days**, the
+  window that ends exactly where the W4 window begins. Without that, the axis
+  would partly _be_ the outcome — retention is a content row in days 28–35, and
+  module usage is content rows, so breadth would out-retain silence almost
+  mechanically. Measured this way the axis is strictly prior to the outcome, and
+  `no content` becomes a real arm rather than a tautological zero: somebody
+  silent for four weeks can still return in week four. An account younger than 28
+  days therefore carries a provisional arm, on the same clock `w4_mature` already
+  runs on and excluded from the rate the same way.
 
 ☠️ **Platform was one of three pre-named fallback axes, and it is struck.** The
 reason matters, because the obvious one is wrong: a platform column **does
@@ -397,8 +431,8 @@ it would change nothing observable and would cost an export-gate entry.
 
 How to read it, in the order the report prints:
 
-- **Read orderings, never percentages, until the gate opens.** Section 2 is
-  ordered by retention rate for exactly that reason.
+- **Read orderings, never percentages, until the gate opens.** Sections 3 and 4
+  are ordered by retention rate for exactly that reason.
 - **The gate is 30 W4-retained users**, reusing the warrant-to-continue number
   rather than inventing a second constant. Section 1 prints how far off it is.
   That puts the segment question on the **2027-08-31** clock, not the
@@ -410,8 +444,18 @@ How to read it, in the order the report prints:
   another document: [positioning.md](positioning.md)'s frame review on the same
   date is untouched. **2027-08-31 stands**, because delivery replaces a duty to
   _read_, never a duty to _decide_.
-- **Section 2 is unreadable unless its axis carries values.** The precondition
-  above is checked before the ordering is printed, not after.
+- **An ordering is unreadable unless its axis carries values.** Section 2 is that
+  precondition, and it is checked **before** an ordering is printed rather than
+  read as a caveat beside one: where it says an axis is not readable, that
+  section prints **no rows at all**. ☠️ **An axis carries values when at least
+  two of its arms hold a mature user.** One arm is not a cross-tab, it is the
+  population with a label on it — and one arm holding everybody is exactly what
+  the concern axis was. Mature is the right population to count over because the
+  rate is taken over mature users: an arm with none of them can order nothing.
+  ⚠️ **This is a second condition, not a restatement of the gate.** The gate says
+  there is enough retention to read; this says there is an axis to read it along.
+  An open gate does not imply a readable cross-tab — that implication is exactly
+  the false green — and neither does a covered axis imply an open gate.
 - **Cells below k=5 print `<5`.** See _Small cells print as `<5`_ above, which
   now governs all three reports rather than this one.
 - ☠️ **A flat reading is a finding, and it now terminates rather than

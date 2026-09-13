@@ -217,6 +217,52 @@ describe("analytics reports never read notifications_enabled_global", () => {
   });
 });
 
+describe("analytics reports never cohort by initial_concerns", () => {
+  // ☠️ #2377, and it is the third instance of one failure. `enabled_modules`
+  // (#1672) gates nothing; `notifications_enabled_global` (#2375) defaults to
+  // true; and `initial_concerns` was MEASURED (#2365) to have never held a value
+  // for a single account, ever - the migration that added it and the commit that
+  // removed the code writing it both shipped in tag v0.18.0, so it reached users
+  // in the very build that stopped asking.
+  //
+  // ⚠️ What it cost was worse than an unreadable table. The segment report
+  // cohorted W4 retention by this column, every account landed in its `unknown`
+  // arm, and the gate - which counts retention across the whole population and
+  // knows nothing about arms - could open anyway and declare the cross-tab
+  // readable over an empty table. A false green, where an unreachable gate would
+  // at least have been honestly silent.
+  //
+  // The column is deliberately KEPT: dropping it changes nothing observable and
+  // would cost an INTENTIONALLY_DROPPED entry in the export gate. So nothing in
+  // the schema stops a later reader reaching for it again, and the corrected
+  // schema comment is only a comment. This is what stops it.
+  for (const file of reportFiles()) {
+    it(`${file} does not read initial_concerns`, () => {
+      expect(sqlLinesMatching(file, /initial_concerns/)).toEqual([]);
+    });
+  }
+
+  it("cohorts the segment report by the two axes that do carry values", () => {
+    // Guards the guard: the ban above is satisfied just as well by a report with
+    // no cross-tab left in it, which is the other way to lose the instrument
+    // docs/positioning.md's segment slot is waiting on. Locale and module usage
+    // are what replaced the concern arms (#2377).
+    const segment = "analytics-segment.sql";
+    expect(sqlLinesMatching(segment, /p\.language in/).length).toBeGreaterThan(0);
+    expect(sqlLinesMatching(segment, /from module_labels/).length).toBeGreaterThan(0);
+  });
+
+  it("checks axis coverage before it prints either ordering", () => {
+    // ☠️ The precondition #2377 added, pinned statically as well as behaviourally
+    // (test/integration/analytics-reports.integration.test.ts runs the false-green
+    // case). Both orderings must be gated: gating one and forgetting the other is
+    // the shape this catches, and it is invisible in a report whose other axis
+    // happens to be covered.
+    const gated = sqlLinesMatching("analytics-segment.sql", /from axis_coverage ac where ac\.axis/);
+    expect(gated).toHaveLength(2);
+  });
+});
+
 describe("k=5 cell suppression is defined once, for all three reports", () => {
   // #2373. The rule used to live in analytics-segment.sql alone, so the other
   // two reports printed raw counts and nothing said so. A second definition
