@@ -293,6 +293,181 @@ describe("aggregate analytics reports (integration)", () => {
     }
   });
 
+  describe("content_events is complete against the live schema", () => {
+    // ☠️ #2374. `content_events` decides who counts as ACTIVATED and who counts
+    // as RETAINED - the two numbers the whole Phase 1 instrument exists to read.
+    // Nothing checked it against the database: test/analytics-shared-sql.test.ts
+    // holds the two copies byte-identical to EACH OTHER, so a new user-content
+    // table joined the reports only if whoever added it remembered. Three had
+    // not (goals, milestones, act_bulls_eye_snapshots).
+    //
+    // This is an integration test because it needs a live schema;
+    // test/export-user-data-monotonic.test.ts says in as many words that it
+    // cannot do this from migration files alone.
+    //
+    // The registry below follows that file's INTENTIONALLY_DROPPED pattern,
+    // including its second half: an entry that has stopped being necessary
+    // fails too, so this list cannot quietly absorb a real omission.
+
+    /**
+     * Relations carrying a `user_id` that `content_events` deliberately does
+     * not read, each with the reason it is not activation.
+     *
+     * ☠️ The governing ruling (#2374, extending #1672's _setup is not
+     * adoption_): **authored configuration is not activation.** A routine, a
+     * habit or a saved breathing pattern is a promise to act, not an act -
+     * and running one writes a covered row anyway, so no signal is lost, it is
+     * only located correctly. The alternative was rejected for a specific
+     * reason: favourites, emotion preferences and widget picks press on the
+     * same boundary with the identical argument, and admitting authored
+     * configuration admits them next.
+     */
+    const NOT_CONTENT: Record<string, string> = {
+      // Identity, settings and delivery plumbing. None of it is a self-help act.
+      profiles: "who the person is, not something they did",
+      user_preferences: "settings, including the onboarding and consent flags",
+      device_push_tokens: "notification delivery plumbing",
+      web_push_subscriptions: "notification delivery plumbing",
+
+      // Authored configuration - the ruling above, applied.
+      routines: "authored configuration: a routine is a promise to act, not an act",
+      routine_steps: "authored configuration: the steps of a routine definition",
+      habits: "authored configuration: the habit definition; habit_logs is the act",
+      breathing_exercises:
+        "authored configuration: SAVED CUSTOM PATTERNS, not sessions - the pattern " +
+        "is the definition, and practising writes mindfulness_sessions",
+      favorites: "authored configuration: which tools the person pinned",
+      emotion_preferences: "authored configuration: which emotions the grid offers",
+      widget_preferences: "authored configuration: Home widget picks (#1958 stopped writing it)",
+
+      // Progress bookkeeping the app derives from acts that are themselves covered.
+      act_program_state: "programme progress state; the practice writes an act_* row",
+      meditation_program_state: "programme progress state; the practice writes meditation_sessions",
+
+      // Not a use of a tool at all.
+      feedback_submissions: "a message to the project, not use of a self-help tool",
+
+      // ☠️ CHILD ROWS OF AN ACT THAT IS ALREADY COUNTED. Not a second rule -
+      // the same one, applied one level down. The parent row records that the
+      // person did the exercise; counting its children would count a single act
+      // as many times as it happened to have parts, so someone who broke a task
+      // into nine steps would read as nine times as engaged as someone who
+      // broke it into one.
+      task_steps: "child rows of procrastination_tasks, which is counted",
+      exposure_items: "child rows of exposure_hierarchies, which is counted",
+      act_action_steps: "child rows of act_committed_actions, which is counted",
+    };
+
+    /**
+     * Every `public` relation carrying a `user_id`, as the app sees it.
+     *
+     * ☠️ Content tables are decrypt-on-read views over `*_data` base tables, so
+     * both halves carry `user_id` and a naive list double-counts every one of
+     * them. The storage half is dropped only when its view actually exists -
+     * never by name alone - so a `_data` table that lost its view shows up here
+     * rather than vanishing.
+     */
+    function relationsCarryingUserId(): string[] {
+      return runSql(`
+        with carrying as (
+          select c.relname::text as relname, c.relkind
+          from pg_class c
+          join pg_namespace n on n.oid = c.relnamespace
+          join pg_attribute a on a.attrelid = c.oid
+          where n.nspname = 'public'
+            and a.attname = 'user_id'
+            and a.attnum > 0
+            and not a.attisdropped
+            and c.relkind in ('r', 'v', 'm', 'p')
+          group by 1, 2
+        )
+        select relname
+        from carrying t
+        where not (
+          t.relkind = 'r'
+          and t.relname like '%\\_data'
+          and exists (
+            select 1 from carrying v
+            where v.relname = left(t.relname, length(t.relname) - 5)
+          )
+        )
+        order by 1;
+      `)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line !== "");
+    }
+
+    /** The tables `content_events` actually reads, from the shipped block. */
+    function contentEventTables(): string[] {
+      const block = sharedBlock("engagement", "content_events");
+      return [...block.matchAll(/from public\.(\w+)/g)].map((match) => match[1]).sort();
+    }
+
+    const surface = relationsCarryingUserId();
+    const covered = contentEventTables();
+
+    it("finds a schema and a block big enough to police", () => {
+      // Guards the guard. If either query stopped matching, every assertion
+      // below would pass by comparing two empty lists.
+      expect(surface.length).toBeGreaterThan(40);
+      expect(covered.length).toBeGreaterThan(25);
+      expect(surface).toContain("mood_logs");
+      expect(covered).toContain("mood_logs");
+      // The storage half must be collapsed into its view, or the surface is
+      // double the size it should be and every `_data` table reads as missing.
+      expect(surface).not.toContain("mood_logs_data");
+    });
+
+    it("reads the three tables #2374 found missing", () => {
+      // Pins the arrival, which the completeness check below cannot: a table
+      // absent from BOTH the block and the registry is what fails there, and
+      // these could have been waved through by an exemption instead.
+      expect(covered).toContain("goals");
+      expect(covered).toContain("milestones");
+      expect(covered).toContain("act_bulls_eye_snapshots");
+    });
+
+    it("reads every user-content table, or names why not", () => {
+      // A table that reaches here is one the reports will silently not count.
+      // Add it to BOTH copies of the shared content_events block, or add it to
+      // NOT_CONTENT above with the reason it is not a self-help act.
+      const unaccounted = surface
+        .filter((table) => !covered.includes(table) && !(table in NOT_CONTENT))
+        .sort();
+      expect(unaccounted).toEqual([]);
+    });
+
+    it("carries no exemption that defers the question instead of answering it", () => {
+      // ☠️ An exemption that says "undecided" is not an exemption, it is the
+      // silence this gate exists to end: the completeness check above would
+      // treat the table as accounted for while no report reads it, so
+      // activation, retention and module usage would undercount the moment
+      // somebody used the feature - and nothing would say so.
+      //
+      // ⚠️ Deferring cannot be made safe by asserting the tables stay empty,
+      // which was tried: the demo seed writes to every one of them, so that
+      // assertion can never pass locally or in CI. Either a table is read, or
+      // its reason is real.
+      const deferred = Object.entries(NOT_CONTENT)
+        .filter(([, reason]) => /undecided|unclear|tbd|for now/i.test(reason))
+        .map(([table]) => table)
+        .sort();
+      expect(deferred).toEqual([]);
+    });
+
+    it("keeps no exemption that has stopped being needed", () => {
+      // A stale exemption is indistinguishable from a real omission being waved
+      // through. An entry fails here if its relation is gone from the schema,
+      // or if content_events has since started reading it - in which case the
+      // registry now contradicts the block.
+      const unnecessary = Object.keys(NOT_CONTENT)
+        .filter((table) => !surface.includes(table) || covered.includes(table))
+        .sort();
+      expect(unnecessary).toEqual([]);
+    });
+  });
+
   describe("segment report: k=5 cell suppression", () => {
     it("suppresses counts of 1..4, prints 0 and 5+", () => {
       const [row] = queryWithin(
