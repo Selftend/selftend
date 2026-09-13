@@ -150,6 +150,15 @@ mistaken for an oversight:
 - **First occurrences** (see _The monthly digest_). It prints facts, never counts
   or dates, so there is no cell to suppress.
 
+One _section_ is carved out as well, and it is not one of those two: the segment
+report's **gate status** prints a retained count raw. Two reasons, and they have
+to hold together — it is the distance to a threshold this document has already
+committed to in writing (30 W4-retained users), which a gate is useless without;
+and the split has exactly two arms printed beside their own total, so
+suppressing one arm would leave it recoverable by subtraction. Half-suppressing
+a two-arm split is not a control. Where retention is cut by _arm_, in the same
+report, the rule applies normally.
+
 `npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
 2026-07-14). It covers: activation (first row in any user-content table, ever
 and within 72h of signup; setup actions excluded), retention (signup-anchored

@@ -83,6 +83,13 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- Two blocks are exempt, each carrying its recorded reason: the
 -- population-provenance block below, and the first-occurrences section (which
 -- prints facts, never counts, so it has no cell to suppress).
+--
+-- ⚠️ One SECTION is carved out too, and it is not one of those two: the gate
+-- status in analytics-segment.sql prints a retained count raw, because it is
+-- the distance to a threshold this repo has already committed to in writing
+-- and because a two-arm split beside its own total suppresses nothing anyway.
+-- The reasoning is written out beside it; do not copy the carve-out anywhere
+-- else on the strength of this sentence.
 create function pg_temp.k_count(n bigint) returns text
   language sql immutable
   as $$
@@ -134,14 +141,19 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
 
 \echo
 \echo '=== Population provenance (how much of this population belongs to the project itself; raw counts, exempt from k=5 - the SQL comment says why) ==='
-\echo '    owner_exact          EXACT. Accounts on the owner address, plus-tags of it included. A stranger cannot hold it.'
-\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test string.'
-\echo '                         A real person may plus-tag their own mail, and demo and test are ordinary words.'
-\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL. A guest account has no email, by construction, so nothing'
-\echo '                         separates a guest minted by a user test from a stranger who tapped the button.'
+\echo '    owner_exact          Accounts on the owner address as written, plus-tags of it included. Exact in the'
+\echo '                         sense that no stranger holds that address - not in the sense of catching every'
+\echo '                         account the owner could make. An address with no marker on it is not in here.'
+\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test'
+\echo '                         string. It bounds what the MARKERS can find, and it over-counts on purpose - a'
+\echo '                         real person may plus-tag their own mail, and demo and test are ordinary words.'
+\echo '    registered_accounts  The population the two counts above are drawn from, so the bound can be read.'
+\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL, and outside both counts. A guest account has no email,'
+\echo '                         by construction, so nothing separates a guest minted by a user test from a'
+\echo '                         stranger who tapped the button.'
 \echo '    AGENTS.md requires deleting throwaway test accounts, so a large bound is a record of cleanup left undone.'
 select count(*) filter (where p.owner_address)                              as owner_exact,
-       count(*) filter (where p.owner_address or p.plus_tagged or p.marked) as internal_upper_bound,
+       count(*) filter (where p.owner_address or p.plus_tagged or p.demo_or_test_string) as internal_upper_bound,
        count(*) filter (where a.account = 'registered')                     as registered_accounts,
        count(*) filter (where a.account = 'guest')                          as guest_accounts
 from accounts a
@@ -157,7 +169,7 @@ cross join lateral (
          split_part(lower(coalesce(a.email, '')), '@', 1) like '%+%'  as plus_tagged,
          (coalesce(a.email, '') <> ''
             and (lower(a.email) like '%demo%'
-              or lower(a.email) like '%test%'))                       as marked
+              or lower(a.email) like '%test%'))            as demo_or_test_string
 ) p;
 -- <<< shared:population_provenance
 

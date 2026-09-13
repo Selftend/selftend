@@ -75,6 +75,13 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- Two blocks are exempt, each carrying its recorded reason: the
 -- population-provenance block below, and the first-occurrences section (which
 -- prints facts, never counts, so it has no cell to suppress).
+--
+-- ⚠️ One SECTION is carved out too, and it is not one of those two: the gate
+-- status in analytics-segment.sql prints a retained count raw, because it is
+-- the distance to a threshold this repo has already committed to in writing
+-- and because a two-arm split beside its own total suppresses nothing anyway.
+-- The reasoning is written out beside it; do not copy the carve-out anywhere
+-- else on the strength of this sentence.
 create function pg_temp.k_count(n bigint) returns text
   language sql immutable
   as $$
@@ -253,14 +260,19 @@ create temp view user_w4 as
 
 \echo
 \echo '=== Population provenance (how much of this population belongs to the project itself; raw counts, exempt from k=5 - the SQL comment says why) ==='
-\echo '    owner_exact          EXACT. Accounts on the owner address, plus-tags of it included. A stranger cannot hold it.'
-\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test string.'
-\echo '                         A real person may plus-tag their own mail, and demo and test are ordinary words.'
-\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL. A guest account has no email, by construction, so nothing'
-\echo '                         separates a guest minted by a user test from a stranger who tapped the button.'
+\echo '    owner_exact          Accounts on the owner address as written, plus-tags of it included. Exact in the'
+\echo '                         sense that no stranger holds that address - not in the sense of catching every'
+\echo '                         account the owner could make. An address with no marker on it is not in here.'
+\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test'
+\echo '                         string. It bounds what the MARKERS can find, and it over-counts on purpose - a'
+\echo '                         real person may plus-tag their own mail, and demo and test are ordinary words.'
+\echo '    registered_accounts  The population the two counts above are drawn from, so the bound can be read.'
+\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL, and outside both counts. A guest account has no email,'
+\echo '                         by construction, so nothing separates a guest minted by a user test from a'
+\echo '                         stranger who tapped the button.'
 \echo '    AGENTS.md requires deleting throwaway test accounts, so a large bound is a record of cleanup left undone.'
 select count(*) filter (where p.owner_address)                              as owner_exact,
-       count(*) filter (where p.owner_address or p.plus_tagged or p.marked) as internal_upper_bound,
+       count(*) filter (where p.owner_address or p.plus_tagged or p.demo_or_test_string) as internal_upper_bound,
        count(*) filter (where a.account = 'registered')                     as registered_accounts,
        count(*) filter (where a.account = 'guest')                          as guest_accounts
 from accounts a
@@ -276,7 +288,7 @@ cross join lateral (
          split_part(lower(coalesce(a.email, '')), '@', 1) like '%+%'  as plus_tagged,
          (coalesce(a.email, '') <> ''
             and (lower(a.email) like '%demo%'
-              or lower(a.email) like '%test%'))                       as marked
+              or lower(a.email) like '%test%'))            as demo_or_test_string
 ) p;
 -- <<< shared:population_provenance
 
@@ -291,15 +303,27 @@ group by 1 order by 2 desc, 1;
 
 \echo
 \echo '=== 1) Gate status — section 2 is not readable until 30 W4-retained users exist ==='
-\echo '    `users` and `w4_mature_users` are whole-population counts - how many people there are, and how many'
-\echo '    have had a week 4 at all - so they print raw. Being retained is something a person did, so the'
-\echo '    per-account split of it is a slice and is k-suppressed; the gate figure itself, below, is the'
-\echo '    whole-population count and prints exactly. The point of this section is the distance to the gate.'
+\echo '    (whole-population counts, deliberately not k-suppressed: the point is to see how far off the gate is)'
+-- ☠️ The carve-out here is NAMED, not assumed - see the k=5 rule in the shared
+-- block above, which lists "retained" among the things a slice counts. This
+-- section is the one place a retained count prints raw, for two reasons that
+-- have to hold together:
+--
+--   * It is the DISTANCE TO A THRESHOLD this repo has already committed to in
+--     writing (30, #1598's number), which is the one quantity docs/analytics.md
+--     allows to be printed beside a threshold. A gate you cannot see the
+--     distance to is not a gate.
+--   * Suppressing only the per-account split would not suppress anything. The
+--     axis has exactly two arms and `w4_retained_total` below is their sum, so
+--     one printed arm and the total recover the other arm exactly. Half-
+--     suppressing a two-arm split is arithmetic theatre, not a control.
+--
+-- Section 2, where retention is cut by ARM, is k-suppressed as the rule says -
+-- there the arms are many and the total does not give them away.
 select l.account,
        count(w.user_id) as users,
        count(w.user_id) filter (where w.w4_mature) as w4_mature_users,
-       pg_temp.k_count(count(w.user_id) filter (where w.w4_mature and w.w4_retained))
-         as w4_retained_users
+       count(w.user_id) filter (where w.w4_mature and w.w4_retained) as w4_retained_users
 from account_labels l
 left join user_w4 w on w.account = l.account
 group by 1 order by 1;
@@ -344,9 +368,11 @@ group by 1 order by 1;
 \echo '=== 4) Guard: concern keys outside the known arms (should always be empty) ==='
 \echo '    `apply_widget_recommendations` does not validate concern keys, so a client'
 \echo '    change could write one section 2 would silently drop. This is where it shows up.'
-\echo '    `<5` = k=5 suppressed count. The key itself is what this guard exists to surface, and suppression'
-\echo '    never hides it: a suppressed row is still a row, and an empty table is still the all-clear.'
-select ua.arm as unexpected_key, pg_temp.k_count(count(*)) as user_rows
+-- ⚠️ `user_rows` counts ROWS of malformed data, not people, so the k=5 rule
+-- above does not reach it: the rule governs cells that slice the population,
+-- and a row here is evidence that a client wrote a key no report knows. The
+-- table should always be empty; if it is not, the KEY is the finding.
+select ua.arm as unexpected_key, count(*) as user_rows
 from user_arms ua
 where not exists (select 1 from arm_labels al where al.arm = ua.arm)
-group by 1 order by count(*) desc, 1;
+group by 1 order by 2 desc, 1;

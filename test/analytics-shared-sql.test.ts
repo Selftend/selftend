@@ -175,6 +175,34 @@ describe("k=5 cell suppression is defined once, for all three reports", () => {
   }
 });
 
+describe("an email address never leaves the database", () => {
+  // ☠️ #2373 put `email` on the shared `accounts` view so the provenance block
+  // can classify an address without a second read of auth.users. Nothing about
+  // that view stops a later section selecting the column into a printed row,
+  // and every report is aggregate-only by policy: "no per-user rows, no user
+  // ids, no emails" (docs/analytics.md, and the header of all three files).
+  // So the column is confined to the two blocks that have a reason to hold it.
+  const ALLOWED_BLOCKS = ["accounts", "population_provenance"];
+
+  for (const file of reportFiles()) {
+    it(`${file} mentions email only inside ${ALLOWED_BLOCKS.join(" and ")}`, () => {
+      const blocks = blocksByFile.get(file);
+      const allowed = ALLOWED_BLOCKS.map((name) => blocks?.get(name) ?? "").join("\n");
+      const allowedLines = new Set(
+        allowed
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== ""),
+      );
+
+      const offenders = sqlLinesMatching(file, /\bemail\b/).filter(
+        (line) => !allowedLines.has(line.trim()),
+      );
+      expect(offenders).toEqual([]);
+    });
+  }
+});
+
 describe("the population-provenance block is exempt from k=5, with both reasons recorded", () => {
   // ☠️ #2373. This block counts the project's OWN accounts and prints an upper
   // bound, so both rationales behind k=5 are void here - one does not apply,
