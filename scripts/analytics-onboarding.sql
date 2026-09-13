@@ -271,10 +271,21 @@ group by 1 order by 2 desc, 1;
 
 \echo
 \echo '=== 1) Weekly signups, last 12 weeks ==='
-select account, date_trunc('week', created_at)::date as week, count(*) as signups
-from accounts
-where created_at >= date_trunc('week', now()) - interval '11 weeks'
-group by 1, 2 order by 2 desc, 1;
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select account, date_trunc('week', created_at)::date as week, count(*) as signups
+  from accounts
+  where created_at >= date_trunc('week', now()) - interval '11 weeks'
+  group by 1, 2
+)
+select account, week, signups
+from (
+  select account, week, signups, 0 as empty_marker from rows
+  union all
+  select '(no rows)', null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.week desc, t.account;
 
 \echo
 \echo '=== 2) Introduction completion by signup week (completed vs not) ==='
@@ -283,28 +294,51 @@ group by 1, 2 order by 2 desc, 1;
 \echo '    is how the two got confused, in the one report that measures both.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
-select a.account,
-       date_trunc('week', a.created_at)::date as week,
-       count(*) as signups,
-       pg_temp.k_count(count(*) filter (where p.app_onboarding_completed)) as completed,
-       pg_temp.k_pct(count(*) filter (where p.app_onboarding_completed), count(*))
-         as completion_pct
-from accounts a
-left join public.user_preferences p on p.user_id = a.user_id
-where a.created_at >= date_trunc('week', now()) - interval '11 weeks'
-group by 1, 2 order by 2 desc, 1;
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select a.account,
+         date_trunc('week', a.created_at)::date as week,
+         count(*) as signups,
+         pg_temp.k_count(count(*) filter (where p.app_onboarding_completed)) as completed,
+         pg_temp.k_pct(count(*) filter (where p.app_onboarding_completed), count(*))
+           as completion_pct
+  from accounts a
+  left join public.user_preferences p on p.user_id = a.user_id
+  where a.created_at >= date_trunc('week', now()) - interval '11 weeks'
+  group by 1, 2
+)
+select account, week, signups, completed, completion_pct
+from (
+  select account, week, signups, completed, completion_pct, 0 as empty_marker from rows
+  union all
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.week desc, t.account;
 
 \echo
 \echo '=== 3) Finish vs skip split (null = completed before via tracking existed) ==='
 \echo '    `<5` = k=5 suppressed count. Which mode someone chose is a property they carry, so these cells are slices.'
-\echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
-select a.account,
-       coalesce(p.app_onboarding_completed_via, 'legacy/unknown') as via,
-       pg_temp.k_count(count(*)) as users
-from public.user_preferences p
-join accounts a on a.user_id = p.user_id
-where p.app_onboarding_completed
-group by 1, 2 order by count(*) desc, 1, 2;
+\echo '    Ordered by the true user count, as the segment report orders its arms: READ THE ORDERING.'
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select a.account,
+         coalesce(p.app_onboarding_completed_via, 'legacy/unknown') as via,
+         pg_temp.k_count(count(*)) as users,
+         count(*) as sort_users
+  from public.user_preferences p
+  join accounts a on a.user_id = p.user_id
+  where p.app_onboarding_completed
+  group by 1, 2
+)
+select account, via, users
+from (
+  select account, via, users, sort_users, 0 as empty_marker from rows
+  union all
+  select '(no rows)', null, null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.sort_users desc, t.account, t.via;
 
 \echo
 \echo '=== 4) Guest-to-registered conversion (the identity clock; 7-day maturity window) ==='
@@ -399,11 +433,22 @@ where guest_origin;
 -- Favourites is the live successor and was reported nowhere until now. Open
 -- shape: kinds and keys come and go with the product, so only what exists
 -- prints.
-select a.account,
-       f.kind,
-       f.key,
-       pg_temp.k_count(count(distinct f.user_id)) as users
-from public.favorites f
-join accounts a on a.user_id = f.user_id
-group by 1, 2, 3
-order by count(distinct f.user_id) desc, 2, 3, 1;
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select a.account,
+         f.kind,
+         f.key,
+         pg_temp.k_count(count(distinct f.user_id)) as users,
+         count(distinct f.user_id) as sort_users
+  from public.favorites f
+  join accounts a on a.user_id = f.user_id
+  group by 1, 2, 3
+)
+select account, kind, key, users
+from (
+  select account, kind, key, users, sort_users, 0 as empty_marker from rows
+  union all
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.sort_users desc, t.kind, t.key, t.account;

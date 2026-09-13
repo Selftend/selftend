@@ -369,16 +369,28 @@ group by 1 order by 1;
 \echo '=== 2) Activation by signup week, last 12 weeks ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
-select account,
-       date_trunc('week', signup_at)::date as week,
-       count(*) as signups,
-       pg_temp.k_count(count(first_content_at)) as activated,
-       pg_temp.k_pct(count(first_content_at), count(*)) as activated_pct,
-       pg_temp.k_count(count(*) filter (where first_content_at <= signup_at + interval '72 hours'))
-         as activated_within_72h
-from first_content
-where signup_at >= date_trunc('week', now()) - interval '11 weeks'
-group by 1, 2 order by 2 desc, 1;
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select account,
+         date_trunc('week', signup_at)::date as week,
+         count(*) as signups,
+         pg_temp.k_count(count(first_content_at)) as activated,
+         pg_temp.k_pct(count(first_content_at), count(*)) as activated_pct,
+         pg_temp.k_count(count(*) filter (where first_content_at <= signup_at + interval '72 hours'))
+           as activated_within_72h
+  from first_content
+  where signup_at >= date_trunc('week', now()) - interval '11 weeks'
+  group by 1, 2
+)
+select account, week, signups, activated, activated_pct, activated_within_72h
+from (
+  select account, week, signups, activated, activated_pct, activated_within_72h, 0 as empty_marker
+    from rows
+  union all
+  select '(no rows)', null, null, null, null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.week desc, t.account;
 
 \echo
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
@@ -399,21 +411,32 @@ with flags as (
   from accounts a
   left join content_events c on c.user_id = a.user_id
   group by a.user_id, 1, 2, 3
+),
+cohorts as (
+  select account,
+         signup_week,
+         count(*) as cohort_size,
+         pg_temp.k_pct(count(*) filter (where w1),
+                       count(*) filter (where signup_at <= now() - interval '14 days')) as w1_pct,
+         pg_temp.k_pct(count(*) filter (where w2),
+                       count(*) filter (where signup_at <= now() - interval '21 days')) as w2_pct,
+         pg_temp.k_pct(count(*) filter (where w3),
+                       count(*) filter (where signup_at <= now() - interval '28 days')) as w3_pct,
+         pg_temp.k_pct(count(*) filter (where w4),
+                       count(*) filter (where signup_at <= now() - interval '35 days')) as w4_pct
+  from flags
+  where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
+  group by 1, 2
 )
-select account,
-       signup_week,
-       count(*) as cohort_size,
-       pg_temp.k_pct(count(*) filter (where w1),
-                     count(*) filter (where signup_at <= now() - interval '14 days')) as w1_pct,
-       pg_temp.k_pct(count(*) filter (where w2),
-                     count(*) filter (where signup_at <= now() - interval '21 days')) as w2_pct,
-       pg_temp.k_pct(count(*) filter (where w3),
-                     count(*) filter (where signup_at <= now() - interval '28 days')) as w3_pct,
-       pg_temp.k_pct(count(*) filter (where w4),
-                     count(*) filter (where signup_at <= now() - interval '35 days')) as w4_pct
-from flags
-where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
-group by 1, 2 order by 2 desc, 1;
+select account, signup_week, cohort_size, w1_pct, w2_pct, w3_pct, w4_pct
+from (
+  select account, signup_week, cohort_size, w1_pct, w2_pct, w3_pct, w4_pct, 0 as empty_marker
+    from cohorts
+  union all
+  select '(no rows)', null, null, null, null, null, null, 1
+   where not exists (select 1 from cohorts)
+) t
+order by t.empty_marker, t.signup_week desc, t.account;
 
 \echo
 \echo '=== 4) Module usage (cbt, meditation, gratitude, act, dbt; distinct users with >=1 record, pct of that account population) ==='
@@ -448,16 +471,28 @@ order by t.account, mods.module;
 \echo
 \echo '=== 5) Core tool usage (per feature; distinct users with >=1 record, pct of that account population) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
-\echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
-select a.account,
-       c.feature,
-       pg_temp.k_count(count(distinct c.user_id)) as users,
-       pg_temp.k_pct(count(distinct c.user_id),
-                     (select count(*) from accounts x where x.account = a.account)) as users_pct
-from content_events c
-join accounts a on a.user_id = c.user_id
-where c.module = 'core'
-group by 1, 2 order by count(distinct c.user_id) desc, 2, 1;
+\echo '    Ordered by the true user count, as the segment report orders its arms: READ THE ORDERING.'
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+with rows as (
+  select a.account,
+         c.feature,
+         pg_temp.k_count(count(distinct c.user_id)) as users,
+         pg_temp.k_pct(count(distinct c.user_id),
+                       (select count(*) from accounts x where x.account = a.account)) as users_pct,
+         count(distinct c.user_id) as sort_users
+  from content_events c
+  join accounts a on a.user_id = c.user_id
+  where c.module = 'core'
+  group by 1, 2
+)
+select account, feature, users, users_pct
+from (
+  select account, feature, users, users_pct, sort_users, 0 as empty_marker from rows
+  union all
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+) t
+order by t.empty_marker, t.sort_users desc, t.feature, t.account;
 
 \echo
 \echo '=== 6) Asked, never attested (accounts the age gate scopes as new - created at or after AGE_GATE_INTRODUCED_AT - that never wrote a verdict) ==='
