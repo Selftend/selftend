@@ -52,29 +52,52 @@ function definitions(name: string): string {
 
 /**
  * One printed section of a report, by its `=== n)` number: the statements
- * between that `\echo` heading and the next one, with the `\echo` lines
- * themselves dropped. Running it through `queryWithin` executes the shipped
- * section verbatim against the report's own views.
+ * between that `\echo` heading and the next one, with every `\echo` line
+ * dropped. Running it through `queryWithin` executes the shipped section
+ * verbatim against the report's own views.
+ *
+ * ⚠️ A section heading is followed by any number of further `\echo` legend
+ * lines - what `<5` means, which columns are deliberately not suppressed - so
+ * only the NEXT `=== n)` heading ends a section. Breaking at the first `\echo`
+ * instead would silently return an empty body the moment a legend is added,
+ * and an empty body asserts nothing.
  */
 function section(name: string, number: number): string {
   const lines = reportSql(name).split("\n");
+  const isHeading = (line: string) => /^\\echo '=== /.test(line);
   const start = lines.findIndex((line) => line.startsWith(`\\echo '=== ${number})`));
   if (start === -1) throw new Error(`analytics-${name}.sql has no section ${number}`);
   const body: string[] = [];
   for (const line of lines.slice(start + 1)) {
-    if (line.startsWith("\\echo")) break;
+    if (isHeading(line)) break;
+    if (line.startsWith("\\echo")) continue;
     body.push(line);
   }
+  if (body.join("").trim() === "") {
+    throw new Error(`analytics-${name}.sql section ${number} has no statements`);
+  }
   return body.join("\n");
+}
+
+/**
+ * The body of one `-- >>> shared:<name>` block, as the reports carry it. Used
+ * to run a shared block that is not a numbered section, and to rewrite one
+ * without copying it.
+ */
+function sharedBlock(name: string, block: string): string {
+  const source = reportSql(name);
+  const start = source.indexOf(`-- >>> shared:${block}`);
+  const end = source.indexOf(`-- <<< shared:${block}`);
+  if (start === -1 || end === -1) throw new Error(`analytics-${name}.sql has no shared:${block}`);
+  return source.slice(start, end);
 }
 
 // psql prints a command tag (CREATE VIEW, CREATE FUNCTION) for every statement
 // in the definitions block, so the rows we want are whatever follows this.
 const ROW_MARKER = "__rows_below__";
 
-/** Runs a query against the named report's own temp views and helper functions. */
-function queryWithin(name: string, sql: string): string[][] {
-  const output = runSql(`${definitions(name)}select '${ROW_MARKER}';\n${sql}\n`);
+function rowsAfterMarker(prelude: string, sql: string, name: string): string[][] {
+  const output = runSql(`${prelude}select '${ROW_MARKER}';\n${sql}\n`);
   const lines = output.split("\n");
   const start = lines.indexOf(ROW_MARKER);
   if (start === -1) throw new Error(`analytics-${name}.sql definitions did not run:\n${output}`);
@@ -84,10 +107,84 @@ function queryWithin(name: string, sql: string): string[][] {
     .map((line) => line.split("|"));
 }
 
-function insertAuthUser(options: { id: string; isAnonymous?: boolean; createdAtSql: string }) {
+/** Runs a query against the named report's own temp views and helper functions. */
+function queryWithin(name: string, sql: string): string[][] {
+  return rowsAfterMarker(definitions(name), sql, name);
+}
+
+/**
+ * The report's definitions, with the shipped `accounts` view narrowed to this
+ * suite's own users — so a shipped section, run verbatim, sees a population
+ * these fixtures control exactly.
+ *
+ * ☠️ Why this exists. Every printed section counts the whole database, so the
+ * assertions below used to read a section before and after seeding and subtract.
+ * k=5 cell suppression (#2373) ends that: `<5` carries no arithmetic, and the
+ * difference between two suppressed readings is not a number. Narrowing the
+ * population is also the stricter option — the fixtures become the whole
+ * population, so a claim is asserted outright rather than as a delta, and a cell
+ * of one to four users can be pinned at `<5` instead of being unobservable.
+ *
+ * The narrowed view is a REWRITE of the shipped shared block, never a copy of
+ * it, so it cannot drift from the view the reports actually run.
+ */
+function cohortDefinitions(name: string): string {
+  const view = sharedBlock(name, "accounts")
+    .slice(0, sharedBlock(name, "accounts").indexOf("-- Both labels,"))
+    .replace("create temp view accounts as", "create or replace temp view accounts as")
+    .replace(
+      "  from auth.users;",
+      `  from auth.users where id::text like '${TEST_UUID_PREFIX}-%';`,
+    );
+  if (!view.includes("where id::text like")) {
+    throw new Error(`analytics-${name}.sql: the accounts view no longer ends in auth.users`);
+  }
+  return `${definitions(name)}\n${view}\n`;
+}
+
+/** Runs a query with this suite's fixtures as the report's entire population. */
+function queryWithinCohort(name: string, sql: string): string[][] {
+  return rowsAfterMarker(cohortDefinitions(name), sql, name);
+}
+
+/**
+ * The population-provenance block's statement, as shipped: its `\set` kept (the
+ * owner address is the thing under test) and its `\echo` legend dropped, since
+ * psql would print those lines straight into the rows being parsed.
+ */
+function provenanceStatement(name: string): string {
+  return sharedBlock(name, "population_provenance")
+    .split("\n")
+    .filter((line) => !line.startsWith("\\echo") && !line.trim().startsWith("--"))
+    .join("\n");
+}
+
+interface AuthUserFixture {
+  id: string;
+  isAnonymous?: boolean;
+  createdAtSql: string;
+  /** SQL for the email column; `null` unless a test is about provenance. */
+  emailSql?: string;
+}
+
+/**
+ * Any number of accounts in one round trip. Every runSql call is a `docker
+ * exec`, so seeding a dozen fixtures one at a time is most of a suite's clock.
+ */
+function insertAuthUsers(fixtures: AuthUserFixture[]) {
   // Mirrors supabase/seed.sql: the empty-string token columns are set
   // explicitly because GoTrue's schema scan fails if they end up NULL on a
   // direct insert.
+  const values = fixtures
+    .map(
+      (options) => `(
+      '${options.id}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${options.emailSql ?? "null"},
+      '{"provider": "anonymous", "providers": ["anonymous"]}', '{}', null, false, ${options.isAnonymous ?? false},
+      '', '', '', '', '', 0, '', '', '',
+      ${options.createdAtSql}, ${options.createdAtSql}
+    )`,
+    )
+    .join(",\n");
   runSql(`
     insert into auth.users (
       id, instance_id, aud, role, email,
@@ -95,13 +192,12 @@ function insertAuthUser(options: { id: string; isAnonymous?: boolean; createdAtS
       confirmation_token, recovery_token, email_change_token_new, email_change_token_current,
       email_change, email_change_confirm_status, phone_change, phone_change_token,
       reauthentication_token, created_at, updated_at
-    ) values (
-      '${options.id}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', null,
-      '{"provider": "anonymous", "providers": ["anonymous"]}', '{}', null, false, ${options.isAnonymous ?? false},
-      '', '', '', '', '', 0, '', '', '',
-      ${options.createdAtSql}, ${options.createdAtSql}
-    );
+    ) values ${values};
   `);
+}
+
+function insertAuthUser(options: AuthUserFixture) {
+  insertAuthUsers([options]);
 }
 
 function insertPreferences(options: {
@@ -136,17 +232,35 @@ function insertEnabledModules(id: string, enabledModulesSql: string) {
 }
 
 /**
- * A preferences row carrying only the two columns the age gate writes through
- * (#1978). Both are three-state: `null` on `age_floor_met` means *never asked*,
- * never *refused*, which is the whole reason section 6 needs a cutoff.
+ * Several `user_preferences` rows in one round trip, covering every column the
+ * suite's fixtures set. Anything not named is left at the shape that means
+ * "never happened": not completed, no mode, no verdict, no policy accepted.
+ *
+ * ☠️ `age_floor_met` and `policy_version_accepted` are three-state (#1978):
+ * `null` on `age_floor_met` means *never asked*, never *refused*, which is the
+ * whole reason section 6 needs a cutoff.
  */
-function insertAgeAttestation(
-  id: string,
-  options: { ageFloorMetSql: string; policyVersionSql: string },
+function insertPreferencesRows(
+  rows: {
+    id: string;
+    completedSql?: string;
+    viaSql?: string;
+    ageFloorMetSql?: string;
+    policyVersionSql?: string;
+  }[],
 ) {
+  const values = rows
+    .map(
+      (row) =>
+        `('${row.id}', ${row.completedSql ?? "false"}, ${row.viaSql ?? "null"}, ` +
+        `${row.ageFloorMetSql ?? "null"}, ${row.policyVersionSql ?? "null"})`,
+    )
+    .join(",\n");
   runSql(`
-    insert into public.user_preferences (user_id, age_floor_met, policy_version_accepted)
-    values ('${id}', ${options.ageFloorMetSql}, ${options.policyVersionSql});
+    insert into public.user_preferences (
+      user_id, app_onboarding_completed, app_onboarding_completed_via,
+      age_floor_met, policy_version_accepted
+    ) values ${values};
   `);
 }
 
@@ -433,60 +547,75 @@ describe("aggregate analytics reports (integration)", () => {
   describe("engagement report: module usage counts records, never enabled_modules", () => {
     // #1672. `enabled_modules` gates nothing (see test/analytics-shared-sql.test.ts
     // for the history), so the module table reports one thing: distinct people
-    // with at least one record in the module's tables. The suite cannot filter
-    // the shipped section to its own cohort, so it reads §4 before and after
-    // seeding and asserts on the difference, which seed users cannot move.
-    const REGISTERED_GRATITUDE = "registered/gratitude";
-    const REGISTERED_ACT = "registered/act";
-    const REGISTERED_CBT = "registered/cbt";
+    // with at least one record in the module's tables. §4 runs as shipped over
+    // this suite's fixtures as its whole population, so every cell below is an
+    // outright claim about the printed row.
+    const AT_THE_FLOOR = 5;
 
-    /** `account/module` -> distinct users with a record, as §4 prints it. */
-    function moduleUsers(): Map<string, number> {
+    /** `account/module` -> the cell §4 prints, verbatim (`<5` included). */
+    function moduleUsers(): Map<string, string> {
       return new Map(
-        queryWithin("engagement", section("engagement", 4)).map(([account, module, users]) => [
-          `${account}/${module}`,
-          Number(users),
-        ]),
+        queryWithinCohort("engagement", section("engagement", 4)).map(
+          ([account, module, users]) => [`${account}/${module}`, users],
+        ),
       );
     }
 
-    let before: Map<string, number>;
-
-    /** How many users the fixtures added to one `account/module` cell. */
-    function delta(key: string): number {
-      return moduleUsers().get(key)! - before.get(key)!;
+    /** `account/module` -> the percentage §4 prints. */
+    function modulePct(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("engagement", section("engagement", 4)).map(
+          ([account, module, , pct]) => [`${account}/${module}`, pct],
+        ),
+      );
     }
 
     beforeAll(() => {
       deleteSuiteUsers();
-      before = moduleUsers();
 
-      // 30: a gratitude record and an EMPTY enabled_modules - the row shape
-      // that surfaced the drift (gratitude used, never "enabled").
-      insertAuthUser({ id: userId(30), createdAtSql: "now() - interval '40 days'" });
+      // 30 and 32..35: exactly five registered people with a gratitude record,
+      // so the cell sits ON the k=5 floor and prints its real value. 32 has two
+      // records, so distinct counting is what is being read.
+      //
+      // 30 carries an EMPTY enabled_modules - the row shape that surfaced the
+      // #1672 drift (gratitude used, never "enabled").
+      //
+      // 31: enabled_modules lists act and cbt, and there is no record of
+      // anything. 36: a guest with a gratitude record, one person, so the same
+      // shipped section prints a suppressed cell beside an unsuppressed one.
+      insertAuthUsers(
+        [30, 31, 32, 33, 34, 35, 36].map((n) => ({
+          id: userId(n),
+          createdAtSql: "now() - interval '40 days'",
+          isAnonymous: n === 36,
+        })),
+      );
       insertEnabledModules(userId(30), "'{}'");
-      insertGratitudeEntry(userId(30));
-
-      // 31: enabled_modules lists act and cbt, and there is no record of anything.
-      insertAuthUser({ id: userId(31), createdAtSql: "now() - interval '40 days'" });
       insertEnabledModules(userId(31), "'{cbt,act}'");
-
-      // 32: two gratitude records, so distinct counting is what is tested.
-      insertAuthUser({ id: userId(32), createdAtSql: "now() - interval '40 days'" });
       insertEnabledModules(userId(32), "'{cbt,gratitude}'");
-      insertGratitudeEntry(userId(32));
+      for (const n of [30, 32, 33, 34, 35, 36]) insertGratitudeEntry(userId(n));
       insertGratitudeEntry(userId(32));
     });
 
     afterAll(deleteSuiteUsers);
 
     it("counts a person with a record once, whether or not enabled_modules lists the module", () => {
-      expect(delta(REGISTERED_GRATITUDE)).toBe(2);
+      // Five people, six records: 32 wrote twice and is still one person.
+      expect(moduleUsers().get("registered/gratitude")).toBe(String(AT_THE_FLOOR));
     });
 
     it("never counts a person enabled_modules lists who has no record", () => {
-      expect(delta(REGISTERED_ACT)).toBe(0);
-      expect(delta(REGISTERED_CBT)).toBe(0);
+      // 31 has act and cbt enabled and nothing written. A zero prints as a zero:
+      // an empty arm is information, and it discloses nothing.
+      expect(moduleUsers().get("registered/act")).toBe("0");
+      expect(moduleUsers().get("registered/cbt")).toBe("0");
+    });
+
+    it("suppresses a module cell resting on fewer than five users", () => {
+      // ☠️ The whole point of #2373 in this report: one guest wrote a gratitude
+      // record, and the cell says so without saying how many.
+      expect(moduleUsers().get("guest/gratitude")).toBe("<5");
+      expect(modulePct().get("guest/gratitude")).toBe("-");
     });
 
     it("prints every module for every account type, zeros included", () => {
@@ -556,6 +685,11 @@ describe("aggregate analytics reports (integration)", () => {
     //
     // The shipped section cannot be filtered to this suite's cohort, so it is
     // read before and after seeding and the assertions are on the deltas.
+    // ☠️ Every registered cell below is deliberately seeded at five or more, so
+    // the counts print their real values and an edge that moves by one stays
+    // visible. k=5 suppression (#2373) would otherwise flatten "four" and
+    // "three" into the same `<5` and make the cutoff edges unobservable. The
+    // guest row is the opposite case, seeded at one, and is asserted as `<5`.
     const CUTOFF = "2026-09-06T00:00:00Z";
     const LATER = "2026-09-06T00:00:01Z";
     const WIDE = "2026-01-01T00:00:00Z";
@@ -564,93 +698,82 @@ describe("aggregate analytics reports (integration)", () => {
     const BELOW = `timestamptz '2026-09-05T23:00:00Z'`;
 
     interface Row {
-      accountsSinceCutoff: number;
-      askedNeverAttested: number;
+      accountsSinceCutoff: string;
+      askedNeverAttested: string;
+      askedNeverAttestedPct: string;
     }
 
-    /** Section 6 as shipped, with only the cutoff overridden. */
+    /** Section 6 as shipped, over this suite's fixtures, with the cutoff overridden. */
     function askedNeverAttested(cutoff = CUTOFF): Map<string, Row> {
-      const rows = queryWithin(
+      const rows = queryWithinCohort(
         "engagement",
         `\\set age_gate_cutoff '${cutoff}'\n${section("engagement", 6)}`,
       );
       return new Map(
-        rows.map(([account, , , accounts, asked]) => [
+        rows.map(([account, , , accounts, asked, pct]) => [
           account,
-          { accountsSinceCutoff: Number(accounts), askedNeverAttested: Number(asked) },
+          { accountsSinceCutoff: accounts, askedNeverAttested: asked, askedNeverAttestedPct: pct },
         ]),
       );
     }
 
-    // ☠️ A baseline per cutoff, because widening the cutoff admits every
-    // pre-existing account on the database, not just this suite's fixtures.
-    // Only the delta at a given cutoff is this suite's own contribution.
-    const before = new Map<string, Map<string, Row>>();
-
-    function delta(account: string, cutoff = CUTOFF): Row {
-      const now = askedNeverAttested(cutoff).get(account)!;
-      const was = before.get(cutoff)!.get(account)!;
-      return {
-        accountsSinceCutoff: now.accountsSinceCutoff - was.accountsSinceCutoff,
-        askedNeverAttested: now.askedNeverAttested - was.askedNeverAttested,
-      };
+    function gateRow(account: string, cutoff = CUTOFF): Row {
+      return askedNeverAttested(cutoff).get(account)!;
     }
 
     beforeAll(() => {
       deleteSuiteUsers();
-      before.set(CUTOFF, askedNeverAttested(CUTOFF));
-      before.set(LATER, askedNeverAttested(LATER));
-      before.set(WIDE, askedNeverAttested(WIDE));
 
       // 40: above the cutoff with NO preferences row at all. This is the person
       // the figure is about - stopping at the gate can mean the row was never
       // written - so the left join is load-bearing, not defensive.
-      insertAuthUser({ id: userId(40), createdAtSql: AFTER });
-
-      // 41: above the cutoff, preferences row present, both columns null.
-      insertAuthUser({ id: userId(41), createdAtSql: AFTER });
-      insertAgeAttestation(userId(41), { ageFloorMetSql: "null", policyVersionSql: "null" });
-
+      //
+      // 41, 47, 48: above the cutoff, preferences row present, both columns null.
+      //
       // 42: answered the gate. Not counted, whatever the consent gate did next.
-      insertAuthUser({ id: userId(42), createdAtSql: AFTER });
-      insertAgeAttestation(userId(42), { ageFloorMetSql: "true", policyVersionSql: "null" });
-
+      //
       // 43: consented, never attested - the #2227 cohort. An account created
       // on 0.17.0 has a policy version on record and meets the age gate on
       // updating; the gate asks it, so the report counts it (#2241).
-      insertAuthUser({ id: userId(43), createdAtSql: AFTER });
-      insertAgeAttestation(userId(43), {
-        ageFloorMetSql: "null",
-        policyVersionSql: `'2026-09-04-teen-floor'`,
-      });
-
+      //
       // 44: the pre-gate install base, one hour BELOW the cutoff, with exactly
       // the null/null shape 41 has. Only the cutoff can tell them apart.
-      insertAuthUser({ id: userId(44), createdAtSql: BELOW });
-      insertAgeAttestation(userId(44), { ageFloorMetSql: "null", policyVersionSql: "null" });
-
+      //
       // 45: a guest above the cutoff. Guests pass through the same gate and
       // abandon for different reasons, so they are counted on their own row.
-      insertAuthUser({ id: userId(45), createdAtSql: AFTER, isAnonymous: true });
-
+      //
       // 46: created exactly ON the instant. The gate exempts strictly-before,
       // so this account is asked; a `>` window would drop it.
-      insertAuthUser({ id: userId(46), createdAtSql: ON });
-      insertAgeAttestation(userId(46), { ageFloorMetSql: "null", policyVersionSql: "null" });
+      insertAuthUsers([
+        ...[40, 41, 42, 43, 47, 48].map((n) => ({ id: userId(n), createdAtSql: AFTER })),
+        { id: userId(44), createdAtSql: BELOW },
+        { id: userId(45), createdAtSql: AFTER, isAnonymous: true },
+        { id: userId(46), createdAtSql: ON },
+      ]);
+      insertPreferencesRows([
+        ...[41, 44, 46, 47, 48].map((n) => ({ id: userId(n) })),
+        { id: userId(42), ageFloorMetSql: "true" },
+        { id: userId(43), policyVersionSql: `'2026-09-04-teen-floor'` },
+      ]);
     });
 
     afterAll(deleteSuiteUsers);
 
     it("counts the account that never answered, whether or not it has a preferences row", () => {
-      // 40 (no row), 41 (null/null), 43 (consented, never attested), 46 (on the instant).
-      expect(delta("registered").askedNeverAttested).toBe(4);
+      // 40 (no row), 41/47/48 (null/null), 43 (consented, never attested),
+      // 46 (on the instant).
+      expect(gateRow("registered").askedNeverAttested).toBe("6");
     });
 
     it("excludes an account that answered, and counts one that consented before the gate", () => {
-      // Five registered fixtures are in the window; four of them stopped. The
+      // Seven registered fixtures are in the window; six of them stopped. The
       // window size is asserted beside the count, so a predicate that lets 42
       // in or drops 43 cannot hide behind a matching total.
-      expect(delta("registered")).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 4 });
+      expect(gateRow("registered")).toEqual({
+        accountsSinceCutoff: "7",
+        askedNeverAttested: "6",
+        askedNeverAttestedPct: "85.7%",
+      });
     });
 
     it("excludes the pre-gate install base, which has the identical null/null shape", () => {
@@ -658,18 +781,33 @@ describe("aggregate analytics reports (integration)", () => {
       // sitting an hour below the cutoff. So it is invisible at the shipped
       // cutoff and appears the moment the cutoff is moved below it - which is
       // the only thing separating "asked and stopped" from "never asked".
-      expect(delta("registered")).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 4 });
-      expect(delta("registered", WIDE)).toEqual({ accountsSinceCutoff: 6, askedNeverAttested: 5 });
+      expect(gateRow("registered").askedNeverAttested).toBe("6");
+      expect(gateRow("registered", WIDE)).toEqual({
+        accountsSinceCutoff: "8",
+        askedNeverAttested: "7",
+        askedNeverAttestedPct: "87.5%",
+      });
     });
 
     it("asks on the instant itself - the gate exempts strictly-before (#2241)", () => {
       // Fixture 46 sits exactly on the cutoff. Moving the cutoff one second
       // later drops it from both the window and the count.
-      expect(delta("registered", LATER)).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 3 });
+      expect(gateRow("registered", LATER)).toEqual({
+        accountsSinceCutoff: "6",
+        askedNeverAttested: "5",
+        askedNeverAttestedPct: "83.3%",
+      });
     });
 
-    it("splits guests from registered accounts", () => {
-      expect(delta("guest")).toEqual({ accountsSinceCutoff: 1, askedNeverAttested: 1 });
+    it("splits guests from registered accounts, and suppresses the guest cell (#2373)", () => {
+      // One guest stopped at the gate. How many accounts the window holds is a
+      // whole-population count and prints raw; how many of them stopped is a
+      // slice, and one person is not a number this report will print.
+      expect(gateRow("guest")).toEqual({
+        accountsSinceCutoff: "1",
+        askedNeverAttested: "<5",
+        askedNeverAttestedPct: "-",
+      });
     });
 
     it("prints the cutoff release and instant on every row, so a zero can be read", () => {
@@ -701,5 +839,121 @@ describe("aggregate analytics reports (integration)", () => {
         ["registered", "AGE_GATE_INTRODUCED_AT", "2026-09-05T00:00:00Z"],
       ]);
     });
+  });
+
+  describe("onboarding report: k=5 suppression, and what it deliberately spares", () => {
+    // #2373. The rule used to live in the segment report alone. Two shipped
+    // sections are read here over this suite's fixtures as the whole
+    // population, and the pair of weeks is the point: one week's slice is small
+    // and vanishes, the other is not and prints.
+    //
+    // ☠️ `signups` is never suppressed, in either week. It is a
+    // whole-population count - how many people arrived - and suppressing it
+    // would print `<5` over the very trend the monthly digest exists to show.
+    const RECENT = "now() - interval '2 days'";
+    const OLDER = "now() - interval '30 days'";
+    const SMALL_WEEK = [50, 51, 52, 53, 54, 55, 56, 57];
+    const LARGE_WEEK = [58, 59, 60, 61, 62, 63];
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers([
+        ...SMALL_WEEK.map((n) => ({ id: userId(n), createdAtSql: RECENT })),
+        ...LARGE_WEEK.map((n) => ({ id: userId(n), createdAtSql: OLDER })),
+      ]);
+      // The recent week: eight arrivals, three of whom finished onboarding.
+      // The older week: six arrivals, all six of whom did.
+      insertPreferencesRows([
+        { id: userId(50), completedSql: "true", viaSql: `'finish'` },
+        { id: userId(51), completedSql: "true", viaSql: `'finish'` },
+        { id: userId(52), completedSql: "true", viaSql: `'skip'` },
+        ...[53, 54, 55, 56, 57].map((n) => ({ id: userId(n) })),
+        ...LARGE_WEEK.map((n) => ({ id: userId(n), completedSql: "true", viaSql: `'skip'` })),
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("suppresses a completion cell of fewer than five people, and prints the arrivals anyway", () => {
+      // Weeks come back newest first, so the recent week leads.
+      const rows = queryWithinCohort("onboarding", section("onboarding", 2));
+      expect(
+        rows.map(([account, , signups, completed, pct]) => [account, signups, completed, pct]),
+      ).toEqual([
+        ["registered", "8", "<5", "-"],
+        ["registered", "6", "6", "100.0%"],
+      ]);
+    });
+
+    it("suppresses the completion mode only where the cell is small", () => {
+      // Seven people skipped and two finished, so the same table carries both
+      // states at once: one cell prints, the other says only that it is small.
+      const rows = queryWithinCohort("onboarding", section("onboarding", 3));
+      expect(rows).toEqual([
+        ["registered", "skip", "7"],
+        ["registered", "finish", "<5"],
+      ]);
+    });
+  });
+
+  describe("every report states who is in its population before its first table", () => {
+    // ☠️ #2373, and docs/analytics.md "Who is in the population". The project's
+    // own accounts are NOT excluded from any figure - that was refused - so
+    // what ships instead is a measurement of how many of them there are, and
+    // this block is exempt from k=5 in both directions: it counts the project's
+    // own accounts, so the privacy rationale is void, and a bound is already
+    // the anti-false-precision form, so that rationale is inverted.
+    //
+    // Signup date is irrelevant here, so every fixture shares one.
+    const OLD = "now() - interval '40 days'";
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers([
+        // Two on the owner's address, one of them plus-tagged. Exactly
+        // identifiable: a stranger cannot hold this address.
+        { id: userId(70), createdAtSql: OLD, emailSql: `'vasil.yoshev@gmail.com'` },
+        { id: userId(71), createdAtSql: OLD, emailSql: `'vasil.yoshev+alpha@gmail.com'` },
+        // A real person who plus-tags their own mail, and two ordinary words.
+        // These are why the wider count is a bound and never an estimate.
+        { id: userId(72), createdAtSql: OLD, emailSql: `'someone+news@example.com'` },
+        { id: userId(73), createdAtSql: OLD, emailSql: `'demo@example.com'` },
+        { id: userId(74), createdAtSql: OLD, emailSql: `'qa-TEST@example.com'` },
+        // Nothing to go on, which is the normal case.
+        { id: userId(75), createdAtSql: OLD, emailSql: `'stranger@example.com'` },
+        // ☠️ A guest has no email at all, so it can never be classified either
+        // way - not as ours, not as theirs.
+        { id: userId(76), createdAtSql: OLD, isAnonymous: true },
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    for (const name of REPORTS) {
+      it(`analytics-${name}.sql counts the owner exactly and the rest as an upper bound`, () => {
+        const [row] = queryWithinCohort(name, provenanceStatement(name));
+        expect(row).toEqual([
+          // owner_exact: 70 and 71. A plus-tag of the owner address is still
+          // the owner address.
+          "2",
+          // internal_upper_bound: those two, plus the stranger who plus-tags
+          // and the two accounts carrying an ordinary word. It over-counts on
+          // purpose; that is what makes it a bound.
+          "5",
+          "6",
+          // The guest arm, stated separately because it is not identifiable.
+          "1",
+        ]);
+      });
+
+      it(`analytics-${name}.sql prints the block raw, never through k=5`, () => {
+        // A count of two would be `<5` under the rule. It is not, and that is
+        // the exemption working: the number has to stay readable precisely as
+        // cleanup succeeds and it becomes small.
+        const [row] = queryWithinCohort(name, provenanceStatement(name));
+        expect(row).not.toContain("<5");
+        expect(row).not.toContain("-");
+      });
+    }
   });
 });

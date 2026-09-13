@@ -44,12 +44,140 @@
 create temp view accounts as
   select id as user_id,
          created_at,
+         -- `email` is carried for the population-provenance block below and for
+         -- nothing else. It is never selected into a printed row - every report
+         -- is aggregate-only (docs/analytics.md), so no address ever leaves the
+         -- database. It is read here rather than in that block because a report
+         -- reads auth.users exactly once; test/analytics-shared-sql.test.ts
+         -- allows exactly one such line per file, and this is it.
+         email,
          case when coalesce(is_anonymous, false) then 'guest' else 'registered' end as account
   from auth.users;
 
 -- Both labels, so section 0 prints the guest population even while it is zero.
 create temp view account_labels(account) as values ('registered'), ('guest');
 -- <<< shared:accounts
+
+-- >>> shared:k_suppression
+-- k=5 cell suppression. Byte-identical in all three reports;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ☠️ This is a FALSE-PRECISION control first and a privacy control second: a
+-- printed "67%" that means two users out of three is the number that gets
+-- believed. A count of 1..4 prints `<5`; a percentage whose numerator or
+-- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
+-- information, and it discloses nothing.
+--
+-- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
+-- `<5`"). The rule governs any cell that SLICES the population — a cell that
+-- counts the people who did something (activated, completed, retained, used a
+-- module, picked a widget) or who carry some property (a concern arm, a
+-- completion mode) — and every percentage taken over such a cell.
+--
+-- It never governs a WHOLE-POPULATION count: how many accounts there are, how
+-- many of each type, how many arrived in a given week, how big a signup cohort
+-- is. Those are the population itself and the trend over it, they attribute
+-- nothing to anybody, and without that carve-out the rule would print `<5`
+-- over the very trend the monthly digest exists to show.
+--
+-- Two blocks are exempt, each carrying its recorded reason: the
+-- population-provenance block below, and the first-occurrences section (which
+-- prints facts, never counts, so it has no cell to suppress).
+--
+-- ⚠️ One SECTION is carved out too, and it is not one of those two: the gate
+-- status in analytics-segment.sql prints a retained count raw, because it is
+-- the distance to a threshold this repo has already committed to in writing
+-- and because a two-arm split beside its own total suppresses nothing anyway.
+-- The reasoning is written out beside it; do not copy the carve-out anywhere
+-- else on the strength of this sentence.
+create function pg_temp.k_count(n bigint) returns text
+  language sql immutable
+  as $$
+    select case
+      when coalesce(n, 0) = 0 then '0'
+      when n < 5 then '<5'
+      else n::text
+    end
+  $$;
+
+create function pg_temp.k_pct(num bigint, den bigint) returns text
+  language sql immutable
+  as $$
+    select case
+      when coalesce(den, 0) < 5 then '-'
+      when coalesce(num, 0) between 1 and 4 then '-'
+      else round(100.0 * coalesce(num, 0) / den, 1)::text || '%'
+    end
+  $$;
+-- <<< shared:k_suppression
+
+-- >>> shared:population_provenance
+-- Who is in this population (docs/analytics.md, "Who is in the population").
+-- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
+-- if they drift, and each report prints it separately and deliberately: every
+-- report runs independently, so a surviving one must carry its own population
+-- statement when another throws.
+--
+-- The `accounts` view has no WHERE, so every figure in every report includes
+-- the project's own accounts. Excluding them was refused; what ships instead is
+-- a measurement of how many of them there are.
+--
+-- ☠️ THIS BLOCK IS EXEMPT FROM THE k=5 RULE ABOVE, and BOTH reasons are
+-- recorded here so the exemption can never be mistaken for an oversight:
+--
+--   * it counts THE PROJECT'S OWN accounts, so the privacy rationale does not
+--     apply to it at all; and
+--   * an upper bound is already the anti-false-precision form, so the
+--     false-precision rationale is not merely absent but inverted.
+--
+-- Without the exemption the number would vanish behind `<5` precisely as
+-- cleanup succeeded and it finally became good news, leaving a reader unable to
+-- tell "almost none" from "withheld". The counts below are therefore raw.
+--
+-- ⚠️ Not the same thing as `=== 0) Population split` below. That one is about
+-- account TYPE (registered or guest); this one is about account PROVENANCE
+-- (ours or theirs). Two different questions, one overloaded word.
+-- ⚠️ The owner address is in source deliberately. It is not a secret and not a
+-- new disclosure: it is the author address on every commit in this repository,
+-- and plus-tagged variants of the same mailbox are already written into
+-- docs/app-store-review-information.md. The exact count has to compare against
+-- something, and a report that kept the address out of the file could not
+-- produce the figure docs/analytics.md asks it for.
+\set owner_email 'vasil.yoshev@gmail.com'
+
+\echo
+\echo '=== Population provenance (how much of this population belongs to the project itself; raw counts, exempt from k=5 - the SQL comment says why) ==='
+\echo '    owner_exact          Accounts on the owner address as written, plus-tags of it included. Exact in the'
+\echo '                         sense that no stranger holds that address - not in the sense of catching every'
+\echo '                         account the owner could make. An address with no marker on it is not in here.'
+\echo '    internal_upper_bound AN UPPER BOUND, never a point estimate: plus-tagged, or carrying a demo or test'
+\echo '                         string. It bounds what the MARKERS can find, and it over-counts on purpose - a'
+\echo '                         real person may plus-tag their own mail, and demo and test are ordinary words.'
+\echo '    registered_accounts  The population the two counts above are drawn from, so the bound can be read.'
+\echo '    guest_accounts       NOT IDENTIFIABLE AT ALL, and outside both counts. A guest account has no email,'
+\echo '                         by construction, so nothing separates a guest minted by a user test from a'
+\echo '                         stranger who tapped the button.'
+\echo '    AGENTS.md requires deleting throwaway test accounts, so a large bound is a record of cleanup left undone.'
+select count(*) filter (where p.owner_address)                              as owner_exact,
+       count(*) filter (where p.owner_address or p.plus_tagged or p.demo_or_test_string) as internal_upper_bound,
+       count(*) filter (where a.account = 'registered')                     as registered_accounts,
+       count(*) filter (where a.account = 'guest')                          as guest_accounts
+from accounts a
+cross join lateral (
+  -- The local part with any plus tag stripped, put back on its own domain:
+  -- a plus tag of the owner address IS the owner address. ☠️ The inner
+  -- split_part is load-bearing - split_part(addr, '+', 1) on an UNTAGGED
+  -- address returns the whole thing, domain included, and the owner would then
+  -- be the only account the exact count missed.
+  select split_part(split_part(lower(coalesce(a.email, '')), '@', 1), '+', 1)
+           || '@' || split_part(lower(coalesce(a.email, '')), '@', 2)
+         = lower(:'owner_email')                                      as owner_address,
+         split_part(lower(coalesce(a.email, '')), '@', 1) like '%+%'  as plus_tagged,
+         (coalesce(a.email, '') <> ''
+            and (lower(a.email) like '%demo%'
+              or lower(a.email) like '%test%'))            as demo_or_test_string
+) p;
+-- <<< shared:population_provenance
 
 \echo
 \echo '=== 0) Population split (every table below carries this axis) ==='
@@ -69,11 +197,13 @@ group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 2) Onboarding conversion by signup week (completed vs not) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 select a.account,
        date_trunc('week', a.created_at)::date as week,
        count(*) as signups,
-       count(*) filter (where p.app_onboarding_completed) as completed,
-       round(100.0 * count(*) filter (where p.app_onboarding_completed) / count(*), 1)
+       pg_temp.k_count(count(*) filter (where p.app_onboarding_completed)) as completed,
+       pg_temp.k_pct(count(*) filter (where p.app_onboarding_completed), count(*))
          as completion_pct
 from accounts a
 left join public.user_preferences p on p.user_id = a.user_id
@@ -82,17 +212,21 @@ group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 3) Finish vs skip split (null = completed before via tracking existed) ==='
+\echo '    `<5` = k=5 suppressed count. Which mode someone chose is a property they carry, so these cells are slices.'
+\echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
 select a.account,
        coalesce(p.app_onboarding_completed_via, 'legacy/unknown') as via,
-       count(*) as users
+       pg_temp.k_count(count(*)) as users
 from public.user_preferences p
 join accounts a on a.user_id = p.user_id
 where p.app_onboarding_completed
-group by 1, 2 order by 3 desc, 1, 2;
+group by 1, 2 order by count(*) desc, 1, 2;
 
 \echo
 \echo '=== 5) Home widget selection still written by pre-Favourites native builds (#1958: the current app neither reads nor seeds this table) ==='
-select a.account, w.widget_id, count(*) as users
+\echo '    `<5` = k=5 suppressed count. A widget pick is a property someone carries, so these cells are slices.'
+\echo '    Ordered by the true user count, as section 2 of the segment report is: READ THE ORDERING.'
+select a.account, w.widget_id, pg_temp.k_count(count(*)) as users
 from public.widget_preferences w
 join accounts a on a.user_id = w.user_id
-group by 1, 2 order by 3 desc, 2, 1;
+group by 1, 2 order by count(*) desc, 2, 1;
