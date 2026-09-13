@@ -268,6 +268,170 @@ create temp view programme_steps(programme, step_order, step, kind, min_phase_in
   select pl.programme, pl.total_phases + 2, 'graduation dismissed', 'graduation_dismissed', null
     from programme_labels pl;
 
+-- ============================================================================
+-- FIRST OCCURRENCES (#2379). Facts that became true for the FIRST TIME EVER
+-- during the covered period.
+--
+-- ☠️ THIS IS THE SECTION THE WHOLE MONTHLY DIGEST EXISTS FOR, AND IT IS THE ONE
+-- MOST LIKELY TO BE DELETED AS DECORATION. Read this before touching it.
+--
+-- The 2026-09-02 failure is usually described as "nobody read the report". That
+-- is NOT what happened, and designing against it produces the wrong instrument.
+-- Activation collapsing is exactly what a digest of numbers WOULD have shown,
+-- and the reader would have concluded "activation is down" - which is wrong.
+-- What actually went missing is that A METRIC'S MEANING CHANGED: anonymous
+-- sign-in went live, "signups" quietly became "visitors who tapped a button",
+-- and docs/analytics.md had predicted precisely that in writing. Printing
+-- quantities more often cannot fix that. Something has to make a REGIME CHANGE
+-- visible, and this is it.
+--
+-- ⚠️ It is NOT the rejected "flag notable movement". `Notable` is a judgement
+-- wearing a number's clothes and needs a threshold; zero to non-zero is the
+-- boundary of EXISTENCE, not a chosen number. No magnitude, no comparison.
+--
+-- Each fact fires at most once, ever, so this section shrinks monotonically and
+-- is structurally incapable of becoming alert fatigue.
+--
+-- ☠️ IT PRINTS FACTS - NEVER DATES, NEVER COUNTS. A first occurrence is n=1 by
+-- definition, so a count would always be 1, and THE DATE IS THE PART THAT WOULD
+-- INDIVIDUATE: "the first guest account was created at 14:07 on the 3rd" is a
+-- timestamp belonging to one identifiable person. The period is already stated
+-- by the digest, so "this happened for the first time in the covered period" is
+-- the whole statement. ⚠️ A later reader WILL want to restore the timestamp as
+-- a helpful detail. It is not a helpful detail; it is the aggregate-only rule
+-- being quietly broken in a section whose whole defence is that it prints no
+-- per-user data. Do not add it.
+--
+-- This is the second block exempt from the k=5 rule above, and it needs no
+-- mechanism: printing facts rather than counts leaves no cell to suppress.
+
+-- The covered period. Defaults to THE CALENDAR MONTH JUST ENDED, which is what
+-- the monthly run on the first of the month reports on.
+-- ⚠️ The integration suite replaces this view to move the window; nothing else
+-- should. A fact is "first" relative to all of history, never to the window -
+-- the window only decides whether to PRINT it.
+create temp view digest_period as
+  select date_trunc('month', now()) - interval '1 month' as period_start,
+         date_trunc('month', now())                      as period_end;
+
+-- The modules and the core tools, as literal lists.
+--
+-- ⚠️ They duplicate the labels in the shared content_events block DELIBERATELY:
+-- deriving either from the data would shrink it to whatever has already
+-- happened, which is the exact opposite of a watch list - the row that matters
+-- most is the module NOBODY HAS USED YET. The integration suite holds each list
+-- in step with the block's text rather than with its rows.
+--
+-- `module_labels` is also what section 4 prints, so the module list is written
+-- once in this file rather than twice.
+create temp view module_labels(module) as values
+  ('cbt'), ('meditation'), ('gratitude'), ('act'), ('dbt');
+
+create temp view core_tool_labels(feature) as values
+  ('mood'), ('journal'), ('sleep'), ('habits'), ('mindfulness');
+
+-- The watch list: every fixed-shape row the three reports print, each with the
+-- instant it first became true, or null if it never has.
+--
+-- ☠️ ONE FACT THE SCHEMA CANNOT DATE, AND IT IS EXCLUDED RATHER THAN FAKED:
+--
+--   * PER-PHASE PROGRAMME MILESTONES. The funnel's "reached phase N" steps come
+--     from `*_program_phase_index`, and `*_program_phase_started_at` holds only
+--     the CURRENT phase's start - it is overwritten on every advance. "The first
+--     time anybody reached phase 3" is not recoverable. Started, completed and
+--     graduation-dismissed all have their own columns and ARE covered. Verified
+--     against the live schema: there is no event, audit or history table for
+--     programme phases anywhere.
+--
+-- ⚠️ AGE-GATE ATTESTATION WAS ALMOST EXCLUDED ON A FALSE PREMISE, and the near
+-- miss is worth recording. `age_floor_met` is a bare boolean, so a search for a
+-- companion column named after IT finds nothing - but the timestamp exists under
+-- a different name, `age_attested_at` (#1762), written at the moment of
+-- attestation. The fact is covered below. Do not re-exclude it on the strength
+-- of `age_floor_met` having no `_at` twin.
+--
+-- ☠️ AND A CAVEAT THAT APPLIES TO EVERY FACT DATED FROM `user_preferences`:
+-- those columns are STATE, NOT EVENTS. `abandonProgram` NULLS
+-- `*_program_started_at`, replay clears `*_program_completed_at`, and
+-- `reminder_consent_updated_at` holds the time of the LAST change, so a
+-- consent later revoked is not visible at all. A `min()` over current state can
+-- therefore be LATER than the truth, and a fact can fire a month late - or, if
+-- everyone who held it has since reverted, not yet at all. Facts dated from
+-- append-only rows (auth.users, content_events, auth.identities) are exact.
+-- See docs/analytics.md and the funnel's own abandonment note in section 7.
+create temp view first_occurrences(fact_order, fact, first_at) as
+  -- Account types. Exact: auth.users rows are append-only.
+  -- ☠️ The guest row is the one that matters. This is the fact that WOULD have
+  -- fired in the digest after 2026-09-02, beside a release list naming the
+  -- release responsible, and it is the worked example in docs/analytics.md.
+  select 1, 'a ' || l.account || ' account exists',
+         (select min(a.created_at) from accounts a where a.account = l.account)
+    from account_labels l
+  union all
+  -- Modules. Exact: content rows are append-only.
+  -- ⚠️ JOINED TO `accounts`, exactly as sections 4 and 5 join it. Without that
+  -- a content row whose account no longer exists would still fire the fact, and
+  -- this section would disagree with the very tables it watches.
+  select 2, 'the ' || m.module || ' module has been used',
+         (select min(c.created_at)
+            from content_events c
+            join accounts a on a.user_id = c.user_id
+           where c.module = m.module)
+    from module_labels m
+  union all
+  -- Core tools. Exact, same reason, same join.
+  select 3, 'the ' || t.feature || ' tool has been used',
+         (select min(c.created_at)
+            from content_events c
+            join accounts a on a.user_id = c.user_id
+           where c.module = 'core' and c.feature = t.feature)
+    from core_tool_labels t
+  union all
+  -- Programme milestones. ⚠️ Dated from state - see the caveat above.
+  select 4, pl.programme || ' programme: somebody has ' || k.label,
+         -- ⚠️ Every branch is named and there is NO catch-all `else`. Section 7
+         -- learned this the hard way: a fall-through branch silently absorbs any
+         -- kind added later, and would date a new milestone from the graduation
+         -- column without failing anything. An unnamed kind yields null here,
+         -- which prints nothing rather than something wrong.
+         (select min(case k.kind
+                       when 'started' then pp.started_at
+                       when 'completed' then pp.completed_at
+                       when 'graduation_dismissed' then pp.graduation_dismissed_at
+                     end)
+            from programme_progress pp where pp.programme = pl.programme)
+    from programme_labels pl
+   cross join (values ('started', 'started it'),
+                      ('completed', 'completed it'),
+                      ('graduation_dismissed', 'dismissed its graduation')) as k(kind, label)
+  union all
+  -- Reminder consent. ⚠️ Dated from state - see the caveat above.
+  select 5, 'somebody has consented to reminders',
+         (select min(p.reminder_consent_updated_at)
+            from public.user_preferences p
+            join accounts a on a.user_id = p.user_id
+           where p.reminder_consent)
+  union all
+  -- The age gate. `age_attested_at` is the instant the verdict was written
+  -- (#1762); `age_floor_met` null means never asked, so a non-null timestamp is
+  -- an attestation whichever way the verdict went. ⚠️ Dated from state: it is
+  -- overwritten if somebody attests again.
+  select 6, 'somebody has answered the age gate',
+         (select min(p.age_attested_at)
+            from public.user_preferences p
+            join accounts a on a.user_id = p.user_id)
+  union all
+  -- The first guest-to-registered conversion, on the identity clock the
+  -- onboarding report's section 4 defines (#2376): the account's EARLIEST
+  -- identity, more than a second after the account itself. Exact:
+  -- auth.identities rows are append-only.
+  select 7, 'a guest account has converted to registered',
+         (select min(f.first_identity_at)
+            from (select i.user_id, min(i.created_at) as first_identity_at
+                    from auth.identities i group by 1) f
+            join accounts a on a.user_id = f.user_id
+           where f.first_identity_at > a.created_at + interval '1 second');
+
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
 -- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
@@ -336,6 +500,39 @@ cross join lateral (
 ) p;
 -- <<< shared:population_provenance
 
+
+\echo
+\echo '=== First occurrences (facts true for the FIRST TIME EVER during the covered period) ==='
+\echo '    READ THIS BESIDE THE RELEASE LIST. One says what changed, the other says something began.'
+\echo '    This is the section that answers the 2026-09-02 failure: a metric whose MEANING changed,'
+\echo '    which no amount of printing quantities more often can surface. Zero to non-zero is the'
+\echo '    boundary of existence, not a chosen threshold - there is nothing notable being judged here.'
+\echo '    Each fact fires at most once, ever, so this section shrinks over time and cannot become noise.'
+\echo '    FACTS ONLY - no dates and no counts, deliberately. A first occurrence is n=1 by definition,'
+\echo '    and the date is the part that would individuate. The SQL comment says why not to restore it.'
+\echo '    Exempt from the k=5 rule, and it needs no mechanism: there is no cell here to suppress.'
+\echo '    ONE CAVEAT WORTH KNOWING: facts read from user_preferences (programme milestones, reminder'
+\echo '    consent, the age gate) are dated from CURRENT STATE, not from an event log. Those columns'
+\echo '    are overwritten or cleared, so such a fact can fire a month late - or, if somebody consented'
+\echo '    and later revoked, name a month that is not really the first. Facts read from accounts,'
+\echo '    content rows and sign-in identities are exact.'
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
+\echo '    A (no rows) here is the ordinary case: it means nothing happened for the first time.'
+with section_rows as (
+  select fo.fact_order, fo.fact
+  from first_occurrences fo
+  cross join digest_period d
+  where fo.first_at >= d.period_start
+    and fo.first_at <  d.period_end
+)
+select fact
+from (
+  select fact, fact_order, 0 as empty_marker from section_rows
+  union all
+  select '(no rows)', null, 1 where not exists (select 1 from section_rows)
+) t
+order by t.empty_marker, t.fact_order, t.fact;
 \echo
 \echo '=== 0) Population split (every table below carries this axis) ==='
 select l.account,
@@ -458,14 +655,14 @@ used as (
   select a.account, c.module, count(distinct c.user_id) as used_users
   from content_events c
   join accounts a on a.user_id = c.user_id
-  where c.module in ('cbt', 'meditation', 'gratitude', 'act', 'dbt')
+  where c.module in (select module from module_labels)
   group by 1, 2
 )
 select t.account,
        mods.module,
        pg_temp.k_count(coalesce(u.used_users, 0)) as users,
        pg_temp.k_pct(coalesce(u.used_users, 0), t.all_users) as users_pct
-from (values ('cbt'), ('meditation'), ('gratitude'), ('act'), ('dbt')) as mods(module)
+from module_labels as mods
 cross join totals t
 left join used u on u.module = mods.module and u.account = t.account
 order by t.account, mods.module;

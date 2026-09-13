@@ -570,9 +570,45 @@ next digest, beside a release list naming the release responsible.
   later reader should not restore the timestamp as a helpful detail.
 - **The watch list is the fixed-shape rows the reports already print**: each
   account type, each module, each core tool, each programme milestone, reminder
-  consent, age-gate attestation, first conversion. ⚠️ A programme funnel reading
-  all zeros is therefore **the watch list working**, not an embarrassment — the
-  month someone first completes a programme, it fires.
+  consent, first conversion. ⚠️ A programme funnel reading all zeros is therefore
+  **the watch list working**, not an embarrassment — the month someone first
+  completes a programme, it fires.
+
+☠️ **One fact on that list is undatable, and it is excluded rather than faked.**
+Found while building it, not while specifying it:
+
+- **Per-phase programme milestones.** The funnel's _reached phase N_ steps come
+  from `*_program_phase_index`, and `*_program_phase_started_at` holds only the
+  **current** phase's start — it is overwritten on every advance. _Started_,
+  _completed_ and _graduation dismissed_ each have their own column and are
+  covered. Verified against the live schema: there is no event, audit or history
+  table for programme phases anywhere.
+
+⚠️ **Age-gate attestation was almost excluded on a false premise, and the near
+miss is the more useful record.** `age_floor_met` is a bare boolean, so looking
+for a companion column named after _it_ finds nothing — but the timestamp exists
+under a different name, `age_attested_at` (#1762), written at the moment of
+attestation. The fact is covered. A later reader should not re-exclude it on the
+strength of `age_floor_met` having no `_at` twin.
+
+⚠️ **And a caveat on every fact dated from `user_preferences`: those columns are
+state, not events.** `abandonProgram` nulls `*_program_started_at`, replay clears
+`*_program_completed_at`, `reminder_consent_updated_at` holds the time of the
+_last_ change, and `age_attested_at` is overwritten if somebody attests again. A
+`min()` over current state can be later than the truth, so such a fact can fire a
+month late — or, where somebody consented and later revoked, **name a month that
+is not really the first**, which is a wrong statement rather than a late one.
+That is the limit of what the schema can support, so the section says it in its
+own legend rather than only in a comment. Facts dated from append-only rows
+(`auth.users`, `content_events`, `auth.identities`) are exact. This is the same
+state-versus-event limit the programme funnel carries, reaching one section
+further.
+
+⚠️ **Order within the engagement report**, which this document previously left
+unstated: the population block prints first, then first occurrences, then section 0. The population block frames every count below it, and first occurrences are
+**facts rather than counts**, so the provenance caveat does not bear on them —
+and the block's `\set` has to stay inside the report's definitions for the test
+harness to run sections in isolation.
 
 **Silence is never allowed to mean anything.** Fixed-shape tables already print
 their zeros; **open-shape tables print an explicit `(no rows)` marker**; a thrown
