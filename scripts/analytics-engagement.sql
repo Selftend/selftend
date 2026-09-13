@@ -202,6 +202,12 @@ create temp view first_content as
 -- ⚠️ Not the same thing as `=== 0) Population split` below. That one is about
 -- account TYPE (registered or guest); this one is about account PROVENANCE
 -- (ours or theirs). Two different questions, one overloaded word.
+-- ⚠️ The owner address is in source deliberately. It is not a secret and not a
+-- new disclosure: it is the author address on every commit in this repository,
+-- and plus-tagged variants of the same mailbox are already written into
+-- docs/app-store-review-information.md. The exact count has to compare against
+-- something, and a report that kept the address out of the file could not
+-- produce the figure docs/analytics.md asks it for.
 \set owner_email 'vasil.yoshev@gmail.com'
 
 \echo
