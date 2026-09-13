@@ -315,12 +315,66 @@ function insertGratitudeEntry(id: string) {
   runSql(`insert into public.gratitude_entries (user_id, item_1) values ('${id}', 'a warm cup');`);
 }
 
+/**
+ * Sign-in identities, the clock the onboarding report's conversion section runs
+ * on (#2376). `createdAtSql` is the instant the identity was ATTACHED, which is
+ * the whole measurement: at the user row means the account was born registered,
+ * later means somebody converted a guest.
+ */
+function insertIdentities(rows: { userId: string; createdAtSql: string; provider?: string }[]) {
+  const values = rows
+    .map(
+      (row, index) =>
+        `('${row.userId}-${index}', '${row.userId}', ` +
+        `jsonb_build_object('sub', '${row.userId}'), '${row.provider ?? "email"}', ` +
+        `${row.createdAtSql}, ${row.createdAtSql}, ${row.createdAtSql})`,
+    )
+    .join(",\n");
+  runSql(`
+    insert into auth.identities (
+      provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    ) values ${values};
+  `);
+}
+
+/**
+ * Section 4 of the onboarding report is two statements: the arm table, then the
+ * rate. Both describes below need them apart — running the section whole folds
+ * the rate row in among the arms.
+ *
+ * ⚠️ Split on `;`, which survives only because `section()` drops the `\echo`
+ * lines, and those legends contain semicolons. Rewrite one legend as a `--`
+ * comment and this silently returns the wrong statement, so the count is
+ * asserted rather than assumed.
+ */
+function conversionStatements(): string[] {
+  const statements = section("onboarding", 4)
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "");
+  expect(statements).toHaveLength(2);
+  return statements.map((statement) => `${statement};`);
+}
+
+const conversionArmTable = () => conversionStatements()[0];
+const conversionRate = () => conversionStatements()[1];
+
+/** A pinned tool or module, as the favourites section reads them. */
+function insertFavourites(rows: { userId: string; kind: string; key: string }[]) {
+  const values = rows.map((row) => `('${row.userId}', '${row.kind}', '${row.key}')`).join(",\n");
+  runSql(`insert into public.favorites (user_id, kind, key) values ${values};`);
+}
+
 function deleteSuiteUsers() {
   runSql(
     `delete from public.gratitude_entries_data where user_id::text like '${TEST_UUID_PREFIX}-%';`,
   );
   runSql(`delete from public.mood_logs_data where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from public.user_preferences where user_id::text like '${TEST_UUID_PREFIX}-%';`);
+  runSql(`delete from public.favorites where user_id::text like '${TEST_UUID_PREFIX}-%';`);
+  // Explicit rather than left to the cascade: an identity outliving its user
+  // would put a stranger's row into this suite's next conversion fixture.
+  runSql(`delete from auth.identities where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from auth.users where id::text like '${TEST_UUID_PREFIX}-%';`);
 }
 
@@ -1277,6 +1331,250 @@ describe("aggregate analytics reports (integration)", () => {
         expect(steps).toContain(`${account}/act/graduation dismissed`);
         expect(steps).toContain(`${account}/dbt/completed`);
       }
+    });
+  });
+
+  describe("onboarding report: guest-to-registered conversion", () => {
+    // ☠️ #2376, on #2366's finding. This is CONTEXT.md's own definition
+    // executed, not a proxy: conversion is attaching the first sign-in identity,
+    // and `auth.identities.created_at` is the instant that happened.
+    //
+    // ☠️ THE ONE-SECOND THRESHOLD separates "same transaction" from "a separate
+    // act", not "fast" from "slow" - a born-registered identity lands within
+    // 0.080s of its user row, and a conversion needs a human decision first. The
+    // fixtures straddle it exactly, at +1s and +1.5s, because a threshold whose
+    // fixtures do not sit either side of it survives being moved.
+    // ☠️ A FIXED INSTANT, not `now() - interval '40 days'`. The accounts and
+    // their identities are inserted by separate statements, and `now()` is
+    // evaluated afresh in each - so a "+1 second" identity actually landed a
+    // second PLUS the drift between the two round trips, and the fixture that
+    // exists to sit exactly ON the threshold sat past it. A literal makes the
+    // two inserts agree to the microsecond. It is far enough in the past to be
+    // mature, and being in the past it stays that way.
+    const SIGNUP = "timestamptz '2026-08-04T12:00:00Z'";
+    const UNCONVERTED = [120, 121, 122, 123, 124];
+    const CONVERTED_IN_WINDOW = [125, 126, 127, 128, 129];
+    const CONVERTED_LATE = 130; // day 9 - a real conversion, outside the window
+    const AT_MINT = 131;
+    const AT_MINT_RELINKED = 132; // linked a second provider much later
+    const AT_MINT_EDGE = 133; // identity exactly 1s later: still the same act
+    const CONVERTED_EDGE = 134; // 1.5s later: a separate act
+
+    /** One row per user from the shipped view, keyed by user id. */
+    function armsByUser(): Map<string, string> {
+      return new Map(
+        queryWithinCohort(
+          "onboarding",
+          `select user_id, arm from conversion_arms order by user_id;`,
+        ).map(([user, arm]) => [user, arm]),
+      );
+    }
+
+    /** Section 4's printed arm table. */
+    function printedArms(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("onboarding", conversionArmTable()).map(([arm, users]) => [arm, users]),
+      );
+    }
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers([
+        // Guests who never converted keep is_anonymous true and have no identity.
+        ...UNCONVERTED.map((n) => ({
+          id: userId(n),
+          createdAtSql: SIGNUP,
+          isAnonymous: true,
+        })),
+        // Everyone below holds an identity, so they are registered now.
+        ...[
+          ...CONVERTED_IN_WINDOW,
+          CONVERTED_LATE,
+          AT_MINT,
+          AT_MINT_RELINKED,
+          AT_MINT_EDGE,
+          CONVERTED_EDGE,
+        ].map((n) => ({ id: userId(n), createdAtSql: SIGNUP })),
+      ]);
+      insertIdentities([
+        ...CONVERTED_IN_WINDOW.map((n) => ({
+          userId: userId(n),
+          createdAtSql: `${SIGNUP} + interval '2 days'`,
+        })),
+        { userId: userId(CONVERTED_LATE), createdAtSql: `${SIGNUP} + interval '9 days'` },
+        { userId: userId(AT_MINT), createdAtSql: SIGNUP },
+        // ☠️ min(), not any: a provider linked three months later must not read
+        // as a conversion on an account that was registered from the start.
+        { userId: userId(AT_MINT_RELINKED), createdAtSql: SIGNUP },
+        {
+          userId: userId(AT_MINT_RELINKED),
+          createdAtSql: `${SIGNUP} + interval '90 days'`,
+          provider: "google",
+        },
+        { userId: userId(AT_MINT_EDGE), createdAtSql: `${SIGNUP} + interval '1 second'` },
+        { userId: userId(CONVERTED_EDGE), createdAtSql: `${SIGNUP} + interval '1.5 seconds'` },
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("puts each account in the arm its identity record earns", () => {
+      const arms = armsByUser();
+      expect(arms.get(userId(UNCONVERTED[0]))).toBe("guest (unconverted)");
+      expect(arms.get(userId(CONVERTED_IN_WINDOW[0]))).toBe("converted guest");
+      expect(arms.get(userId(CONVERTED_LATE))).toBe("converted guest");
+      expect(arms.get(userId(AT_MINT))).toBe("registered at mint");
+    });
+
+    it("☠️ reads the earliest identity, so a later provider link is not a conversion", () => {
+      expect(armsByUser().get(userId(AT_MINT_RELINKED))).toBe("registered at mint");
+    });
+
+    it("☠️ puts the one-second threshold between the same act and a separate one", () => {
+      // Exactly one second is still the signup transaction; half a second later
+      // is a decision somebody made. Moving the threshold either way breaks one
+      // of these two.
+      const arms = armsByUser();
+      expect(arms.get(userId(AT_MINT_EDGE))).toBe("registered at mint");
+      expect(arms.get(userId(CONVERTED_EDGE))).toBe("converted guest");
+    });
+
+    it("partitions the whole population, leaving nobody in no arm", () => {
+      // The acceptance criterion the contradiction arm depends on: if the arms
+      // did not cover everyone, an account could go missing rather than turning
+      // up in the arm that exists to catch disagreement.
+      const [row] = queryWithinCohort(
+        "onboarding",
+        `select count(*), count(arm), count(distinct user_id) from conversion_arms;`,
+      );
+      // Fifteen accounts, fifteen arms, nobody counted twice and nobody null.
+      expect(row).toEqual(["15", "15", "15"]);
+      expect(armsByUser().size).toBe(15);
+    });
+
+    it("prints all four arms, with the contradiction arm empty on well-formed data", () => {
+      // ⚠️ Fixed shape. The contradiction arm has to print its zero, or its
+      // absence and its emptiness look the same.
+      const arms = printedArms();
+      expect([...arms.keys()]).toEqual([
+        "guest (unconverted)",
+        "converted guest",
+        "registered at mint",
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
+      ]);
+      expect(arms.get("guest (unconverted)")).toBe("5");
+      expect(arms.get("converted guest")).toBe("7");
+      expect(arms.get("is_anonymous disagrees with the identity record (CONTRADICTION)")).toBe("0");
+    });
+
+    it("rates conversion over mature guest-origin accounts, and excludes a late one", () => {
+      // Twelve guest-origin accounts, all past seven days. Six converted inside
+      // the window; the day-nine conversion is real and is deliberately not in
+      // the numerator, because the window asks about the first week.
+      const [row] = queryWithinCohort("onboarding", conversionRate());
+      expect(row).toEqual(["12", "6", "50.0%"]);
+    });
+  });
+
+  describe("onboarding report: the contradiction arm", () => {
+    // ☠️ The arm exists to catch `is_anonymous` and the identity record
+    // disagreeing about who is a guest. This makes them disagree on purpose: an
+    // account that says it is registered while holding no identity at all.
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers([
+        // Two accounts that say they are registered and hold no identity.
+        { id: userId(140), createdAtSql: "now() - interval '40 days'" },
+        { id: userId(141), createdAtSql: "now() - interval '40 days'" },
+        // ☠️ And one of the MIRROR shape: a guest that holds an identity. An
+        // earlier version of the arms filed this as `converted guest` - a
+        // disagreement absorbed into a plausible-looking neighbour, which is
+        // the failure this arm exists to prevent.
+        {
+          id: userId(142),
+          createdAtSql: "now() - interval '40 days'",
+          isAnonymous: true,
+        },
+      ]);
+      insertIdentities([{ userId: userId(142), createdAtSql: "now() - interval '38 days'" }]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("catches a guest that holds an identity, not only the reverse", () => {
+      const arms = new Map(
+        queryWithinCohort(
+          "onboarding",
+          `select user_id, arm from conversion_arms order by user_id;`,
+        ).map(([user, arm]) => [user, arm]),
+      );
+      expect(arms.get(userId(142))).toBe(
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
+      );
+      expect(arms.get(userId(140))).toBe(
+        "is_anonymous disagrees with the identity record (CONTRADICTION)",
+      );
+    });
+
+    it("fills when the two definitions of guest drift apart", () => {
+      // Only the arm table, not the rate statement that follows it in the
+      // section - running both would fold the rate row in among the arms.
+      const rows = new Map(
+        queryWithinCohort("onboarding", conversionArmTable()).map(([arm, users]) => [arm, users]),
+      );
+      expect(rows.get("is_anonymous disagrees with the identity record (CONTRADICTION)")).toBe(
+        "<5",
+      );
+      // And nobody is quietly filed elsewhere to make the total look right.
+      expect(rows.get("guest (unconverted)")).toBe("0");
+      expect(rows.get("converted guest")).toBe("0");
+      expect(rows.get("registered at mint")).toBe("0");
+    });
+  });
+
+  describe("onboarding report: favourites", () => {
+    // #2376. Favourites took the slot the retired widget-picks section held.
+    // Open shape - kinds and keys come and go with the product - so only what
+    // exists prints, and a key nobody pinned is simply absent rather than a row
+    // of zero.
+    const PINNED_MOOD = [150, 151, 152, 153, 154];
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers([
+        ...PINNED_MOOD.map((n) => ({ id: userId(n), createdAtSql: "now() - interval '40 days'" })),
+        { id: userId(155), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+      ]);
+      insertFavourites([
+        ...PINNED_MOOD.map((n) => ({ userId: userId(n), kind: "tool", key: "mood" })),
+        // One person pinning twice is still one person.
+        { userId: userId(PINNED_MOOD[0]), kind: "module", key: "cbt" },
+        // A guest pins too, so the account axis carries something on both arms.
+        { userId: userId(155), kind: "tool", key: "journal" },
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("counts distinct people per kind and key, split by account type", () => {
+      const rows = new Map(
+        queryWithinCohort("onboarding", section("onboarding", 5)).map(
+          ([account, kind, key, users]) => [`${account}/${kind}/${key}`, users],
+        ),
+      );
+      expect(rows.get("registered/tool/mood")).toBe("5");
+      expect(rows.get("registered/module/cbt")).toBe("<5");
+      expect(rows.get("guest/tool/journal")).toBe("<5");
+      // ☠️ Exactly these three rows and no others. Asserting only that an
+      // unpinned key is absent would assert nothing - section 5 has no label
+      // table, so a key nobody pinned can never appear and the check could not
+      // fail. The claim worth making is that the section emits one row per
+      // (account, kind, key) that exists and invents none.
+      expect([...rows.keys()].sort()).toEqual([
+        "guest/tool/journal",
+        "registered/module/cbt",
+        "registered/tool/mood",
+      ]);
     });
   });
 

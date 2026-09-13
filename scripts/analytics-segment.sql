@@ -63,8 +63,9 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
--- module, picked a widget) or who carry some property (a concern arm, a
--- completion mode) — and every percentage taken over such a cell.
+-- module, converted from guest) or who carry some property (a concern arm, a
+-- completion mode, a pinned favourite) — and every percentage taken over such a
+-- cell.
 --
 -- It never governs a WHOLE-POPULATION count: how many accounts there are, how
 -- many of each type, how many arrived in a given week, how big a signup cohort
