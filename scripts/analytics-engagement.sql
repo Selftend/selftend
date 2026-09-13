@@ -371,7 +371,7 @@ group by 1 order by 1;
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select account,
          date_trunc('week', signup_at)::date as week,
          count(*) as signups,
@@ -386,9 +386,9 @@ with rows as (
 select account, week, signups, activated, activated_pct, activated_within_72h
 from (
   select account, week, signups, activated, activated_pct, activated_within_72h, 0 as empty_marker
-    from rows
+    from section_rows
   union all
-  select '(no rows)', null, null, null, null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, null, null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.week desc, t.account;
 
@@ -396,6 +396,8 @@ order by t.empty_marker, t.week desc, t.account;
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
 \echo '    `-` = percentage withheld because a contributing cell rests on fewer than five users.'
 \echo '    `cohort_size` is how many people arrived that week - a whole-population count - and prints raw.'
+\echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
+\echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
 with flags as (
   select a.account,
          date_trunc('week', a.created_at)::date as signup_week,
@@ -474,7 +476,7 @@ order by t.account, mods.module;
 \echo '    Ordered by the true user count, as the segment report orders its arms: READ THE ORDERING.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select a.account,
          c.feature,
          pg_temp.k_count(count(distinct c.user_id)) as users,
@@ -488,9 +490,9 @@ with rows as (
 )
 select account, feature, users, users_pct
 from (
-  select account, feature, users, users_pct, sort_users, 0 as empty_marker from rows
+  select account, feature, users, users_pct, sort_users, 0 as empty_marker from section_rows
   union all
-  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.sort_users desc, t.feature, t.account;
 

@@ -963,9 +963,6 @@ describe("aggregate analytics reports (integration)", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0][0]).toBe("(ordering withheld)");
         expect(rows[0][1]).toContain("fewer than two arms");
-        // No arm of either axis may appear: the point is that nothing rankable
-        // was printed, not merely that the row count is one.
-        expect(rows[0][0]).not.toMatch(/^(en|bg|no preferences row|cbt only|no content)$/);
       }
     });
 
@@ -1989,6 +1986,33 @@ describe("aggregate analytics reports (integration)", () => {
     const ORDERING_WITHHELD = "(ordering withheld)";
 
     /**
+     * How many columns each restructured section PRINTS.
+     *
+     * ☠️ This is a k=5 guard, not a tidiness one. Unioning a marker row in
+     * forced every restructured section to carry its ordering in a `sort_*`
+     * column, and those keys are RAW counts and RAW rates - exactly the numbers
+     * `pg_temp.k_count` and `k_pct` exist to hide. They are safe only because
+     * they live in the inner subquery and the ORDER BY, never in the outer
+     * select list, which is one keystroke from being wrong and reads almost
+     * identically. A leaked key shows up here as an extra column.
+     *
+     * ⚠️ Do not "simplify" this into a grep for `sort_` in the report output.
+     * That was tried and it is VACUOUS: runSql passes `-tA`, so psql prints no
+     * column headers at all, and a leaked key is just another bare number.
+     */
+    const PRINTED_COLUMNS: Record<string, number> = {
+      "engagement:2": 6,
+      "engagement:3": 7,
+      "engagement:5": 4,
+      "onboarding:1": 3,
+      "onboarding:2": 5,
+      "onboarding:3": 3,
+      "onboarding:5": 4,
+      "segment:3": 6,
+      "segment:4": 6,
+    };
+
+    /**
      * Every printed section of every report, classified. A value other than
      * OPEN/WITHHELD is the reason the section is fixed-shape, and that reason is
      * TESTED rather than trusted: a fixed-shape section must still print rows
@@ -2063,6 +2087,12 @@ describe("aggregate analytics reports (integration)", () => {
         // Guards the guard. A section added later is invisible to this rule
         // until somebody says which kind it is, which is exactly how the
         // open-shape sections went unswept until #2378.
+        //
+        // ⚠️ Not total, and the limit is worth knowing: this keys off `\echo`
+        // headings, so a statement appended AFTER the last heading folds into
+        // the section above it and escapes classification entirely. Every
+        // printed statement in all three reports currently sits under a heading.
+        // Give a new one its own heading, or it is not swept.
         expect(printedSections(name)).toEqual(Object.keys(registry).sort());
       });
 
@@ -2074,6 +2104,19 @@ describe("aggregate analytics reports (integration)", () => {
             const rows = queryWithNoPopulation(name, statementsOf(name, label));
             expect(rows).toHaveLength(1);
             expect(rows[0][0]).toBe(NO_ROWS);
+            expect(rows[0]).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+          });
+
+          it(`analytics-${name}.sql: ${title} prints no ordering key beside its rows`, () => {
+            // See PRINTED_COLUMNS: the sort key is a raw count, so a leak into
+            // the printed columns would hand back the number k=5 suppressed.
+            // Run over the WHOLE population, where a leaked key actually holds a
+            // value rather than the marker row's null.
+            const rows = queryWithin(name, statementsOf(name, label));
+            expect(rows.length).toBeGreaterThan(0);
+            for (const row of rows) {
+              expect(row).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+            }
           });
           continue;
         }
@@ -2087,6 +2130,18 @@ describe("aggregate analytics reports (integration)", () => {
             expect(rows).toHaveLength(1);
             expect(rows[0][0]).toBe(ORDERING_WITHHELD);
             expect(rows[0][1]).toContain("section 2");
+            expect(rows[0]).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+          });
+
+          it(`analytics-${name}.sql: ${title} prints no ordering key beside its rows`, () => {
+            // See PRINTED_COLUMNS. These two carry a raw RATE as their sort key,
+            // which is worse than a raw count: it is the percentage k_pct
+            // withholds, at full precision.
+            const rows = queryWithin(name, statementsOf(name, label));
+            expect(rows.length).toBeGreaterThan(0);
+            for (const row of rows) {
+              expect(row).toHaveLength(PRINTED_COLUMNS[`${name}:${label}`]);
+            }
           });
           continue;
         }

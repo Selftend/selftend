@@ -54,8 +54,9 @@ Two things to know when reading it:
   module-usage arms. Open-shape tables (weeks, feature names) print only what
   exists. Section 0 of each report carries the axis unconditionally. ⚠️ The one
   deliberate exception is an ordering the segment report has **withheld** for
-  failing its axis-coverage precondition: that prints no rows at all, and the
-  section above it says why.
+  failing its axis-coverage precondition: that prints a single
+  `(ordering withheld)` row naming the reason, and the section above it says
+  which axis failed.
 - **The split reads current account state, not state at signup.** Signing up
   from a guest session converts the same `auth.users` row in place, so a
   converted guest reads as `registered` across their whole history. The `guest`
@@ -447,7 +448,7 @@ How to read it, in the order the report prints:
 - **An ordering is unreadable unless its axis carries values.** Section 2 is that
   precondition, and it is checked **before** an ordering is printed rather than
   read as a caveat beside one: where it says an axis is not readable, that
-  section prints **no rows at all**. ☠️ **An axis carries values when at least
+  section prints **a single `(ordering withheld)` row** and no ordering at all. ☠️ **An axis carries values when at least
   two of its arms hold a mature user.** One arm is not a cross-tab, it is the
   population with a label on it — and one arm holding everybody is exactly what
   the concern axis was. Mature is the right population to count over because the

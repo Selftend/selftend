@@ -273,7 +273,7 @@ group by 1 order by 2 desc, 1;
 \echo '=== 1) Weekly signups, last 12 weeks ==='
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select account, date_trunc('week', created_at)::date as week, count(*) as signups
   from accounts
   where created_at >= date_trunc('week', now()) - interval '11 weeks'
@@ -281,9 +281,9 @@ with rows as (
 )
 select account, week, signups
 from (
-  select account, week, signups, 0 as empty_marker from rows
+  select account, week, signups, 0 as empty_marker from section_rows
   union all
-  select '(no rows)', null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.week desc, t.account;
 
@@ -296,7 +296,7 @@ order by t.empty_marker, t.week desc, t.account;
 \echo '    `signups` is the weekly arrival trend, a whole-population count, and prints raw.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select a.account,
          date_trunc('week', a.created_at)::date as week,
          count(*) as signups,
@@ -310,9 +310,9 @@ with rows as (
 )
 select account, week, signups, completed, completion_pct
 from (
-  select account, week, signups, completed, completion_pct, 0 as empty_marker from rows
+  select account, week, signups, completed, completion_pct, 0 as empty_marker from section_rows
   union all
-  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.week desc, t.account;
 
@@ -322,7 +322,7 @@ order by t.empty_marker, t.week desc, t.account;
 \echo '    Ordered by the true user count, as the segment report orders its arms: READ THE ORDERING.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select a.account,
          coalesce(p.app_onboarding_completed_via, 'legacy/unknown') as via,
          pg_temp.k_count(count(*)) as users,
@@ -334,9 +334,9 @@ with rows as (
 )
 select account, via, users
 from (
-  select account, via, users, sort_users, 0 as empty_marker from rows
+  select account, via, users, sort_users, 0 as empty_marker from section_rows
   union all
-  select '(no rows)', null, null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.sort_users desc, t.account, t.via;
 
@@ -435,7 +435,7 @@ where guest_origin;
 -- prints.
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
-with rows as (
+with section_rows as (
   select a.account,
          f.kind,
          f.key,
@@ -447,8 +447,8 @@ with rows as (
 )
 select account, kind, key, users
 from (
-  select account, kind, key, users, sort_users, 0 as empty_marker from rows
+  select account, kind, key, users, sort_users, 0 as empty_marker from section_rows
   union all
-  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from rows)
+  select '(no rows)', null, null, null, null, 1 where not exists (select 1 from section_rows)
 ) t
 order by t.empty_marker, t.sort_users desc, t.kind, t.key, t.account;
