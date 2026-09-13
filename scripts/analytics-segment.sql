@@ -123,6 +123,11 @@ create temp view content_events as
   union all select user_id, created_at, 'cbt', 'self_care' from public.self_care_logs
   union all select user_id, created_at, 'cbt', 'activity' from public.activity_logs
   union all select user_id, created_at, 'cbt', 'exposure' from public.exposure_sessions
+  -- goals and milestones are routed under modules/cbt, whatever their anchoring
+  -- to personal values suggests; a milestone is dated by created_at, not by the
+  -- completed_at it also carries, so an unfinished one still counts as use.
+  union all select user_id, created_at, 'cbt', 'goal' from public.goals
+  union all select user_id, created_at, 'cbt', 'milestone' from public.milestones
   -- meditation module
   union all select user_id, created_at, 'meditation', 'session' from public.meditation_sessions
   -- gratitude module
@@ -135,6 +140,7 @@ create temp view content_events as
   union all select user_id, created_at, 'act', 'observing_self' from public.act_observing_self_sessions
   union all select user_id, created_at, 'act', 'choice_point' from public.act_choice_points
   union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions
+  union all select user_id, created_at, 'act', 'bulls_eye' from public.act_bulls_eye_snapshots
   -- dbt module
   union all select user_id, created_at, 'dbt', 'coping_plan' from public.dbt_coping_plans
   union all select user_id, completed_at, 'dbt', 'muscle_relaxation' from public.dbt_sessions

@@ -192,6 +192,25 @@ in the integration suite because that check needs a database —
 `test/export-user-data-monotonic.test.ts` says in as many words that it cannot
 do this from migration files alone.
 
+☠️ **Open question the gate exposed: eleven tables are undecided, not excluded.**
+Building it turned up far more than the three missing tables it was written for.
+Twenty-five relations carry a `user_id` without being content, and fourteen of
+those are settled by the rule above — identity, settings, delivery plumbing,
+authored configuration, programme progress state. The other eleven are not:
+`core_beliefs`, `challenge_plans`, `recovery_plans`, `procrastination_tasks`,
+`task_steps`, `stage_practice_notes`, `act_value_entries`, `values_profile`,
+`act_action_steps`, `exposure_hierarchies` and `exposure_items` are each the
+**output of an exercise rather than a setting**, so the authored-configuration
+rule does not reach them and calling them excluded would be writing a false
+reason into the registry. They sit in it marked `UNDECIDED`.
+
+Deferring is safe **today and only today**: all eleven held zero rows in
+production when this was measured (2026-09-13), so the classification moves no
+number. It moves one the day somebody uses the feature — a person doing belief
+work or building an exposure ladder would not read as activated. That is why
+this is recorded as an open question and not left to silence, which is the
+failure the gate exists to end.
+
 The **programme funnel** covers CBT, ACT and DBT: started, phase reached,
 completed, graduation dismissed. Every column already exists and is written for
 the whole population; none of it was reported anywhere until now, which is an
