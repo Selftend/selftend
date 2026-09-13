@@ -206,17 +206,26 @@ create temp view first_content as
 -- having started, and this view keeps the two columns together so that stays
 -- easy to see.
 --
--- `total_phases` is the length of each programme's definition in the app -
--- CBT_PROGRAM (5), ACT_PROGRAM (4), DBT_PROGRAM (4) in
--- src/features/<module>/program-definition.ts. It is here so the funnel can
--- print one row per phase without a second list of magic numbers;
+-- The phase counts live in `programme_labels` just below - CBT_PROGRAM (5),
+-- ACT_PROGRAM (4), DBT_PROGRAM (4) in
+-- src/features/<module>/program-definition.ts - so the funnel can print one row
+-- per phase without a second list of magic numbers.
 -- test/analytics-programme-phases.test.ts fails if a programme grows or shrinks
--- and this is not moved with it.
+-- and that list is not moved with it.
+-- ☠️ The programmes and their lengths, and the ONE place either is written.
+-- This is deliberately independent of `accounts`: the funnel's shape must not
+-- depend on anybody existing. Derived from the progress view instead - with a
+-- `select distinct` over it - it would collapse to NOTHING on a database with
+-- no accounts, and section 7 would print zero rows. A fixed-shape table that
+-- prints nothing is the one outcome docs/analytics.md rules out, because
+-- silence then means either "no data" or "broken" and a reader cannot tell.
+create temp view programme_labels(programme, total_phases) as values
+  ('cbt', 5), ('act', 4), ('dbt', 4);
+
 create temp view programme_progress as
   select a.user_id,
          a.account,
          p.programme,
-         p.total_phases,
          p.started_at,
          p.phase_index,
          p.completed_at,
@@ -224,13 +233,13 @@ create temp view programme_progress as
   from accounts a
   left join public.user_preferences up on up.user_id = a.user_id
   cross join lateral (values
-    ('cbt', 5, up.cbt_program_started_at, up.cbt_program_phase_index,
-                up.cbt_program_completed_at, up.cbt_graduation_dismissed_at),
-    ('act', 4, up.act_program_started_at, up.act_program_phase_index,
-                up.act_program_completed_at, up.act_graduation_dismissed_at),
-    ('dbt', 4, up.dbt_program_started_at, up.dbt_program_phase_index,
-                up.dbt_program_completed_at, up.dbt_graduation_dismissed_at)
-  ) as p(programme, total_phases, started_at, phase_index,
+    ('cbt', up.cbt_program_started_at, up.cbt_program_phase_index,
+            up.cbt_program_completed_at, up.cbt_graduation_dismissed_at),
+    ('act', up.act_program_started_at, up.act_program_phase_index,
+            up.act_program_completed_at, up.act_graduation_dismissed_at),
+    ('dbt', up.dbt_program_started_at, up.dbt_program_phase_index,
+            up.dbt_program_completed_at, up.dbt_graduation_dismissed_at)
+  ) as p(programme, started_at, phase_index,
          completed_at, graduation_dismissed_at);
 
 -- The funnel's steps, generated from each programme's own length rather than
@@ -239,19 +248,24 @@ create temp view programme_progress as
 -- programme and both account types, zeros included - because those zeros are
 -- the watch list the first-occurrences section reads. Reaching phase 1 IS
 -- starting, so the phase steps begin at 2.
-create temp view programme_steps(programme, step_order, step, min_phase_index) as
-  select pl.programme, 1, 'started', 0
-    from (select distinct programme, total_phases from programme_progress) pl
+--
+-- ⚠️ `kind` is the stable key the section branches on; `step` is only the label
+-- it prints. They are separate because a `case` on the printed text falls
+-- through to the phase branch the moment somebody rewords a label, and would
+-- then count completers by phase index without failing anything.
+create temp view programme_steps(programme, step_order, step, kind, min_phase_index) as
+  select pl.programme, 1, 'started', 'started', 0
+    from programme_labels pl
   union all
-  select pl.programme, i, 'reached phase ' || i, i - 1
-    from (select distinct programme, total_phases from programme_progress) pl
+  select pl.programme, i, 'reached phase ' || i, 'phase', i - 1
+    from programme_labels pl
    cross join generate_series(2, pl.total_phases) as i
   union all
-  select pl.programme, pl.total_phases + 1, 'completed', null
-    from (select distinct programme, total_phases from programme_progress) pl
+  select pl.programme, pl.total_phases + 1, 'completed', 'completed', null
+    from programme_labels pl
   union all
-  select pl.programme, pl.total_phases + 2, 'graduation dismissed', null
-    from (select distinct programme, total_phases from programme_progress) pl;
+  select pl.programme, pl.total_phases + 2, 'graduation dismissed', 'graduation_dismissed', null
+    from programme_labels pl;
 
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
@@ -501,12 +515,16 @@ left join public.user_preferences p on p.user_id = a.user_id
 group by 1 order by 1;
 
 \echo
-\echo '=== 7) Programme funnel (cbt, act, dbt; the drop-off from starting to graduating) ==='
+\echo '=== 7) Programme funnel (cbt, act, dbt; how far people get through a programme run) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    Every step prints for every programme and both account types, zeros included: those zeros are the'
 \echo '    watch list, and the month somebody first completes a programme is the month this stops being zero.'
-\echo '    `pct_of_starters` is a share of the people who STARTED that programme, never of the population -'
-\echo '    the drop-off is the question a funnel answers.'
+\echo '    `pct_of_starters` is a share of the people whose start is STILL ON RECORD - never of the population.'
+\echo '    ☠️ READ THIS BEFORE READING THE NUMBERS. Abandoning a programme sets started_at back to null, so a'
+\echo '    person who started, got part way and left is counted at NO step here, and is absent from the'
+\echo '    denominator too. This table is a snapshot of runs in progress and runs completed - it is NOT a'
+\echo '    cohort of everyone who ever began, and the drop-off it shows is therefore OPTIMISTIC. Replaying'
+\echo '    likewise clears completed_at, so a graduate who starts again stops counting as completed.'
 -- #2375. None of this was reported anywhere before, which is an odd gap for the
 -- part of the product AGENTS.md names as core MVP alongside the everyday tools.
 --
@@ -514,35 +532,51 @@ group by 1 order by 1;
 -- step is conditioned on `started_at is not null`, because `phase_index`
 -- defaults to 0 and a report that drops that condition counts the whole
 -- population as having reached phase 1.
-select l.account,
-       s.programme,
-       s.step,
-       pg_temp.k_count(count(pp.user_id) filter (
-         where case
-           when s.step = 'completed' then pp.completed_at is not null
-           when s.step = 'graduation dismissed' then pp.graduation_dismissed_at is not null
-           else pp.started_at is not null and pp.phase_index >= s.min_phase_index
-         end
-       )) as users,
-       pg_temp.k_pct(
+--
+-- ☠️ THE COLUMNS ARE CURRENT STATE, NOT EVENTS, and that bounds what this
+-- section can honestly claim. `abandonProgram` in src/features/<module>/
+-- use-<module>-program.ts writes `started_at = null` and leaves phase_index
+-- where it was, so abandonment is not merely unreported - it is ERASED, and the
+-- person disappears from both the numerator and the denominator. Someone who
+-- quit at phase 3 is indistinguishable here from someone who never began.
+-- `replayProgram` clears completed_at for the same reason.
+--
+-- ⚠️ So do not describe this as a funnel over everyone who ever started, and do
+-- not use it to argue that stalling is measured: it shows how far the people
+-- still in a programme have got. Recording abandonment properly needs the app
+-- to stop destroying the start date, which is a schema change and not a report
+-- change; that is tracked separately.
+with reached as (
+  select l.account,
+         s.programme,
+         s.step,
+         s.step_order,
+         -- ☠️ Computed ONCE. It used to be copied into the count and the
+         -- percentage, which put the started_at guard in two places that had to
+         -- be kept in step by hand.
          count(pp.user_id) filter (
-           where case
-             when s.step = 'completed' then pp.completed_at is not null
-             when s.step = 'graduation dismissed' then pp.graduation_dismissed_at is not null
+           where case s.kind
+             when 'completed' then pp.completed_at is not null
+             when 'graduation_dismissed' then pp.graduation_dismissed_at is not null
              else pp.started_at is not null and pp.phase_index >= s.min_phase_index
            end
-         ),
-         count(pp.user_id) filter (where pp.started_at is not null)
-       ) as pct_of_starters
-from account_labels l
-cross join programme_steps s
-left join programme_progress pp
-       on pp.account = l.account
-      and pp.programme = s.programme
-group by l.account, s.programme, s.step, s.step_order
-order by l.account, s.programme, s.step_order;
+         ) as users,
+         count(pp.user_id) filter (where pp.started_at is not null) as starters
+  from account_labels l
+  cross join programme_steps s
+  left join programme_progress pp
+         on pp.account = l.account
+        and pp.programme = s.programme
+  group by l.account, s.programme, s.step, s.step_order
+)
+select account,
+       programme,
+       step,
+       pg_temp.k_count(users) as users,
+       pg_temp.k_pct(users, starters) as pct_of_starters
+from reached
+order by account, programme, step_order;
 
-\echo
 \echo '=== 8) Reminder adoption (user_preferences.reminder_consent) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    `accounts` is a whole-population count and prints raw.'

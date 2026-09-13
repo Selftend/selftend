@@ -128,18 +128,20 @@ function queryWithin(name: string, sql: string): string[][] {
  * The narrowed view is a REWRITE of the shipped shared block, never a copy of
  * it, so it cannot drift from the view the reports actually run.
  */
-function cohortDefinitions(name: string): string {
-  const view = sharedBlock(name, "accounts")
-    .slice(0, sharedBlock(name, "accounts").indexOf("-- Both labels,"))
+function definitionsWithPopulation(name: string, whereSql: string): string {
+  const block = sharedBlock(name, "accounts");
+  const view = block
+    .slice(0, block.indexOf("-- Both labels,"))
     .replace("create temp view accounts as", "create or replace temp view accounts as")
-    .replace(
-      "  from auth.users;",
-      `  from auth.users where id::text like '${TEST_UUID_PREFIX}-%';`,
-    );
-  if (!view.includes("where id::text like")) {
+    .replace("  from auth.users;", `  from auth.users where ${whereSql};`);
+  if (!view.includes(`where ${whereSql}`)) {
     throw new Error(`analytics-${name}.sql: the accounts view no longer ends in auth.users`);
   }
   return `${definitions(name)}\n${view}\n`;
+}
+
+function cohortDefinitions(name: string): string {
+  return definitionsWithPopulation(name, `id::text like '${TEST_UUID_PREFIX}-%'`);
 }
 
 /** Runs a query with this suite's fixtures as the report's entire population. */
@@ -276,7 +278,7 @@ function insertPreferencesRows(
 function insertProgrammeRows(
   rows: {
     id: string;
-    programme: "cbt" | "act" | "dbt";
+    programme?: "cbt" | "act" | "dbt";
     startedAtSql?: string;
     phaseIndex?: number;
     completedAtSql?: string;
@@ -286,24 +288,24 @@ function insertProgrammeRows(
   }[],
 ) {
   for (const row of rows) {
+    // ⚠️ `user_id` is the primary key, so a second row for the same person
+    // would throw rather than add a programme. Upserting instead means a
+    // fixture can be put into two programmes by calling this twice, which the
+    // signature otherwise invites and could not deliver.
+    const programmeColumns = row.programme
+      ? `
+        ${row.programme}_program_started_at = ${row.startedAtSql ?? "null"},
+        ${row.programme}_program_phase_index = ${row.phaseIndex ?? 0},
+        ${row.programme}_program_completed_at = ${row.completedAtSql ?? "null"},
+        ${row.programme}_graduation_dismissed_at = ${row.graduationDismissedAtSql ?? "null"},`
+      : "";
     runSql(`
-      insert into public.user_preferences (
-        user_id,
-        ${row.programme}_program_started_at,
-        ${row.programme}_program_phase_index,
-        ${row.programme}_program_completed_at,
-        ${row.programme}_graduation_dismissed_at,
-        reminder_consent,
-        notifications_enabled_global
-      ) values (
-        '${row.id}',
-        ${row.startedAtSql ?? "null"},
-        ${row.phaseIndex ?? 0},
-        ${row.completedAtSql ?? "null"},
-        ${row.graduationDismissedAtSql ?? "null"},
-        ${row.reminderConsentSql ?? "false"},
-        ${row.notificationsGlobalSql ?? "true"}
-      );
+      insert into public.user_preferences (user_id) values ('${row.id}')
+      on conflict (user_id) do nothing;
+      update public.user_preferences set${programmeColumns}
+        reminder_consent = ${row.reminderConsentSql ?? "false"},
+        notifications_enabled_global = ${row.notificationsGlobalSql ?? "true"}
+      where user_id = '${row.id}';
     `);
   }
 }
@@ -1122,6 +1124,11 @@ describe("aggregate analytics reports (integration)", () => {
     const STARTED_ONLY = [80, 81, 82, 83, 84, 85]; // started, sitting on phase 2
     const NEVER_STARTED = [86, 87, 88, 89, 90]; // ☠️ phase index, no start
     const COMPLETED = [91, 92, 93, 94, 95]; // ran the whole thing
+    // ☠️ Guests, running a DIFFERENT programme from the registered fixtures.
+    // Without them every fixture is registered, and the account axis is
+    // asserted only for row presence and zeros - so breaking the join on
+    // `pp.account` would leave every other test in this suite passing.
+    const GUESTS_ON_ACT = [96, 97, 98, 99, 110];
 
     /** Section 7 as shipped, over this suite's fixtures, keyed `account/programme/step`. */
     function funnel(): Map<string, { users: string; pct: string }> {
@@ -1137,13 +1144,26 @@ describe("aggregate analytics reports (integration)", () => {
 
     beforeAll(() => {
       deleteSuiteUsers();
-      insertAuthUsers(
-        [...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED].map((n) => ({
+      insertAuthUsers([
+        ...[...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
         })),
-      );
+        ...GUESTS_ON_ACT.map((n) => ({
+          id: userId(n),
+          createdAtSql: "now() - interval '40 days'",
+          isAnonymous: true,
+        })),
+      ]);
       insertProgrammeRows([
+        // Five guests on ACT, so the account axis carries real progress on both
+        // arms and on two different programmes at once.
+        ...GUESTS_ON_ACT.map((n) => ({
+          id: userId(n),
+          programme: "act" as const,
+          startedAtSql: "now() - interval '10 days'",
+          phaseIndex: 1,
+        })),
         // Started and on phase 2 of 5.
         ...STARTED_ONLY.map((n) => ({
           id: userId(n),
@@ -1208,11 +1228,41 @@ describe("aggregate analytics reports (integration)", () => {
       // ⚠️ The zeros are the point: they are the watch list the first
       // occurrences section reads, so the month somebody first completes a
       // programme it stops being zero. Nobody dismissed a graduation here, and
-      // nothing touched act or dbt.
+      // no registered fixture touched act or dbt.
       const rows = funnel();
       expect(rows.get("registered/cbt/graduation dismissed")?.users).toBe("0");
       expect(rows.get("registered/act/started")?.users).toBe("0");
       expect(rows.get("registered/dbt/started")?.users).toBe("0");
+    });
+
+    it("☠️ keeps each account type's progress on its own arm", () => {
+      // Five guests started ACT; eleven registered accounts started CBT, and
+      // nobody did both. So each arm's progress must appear only against its
+      // own account type - a join that lost `pp.account` would show all sixteen
+      // people under both, and every other assertion here would still pass.
+      const rows = funnel();
+      expect(rows.get("guest/act/started")?.users).toBe("5");
+      expect(rows.get("guest/act/reached phase 2")?.users).toBe("5");
+      expect(rows.get("guest/cbt/started")?.users).toBe("0");
+      expect(rows.get("registered/act/started")?.users).toBe("0");
+      expect(rows.get("registered/cbt/started")?.users).toBe("11");
+    });
+
+    it("☠️ keeps its full shape when nobody exists at all", () => {
+      // The steps come from `programme_labels`, which is independent of
+      // `accounts`, and this is why. Derived from the progress view instead -
+      // the obvious way to write it - the step list collapses to nothing on an
+      // empty population and section 7 prints ZERO ROWS. A fixed-shape table
+      // that prints nothing is the one outcome docs/analytics.md rules out:
+      // silence then means either "no data" or "broken", and a reader cannot
+      // tell which.
+      const empty = rowsAfterMarker(
+        definitionsWithPopulation("engagement", "false"),
+        section("engagement", 7),
+        "engagement",
+      );
+      expect(empty).toHaveLength(2 * (7 + 6 + 6));
+      for (const row of empty) expect(row[3]).toBe("0");
     });
 
     it("prints every step for every programme and both account types", () => {
@@ -1237,6 +1287,11 @@ describe("aggregate analytics reports (integration)", () => {
     // false and moves only when somebody chooses it.
     const CONSENTED = [100, 101, 102, 103, 104];
     const DECLINED = [105, 106, 107];
+    // ☠️ Exactly two guests, one of whom consented. This arm is the only one
+    // that can show the k=5 rule doing anything: `k_count(0)` prints "0" and
+    // `k_count(5)` prints "5", both identical to the raw number, so a guest arm
+    // of zero would assert the suppression and the absence of it alike.
+    const GUESTS = [108, 109];
 
     function reminders(): Map<string, string[]> {
       return new Map(
@@ -1249,13 +1304,21 @@ describe("aggregate analytics reports (integration)", () => {
 
     beforeAll(() => {
       deleteSuiteUsers();
-      insertAuthUsers(
-        [...CONSENTED, ...DECLINED].map((n) => ({
+      insertAuthUsers([
+        ...[...CONSENTED, ...DECLINED].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
         })),
-      );
+        ...GUESTS.map((n) => ({
+          id: userId(n),
+          createdAtSql: "now() - interval '40 days'",
+          isAnonymous: true,
+        })),
+      ]);
       insertProgrammeRows([
+        // Two guests, one consenting: an arm small enough for k=5 to bite.
+        { id: userId(GUESTS[0]), reminderConsentSql: "true" },
+        { id: userId(GUESTS[1]), reminderConsentSql: "false" },
         // ☠️ Consented, with the global switch OFF. If this section ever reads
         // `notifications_enabled_global` these five vanish and the count reads
         // zero - which is the failure the column choice exists to prevent, made
@@ -1286,9 +1349,11 @@ describe("aggregate analytics reports (integration)", () => {
     });
 
     it("prints the account count raw and the consent count through k=5", () => {
-      // `accounts` is a whole-population count; consent is a slice. The guest
-      // row has nobody in it, so it shows what an empty arm looks like.
-      expect(reminders().get("guest")).toEqual(["0", "0", "-"]);
+      // ☠️ The whole claim of the title, in one row: two guest accounts print
+      // as 2 because a population count is never suppressed, while the one who
+      // consented prints `<5` because that is a slice. A guest arm of zero
+      // would have asserted nothing - `k_count(0)` is "0" either way.
+      expect(reminders().get("guest")).toEqual(["2", "<5", "-"]);
     });
   });
 

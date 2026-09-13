@@ -57,10 +57,16 @@ function phaseCount(file: string, constant: string): number {
   throw new Error(`${file}: ${constant} array literal is never closed`);
 }
 
-/** The `total_phases` the report's `programme_progress` view uses per programme. */
+/**
+ * The `total_phases` the report's `programme_labels` view declares per
+ * programme — the one place the report writes a phase count.
+ */
 function reportedPhases(): Record<string, number> {
   const source = fs.readFileSync(REPORT, "utf8");
-  const rows = [...source.matchAll(/\('(cbt|act|dbt)', (\d+), up\./g)];
+  const declaration = source.indexOf("create temp view programme_labels");
+  if (declaration === -1) throw new Error("the report has no programme_labels view");
+  const end = source.indexOf(";", declaration);
+  const rows = [...source.slice(declaration, end).matchAll(/\('(cbt|act|dbt)', (\d+)\)/g)];
   return Object.fromEntries(rows.map((row) => [row[1], Number(row[2])]));
 }
 
