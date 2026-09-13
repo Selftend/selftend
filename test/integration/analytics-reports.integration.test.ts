@@ -2091,10 +2091,19 @@ describe("aggregate analytics reports (integration)", () => {
       }
     });
 
-    it("covers every fixed-shape row the three reports print", () => {
+    it("covers every fixed-shape row it watches", () => {
       // ☠️ The watch list is the acceptance criterion, and a list that quietly
       // lost an entry would simply never fire for it - silently, forever. So the
       // whole list is pinned, not sampled.
+      //
+      // ⚠️ What this does NOT reach, said out loud because the test's name used
+      // to promise more than it delivers: the list below is a literal, so a new
+      // fixed-shape row in the ONBOARDING or SEGMENT report cannot fail here.
+      // The module and core-tool entries are the exception - the test after this
+      // one derives those from the shipped content_events block. Segment's own
+      // fixed-shape rows (gate status, axis coverage) are deliberately out of
+      // scope: they are thresholds and preconditions, not facts that can happen
+      // for a first time.
       const all = queryWithin("engagement", `select fact from first_occurrences order by 1;`).map(
         ([fact]) => fact,
       );
@@ -2104,6 +2113,7 @@ describe("aggregate analytics reports (integration)", () => {
           "a registered account exists",
           "a guest account has converted to registered",
           "somebody has consented to reminders",
+          "somebody has answered the age gate",
           ...["cbt", "meditation", "gratitude", "act", "dbt"].map(
             (module) => `the ${module} module has been used`,
           ),
@@ -2138,18 +2148,59 @@ describe("aggregate analytics reports (integration)", () => {
       for (const tool of coreTools) expect(all).toContain(`the ${tool} tool has been used`);
     });
 
-    it("records why the two undatable facts are excluded rather than faked", () => {
+    it("☠️ defaults the covered period to the calendar month just ended", () => {
+      // ☠️ Every other test in this describe REPLACES `digest_period`, so the
+      // shipped default was asserted by nothing at all: pointing it at the
+      // current month instead would have kept the whole suite green. The digest
+      // runs on the 1st and reports on the month that has just ended, and this
+      // is the only thing that says so.
+      const [row] = queryWithin(
+        "engagement",
+        `select period_start = date_trunc('month', now()) - interval '1 month',
+                period_end   = date_trunc('month', now())
+           from digest_period;`,
+      );
+      expect(row).toEqual(["t", "t"]);
+    });
+
+    it("☠️ treats the period as half-open, so no month can claim another's fact", () => {
+      // A fact at exactly midnight on the 1st belongs to the month STARTING
+      // then, never to the one ending. Without a fixture sitting exactly on the
+      // boundary, flipping `<` to `<=` in the section passes every other test
+      // here - and the fact would then fire in two consecutive digests, breaking
+      // the one promise this section makes.
+      //
+      // ⚠️ It has to be a fact that has NOT already fired for this cohort, or an
+      // earlier fixture decides the month and the boundary is never exercised.
+      // The act module is untouched by the fixtures above; the guest account is
+      // not, which is what made the first version of this test wrong.
+      expect(factsIn(MARCH, APRIL)).not.toContain("the act module has been used");
+
+      insertModuleContent([{ id: userId(70), module: "act", createdAtSql: APRIL }]);
+      try {
+        expect(factsIn(MARCH, APRIL)).not.toContain("the act module has been used");
+        expect(factsIn(APRIL, MAY)).toContain("the act module has been used");
+      } finally {
+        runSql(`delete from public.act_choice_points_data where user_id = '${userId(70)}';`);
+      }
+    });
+
+    it("records why the undatable fact is excluded rather than faked", () => {
       // ☠️ `age_floor_met` is a boolean with NO timestamp column anywhere, and
       // `*_program_phase_started_at` holds only the CURRENT phase's start. Both
       // facts are in the ticket's watch list and NEITHER can be dated. An
       // exclusion with no recorded reason is indistinguishable from an omission,
       // and this is the repo where an undecided exemption has bitten before.
       const source = reportSql("engagement");
-      expect(source).toContain("TWO FACTS THE SCHEMA CANNOT DATE");
-      expect(source).toContain("age_floor_met_at");
+      expect(source).toContain("ONE FACT THE SCHEMA CANNOT DATE");
       expect(source).toContain("PER-PHASE PROGRAMME MILESTONES");
-      // And the state-not-event caveat that applies to the rest.
+      // And the state-not-event caveat that applies to several of the rest.
       expect(source).toContain("STATE, NOT EVENTS");
+      // ☠️ The near miss, kept deliberately: age-gate attestation was almost
+      // excluded because `age_floor_met` has no `_at` twin, when the timestamp
+      // exists under another name. A later reader must not re-exclude it.
+      expect(source).toContain("age_attested_at");
+      expect(source).toContain("FALSE PREMISE");
     });
 
     it("is computed by the report, not assembled by anything else", () => {
