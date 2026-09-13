@@ -264,6 +264,50 @@ function insertPreferencesRows(
   `);
 }
 
+/**
+ * `user_preferences` rows carrying the programme and reminder columns the
+ * engagement report's sections 7 and 8 read (#2375).
+ *
+ * ☠️ `startedAtSql` and `phaseIndex` are separate on purpose, so a fixture can
+ * hold the shape the funnel must ignore: a phase index with NO start. That
+ * shape is not exotic - `phase_index` defaults to 0 for every account, so every
+ * account that never opened a programme has one.
+ */
+function insertProgrammeRows(
+  rows: {
+    id: string;
+    programme: "cbt" | "act" | "dbt";
+    startedAtSql?: string;
+    phaseIndex?: number;
+    completedAtSql?: string;
+    graduationDismissedAtSql?: string;
+    reminderConsentSql?: string;
+    notificationsGlobalSql?: string;
+  }[],
+) {
+  for (const row of rows) {
+    runSql(`
+      insert into public.user_preferences (
+        user_id,
+        ${row.programme}_program_started_at,
+        ${row.programme}_program_phase_index,
+        ${row.programme}_program_completed_at,
+        ${row.programme}_graduation_dismissed_at,
+        reminder_consent,
+        notifications_enabled_global
+      ) values (
+        '${row.id}',
+        ${row.startedAtSql ?? "null"},
+        ${row.phaseIndex ?? 0},
+        ${row.completedAtSql ?? "null"},
+        ${row.graduationDismissedAtSql ?? "null"},
+        ${row.reminderConsentSql ?? "false"},
+        ${row.notificationsGlobalSql ?? "true"}
+      );
+    `);
+  }
+}
+
 /** A gratitude record, the module content row the #1672 drift was first seen on. */
 function insertGratitudeEntry(id: string) {
   runSql(`insert into public.gratitude_entries (user_id, item_1) values ('${id}', 'a warm cup');`);
@@ -1068,6 +1112,183 @@ describe("aggregate analytics reports (integration)", () => {
         ["registered", "skip", "7"],
         ["registered", "finish", "<5"],
       ]);
+    });
+  });
+
+  describe("engagement report: the programme funnel", () => {
+    // #2375. Every cell asserted below is seeded at five or more, so the counts
+    // print their real values - k=5 would otherwise flatten the whole funnel
+    // into `<5` and there would be nothing to read.
+    const STARTED_ONLY = [80, 81, 82, 83, 84, 85]; // started, sitting on phase 2
+    const NEVER_STARTED = [86, 87, 88, 89, 90]; // ☠️ phase index, no start
+    const COMPLETED = [91, 92, 93, 94, 95]; // ran the whole thing
+
+    /** Section 7 as shipped, over this suite's fixtures, keyed `account/programme/step`. */
+    function funnel(): Map<string, { users: string; pct: string }> {
+      return new Map(
+        queryWithinCohort("engagement", section("engagement", 7)).map(
+          ([account, programme, step, users, pct]) => [
+            `${account}/${programme}/${step}`,
+            { users, pct },
+          ],
+        ),
+      );
+    }
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers(
+        [...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED].map((n) => ({
+          id: userId(n),
+          createdAtSql: "now() - interval '40 days'",
+        })),
+      );
+      insertProgrammeRows([
+        // Started and on phase 2 of 5.
+        ...STARTED_ONLY.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          startedAtSql: "now() - interval '20 days'",
+          phaseIndex: 1,
+        })),
+        // ☠️ THE SHAPE THE FUNNEL MUST IGNORE. A phase index as high as it goes
+        // and no start date, which is what every account that never opened the
+        // programme looks like once the column default is read as progress.
+        // These five must appear at NO step; if the `started_at is not null`
+        // condition is ever dropped they appear at all four phase steps.
+        ...NEVER_STARTED.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          phaseIndex: 4,
+        })),
+        // Started, reached the last phase, and finished.
+        ...COMPLETED.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          startedAtSql: "now() - interval '30 days'",
+          phaseIndex: 4,
+          completedAtSql: "now() - interval '2 days'",
+        })),
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("counts a person at every step they have reached, and no further", () => {
+      const rows = funnel();
+      // 11 started; 11 are on phase 2 or past it; only the 5 finishers went on.
+      expect(rows.get("registered/cbt/started")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 2")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 3")?.users).toBe("5");
+      expect(rows.get("registered/cbt/reached phase 4")?.users).toBe("5");
+      expect(rows.get("registered/cbt/reached phase 5")?.users).toBe("5");
+      expect(rows.get("registered/cbt/completed")?.users).toBe("5");
+    });
+
+    it("☠️ never counts a phase index that no start date supports", () => {
+      // The five NEVER_STARTED fixtures sit on the last phase with no start.
+      // Dropping the condition would put them into all four phase steps, so
+      // these numbers are exactly the ones that move: 11 -> 16 and 5 -> 10.
+      const rows = funnel();
+      expect(rows.get("registered/cbt/started")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 2")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 5")?.users).toBe("5");
+    });
+
+    it("reads the drop-off as a share of starters, not of the population", () => {
+      // 5 of 11 starters reached the last phase. Read against the 16 accounts
+      // this suite creates it would be 31.3%, and against every account on the
+      // database something else again.
+      const rows = funnel();
+      expect(rows.get("registered/cbt/started")?.pct).toBe("100.0%");
+      expect(rows.get("registered/cbt/reached phase 5")?.pct).toBe("45.5%");
+    });
+
+    it("prints a zero step rather than dropping it, and never leaks across programmes", () => {
+      // ⚠️ The zeros are the point: they are the watch list the first
+      // occurrences section reads, so the month somebody first completes a
+      // programme it stops being zero. Nobody dismissed a graduation here, and
+      // nothing touched act or dbt.
+      const rows = funnel();
+      expect(rows.get("registered/cbt/graduation dismissed")?.users).toBe("0");
+      expect(rows.get("registered/act/started")?.users).toBe("0");
+      expect(rows.get("registered/dbt/started")?.users).toBe("0");
+    });
+
+    it("prints every step for every programme and both account types", () => {
+      // Fixed shape. CBT has five phases and ACT and DBT four, so the step
+      // count differs per programme by design - keep this in step with the
+      // programme definitions, which test/analytics-programme-phases.test.ts
+      // holds the report's own numbers equal to.
+      const steps = [...funnel().keys()];
+      expect(steps).toHaveLength(2 * (7 + 6 + 6));
+      for (const account of ["guest", "registered"]) {
+        expect(steps).toContain(`${account}/cbt/reached phase 5`);
+        expect(steps).toContain(`${account}/act/graduation dismissed`);
+        expect(steps).toContain(`${account}/dbt/completed`);
+      }
+    });
+  });
+
+  describe("engagement report: reminder adoption", () => {
+    // ☠️ #2375. The claim is not just that a number is printed, but that it is
+    // the number that VARIES. `notifications_enabled_global` defaults to true
+    // and would read as near-universal adoption; `reminder_consent` defaults to
+    // false and moves only when somebody chooses it.
+    const CONSENTED = [100, 101, 102, 103, 104];
+    const DECLINED = [105, 106, 107];
+
+    function reminders(): Map<string, string[]> {
+      return new Map(
+        queryWithinCohort("engagement", section("engagement", 8)).map(([account, ...rest]) => [
+          account,
+          rest,
+        ]),
+      );
+    }
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      insertAuthUsers(
+        [...CONSENTED, ...DECLINED].map((n) => ({
+          id: userId(n),
+          createdAtSql: "now() - interval '40 days'",
+        })),
+      );
+      insertProgrammeRows([
+        // ☠️ Consented, with the global switch OFF. If this section ever reads
+        // `notifications_enabled_global` these five vanish and the count reads
+        // zero - which is the failure the column choice exists to prevent, made
+        // visible rather than argued about.
+        ...CONSENTED.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          reminderConsentSql: "true",
+          notificationsGlobalSql: "false",
+        })),
+        // Not consented, with the global switch ON - the default shape, and the
+        // one that would be counted by mistake.
+        ...DECLINED.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          reminderConsentSql: "false",
+          notificationsGlobalSql: "true",
+        })),
+      ]);
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("counts consent, and is unmoved by the global switch that defaults to true", () => {
+      // 8 accounts, 5 of whom consented - all five with the global switch off,
+      // and the three who did not consent have it on.
+      expect(reminders().get("registered")).toEqual(["8", "5", "62.5%"]);
+    });
+
+    it("prints the account count raw and the consent count through k=5", () => {
+      // `accounts` is a whole-population count; consent is a slice. The guest
+      // row has nobody in it, so it shows what an empty arm looks like.
+      expect(reminders().get("guest")).toEqual(["0", "0", "-"]);
     });
   });
 

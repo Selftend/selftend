@@ -195,6 +195,64 @@ create temp view first_content as
   left join content_events c on c.user_id = a.user_id
   group by 1, 2, 3;
 
+-- The three programmes, one row per account per programme (#2375). Every column
+-- read here already exists and is already written for the whole population;
+-- this collects nothing new.
+--
+-- ☠️ `phase_index` DEFAULTS TO 0, for everyone who has never opened the
+-- programme. Reading it without `started_at is not null` beside it reports the
+-- column default as though it were progress - which is the `enabled_modules`
+-- mistake (#1672) in a new place. Section 7 conditions every phase step on
+-- having started, and this view keeps the two columns together so that stays
+-- easy to see.
+--
+-- `total_phases` is the length of each programme's definition in the app -
+-- CBT_PROGRAM (5), ACT_PROGRAM (4), DBT_PROGRAM (4) in
+-- src/features/<module>/program-definition.ts. It is here so the funnel can
+-- print one row per phase without a second list of magic numbers;
+-- test/analytics-programme-phases.test.ts fails if a programme grows or shrinks
+-- and this is not moved with it.
+create temp view programme_progress as
+  select a.user_id,
+         a.account,
+         p.programme,
+         p.total_phases,
+         p.started_at,
+         p.phase_index,
+         p.completed_at,
+         p.graduation_dismissed_at
+  from accounts a
+  left join public.user_preferences up on up.user_id = a.user_id
+  cross join lateral (values
+    ('cbt', 5, up.cbt_program_started_at, up.cbt_program_phase_index,
+                up.cbt_program_completed_at, up.cbt_graduation_dismissed_at),
+    ('act', 4, up.act_program_started_at, up.act_program_phase_index,
+                up.act_program_completed_at, up.act_graduation_dismissed_at),
+    ('dbt', 4, up.dbt_program_started_at, up.dbt_program_phase_index,
+                up.dbt_program_completed_at, up.dbt_graduation_dismissed_at)
+  ) as p(programme, total_phases, started_at, phase_index,
+         completed_at, graduation_dismissed_at);
+
+-- The funnel's steps, generated from each programme's own length rather than
+-- listed: started, then one row per later phase, then completed, then
+-- graduation dismissed. A FIXED-shape table - every step prints for every
+-- programme and both account types, zeros included - because those zeros are
+-- the watch list the first-occurrences section reads. Reaching phase 1 IS
+-- starting, so the phase steps begin at 2.
+create temp view programme_steps(programme, step_order, step, min_phase_index) as
+  select pl.programme, 1, 'started', 0
+    from (select distinct programme, total_phases from programme_progress) pl
+  union all
+  select pl.programme, i, 'reached phase ' || i, i - 1
+    from (select distinct programme, total_phases from programme_progress) pl
+   cross join generate_series(2, pl.total_phases) as i
+  union all
+  select pl.programme, pl.total_phases + 1, 'completed', null
+    from (select distinct programme, total_phases from programme_progress) pl
+  union all
+  select pl.programme, pl.total_phases + 2, 'graduation dismissed', null
+    from (select distinct programme, total_phases from programme_progress) pl;
+
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
 -- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
@@ -439,5 +497,75 @@ from account_labels l
 left join accounts a
        on a.account = l.account
       and a.created_at >= :'age_gate_cutoff'::timestamptz
+left join public.user_preferences p on p.user_id = a.user_id
+group by 1 order by 1;
+
+\echo
+\echo '=== 7) Programme funnel (cbt, act, dbt; the drop-off from starting to graduating) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    Every step prints for every programme and both account types, zeros included: those zeros are the'
+\echo '    watch list, and the month somebody first completes a programme is the month this stops being zero.'
+\echo '    `pct_of_starters` is a share of the people who STARTED that programme, never of the population -'
+\echo '    the drop-off is the question a funnel answers.'
+-- #2375. None of this was reported anywhere before, which is an odd gap for the
+-- part of the product AGENTS.md names as core MVP alongside the everyday tools.
+--
+-- ☠️ Read `programme_progress` above before changing anything here: every phase
+-- step is conditioned on `started_at is not null`, because `phase_index`
+-- defaults to 0 and a report that drops that condition counts the whole
+-- population as having reached phase 1.
+select l.account,
+       s.programme,
+       s.step,
+       pg_temp.k_count(count(pp.user_id) filter (
+         where case
+           when s.step = 'completed' then pp.completed_at is not null
+           when s.step = 'graduation dismissed' then pp.graduation_dismissed_at is not null
+           else pp.started_at is not null and pp.phase_index >= s.min_phase_index
+         end
+       )) as users,
+       pg_temp.k_pct(
+         count(pp.user_id) filter (
+           where case
+             when s.step = 'completed' then pp.completed_at is not null
+             when s.step = 'graduation dismissed' then pp.graduation_dismissed_at is not null
+             else pp.started_at is not null and pp.phase_index >= s.min_phase_index
+           end
+         ),
+         count(pp.user_id) filter (where pp.started_at is not null)
+       ) as pct_of_starters
+from account_labels l
+cross join programme_steps s
+left join programme_progress pp
+       on pp.account = l.account
+      and pp.programme = s.programme
+group by l.account, s.programme, s.step, s.step_order
+order by l.account, s.programme, s.step_order;
+
+\echo
+\echo '=== 8) Reminder adoption (user_preferences.reminder_consent) ==='
+\echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
+\echo '    `accounts` is a whole-population count and prints raw.'
+-- ☠️ THIS SECTION READS `reminder_consent` AND MUST NOT READ
+-- `notifications_enabled_global`. This is the section most at risk of being
+-- "improved" into uselessness by a later reader who notices the consent number
+-- is small and the global number is big, and swaps one for the other.
+--
+-- `notifications_enabled_global` DEFAULTS TO TRUE and is true for very nearly
+-- everyone, so reporting it would measure a default rather than a decision -
+-- the `enabled_modules` mistake (#1672) repeated exactly, on a new column.
+-- `reminder_consent` defaults to FALSE and is set only by someone choosing it,
+-- so it is the column that varies, and it is the figure that evidences the
+-- quiet-by-default guardrail in AGENTS.md actually holding.
+--
+-- test/analytics-shared-sql.test.ts fails any report that reads the global
+-- column, so this is not a convention anyone has to remember.
+select l.account,
+       count(a.user_id) as accounts,
+       pg_temp.k_count(count(a.user_id) filter (where p.reminder_consent)) as consented,
+       pg_temp.k_pct(count(a.user_id) filter (where p.reminder_consent),
+                     count(a.user_id)) as consent_pct
+from account_labels l
+left join accounts a on a.account = l.account
 left join public.user_preferences p on p.user_id = a.user_id
 group by 1 order by 1;
