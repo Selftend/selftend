@@ -143,4 +143,64 @@ describe("the bare constants stay bare", () => {
   it("playStoreUrl still carries the package id it needs", () => {
     expect(appEnv.playStoreUrl).toMatch(/[?&]id=/);
   });
+
+  // ☠️ The same guarantee as an ALLOWLIST of query keys rather than a denylist
+  // of tagging ones. `TAGGING_PARAMS` above can only catch a name somebody
+  // thought to forbid; naming the keys that may appear catches a tag under any
+  // name at all. Both are kept: the denylist names the specific danger and
+  // reads as documentation, this one closes the open end.
+  const ALLOWED_QUERY_KEYS: Record<string, string[]> = {
+    playStoreUrl: ["id"],
+    appStoreUrl: [],
+  };
+
+  function queryKeys(url: string): string[] {
+    const query = url.split("#")[0].split("?").slice(1).join("?");
+    return query
+      ? query
+          .split("&")
+          .filter(Boolean)
+          .map((pair) => pair.split("=")[0])
+      : [];
+  }
+
+  it.each(Object.keys(ALLOWED_QUERY_KEYS))("%s carries no query key but its own", (name) => {
+    const url = appEnv[name as "playStoreUrl" | "appStoreUrl"];
+
+    expect({ name, keys: queryKeys(url) }).toEqual({ name, keys: ALLOWED_QUERY_KEYS[name] });
+  });
+
+  // Prove that check is looking at something, on both stores.
+  it("would catch a tagged constant under any parameter name", () => {
+    expect(queryKeys(`${PLAY}&referrer=utm_source%3Dweb-download-bar`)).not.toEqual(
+      ALLOWED_QUERY_KEYS.playStoreUrl,
+    );
+    expect(queryKeys(`${PLAY}&something_nobody_forbade=x`)).not.toEqual(
+      ALLOWED_QUERY_KEYS.playStoreUrl,
+    );
+    expect(queryKeys(`${APPLE}?ct=app-support`)).not.toEqual(ALLOWED_QUERY_KEYS.appStoreUrl);
+  });
+
+  // ⚠️ What neither guard can see, stated rather than left to be discovered:
+  // both read `appEnv`, which resolves `EXPO_PUBLIC_PLAY_STORE_URL` /
+  // `EXPO_PUBLIC_APP_STORE_URL` first. A tag added to a deployment's env var
+  // would reach the update path and trip nothing here - only a human reading
+  // the deploy config would know.
+  it("cannot see a tag added through the deployment's env var", () => {
+    const previous = process.env.EXPO_PUBLIC_PLAY_STORE_URL;
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL = `${PLAY}&referrer=utm_source%3Dsomething`;
+    jest.resetModules();
+
+    try {
+      const { appEnv: freshEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+      // The tag is live in the config and every guard above still passes.
+      expect(queryKeys(freshEnv.playStoreUrl)).toContain("referrer");
+      expect(queryKeys(appEnv.playStoreUrl)).toEqual(ALLOWED_QUERY_KEYS.playStoreUrl);
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_PLAY_STORE_URL;
+      else process.env.EXPO_PUBLIC_PLAY_STORE_URL = previous;
+      jest.resetModules();
+    }
+  });
 });
