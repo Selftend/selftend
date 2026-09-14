@@ -157,9 +157,18 @@ function definitionsWithPopulation(name: string, whereSql: string): string {
   const view = block
     .slice(0, block.indexOf("-- Both labels,"))
     .replace("create temp view accounts as", "create or replace temp view accounts as")
-    .replace("  from auth.users;", `  from auth.users where ${whereSql};`);
+    .replace(
+      "  from public.digest_auth_users;",
+      `  from public.digest_auth_users where ${whereSql};`,
+    );
   if (!view.includes(`where ${whereSql}`)) {
-    throw new Error(`analytics-${name}.sql: the accounts view no longer ends in auth.users`);
+    // ☠️ This is a guard, not a formality, and it earned its keep: it is what
+    // caught #2393 renaming the accounts view's source. Without it the narrowing
+    // would have silently not applied, and every cohort-scoped assertion in this
+    // file would have run against the WHOLE database while still passing.
+    throw new Error(
+      `analytics-${name}.sql: the accounts view no longer ends in public.digest_auth_users`,
+    );
   }
   return `${definitions(name)}\n${view}\n`;
 }
@@ -461,6 +470,55 @@ describe("aggregate analytics reports (integration)", () => {
     }
   });
 
+  describe("the digest auth views expose exactly what the reports read", () => {
+    // ☠️ #2393. These two views exist so the digest's read-only role never needs
+    // the `auth` schema - which `postgres` cannot grant it, the schema being
+    // owned by `supabase_admin` with USAGE held without grant option.
+    //
+    // ☠️☠️ THEIR COLUMN LISTS ARE A SECURITY BOUNDARY, NOT A CONVENIENCE.
+    // `auth.users` also holds `encrypted_password`, `confirmation_token` and
+    // `recovery_token`, and this report family's entire output is posted into a
+    // GitHub comment every month. Widening either view to `select *` would put
+    // those within reach of exactly the role whose output is published.
+    //
+    // This is the control that makes the views safe to ship in a migration at
+    // all: a widening fails here, rather than depending on a reviewer noticing
+    // a diff in a file nobody reads twice.
+    const EXPOSED: Record<string, string[]> = {
+      digest_auth_users: ["created_at", "email", "id", "is_anonymous"],
+      digest_auth_identities: ["created_at", "user_id"],
+    };
+
+    for (const [view, columns] of Object.entries(EXPOSED)) {
+      it(`public.${view} exposes exactly ${columns.join(", ")}`, () => {
+        const actual = runSql(
+          `select column_name from information_schema.columns
+            where table_schema = 'public' and table_name = '${view}'
+            order by column_name;`,
+        )
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== "");
+        expect(actual).toEqual(columns);
+      });
+    }
+
+    it("keeps both views out of reach of the API roles", () => {
+      // ⚠️ These views read the auth schema with the view owner's privileges, so
+      // granting them to `anon` or `authenticated` would hand every API caller a
+      // read of auth.users that RLS never sees. Only the digest role gets SELECT,
+      // and that grant is made with the role by hand on production (#2380).
+      const leaked = runSql(
+        `select table_name || ' -> ' || grantee
+           from information_schema.role_table_grants
+          where table_schema = 'public'
+            and table_name in ('digest_auth_users', 'digest_auth_identities')
+            and grantee in ('anon', 'authenticated');`,
+      ).trim();
+      expect(leaked).toBe("");
+    });
+  });
+
   describe("content_events is complete against the live schema", () => {
     // ☠️ #2374. `content_events` decides who counts as ACTIVATED and who counts
     // as RETAINED - the two numbers the whole Phase 1 instrument exists to read.
@@ -514,6 +572,15 @@ describe("aggregate analytics reports (integration)", () => {
 
       // Not a use of a tool at all.
       feedback_submissions: "a message to the project, not use of a self-help tool",
+
+      // ☠️ #2393. A VIEW over auth.identities, not a content table - it exists
+      // so the digest's read-only role never needs the auth schema. Counting it
+      // as content would read "attached a sign-in identity" as a self-help act,
+      // and would count every registered account as having used a tool.
+      // (`digest_auth_users` is absent from this registry on purpose: it exposes
+      // `id`, not `user_id`, so it never reaches this gate's surface.)
+      digest_auth_identities:
+        "a view over auth.identities for the digest role; signing in is not a self-help act",
 
       // ☠️ CHILD ROWS OF AN ACT THAT IS ALREADY COUNTED. Not a second rule -
       // the same one, applied one level down. The parent row records that the

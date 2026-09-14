@@ -54,11 +54,11 @@ create temp view accounts as
          -- nothing else. It is never selected into a printed row - every report
          -- is aggregate-only (docs/analytics.md), so no address ever leaves the
          -- database. It is read here rather than in that block because a report
-         -- reads auth.users exactly once; test/analytics-shared-sql.test.ts
+         -- reads the account source exactly once; test/analytics-shared-sql.test.ts
          -- allows exactly one such line per file, and this is it.
          email,
          case when coalesce(is_anonymous, false) then 'guest' else 'registered' end as account
-  from auth.users;
+  from public.digest_auth_users;
 
 -- Both labels, so section 0 prints the guest population even while it is zero.
 create temp view account_labels(account) as values ('registered'), ('guest');
@@ -179,7 +179,7 @@ create temp view conversion_arms as
   from accounts a
   left join (
     select user_id, min(created_at) as first_identity_at
-    from auth.identities
+    from public.digest_auth_identities
     group by 1
   ) fi on fi.user_id = a.user_id;
 

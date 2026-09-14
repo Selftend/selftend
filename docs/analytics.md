@@ -672,6 +672,32 @@ the nightly backup uses. The asymmetry that decides it: the backup runs a fixed
 schedule** — the first scheduled job whose executed text a merged pull request
 can change.
 
+☠️ **That role cannot read the `auth` schema, and no grant can give it access** —
+which is why the reports do not read `auth.users` directly. The schema is owned
+by `supabase_admin`, and `postgres` (what the Supabase SQL editor runs as) holds
+`USAGE` **without grant option**, so `grant usage on schema auth` emits
+`WARNING: no privileges were granted` and does nothing. ⚠️ Every role that _does_
+reach `auth` — `anon`, `authenticated`, `service_role` — also carries write
+grants on `public`, because RLS is what gates them for the API; granting
+membership in one produces a role that can `INSERT` and `DELETE` freely, the
+opposite of the requirement.
+
+So the reports read `public.digest_auth_users` and
+`public.digest_auth_identities`, views owned by `postgres`, whose base tables are
+checked against the view's **owner** rather than the caller. ☠️ **Their column
+lists are a security boundary, not a convenience**: `auth.users` also holds
+`encrypted_password`, `confirmation_token` and `recovery_token`, and this report
+family's whole output is posted into a GitHub comment. Both lists are pinned by
+`test/integration/analytics-reports.integration.test.ts`, so widening one fails a
+test rather than relying on a reviewer noticing, and neither view is granted to
+the API roles.
+
+Two further things that role needs, both non-obvious and both discovered by
+rehearsing it rather than by reading: **`BYPASSRLS`** — 55 tables in `public`
+have RLS, and without it every figure reads **zero, silently, with no error** —
+and **`TEMPORARY`** on the database, because every report opens with
+`create temp view` and `create function pg_temp.k_count`.
+
 When basic product questions arise ("how many users signed up this week?", "how many exercises were completed?"), use server-side SQL against existing tables:
 
 - Auth tables already have timestamped sign-up records.

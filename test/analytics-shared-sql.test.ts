@@ -361,9 +361,31 @@ describe("analytics reports carry the account split", () => {
       expect(source).toContain("'=== 0) Population split");
     });
 
-    it(`${file} reads auth.users only through the accounts view`, () => {
+    it(`${file} reads its account source only through the accounts view`, () => {
       // The one permitted mention is inside the shared accounts block.
-      expect(sqlLinesMatching(file, /auth\.users/)).toEqual(["  from auth.users;"]);
+      expect(sqlLinesMatching(file, /digest_auth_users/)).toEqual([
+        "  from public.digest_auth_users;",
+      ]);
+    });
+
+    it(`${file} never reaches into the auth schema directly`, () => {
+      // ☠️ #2393. The reports used to read `auth.users` here, and this guard
+      // asserted it appeared on exactly one code line. It still asserts exactly
+      // one read, of the view that replaced it - but the ORIGINAL property has
+      // to be kept too, or the rename would trade a real control for a cosmetic
+      // one.
+      //
+      // Two reasons the auth schema stays out of these files entirely:
+      //
+      //   * the digest's role CANNOT read it. The schema is owned by
+      //     `supabase_admin` and `postgres` holds USAGE without grant option, so
+      //     no grant can give a new role access. A report that reached into auth
+      //     would simply fail on the monthly run - and only there, since every
+      //     local and CI run is `postgres`, which can.
+      //   * the views expose four columns and two columns. `auth.users` also
+      //     holds `encrypted_password`, `confirmation_token` and `recovery_token`,
+      //     and this report family's whole output is posted into a GitHub comment.
+      expect(sqlLinesMatching(file, /\bauth\.\w+/)).toEqual([]);
     });
   }
 });
