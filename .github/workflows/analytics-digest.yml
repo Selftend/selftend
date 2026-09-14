@@ -1,0 +1,251 @@
+name: Analytics digest
+
+# The monthly analytics digest (#2381, decided across map #2362). Runs all three
+# aggregate reports against production over the complete previous calendar month
+# and posts the output as ONE comment on a standing closed issue in
+# vasilyoshev/control-tower.
+#
+# ☠️ THE REPORTS ARRIVE; THEY ARE NOT FETCHED. Delivery is not a clock and
+# creates no obligation - nobody is on duty to read this. The 2026-09-02 gap
+# opened because reading required DOING: finding a credential, running a script.
+# Unbidden arrival flips the default so that IGNORING becomes the action.
+#
+#   * THE 1st, DELIBERATELY NOT THE 9th. The 9th is the recurring-checks duty day
+#     in docs/operations-runbook.md, and a no-duty delivery landing on a duty day
+#     gets read as a duty soon enough.
+#   * IT ALWAYS ARRIVES, EVEN EMPTY, so its absence can never be mistaken for a
+#     quiet month.
+#   * EVERY REPORT RUNS INDEPENDENTLY and the comment posts regardless, printing
+#     an explicit failure line for any report that threw. A run that aborted
+#     would leave a gap indistinguishable from a month nobody ran, and silently
+#     omitting a failed section is worse still.
+#
+# ⚠️ THIS THREAD'S SELF-WITNESSING IS ASYMMETRIC, and saying so here is the
+# point. It records a REPORT failure - that is what the failure line is for. But
+# A FAILURE TO POST CANNOT POST. Only the red workflow run catches that, via the
+# email GitHub sends the scheduled workflow's actor. Do not read a quiet month as
+# evidence the instrument is healthy; read the Actions tab.
+#
+# ☠️ WHEN A NUMBER MOVES SHARPLY: NOTHING HAPPENS. That is a decision, not an
+# omission, recorded here so a later reader does not fill the gap with alerting.
+# Alerting is where a threshold - and with it loss framing - would re-enter.
+#
+# ☠️ THE WORKFLOW ASSEMBLES THE MASTHEAD AND NOTHING ELSE. Everything below it is
+# report output, verbatim, because anything the workflow builds sits outside
+# every guard the repository has. In particular the population block stays
+# per-report, printed three times, deliberately: hoisting it here would return it
+# to exactly the strippable territory it was put into the SQL to escape, and each
+# report runs independently, so a surviving report must carry its own population
+# statement when another throws.
+#
+# ⚠️ Summarising was rejected. A digest that selects sections has to CHOOSE WHAT
+# MATTERS, which is the judgement docs/analytics.md forbids, and the section
+# nobody chose is the one that goes unread.
+#
+# ⚠️ This is owner-facing operational tooling, not a user-facing surface, so the
+# streak, reminder and notification guardrails do not bind it. Said out loud
+# because a scheduled recurring message reads like a breach to a skimmer. The
+# no-loss-framing and aggregate-only rules bind it anyway, by other routes.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   ANALYTICS_DIGEST_DB_URL     Session Pooler connection string for the
+#                               DEDICATED READ-ONLY ROLE (#2380), never the
+#                               owner's. ☠️ NOT `SUPABASE_DB_URL`: that is the
+#                               `postgres` role, which can write and bypasses
+#                               RLS. The digest feeds repository-authored SQL to
+#                               production on a schedule - the first scheduled
+#                               job whose executed text a merged pull request can
+#                               change - so the role it runs as must be unable to
+#                               write. The pooler username is `<role>.<ref>`, so
+#                               it reads `analytics_digest_ro.<ref>`, not
+#                               `postgres.<ref>`. The direct connection is
+#                               IPv6-only and does NOT work on GitHub runners.
+#   CONTROL_TOWER_ISSUES_TOKEN  Fine-grained PAT, scoped to
+#                               vasilyoshev/control-tower ONLY, issues-write, and
+#                               NO EXPIRY. ☠️ An expiring token stops delivery
+#                               SILENTLY, re-creating the exact failure "it always
+#                               arrives, even empty" was built to prevent.
+#                               ⚠️ No-expiry is possible only because the standing
+#                               thread lives in a PERSONAL repository: the
+#                               Selftend organisation forbids fine-grained tokens
+#                               with a lifetime over 366 days.
+
+on:
+  schedule:
+    - cron: "17 6 1 * *" # 06:17 UTC on the 1st - the house off-the-hour :17
+  workflow_dispatch: # a manual run is how you test it without waiting a month
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analytics-digest
+  cancel-in-progress: false
+
+env:
+  # The standing thread, opened and then closed. A new issue each month was
+  # rejected: monthly issues accumulate into what reads as a backlog, and a
+  # backlog implies duty.
+  DIGEST_REPO: vasilyoshev/control-tower
+  DIGEST_ISSUE: "136"
+  # GitHub rejects a comment body over 65536 characters. Every table in these
+  # reports is bounded - twelve weeks, five modules, a handful of features - so
+  # the full output is expected to fit and to keep fitting as the population
+  # grows. The cap is here so that being wrong about that is LOUD.
+  COMMENT_LIMIT: "65000"
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history and tags: the masthead lists the releases that fell
+          # inside the period, and a shallow clone has no tags to list.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Build the masthead
+        id: masthead
+        run: |
+          set -euo pipefail
+
+          # The complete previous calendar month, half-open [start, end). This is
+          # the same window `digest_period` defaults to inside the engagement
+          # report's first-occurrences section; they are computed separately
+          # because the report must be correct when run by hand too.
+          PERIOD_START="$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m-%d)"
+          PERIOD_END="$(date -u +%Y-%m-01)"
+          PERIOD_LAST="$(date -u -d "$PERIOD_END -1 day" +%Y-%m-%d)"
+          {
+            echo "PERIOD_START=$PERIOD_START"
+            echo "PERIOD_END=$PERIOD_END"
+            echo "PERIOD_LAST=$PERIOD_LAST"
+          } >> "$GITHUB_ENV"
+
+          # Releases that fell inside the period, as NAMES AND DATES ONLY.
+          # ⚠️ Annotating each with whether it "touched a measured surface" was
+          # rejected: mechanically it is a fragile diff heuristic, by hand it is a
+          # standing judgement. The masthead STATES, it never ranks.
+          git tag --sort=creatordate --format='%(creatordate:short) %(refname:short)' \
+            > "$RUNNER_TEMP/all-tags.txt" || true
+          awk -v s="$PERIOD_START" -v e="$PERIOD_END" '$1 >= s && $1 < e' \
+            "$RUNNER_TEMP/all-tags.txt" > "$RUNNER_TEMP/releases.txt" || true
+
+      - name: Run the three reports
+        id: reports
+        env:
+          ANALYTICS_DIGEST_DB_URL: ${{ secrets.ANALYTICS_DIGEST_DB_URL }}
+        run: |
+          set -uo pipefail
+
+          if [ -z "${ANALYTICS_DIGEST_DB_URL:-}" ]; then
+            echo "ANALYTICS_DIGEST_DB_URL is not set - see this workflow's header." >&2
+            exit 1
+          fi
+
+          # ☠️ Each report runs INDEPENDENTLY. `set -e` is deliberately not in
+          # force here: a thrown report must print its failure line and let the
+          # other two run. A run that aborted on the first failure would leave a
+          # gap indistinguishable from a month nobody ran.
+          STATUS_LINES=""
+          for name in engagement onboarding segment; do
+            out="$RUNNER_TEMP/$name.txt"
+            node scripts/analytics-report.js "$name" > "$out" 2>&1
+            code=$?
+            if [ "$code" -eq 0 ]; then
+              STATUS_LINES="${STATUS_LINES}- \`$name\`: ok"$'\n'
+            else
+              STATUS_LINES="${STATUS_LINES}- \`$name\`: **FAILED** (exit $code) - its section below stops where it threw"$'\n'
+              {
+                echo
+                echo "*** REPORT FAILED (exit $code). The output above stops where it threw. ***"
+                echo "*** This is the instrument reporting its own breakage, not a quiet month. ***"
+              } >> "$out"
+            fi
+          done
+          printf '%s' "$STATUS_LINES" > "$RUNNER_TEMP/status.txt"
+
+      - name: Assemble and post the comment
+        env:
+          GH_TOKEN: ${{ secrets.CONTROL_TOWER_ISSUES_TOKEN }}
+        run: |
+          set -euo pipefail
+          BODY="$RUNNER_TEMP/body.md"
+
+          {
+            echo "## Selftend monthly analytics digest"
+            echo
+            echo "**Period:** ${PERIOD_START} to ${PERIOD_LAST} inclusive (UTC), the complete previous calendar month."
+            echo
+            echo "**Releases in the period:**"
+            echo
+            if [ -s "$RUNNER_TEMP/releases.txt" ]; then
+              # ⚠️ `tag_date`, not `date`: naming a loop variable `date` shadows
+              # the command of the same name for everything after it.
+              while read -r tag_date tag; do
+                echo "- \`$tag\` — $tag_date"
+              done < "$RUNNER_TEMP/releases.txt"
+            else
+              echo "- (none)"
+            fi
+            echo
+            echo "**Instrument status:**"
+            echo
+            cat "$RUNNER_TEMP/status.txt"
+            echo
+            echo "Read the release list beside the engagement report's **first occurrences**: one says what changed, the other says something began. Nobody is on duty to read this."
+            echo
+            echo "---"
+            for name in engagement onboarding segment; do
+              echo
+              echo "## $name"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/$name.txt"
+              echo '```'
+            done
+          } > "$BODY"
+
+          # ☠️ Over the limit, the comment is still posted - truncated, and SAYING
+          # SO - and the run then fails so the red-run email fires. Dropping the
+          # comment entirely would make a size problem look like a quiet month,
+          # and truncating in silence would be worse than either.
+          TOO_LONG=0
+          if [ "$(wc -c < "$BODY")" -gt "$COMMENT_LIMIT" ]; then
+            TOO_LONG=1
+            head -c "$COMMENT_LIMIT" "$BODY" > "$BODY.cut"
+            {
+              echo
+              echo '```'
+              echo
+              echo "> ⚠️ **TRUNCATED.** The full digest exceeded GitHub's comment limit, so the tail"
+              echo "> of this comment is missing. The reports themselves are fine; the delivery is"
+              echo "> not. This run is marked failed so it cannot pass unnoticed."
+            } >> "$BODY.cut"
+            mv "$BODY.cut" "$BODY"
+          fi
+
+          gh issue comment "$DIGEST_ISSUE" --repo "$DIGEST_REPO" --body-file "$BODY"
+
+          if [ "$TOO_LONG" -eq 1 ]; then
+            echo "Digest posted but TRUNCATED - see the comment." >&2
+            exit 1
+          fi
+
+          # ☠️ The reports' own exit codes do not fail this job: the comment
+          # carries their failure lines, and that is the record. What fails the
+          # job is a failure to DELIVER, because that is the half the thread
+          # cannot witness for itself.
