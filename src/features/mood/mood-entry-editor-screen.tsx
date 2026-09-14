@@ -16,7 +16,8 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
+import { ChipRun, ChipRunReservation, SelectableChip } from "@/src/components/app/selectable-chip";
+import { DEFAULT_EMOTIONS } from "@/src/constants/emotions";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
 import {
@@ -120,6 +121,48 @@ const EmotionGrid = memo(function EmotionGrid({
 });
 
 /**
+ * The emotion grid's SPACE, held while the preferences query is in flight (#2345, ADR-0009).
+ *
+ * The grid used to be replaced by a bare ~20px `ActivityIndicator`, and the Note field is its
+ * immediate next sibling, so every control below it jumped when the rows landed — **292px at
+ * 390dp, measured** by the e2e below against the unfixed code (y=609 → y=901), and on a
+ * first-ever user `listOrSeedEmotions` makes up to four sequential round trips before it
+ * happens. ☠️ **This is an input-integrity defect, not a cosmetic one.** In the user test
+ * that found it (#2327) a tap meant for Note landed on `sad`, index 11 of 22: the app took
+ * an action the person did not choose.
+ *
+ * The measuring stick is the DEFAULT set — the list every first-ever user is seeded with,
+ * and the one the defect was measured against — rendered invisibly through the chip's own
+ * frame constants, so the reservation is exact by construction and needs no pixel number.
+ * ⚠️ A user who has pruned or extended the list still sees a smaller settle. That is
+ * ADR-0009's own trade stated where it lands: a reduction, not an elimination.
+ *
+ * The spinner is kept, centred in the held space rather than standing in for it — which
+ * also means the five suites that pin `ActivityIndicator` by component type are untouched.
+ *
+ * ⚠️ The names come from `resolveEmotion`, which with no rows yet resolves each builtin to
+ * the same translated name and emoji the real chip will carry. Re-deriving them here from
+ * `DEFAULT_EMOTIONS` and a `t()` call would be a second implementation of that resolution,
+ * and the day the two disagreed the stick would silently be the wrong width.
+ */
+const EmotionGridReservation = memo(function EmotionGridReservation({
+  resolve,
+  selectedIds,
+}: {
+  resolve: (id: string) => EmotionDisplay;
+  selectedIds: string[];
+}) {
+  const chips = DEFAULT_EMOTIONS.map(({ id }) => {
+    const { name, emoji } = resolve(id);
+    return { id, label: name, emoji };
+  });
+
+  return (
+    <ChipRunReservation chips={chips} selectedIds={selectedIds} overlay={<ActivityIndicator />} />
+  );
+});
+
+/**
  * The design language's section eyebrow — 11px, 600, 0.1em-tracked uppercase —
  * with the quieter "— optional" tail rendered in normal case (design `2b`).
  * Replaces the sentence-case bold `Label`s the old shell used (#869).
@@ -206,7 +249,7 @@ export function MoodEntryEditorScreen({
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
   const saving = saveMutation.isPending || completeActivityMutation.isPending;
-  const { allEmotions, isLoading: emotionsLoading } = useEmotionDisplay();
+  const { allEmotions, resolveEmotion, isLoading: emotionsLoading } = useEmotionDisplay();
 
   // Hydrate local field state from the saved entry ONCE per entry id. Keying on the id
   // (not the object) stops a later list/detail refetch - which produces a new object
@@ -469,10 +512,46 @@ export function MoodEntryEditorScreen({
         <View className="gap-4">
           <View className="flex-row items-baseline justify-between">
             <SectionEyebrow title={t("mood.emotionsTitle")} optionalTag={t("mood.optionalTag")} />
+            {/* ☠️ SHUT WHILE THE READ BELOW IS IN FLIGHT (#2360), and the reason is the
+                PANEL's sizing, not anything on this screen. On web the manage-emotions panel
+                hugs its content by design (`VIEW_SIZING`, 2E/#905), so one opened onto a
+                pending read grows from a short card to a viewport-capped one the moment the
+                rows land — recentring the desktop card, growing the mobile drawer upward, and
+                carrying its own header and "Add emotion" button with it. ADR-0009 edge 5 put
+                that column in order (#2348), but edge 5 assumes a column of DEFINITE height,
+                which the web panel does not have; every cure at panel scale is either a
+                reversal of 2E or the guessed height edge 5 rejects by name.
+
+                The gate belongs here because this screen is the panel's only door, and
+                because the panel reads the SAME query key through the same hook — it is
+                pending exactly when `emotionsLoading` is true, so the answer is already in
+                hand at the moment of the tap. `test/manage-emotions-single-door.test.ts`
+                holds that one-door premise up; without it this argument quietly stops being
+                true. Costs the panel's sizing nothing.
+
+                ⚠️ This shuts the FIRST-LOAD path — the one that produced the defect — and
+                not every path. A read that ERRORS settles with no rows and `isLoading`
+                false, so the door opens on an empty panel, and a later successful refetch
+                grows it after all. That residue is ADR-0009 edge 1's ruling, not an
+                oversight: reservation belongs to the pending state, which "converts a
+                shift-on-success into a rarer shift-on-failure — a trade, not an
+                elimination". Do not read this gate as a promise the panel never settles.
+
+                `disabled` rather than a swap to a plain `View`: the link stays visible here
+                (unlike a reservation's stick), so it must announce that it is not yet live
+                rather than look identical and silently do nothing. It also takes the control
+                out of the tab order — react-native-web gives every `Pressable` `tabIndex=0`
+                UNLESS it is disabled, which is the same mechanism `ShowAllLinkStick` avoids
+                by not being a `Pressable` at all.
+
+                Opacity only, never a size or a swap: the gate must not itself move the row it
+                sits in. */}
             <Pressable
               onPress={() => setManageEmotionsOpen(true)}
+              disabled={emotionsLoading}
               accessibilityRole="button"
               accessibilityLabel={tMood("emotions.manage.title")}
+              className={cn(emotionsLoading && "opacity-50")}
             >
               <Text className="text-[12.5px] text-muted-foreground">
                 {tMood("emotions.manage.link")}
@@ -480,7 +559,7 @@ export function MoodEntryEditorScreen({
             </Pressable>
           </View>
           {emotionsLoading ? (
-            <ActivityIndicator />
+            <EmotionGridReservation resolve={resolveEmotion} selectedIds={emotions} />
           ) : (
             <EmotionGrid emotions={allEmotions} selectedIds={emotions} onToggle={toggleEmotion} />
           )}

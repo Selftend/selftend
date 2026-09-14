@@ -22,6 +22,7 @@ import { AccessibilityInfo, Platform, type AccessibilityActionEvent } from "reac
 import {
   announceMessage,
   currentStateProps,
+  focusNode,
   politeLiveRegionProps,
   reorderMoveProps,
   toggleButtonStateProps,
@@ -348,6 +349,30 @@ describe("reorderMoveProps", () => {
 // ---------------------------------------------------------------------------
 // politeLiveRegionProps / announceMessage
 // ---------------------------------------------------------------------------
+
+/**
+ * The helper exists for focus that would otherwise be DROPPED - a control that
+ * unmounts because it was pressed. ☠️ So the case that matters most is the one
+ * where there is nothing to call: a native ref is a real object with no `focus`,
+ * and a ref read a beat after its element went is null. Neither may throw, or
+ * the fold that called it takes the screen down with it.
+ */
+describe("focusNode", () => {
+  it("focuses a node that can be focused - the web DOM half of a Pressable ref", () => {
+    const focus = jest.fn();
+
+    focusNode({ focus });
+
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing, and throws nothing, when there is no focus to take", () => {
+    expect(() => focusNode(null)).not.toThrow();
+    expect(() => focusNode(undefined)).not.toThrow();
+    // What a native ref looks like: an object, no DOM method on it.
+    expect(() => focusNode({ measureInWindow: () => undefined })).not.toThrow();
+  });
+});
 
 describe("politeLiveRegionProps", () => {
   afterEach(() => {

@@ -106,7 +106,7 @@ The suggested sequence in which steps are presented and revealed. It is advisory
 _Avoid_: sequence-gate, prerequisite
 
 **Reminder** (of a routine):
-An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from the per-tool reminder prompt shown after a single tool use.
+An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders.
 _Avoid_: notification, alarm, schedule
 
 **Anchor**:
@@ -141,14 +141,12 @@ Restoring a lost reminder channel for a user who has already said yes, without a
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
 
 **Reminder consent**:
-Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces. Its three states are named because two of them are indistinguishable unless you also know whether the question was ever put:
+Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
 
-- **Never asked** — no answer recorded. The one-time post-completion prompt is offered.
-- **Declined** — asked, and the answer was no. The prompt is permanently withheld. It **has no positive rendering**: nothing draws differently for declined than for never asked, so declined is only ever the _absence_ of the prompt.
-- **Consented** — asked, and the answer was yes. The prompt is offered for any tool not already armed.
+The question is never put on its own: consent is recorded as a side effect of turning some reminder on, so the account either **has consented** or has **never been asked**. There is no declined state. The product used to carry one in theory — a post-completion prompt it would then withhold — but nothing ever wrote it, and that prompt was removed outright (ADR-0008). Consent itself stays load-bearing: delivery reads it on every send. What the prompt's removal orphaned is only the **date** the answer was recorded, which nothing reads any more; it is kept as a consent trail.
 
 Invariant: an account cannot hold an enabled reminder without consent.
-_Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (does not distinguish never asked from declined)
+_Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (names the tap, not the account-wide permission it leaves behind)
 
 ### Design language ("Color field")
 

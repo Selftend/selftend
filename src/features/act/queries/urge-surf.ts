@@ -8,7 +8,7 @@ import {
 } from "@/src/features/act/repository";
 import type { UrgeSurfLogInput } from "@/src/features/act/types";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { ACT_HISTORY_PAGE_SIZE, actKeys } from "./keys";
 
 export function useUrgeSurfLogs(userId: string | null, limit = 30) {
@@ -57,7 +57,7 @@ export function useSaveUrgeSurfLog(userId: string | null) {
     mutationFn: (input: UrgeSurfLogInput) => saveUrgeSurfLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
-      requestReminderPrompt("act");
+      noteToolSave();
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.urgeSurfList(userId) });
     },

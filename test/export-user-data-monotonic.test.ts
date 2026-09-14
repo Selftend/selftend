@@ -52,6 +52,14 @@ const INTENTIONALLY_DROPPED = new Set([
   // record - is a different column and is still exported.
   "user_preferences.selected_concerns",
   "user_preferences.widgets_seeded",
+  // `20260915000000_drop_reminder_prompted_tools.sql` drops the column (#2343,
+  // ADR-0008). It held the post-save reminder offer's own once-ever bookkeeping
+  // - which targets the app had already asked about - and #2342 removed the
+  // offer, leaving no writer and no reader. Dropped for data minimisation, so
+  // there is nothing left to export. The consent columns beside it
+  // (`reminder_consent`, `reminder_consent_updated_at`) are a different thing
+  // and are still exported.
+  "user_preferences.reminder_prompted_tools",
 ]);
 
 /**

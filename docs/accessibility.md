@@ -15,6 +15,26 @@ Accessibility is part of the app foundation, not a polish pass. Users must be ab
 - Respect reduced motion for modals, menus, and animated wrappers.
 - Keep crisis and safety guidance reachable without sign-in.
 
+## The two checkbox lists in a thought record
+
+The Feelings list and the Thinking patterns list on `/modules/cbt/new` render rows below the 44px target and, on web, below the 24 x 24 WCAG 2.5.8 AA floor on height. That is a ruling, not an oversight, and it is written down here because the failure is otherwise silent and the next person to measure it would read it as a bug.
+
+Raising those rows to a 44px minimum was measured on [#2333](https://github.com/Selftend/selftend/issues/2333) and rejected: it adds roughly 936px across the two lists against the 864px of card chrome the row shape reclaimed - a net loss on a block that was already 2,318px at 360dp. What the rows give instead:
+
+- On native, `Checkbox` carries `COMPACT_CONTROL_HIT_SLOP`, so the 16px box is already a 44px effective target and costs no layout height.
+- On both platforms the whole row is pressable, so the target spans the row rather than the label's text box - which is what it was limited to before.
+
+Both lists render the shared `CheckboxRow` ([src/components/app/checkbox-row.tsx](../src/components/app/checkbox-row.tsx)) so they cannot drift into different row shapes. A future change proposing a 44px minimum has to beat that measurement first.
+
+Accepted with it: at the shipped row pitch adjacent hit areas overlap slightly on native, so a sloppy tap can tick a neighbour. The failure is visible and undone in one tap.
+
+### The patterns list folds, and the fold unmounts
+
+Ticking a thinking pattern collapses the other sixteen ([#2350](https://github.com/Selftend/selftend/issues/2350)). `Disclosure` is unanimated and unmounts its children by ruling, so the row that was pressed is removed by the press. Two consequences, handled differently:
+
+- **Keyboard focus is moved, not dropped.** On web the pressed row is the focused element, so focus would land on the document body. It is put on the disclosure's trigger instead - the control that now stands for what went - through `Disclosure`'s `triggerRef` and `focusNode`.
+- **Where the person lands is web-only.** About 1,200px leaves in one frame while the viewport sits inside the region that goes, so the block puts itself at the top of its scroll container (`src/lib/scroll-node-to-top.ts`). On iOS and Android a `View` ref has no such method and the position is whatever the scroll offset clamps to. That is written down here because the failure is silent: closing it needs the `ScrollView` ref `MobileFormScreen` was ruled not to forward on [#2333](https://github.com/Selftend/selftend/issues/2333), which is a ruling to reopen rather than route around.
+
 ## Supported width floor
 
 **The narrowest supported viewport is 360dp.** 320dp is explicitly **not** supported, and the difference is not cosmetic: below roughly 324px the compact 12-hour time control on the reminders screen paints over that row's switch (measured 3.5px of overlap at 320px). That was ruled acceptable rather than fixed, so it is written down here — the failure is silent otherwise, and the next person to measure it would read it as a bug.
@@ -78,6 +98,14 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
 - [src/components/react-native-reusables/button.tsx](../src/components/react-native-reusables/button.tsx), [src/components/react-native-reusables/select.tsx](../src/components/react-native-reusables/select.tsx), [src/components/react-native-reusables/switch.tsx](../src/components/react-native-reusables/switch.tsx), [src/components/react-native-reusables/checkbox.tsx](../src/components/react-native-reusables/checkbox.tsx), and [src/components/react-native-reusables/radio-group.tsx](../src/components/react-native-reusables/radio-group.tsx) set baseline roles, states, and hit slop.
 - [src/components/react-native-reusables/native-only-animated-view.tsx](../src/components/react-native-reusables/native-only-animated-view.tsx) drops entering, exiting, and layout animations when reduced motion is enabled.
 - [src/components/app/accessible-card-link.tsx](../src/components/app/accessible-card-link.tsx) is the default pattern for card-shaped navigation actions.
+- [src/components/app/reserved-space.tsx](../src/components/app/reserved-space.tsx) holds the space a
+  pending surface will occupy (ADR-0009). It hides the invisible measuring stick from assistive
+  technology and takes no pointer events - but neither of those reaches the **Tab key**.
+  react-native-web gives every `Pressable` `tabIndex="0"` unless it is disabled, so a stick built
+  from the real interactive component stays focusable while invisible, inside `aria-hidden`: Tab
+  lands on nothing a sighted keyboard user can see, and Enter can navigate them off the screen they
+  are waiting on. **Build a stick from non-interactive twins**, as `ChipRunReservation`'s plain
+  `View` pills and `ShowAllLinkStick` (the "Show all" door's face, with no press behaviour) do.
 - Onboarding and avatar-crop modals switch from fade animation to no animation when reduced motion is enabled.
 - Required policy consent uses a full-screen gate instead of a modal so linked Privacy Policy and Terms pages remain readable and reachable.
 

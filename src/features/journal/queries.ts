@@ -16,7 +16,7 @@ import { deviceTimeZone } from "@/src/utils/date";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const journalKeys = {
@@ -111,7 +111,7 @@ export function useSaveJournalEntry(userId: string | null) {
       saveJournalEntry(userId!, input, entryId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (_data, { entryId }) => {
-      if (!entryId) requestReminderPrompt("journal");
+      if (!entryId) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: journalKeys.all }),

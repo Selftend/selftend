@@ -2,7 +2,6 @@ import { useFocusEffect } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   useWindowDimensions,
@@ -44,7 +43,12 @@ import {
   weekWindowFor,
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
-import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import {
+  formatWeekLabel,
+  WeekHero,
+  WeekHeroReservation,
+  WeekNavigator,
+} from "@/src/features/mood/mood-week-hero";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
@@ -522,13 +526,23 @@ export default function MoodTrackerScreen() {
                     topEmotions={topEmotions}
                     logs={weekLogs}
                     showHistoryLink={!wideRows}
+                    inert={false}
                   />
                 ) : weekQuery.isError ? (
                   <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
                 ) : (
-                  <View className="items-center py-8">
-                    <ActivityIndicator />
-                  </View>
+                  // And it holds the block's space while it says nothing, so the trend
+                  // and the two stats sections below do not snap up and back down as the
+                  // week lands (ADR-0009 clause 2). The reservation derives its own
+                  // contents from the window - see `WeekHeroReservation`.
+                  //
+                  // This arm is "not loaded and not failed", which is every way the query
+                  // can be unsettled - in flight, retrying, or paused with no connection -
+                  // and ADR-0009 edge 1 reserves for all of them alike. It holds the space
+                  // for as long as a paused query stays paused, which is the point: the
+                  // block is coming back, and the old spinner claimed activity that a
+                  // paused query does not have.
+                  <WeekHeroReservation window={weekWindow} showHistoryLink={!wideRows} />
                 )}
               </Section>
             ) : null}

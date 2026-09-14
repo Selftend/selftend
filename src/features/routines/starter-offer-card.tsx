@@ -14,7 +14,6 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAngerLogs } from "@/src/features/anger/queries";
-import { isReminderPromptEligible } from "@/src/features/notifications/reminder-prompt";
 import { STEPPABLE_TOOL_IDS, type SteppableToolId } from "@/src/features/routines/derive";
 import { useRoutines } from "@/src/features/routines/queries";
 import { buildStarterSteps } from "@/src/features/routines/starter";
@@ -32,22 +31,25 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { INSET_LAYER, useInsetBelow, useInsetPublisher } from "@/src/stores/layered-inset-store";
-import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
+import { useToolSaveStore } from "@/src/stores/tool-save-store";
 
-// Globally mounted host (next to ReminderPromptCard) for the once-ever
-// starter-routine offer at the second action (#1677, decided in #1663). The
-// glossary names a routine "the second-action bridge"; until this card the
-// only proactive offer fired in the wizard at zero actions, and the
-// Routines-page card is seek-only.
+// Globally mounted host for the once-ever starter-routine offer at the second
+// action (#1677, decided in #1663). The glossary names a routine "the
+// second-action bridge"; until this card the only proactive offer fired in the
+// wizard at zero actions, and the Routines-page card is seek-only.
 //
-// It mirrors the reminder prompt's mechanics exactly: tool save flows push a
-// request into the shared store; this card derives eligibility from the
-// record - nothing stored (#952) - shows once, and marks the offer shown the
-// moment it appears, so navigating away counts as asked and declining writes
-// nothing further. On any save the reminder prompt wins: the request is
-// evaluated against the same preferences snapshot the reminder card consumes
-// in the same render, and a save the reminder prompt takes leaves this offer
-// waiting for a later save.
+// Tool save flows note a save in the shared store; this card derives
+// eligibility from the record - nothing stored (#952) - shows once, and marks
+// the offer shown the moment it appears, so navigating away counts as asked
+// and declining writes nothing further.
+//
+// ☠️ It used to yield the first qualifying save to the reminder prompt, by
+// calling that prompt's own eligibility predicate as its gate. The offer at the
+// completion moment was removed outright (#2342, ADR-0008), so there is no
+// second floater to collide with and nothing to defer to: this offer now fires
+// on the FIRST qualifying save, which is what #1677 intended before the
+// reminder card started taking that save for each of ten tools in turn. The
+// deferral was deleted, not replaced with a fresh one.
 //
 // This is deliberately NOT a Home starter card - that surface was rejected
 // (today-screen.tsx) because a persistent card reads as a suggestion with no
@@ -61,24 +63,20 @@ export function StarterOfferCard() {
   const { data: preferences } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
   const { mutateAsync: persistPreferences } = updatePreferences;
-  const request = useReminderPromptStore((state) => state.request);
-  const reminderVisible = useReminderPromptStore((state) => state.promptVisible);
+  const saveCount = useToolSaveStore((state) => state.saveCount);
 
   const [visible, setVisible] = useState(false);
   const [steps, setSteps] = useState<SteppableToolId[] | null>(null);
   const [pendingSave, setPendingSave] = useState(false);
 
-  // Consume the request's UI state during render, exactly like the reminder
-  // card does: both cards see the same store request with the same preferences
-  // snapshot, so "the reminder prompt wins this save" is decided identically
-  // on both sides - the reminder card by showing, this card by waiting.
-  const [consumedRequest, setConsumedRequest] = useState<typeof request>(null);
-  if (request && request !== consumedRequest && userId && preferences) {
-    setConsumedRequest(request);
-    if (
-      !preferences.starterRoutineOffered &&
-      !isReminderPromptEligible(preferences, request.targetKey)
-    ) {
+  // Consume the save during render (a render-time adjustment): the counter the
+  // store publishes is compared against the last one this card acted on, so a
+  // save is evaluated exactly once and a card mounted mid-session does not
+  // treat the session's earlier saves as new.
+  const [consumedSaveCount, setConsumedSaveCount] = useState(saveCount);
+  if (saveCount !== consumedSaveCount && userId && preferences) {
+    setConsumedSaveCount(saveCount);
+    if (!preferences.starterRoutineOffered) {
       setPendingSave(true);
     }
   }
@@ -102,15 +100,12 @@ export function StarterOfferCard() {
   const { data: selfCareLogs } = useSelfCareLogs(noRoutineUserId);
   const offerOnly = { worryEntries, angerLogs, selfCareLogs };
 
-  // The decision, made as render-time adjustments (the reminder card's
-  // consumption pattern): derived entirely from the record, never stored
-  // (#952). While a needed slice is still loading nothing changes; a failed
-  // condition drops this save - the offer waits for a later one; a passed
-  // evaluation shows the card. The reminderVisible check covers a reminder
-  // prompt still on screen from an earlier save: the two floaters share one
-  // bottom slot, and the reminder prompt wins.
+  // The decision, made as render-time adjustments: derived entirely from the
+  // record, never stored (#952). While a needed slice is still loading nothing
+  // changes; a failed condition drops this save - the offer waits for a later
+  // one; a passed evaluation shows the card.
   if (evaluating && userId && preferences) {
-    if (preferences.starterRoutineOffered || reminderVisible) {
+    if (preferences.starterRoutineOffered) {
       setPendingSave(false);
     } else if (routines !== undefined) {
       if (routines.length > 0) {
@@ -130,21 +125,16 @@ export function StarterOfferCard() {
     }
   }
 
-  // A reminder prompt arriving on a later save takes the slot outright.
-  if (visible && reminderVisible) {
-    setVisible(false);
-  }
-
   // The show's side effect: marked as offered ON SHOW - navigating away
   // without touching the card still counts as asked. Best-effort: a failed
-  // write only risks one more ask, mirroring the reminder prompt.
+  // write only risks one more ask.
   useEffect(() => {
     if (!visible) return;
     persistPreferences({ starterRoutineOffered: true }).catch(() => {});
   }, [visible, persistPreferences]);
 
-  // Layer 2 of the bottom-inset ladder (#1339), same slot as the reminder
-  // prompt card - only one of the two is ever visible.
+  // Layer 2 of the bottom-inset ladder (#1339): this card and the routine FAB
+  // stand on the same rung, above the keyboard and the banner strip.
   const insetBelow = useInsetBelow(INSET_LAYER.floater);
   const hostBottom = Math.max(insets.bottom, insetBelow) + 16;
   const { attachHost: attachCard, onLayout: onCardLayout } = useInsetPublisher(
@@ -163,9 +153,11 @@ export function StarterOfferCard() {
 
   return (
     <View
-      // box-none must be the prop, not style.pointerEvents - see the reminder
-      // prompt card: the style value is passed through as raw (invalid) CSS on
-      // web, and this full-width overlay would swallow the screen's clicks.
+      // box-none must be the prop, not style.pointerEvents: NativeWind passes the
+      // style value through as raw CSS, and "box-none" is invalid CSS (ignored), so
+      // this full-width overlay would capture clicks meant for the screen behind it.
+      // The prop routes through react-native-web's box-none polyfill (container
+      // non-interactive, direct children interactive).
       testID="starter-offer-host"
       pointerEvents="box-none"
       className="absolute inset-x-0 z-[70] items-center px-4"

@@ -150,7 +150,7 @@ describe("on web", () => {
     render(<KeyboardInsetPublisher />);
     viewport.resizeTo(480);
 
-    // RoutineFab and ReminderPromptCard sit on layer 2 and read everything
+    // RoutineFab and StarterOfferCard sit on layer 2 and read everything
     // below: layer 0 reaches them exactly as layer 1 does. That is #1339's
     // visible win - before this, an `absolute; bottom` floater sat BEHIND the
     // web keyboard, because no viewport meta resizes the layout viewport here.

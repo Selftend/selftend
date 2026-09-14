@@ -282,6 +282,69 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText("Couldn't load the writing chart.")).toBeNull();
   });
 
+  /**
+   * ADR-0009 clause 2. What stood here was that spinner in a `py-8` box, shorter than the
+   * chart it stood in for, so the entries list below - every card a tap target - rose
+   * while the buckets were in flight and dropped back as they landed.
+   *
+   * ⚠️ jest cannot see the height: NativeWind resolves no padding or width into
+   * `props.style`, so an assertion about the reserved size would be vacuously green
+   * (`item-card.tsx`, and ADR-0009's Enforcement section). What it CAN see is that the
+   * space is held by the chart's own columns rather than by a spinner alone, that the
+   * columns are the ones the selected range will land, and that none of it is drawn or
+   * read out. The columns-per-range half is `journal-writing-chart.test.tsx`'s.
+   */
+  it("holds the chart's space while the read is in flight, rather than collapsing it", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    mockUseJournalWritingBuckets.mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPaused: false,
+      refetch: jest.fn(),
+    } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByTestId("journal-writing-reservation")).toBeTruthy();
+    // The default range's thirty columns, held and hidden: nothing visible, nothing
+    // announced, and no claim that thirty days of writing are on their way.
+    expect(screen.getAllByTestId("bar-chart-bar", { includeHiddenElements: true })).toHaveLength(
+      30,
+    );
+    expect(screen.queryByText("Words written per day.")).toBeNull();
+    expect(screen.queryByText("No writing in this range.")).toBeNull();
+    // And the list the reservation exists for is still under it.
+    expect(screen.getByText("Entries")).toBeTruthy();
+  });
+
+  /**
+   * The other half of the same rule: the reservation belongs to the PENDING state, not to
+   * the slot (ADR-0009, edge 1). A read that failed, or never started, has its answer
+   * already - the error line and its retry - and holding a chart's height above it would
+   * be reserving for something that is not coming.
+   */
+  it("reserves nothing once the read has failed or never started", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    for (const query of [
+      { data: undefined, isError: true },
+      { data: undefined, isPending: true, isPaused: true },
+    ]) {
+      mockUseJournalWritingBuckets.mockReturnValue({
+        ...query,
+        refetch: jest.fn(),
+      } as unknown as ReturnType<typeof useJournalWritingBuckets>);
+
+      const tree = renderWithProviders(<JournalListScreen />);
+
+      expect(screen.getByText("Couldn't load the writing chart.")).toBeTruthy();
+      expect(screen.queryByTestId("journal-writing-reservation")).toBeNull();
+      expect(
+        screen.queryAllByTestId("bar-chart-bar", { includeHiddenElements: true }),
+      ).toHaveLength(0);
+      tree.unmount();
+    }
+  });
+
   it("keeps the writing section and its control when the selected range is empty", () => {
     mockEntries([journalEntry("old", "2025-01-01")]);
     mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<

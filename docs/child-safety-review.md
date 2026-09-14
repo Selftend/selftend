@@ -249,6 +249,16 @@ A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-s
 
 **One footnote, added when the module joined routines.** Six DBT-named strings do not live in the `dbt` namespace at all - the routine step labels _Muscle relaxation_, _Wise mind check-in_, _Judgement record_, _Emotion record_, _Opposite action_ and _Script_, plus the picker's _DBT_ group header, which sit in `routines`. They were screened with the same shapes and came back clean in both locales: no hit on any of the nine, and the longest is three words. They are labels naming a record, not claims about it, so they raise nothing the passes above did not already settle - but they are recorded here so "fully reviewed" is not read as "everything DBT says lives in one file".
 
+### 2026-09-11 — the "Your days" single-day line, reworded ([#2344](https://github.com/Selftend/selftend/issues/2344))
+
+**Scope.** One string, `navigation:progress.timelineSingleDay`, in both locales: _"Your record starts here."_ → **"Today is on your record."** / _"Твоят запис започва тук."_ → **"Днес е в записа ти."** The rest of the block is unchanged and stands on the 2026-09-04 run above. Taken because the surface is engagement-adjacent by construction, not because one string looks risky.
+
+**Both passes.** Zero candidates on all six shapes, as before: no clinical or treatment vocabulary, no Play-sensitive subject matter, no crisis vocabulary, no absolute effect verb. Five words in each language, no word over six letters — well inside row 1.
+
+**Row 4 and §12 are the two worth stating.** The new line still interprets nothing: it reports that a day the person recorded on is today, which is the same claim the mark itself makes. ☠️ And it was checked in the other direction — the old wording announced a _beginning_, which is what the reporter read as data loss, and a confirmation that carried an expectation (_"starts today"_, anything implying more is owed) would have been the come-back shape §12 refuses. **"Today is on your record." states the record and stops**, which is the only thing this surface is allowed to do.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** Clean against `restraint-copy`, `practice-copy`, `positioning-copy` and `child-safety-copy` in both locales.
+
 ## Re-running this
 
 The trigger for a re-run is §4's cadence rule, and [#1769](https://github.com/Selftend/selftend/issues/1769) made it a checkbox: `.github/pull_request_template.md`, in the Product guardrails block, asks every PR whether it ships **a new module, or an engagement-adjacent feature.** `test/child-safety-cadence.test.ts` keeps that line in the checklist rather than in the notes, where it would read the same and gate nothing.

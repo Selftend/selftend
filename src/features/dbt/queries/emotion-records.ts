@@ -9,7 +9,7 @@ import {
   saveEmotionRecord,
 } from "@/src/features/dbt/repository";
 import type { EmotionRecordInput } from "@/src/features/dbt/types";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
@@ -58,10 +58,7 @@ export function useSaveEmotionRecord(userId: string | null) {
     mutationFn: (input: EmotionRecordInput) => saveEmotionRecord(userId!, input),
     meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
-      // The once-ever reminder offer rides any DBT save (spec §4). The store
-      // decides whether to show it and the shipped eligibility gates it; this
-      // only reports that a save happened.
-      requestReminderPrompt("dbt");
+      noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: dbtKeys.emotionRecordList(userId) }),

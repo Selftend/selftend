@@ -29,7 +29,6 @@ import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner"
 import { FreshStartNotice } from "@/src/components/app/fresh-start-notice";
 import { KeyboardInsetPublisher } from "@/src/components/app/keyboard-inset-publisher";
 import { SiteHead } from "@/src/components/app/site-head";
-import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleDriver, useStyleName } from "@/src/lib/style";
@@ -120,10 +119,10 @@ export default Sentry.wrap(function RootLayout() {
               <FreshStartNotice />
               <AppShell />
               <CookieConsentBanner />
-              <ReminderPromptCard />
-              {/* After ReminderPromptCard in the tree so its effects run first:
-                  the starter offer reads the reminder card's published
-                  visibility and yields the shared bottom slot (#1677). */}
+              {/* The one floater the completion moment can raise (#1677). The
+                  reminder offer that used to share this slot - and win it - was
+                  removed outright (#2342, ADR-0008): nothing asks after a save
+                  any more. */}
               <StarterOfferCard />
               <AppToast />
             </AppErrorBoundary>

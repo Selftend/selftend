@@ -44,11 +44,37 @@ if (!fs.existsSync(sqlFile)) {
 
 const sql = fs.readFileSync(sqlFile, "utf8");
 
+// ☠️ ON_ERROR_STOP=1 IS LOAD-BEARING, and its absence was found by #2378. Without
+// it psql reports a failing statement, carries on with the next one, and EXITS 0
+// - so a report with a broken section printed the rest and looked like a
+// success, and `npm run analytics:<name>` could not be trusted as a check.
+//
+// That is the exact failure this report family is built to rule out:
+// docs/analytics.md requires DATA, CORRECTLY EMPTY and BROKEN to be three
+// distinguishable states, and #2378 made the first two distinguishable by giving
+// open-shape sections a no-rows marker. A runner that swallows the third
+// undermines both. A broken report must now stop, say so, and exit non-zero.
+//
+// ⚠️ The trade is deliberate: a report with one bad section no longer prints the
+// sections after it. A loud failure beats a silently missing table, and the
+// integration suite has always run these files this way.
+const PSQL_STRICT = ["-v", "ON_ERROR_STOP=1"];
+
 if (isLocal) {
   // Pipe SQL file via stdin into psql running inside the Docker container.
   const result = spawnSync(
     "docker",
-    ["exec", "-i", "supabase_db_selftend", "psql", "-U", "postgres", "-d", "postgres"],
+    [
+      "exec",
+      "-i",
+      "supabase_db_selftend",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      ...PSQL_STRICT,
+    ],
     { input: sql, stdio: ["pipe", "inherit", "inherit"] },
   );
   process.exit(result.status ?? 1);
@@ -63,7 +89,7 @@ if (isLocal) {
     );
     process.exit(1);
   }
-  const result = spawnSync("psql", [dbUrl], {
+  const result = spawnSync("psql", [dbUrl, ...PSQL_STRICT], {
     input: sql,
     stdio: ["pipe", "inherit", "inherit"],
   });

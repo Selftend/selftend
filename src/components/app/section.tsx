@@ -4,6 +4,16 @@ import { View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 
+/**
+ * The gap between a section's children.
+ *
+ * Exported because a block that draws two of those children as one unit has to space them
+ * the same way, or it changes the layout by being extracted — `JournalWritingChart` is the
+ * instance: its bars and its caption were siblings here before a reservation needed them
+ * to be one component. One constant rather than two matching literals.
+ */
+export const SECTION_GAP = "gap-4";
+
 interface SectionProps {
   children: ReactNode;
   /** Optional label above the section body, e.g. "Mood trend". Rendered uppercase. */
@@ -68,7 +78,7 @@ export function Section({
   return (
     <View
       testID="section"
-      className={cn("gap-4 py-6", ruled && "border-t border-border", className)}
+      className={cn(SECTION_GAP, "py-6", ruled && "border-t border-border", className)}
     >
       {title || action ? (
         <View testID="section-label-row" className="flex-row items-center justify-between gap-3">

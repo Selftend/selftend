@@ -76,17 +76,22 @@ export const COOKIE_CONSENT_VALUE = JSON.stringify({
 
 // The user_preferences gate fields (column names) that must always hold
 // non-gate-firing values while a suite runs. Reads the live policyVersion
-// constant so it can never drift. reminder_consent(+updated_at) marks the
-// one-time reminder prompt as already declined (see isReminderPromptEligible)
-// - otherwise the "Want a daily reminder?" modal pops after any tool
-// completion and blocks unrelated specs' buttons/navigation.
+// constant so it can never drift.
+//
+// This list used to carry reminder_consent: false with a timestamp, which is
+// how the post-completion reminder offer read "already declined" - without it
+// the "Want a daily reminder?" card popped after any tool save and covered
+// unrelated specs' buttons. That offer was removed outright (#2342), so the
+// suppression has nothing left to suppress, and the pair was a row no user path
+// could ever produce: nothing in the app has ever written a declined consent.
+// A fixture that models an impossible row is the next bug's hiding place, so it
+// is gone rather than kept "just in case".
 //
 // Snapshot/restore specs MUST spread this over any captured full row before
 // restoring it: a beforeAll capture happens before fixtures.ts's normalization
-// ever ran, so the raw capture can hold the seed's stale policy version and a
-// null reminder timestamp - restoring that resurrects the consent gate for a
-// later test (#172: a trace caught the gate rendering from exactly such a
-// restored row).
+// ever ran, so the raw capture can hold the seed's stale policy version -
+// restoring that resurrects the consent gate for a later test (#172: a trace
+// caught the gate rendering from exactly such a restored row).
 export const NORMALIZED_GATE_PREFS = {
   app_onboarding_completed: true,
   policy_version_accepted: policyVersion,
@@ -111,25 +116,27 @@ export const NORMALIZED_GATE_PREFS = {
   // that models an impossible row is the next bug's hiding place. GB is what
   // `clearAgeGate` (helpers.ts) types into the form, so an account that came
   // through the UI and one normalized here tell the same story. The instant is
-  // fixed rather than `now()` for the same reason `reminder_consent_updated_at`
-  // below is: nothing reads it, and a moving value in a shared constant is a
-  // needless source of run-to-run difference.
+  // fixed rather than `now()` because nothing reads it back, and a moving value
+  // in a shared constant is a needless source of run-to-run difference.
   age_floor_met: true,
   age_attested_country: "GB",
   age_attested_at: "2026-01-01T00:00:00.000Z",
-  reminder_consent: false,
-  reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
   // Pooled users count as verified or the #489 banner pins itself to the top
   // of every spec. The banner's own journey lives in sign-up-onboarding
   // (plain @playwright/test, fresh user), which the normalization never
   // touches.
   email_verified: true,
-  // The once-ever starter-routine offer (#1677) counts as already shown.
-  // With reminder consent declined above, the reminder prompt never wins a
-  // save here, so a pooled user at zero routines (bob, by design - see
-  // supabase/seed.sql) whose specs save into a second steppable tool would
-  // otherwise pop the offer after that save and block unrelated specs'
-  // buttons. (Bob's own seed is one tool - five thought records - so it is
-  // the specs' saves, not the seed, that reach the second action.)
+  // The once-ever starter-routine offer (#1677) counts as already shown. A
+  // pooled user at zero routines (bob, by design - see supabase/seed.sql) whose
+  // specs save into a second steppable tool would otherwise pop the offer after
+  // that save and block unrelated specs' buttons. (Bob's own seed is one tool -
+  // five thought records - so it is the specs' saves, not the seed, that reach
+  // the second action.)
+  //
+  // ☠️ This line carries MORE weight since #2342, not less. The offer used to
+  // yield the first qualifying save to the reminder prompt, which took it for
+  // each tool in turn; with that prompt removed the starter offer fires on the
+  // first qualifying save. Drop this flag and specs start losing their buttons
+  // a save earlier than they used to.
   starter_routine_offered: true,
 } as const;

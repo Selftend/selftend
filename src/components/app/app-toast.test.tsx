@@ -580,7 +580,7 @@ function topEdge(args: Parameters<typeof toastBottom>[0]): number {
 
 describe("toastBottom - the ladder arithmetic", () => {
   it("rests on the home-indicator inset plus one rung when nothing is down there", () => {
-    // The same rung RoutineFab and ReminderPromptCard stand on, spelled the same
+    // The same rung RoutineFab and StarterOfferCard stand on, spelled the same
     // way - a toast that invented its own gutter would read as misaligned next
     // to furniture that is, in fact, correctly aligned.
     expect(toastBottom(PHONE)).toBe(34 + TOAST_GUTTER);

@@ -16,7 +16,7 @@ import { addDaysToKey } from "@/src/utils/date";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const moodKeys = {
@@ -188,7 +188,7 @@ export function useSaveMoodLog(userId: string | null) {
       saveMoodLog(userId!, input, moodLogId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (_data, { moodLogId }) => {
-      if (!moodLogId) requestReminderPrompt("mood");
+      if (!moodLogId) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: moodKeys.all }),
