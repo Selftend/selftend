@@ -497,6 +497,29 @@ repository runs all three on the **1st of each month**, covering the complete
 previous calendar month, and posts the output as **one comment on a single
 standing, closed issue in the private `vasilyoshev/control-tower` repository**.
 
+It is `.github/workflows/analytics-digest.yml`, at `17 6 1 * *`, writing to
+`vasilyoshev/control-tower#136`. Two secrets on `Selftend/selftend`:
+`ANALYTICS_DIGEST_DB_URL` (the read-only role's **Session Pooler** string — the
+direct connection is IPv6-only and fails on GitHub runners) and
+`CONTROL_TOWER_ISSUES_TOKEN`. `test/analytics-digest-workflow.test.ts` pins the
+decisions that would be expensive to get wrong, because nothing else executes
+this workflow before the 1st.
+
+☠️ **It must never use `SUPABASE_DB_URL`.** That is the owner's credential — the
+`postgres` role, which can write and bypasses RLS — and reusing the familiar name
+would hand a scheduled job write access to production without anything noticing.
+`scripts/analytics-report.js` therefore accepts both names and **prefers the
+digest's**, so a run handed the restricted credential can never fall back to the
+privileged one; it logs which name it used, never the value.
+
+⚠️ **Two failure modes are handled rather than hoped away.** A report that throws
+prints an explicit failure line and does **not** stop the other two, so a partial
+month is never mistaken for a quiet one. And if the assembled comment ever
+exceeds GitHub's 65536-character limit, it is posted **truncated and saying so**,
+and the run then fails — measured at roughly 26 KB when this shipped, so the
+headroom is large, but a silent truncation would be exactly the kind of silence
+this document forbids.
+
 ☠️ **Delivery is not a clock, and this creates no obligation.** Nobody is on
 duty to read it. The 2026-09-02 gap opened because reading required _doing_ —
 finding a credential, running a script — and unbidden arrival flips the default

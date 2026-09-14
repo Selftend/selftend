@@ -80,15 +80,38 @@ if (isLocal) {
   process.exit(result.status ?? 1);
 } else {
   // --linked: use psql with the connection string from the env var.
-  const dbUrl = process.env.SUPABASE_DB_URL;
+  //
+  // ☠️ TWO NAMES, DELIBERATELY, AND THE DIGEST MUST NOT BORROW THE OTHER ONE
+  // (#2380, #2381). `SUPABASE_DB_URL` is the OWNER's credential - the `postgres`
+  // role, which can write and bypasses RLS. The monthly digest runs
+  // repository-authored SQL against production on a schedule, so it runs as a
+  // dedicated read-only role under its own name. Collapsing the two would mean a
+  // scheduled job silently acquiring write access the day somebody set the
+  // familiar variable, which is the precise failure the separate role exists to
+  // prevent.
+  //
+  // The digest's name wins when both are present: a run that has been handed the
+  // restricted credential must never quietly fall back to the privileged one.
+  // ⚠️ Both read statically: `process.env[someVariable]` is rejected by
+  // eslint's expo/no-dynamic-env-var, and the pair reads more plainly anyway.
+  // `||` rather than `??` on purpose - an empty string is an unset credential,
+  // not a credential that happens to be empty.
+  const digestUrl = process.env.ANALYTICS_DIGEST_DB_URL;
+  const ownerUrl = process.env.SUPABASE_DB_URL;
+  const dbUrl = digestUrl || ownerUrl;
+  const urlVar = digestUrl ? "ANALYTICS_DIGEST_DB_URL" : "SUPABASE_DB_URL";
   if (!dbUrl) {
     console.error(
-      `[analytics:${reportName}] SUPABASE_DB_URL is not set.\n` +
+      `[analytics:${reportName}] neither ANALYTICS_DIGEST_DB_URL nor SUPABASE_DB_URL is set.\n` +
         "Get the connection string from: Supabase dashboard > Project Settings > Database > Connection string > psql\n" +
-        `Then run: SUPABASE_DB_URL='postgres://...' npm run analytics:${reportName}`,
+        `Then run: SUPABASE_DB_URL='postgres://...' npm run analytics:${reportName}\n` +
+        "The scheduled digest uses ANALYTICS_DIGEST_DB_URL, which is the read-only role.",
     );
     process.exit(1);
   }
+  // Which name, never the value - so a digest run's log evidences that it used
+  // the restricted credential rather than the owner's.
+  console.error(`[analytics:${reportName}] connecting via ${urlVar}`);
   const result = spawnSync("psql", [dbUrl, ...PSQL_STRICT], {
     input: sql,
     stdio: ["pipe", "inherit", "inherit"],
