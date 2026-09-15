@@ -104,8 +104,11 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
 
 test("policy pages that cross-link do not stack copies of each other", async ({ page }) => {
   // Public pages, so this exercises the ROOT stack rather than the authenticated one.
+  // Privacy → security is a real link since #2476 (`LinkButton`, singular like every
+  // footer link); security → privacy is still the imperative push, so this pair now
+  // covers one of each.
   await page.goto("/privacy");
-  const toSecurity = page.getByRole("button", { name: "How we protect your data" });
+  const toSecurity = page.getByRole("link", { name: "How we protect your data" });
   await expect(toSecurity).toBeVisible({ timeout: 15_000 });
   expect(await privacyRoots(page)).toBe(1);
 
@@ -115,7 +118,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   // Security pushes privacy straight back - the purest ping-pong in the app.
   await page.getByRole("button", { name: "Read the full Privacy Policy" }).click();
   await expect(page).toHaveURL(/\/privacy/, { timeout: 15_000 });
-  await expect(page.getByRole("button", { name: "How we protect your data" })).toBeVisible({
+  await expect(page.getByRole("link", { name: "How we protect your data" })).toBeVisible({
     timeout: 15_000,
   });
 
@@ -128,7 +131,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   // alternative (`dismissTo`) replaces on EVERY navigation and costs Back entirely. What
   // must never happen is Back resurrecting the duplicate.
   await page.goBack();
-  await expect(page.getByRole("button", { name: "How we protect your data" })).toBeVisible({
+  await expect(page.getByRole("link", { name: "How we protect your data" })).toBeVisible({
     timeout: 15_000,
   });
   expect(await privacyRoots(page)).toBe(1);
