@@ -1,0 +1,357 @@
+<title>Selftend Reminder Row</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Nunito:wght@800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<style>
+  :root {
+    --background: 260 28% 96%;
+    --foreground: 260 18% 14%;
+    --card: 260 28% 99%;
+    --primary: 262 62% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-ink: 262 62% 28%;
+    --secondary: 260 8% 92%;
+    --muted: 260 14% 95%;
+    --muted-foreground: 260 8% 42%;
+    --border: 260 14% 87%;
+    --input: 260 14% 87%;
+    --destructive: 0 72% 48%;
+    --desk: 260 10% 90%;
+    --radius: 0.625rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --background: 260 20% 9%;
+      --foreground: 260 30% 96%;
+      --card: 260 16% 16%;
+      --primary: 264 72% 72%;
+      --primary-foreground: 260 22% 12%;
+      --primary-ink: 264 72% 80%;
+      --secondary: 260 8% 22%;
+      --muted: 260 12% 18%;
+      --muted-foreground: 260 12% 72%;
+      --border: 260 12% 24%;
+      --input: 260 12% 22%;
+      --destructive: 0 68% 64%;
+      --desk: 260 14% 6%;
+    }
+  }
+  :root[data-theme="dark"] {
+    --background: 260 20% 9%;
+    --foreground: 260 30% 96%;
+    --card: 260 16% 16%;
+    --primary: 264 72% 72%;
+    --primary-foreground: 260 22% 12%;
+    --primary-ink: 264 72% 80%;
+    --secondary: 260 8% 22%;
+    --muted: 260 12% 18%;
+    --muted-foreground: 260 12% 72%;
+    --border: 260 12% 24%;
+    --input: 260 12% 22%;
+    --destructive: 0 68% 64%;
+    --desk: 260 14% 6%;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: hsl(var(--desk));
+    color: hsl(var(--foreground));
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 24px 48px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 820px) {
+    .wrap { grid-template-columns: 360px 1fr; align-items: start; }
+    .phone-col { position: sticky; top: env(safe-area-inset-top, 0px); }
+  }
+  h1.page { font: 800 22px/1.2 Nunito, "Noto Sans", sans-serif; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: hsl(var(--muted-foreground)); margin: 0 0 16px; max-width: 62ch; }
+  .panel { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 14px 16px; }
+  .panel + .panel { margin-top: 14px; }
+  .panel h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: hsl(var(--muted-foreground)); margin: 0 0 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid hsl(var(--border)); border-radius: 999px; padding: 2px; background: hsl(var(--background)); }
+  .seg button {
+    font: 600 13px/1 "Noto Sans", sans-serif; border: 0; background: transparent; color: hsl(var(--muted-foreground));
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .seg button:focus-visible, .chk input:focus-visible, .sel:focus-visible { outline: 3px solid hsl(var(--primary) / 0.5); outline-offset: 1px; }
+  .chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
+  .sel { font: 13px "Noto Sans", sans-serif; padding: 6px 8px; border-radius: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  table.m { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+  table.m th, table.m td { text-align: left; padding: 5px 6px; border-bottom: 1px solid hsl(var(--border)); vertical-align: top; }
+  table.m th { font-weight: 600; color: hsl(var(--muted-foreground)); font-size: 12px; }
+  table.m td.n { text-align: right; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .kv dt { color: hsl(var(--muted-foreground)); }
+  .kv dd { margin: 0; }
+  .notes p { margin: 0 0 8px; max-width: 64ch; }
+  .notes p strong { font-weight: 600; }
+  .notes ol { padding-left: 20px; margin: 0; }
+  .notes li { margin-bottom: 8px; max-width: 64ch; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: hsl(var(--primary-ink)); background: hsl(var(--primary) / 0.12); padding: 2px 7px; border-radius: 999px; margin-right: 6px; }
+
+  /* ---- the phone: 360 CSS px, inner ---- */
+  .phone {
+    width: 360px; max-width: 100%;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px hsl(260 20% 10% / 0.18);
+  }
+  .status { height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: hsl(var(--muted-foreground)); letter-spacing: 0.04em; }
+  .screen { height: 700px; overflow-y: auto; overscroll-behavior: contain; }
+  .scroll { padding: 24px; }
+  .column { display: flex; flex-direction: column; gap: 24px; }
+  .hdr { display: flex; flex-direction: column; gap: 8px; }
+  .h1 { font: 800 36px/1.1 Nunito, "Noto Sans", sans-serif; letter-spacing: -0.025em; margin: 0; }
+  .muted { color: hsl(var(--muted-foreground)); font-size: 14px; }
+  .card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; }
+  .master { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .master .line { display: flex; align-items: center; gap: 16px; }
+  .name { font-size: 15px; font-weight: 600; line-height: 1.35; }
+  .master .name { flex: 1; }
+  .hint { font-size: 13px; color: hsl(var(--muted-foreground)); max-width: 52ch; }
+  .rows { padding-inline: 16px; }
+  .row { position: relative; display: flex; flex-direction: column; gap: 6px; padding-block: 14px; }
+  .row + .row, .row + .run, .run + .row { border-top: 1px solid hsl(var(--border)); }
+  .frame { display: flex; align-items: center; gap: 14px; }
+  .ic { font-family: "Material Icons"; font-size: 20px; width: 20px; height: 20px; line-height: 1; color: hsl(var(--muted-foreground)); flex-shrink: 0; overflow: hidden; }
+  .body { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .label { font-size: 15px; font-weight: 600; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tf { display: flex; align-items: center; gap: 2px; height: 36px; padding-inline: 6px; border: 1px solid hsl(var(--input)); border-radius: 6px; background: hsl(var(--background)); align-self: flex-start; }
+  .tf .d { width: 36px; height: 32px; display: grid; place-items: center; font-size: 14px; border-radius: 4px; }
+  .tf .c { color: hsl(var(--muted-foreground)); font-size: 14px; }
+  .tf .mer { margin-left: 4px; display: inline-flex; border-radius: 999px; background: hsl(var(--muted)); padding: 2px; }
+  .tf .mer span { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; color: hsl(var(--muted-foreground)); }
+  .tf .mer span.on { background: hsl(var(--card)); color: hsl(var(--foreground)); box-shadow: 0 1px 2px hsl(0 0% 0% / 0.12); }
+  .sw { width: 32px; height: 18.4px; border-radius: 999px; background: hsl(var(--input)); border: 1px solid transparent; position: relative; flex-shrink: 0; box-shadow: 0 1px 2px hsl(0 0% 0% / 0.05); }
+  .sw::after { content: ""; position: absolute; top: 0.2px; left: 0; width: 16px; height: 16px; border-radius: 999px; background: hsl(var(--background)); transition: transform 120ms; }
+  .sw.on { background: hsl(var(--primary)); }
+  .sw.on::after { transform: translateX(14px); background: hsl(var(--primary-foreground)); }
+  .sw.off-disabled { opacity: 0.5; }
+  .note { font-size: 13px; color: hsl(var(--muted-foreground)); }
+  .run { padding-block: 10px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+  .group { display: flex; flex-direction: column; gap: 8px; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: hsl(var(--muted-foreground)); padding-inline: 4px; }
+  .arrival { position: absolute; inset: 4px -8px; border-radius: 8px; background: hsl(var(--primary) / 0.10); pointer-events: none; }
+  .dim { opacity: 0.55; }
+  .measure { position: absolute; visibility: hidden; white-space: nowrap; font-size: 15px; font-weight: 600; font-family: "Noto Sans", sans-serif; left: -9999px; top: 0; }
+  @media (prefers-reduced-motion: reduce) { .sw::after { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="phone-col">
+    <div class="phone" id="phone">
+      <div class="status">360 × 700 CSS px</div>
+      <div class="screen" id="screen"></div>
+    </div>
+    <span class="measure" id="measure" aria-hidden="true"></span>
+  </div>
+
+  <div>
+    <h1 class="page">One general row above eleven manual ones</h1>
+    <p class="lede">The Reminders screen at a true 360 px, drawn from the shipped row and card styles and the copy fixed on the map. Switch the arrangement, the language and the states below; the numbers underneath are measured from the frame on the left, not estimated.</p>
+
+    <div class="panel">
+      <h2>Arrangement</h2>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Arrangement">
+          <button id="arr-A" data-arr="A" aria-pressed="true">A · Row one</button>
+          <button id="arr-B" data-arr="B" aria-pressed="false">B · Own card</button>
+          <button id="arr-C" data-arr="C" aria-pressed="false">C · Two runs</button>
+        </div>
+        <div class="seg" role="group" aria-label="Language">
+          <button id="loc-en" data-loc="en" aria-pressed="true">en</button>
+          <button id="loc-bg" data-loc="bg" aria-pressed="false">bg</button>
+        </div>
+      </div>
+      <div class="controls" style="margin-top:10px">
+        <label class="chk"><input type="checkbox" id="st-heldout" checked> General held out</label>
+        <label class="chk"><input type="checkbox" id="st-on"> General switched on</label>
+        <label class="chk"><input type="checkbox" id="st-arrival"> Arrival <code>?target=gratitude</code></label>
+        <label class="chk"><input type="checkbox" id="st-master-off"> Master off</label>
+        <label class="chk">Icon <select class="sel" id="st-icon"><option value="home">home</option><option value="notifications">notifications</option><option value="spa">spa</option><option value="auto_awesome">auto_awesome</option></select></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Measured on this frame</h2>
+      <dl class="kv" id="kv"></dl>
+      <table class="m" id="mt" style="margin-top:10px"></table>
+    </div>
+
+    <div class="panel notes">
+      <h2>What each arrangement claims</h2>
+      <p><span class="tag">A</span><strong>Row one in the rows card.</strong> Twelve rows, one run, the general row first. The smallest change to the shipped screen: no new copy, no new card. The risk is that "Selftend" reads as a twelfth tool with an odd name, and that its switch and the master switch sit one card apart, both app-wide.</p>
+      <p><span class="tag">B</span><strong>Its own card above the tools card.</strong> The general row gets a card of its own between the master card and the eleven rows, and the tools card takes a small label above it. Three stacked cards with switches: the master, the general, then the tools. It reads as a different kind, but it puts the two app-wide switches in adjacent cards.</p>
+      <p><span class="tag">C</span><strong>One card, two runs.</strong> The general row is row one of the rows card, and an eyebrow inside the card divides it from the eleven. One card, so the master stays visibly different (its card has a hint and no time); one label, so the eleven read as the per-tool run. The label is the only new string.</p>
+      <p><strong>What no arrangement changes.</strong> The master card and its hint (#1782), the row anatomy (icon, name, compact time, switch), the arrival highlight landing on a tool row past the general one (#967), and the intro sentence fixed by #2413. No overlap note anywhere (#2417).</p>
+      <p><strong>Held out.</strong> The general row ships held out (#2413, DBT's path): its switch is disabled and the existing note sits under the name. DBT is held out on dev today for the same reason, so the frame shows both notes until the native builds carrying the routes are live.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var COPY = {
+    en: {
+      title: "Reminders",
+      description: "Every reminder here is off until you turn it on. One from Selftend, or one for each tool you use - pick the time it arrives.",
+      master: "Notifications enabled",
+      hint: "One switch for every reminder, routines included. Your times are kept while it is off.",
+      heldOut: "Not ready yet. This reminder can't be delivered until the phone apps can open the place it leads to, so the switch stays off everywhere until then.",
+      general: "Selftend",
+      run: "For each tool",
+      am: "AM", pm: "PM", twelve: true
+    },
+    bg: {
+      title: "Напомняния",
+      description: "Всяко напомняне тук е изключено, докато не го включиш. Едно от Selftend или по едно за всеки инструмент, който ползваш - избери часа, в който да идва.",
+      master: "Известията са включени",
+      hint: "Един ключ за всички напомняния, включително рутините. Часовете ти се запазват, докато е изключен.",
+      heldOut: "Още не е готово. Това напомняне не може да се доставя, докато приложенията за телефон не могат да отворят мястото, към което води, затова ключът остава изключен навсякъде дотогава.",
+      general: "Selftend",
+      run: "За всеки инструмент",
+      twelve: false
+    }
+  };
+  // Registry order (registry.ts), default hours from #2413's taken list.
+  var TARGETS = [
+    { key: "mood", icon: "mood", hour: 12, en: "Check-in", bg: "Запис на настроението" },
+    { key: "breathing", icon: "air", hour: 16, en: "Breathing", bg: "Дишане" },
+    { key: "gratitude", icon: "favorite", hour: 20, en: "Gratitude log", bg: "Дневник на благодарността" },
+    { key: "meditation", icon: "self_improvement", hour: 7, en: "Meditation", bg: "Медитация" },
+    { key: "habits", icon: "task_alt", hour: 9, en: "Habits", bg: "Навици" },
+    { key: "cbt", icon: "psychology", hour: 19, en: "CBT", bg: "КПТ" },
+    { key: "act", icon: "explore", hour: 19, en: "ACT", bg: "ACT" },
+    { key: "sleep", icon: "bedtime", hour: 22, en: "Sleep", bg: "Сън" },
+    { key: "journal", icon: "edit_note", hour: 21, en: "Journal", bg: "Дневник" },
+    { key: "grounding", icon: "anchor", hour: 15, en: "Grounding", bg: "Заземяване" },
+    { key: "dbt", icon: "balance", hour: 19, en: "DBT", bg: "ДПТ", heldOut: true }
+  ];
+
+  var state = { arr: "A", loc: "en", heldOut: true, on: false, arrival: false, masterOff: false, icon: "home" };
+  try {
+    var saved = JSON.parse(localStorage.getItem("selftend-reminder-row") || "null");
+    if (saved && typeof saved === "object") { for (var k in saved) if (k in state) state[k] = saved[k]; }
+  } catch (e) {}
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function timeField(hour, c) {
+    var h = hour, mer = "";
+    if (c.twelve) { mer = hour >= 12 ? "pm" : "am"; h = hour % 12; if (h === 0) h = 12; }
+    var html = '<div class="tf" aria-hidden="true"><span class="d">' + pad(h) + '</span><span class="c">:</span><span class="d">00</span>';
+    if (c.twelve) html += '<span class="mer"><span class="' + (mer === "am" ? "on" : "") + '">' + c.am + '</span><span class="' + (mer === "pm" ? "on" : "") + '">' + c.pm + '</span></span>';
+    return html + '</div>';
+  }
+  function row(opts) {
+    var c = COPY[state.loc];
+    var disabled = opts.heldOut || state.masterOff;
+    var on = opts.on && !opts.heldOut;
+    var html = '<div class="row' + (state.masterOff ? ' dim' : '') + '" data-row="' + opts.key + '">';
+    if (opts.arrival) html += '<div class="arrival"></div>';
+    html += '<div class="frame"><span class="ic">' + opts.icon + '</span><div class="body"><div class="label" data-label="' + opts.key + '">' + opts.label + '</div>' + timeField(opts.hour, c) + '</div>';
+    html += '<span class="sw' + (on ? ' on' : '') + (disabled ? ' off-disabled' : '') + '" role="switch" aria-checked="' + on + '" aria-label="' + opts.label + '"' + (disabled ? ' aria-disabled="true"' : '') + '></span></div>';
+    if (opts.heldOut) html += '<div class="note">' + c.heldOut + '</div>';
+    return html + '</div>';
+  }
+  function generalRow() {
+    var c = COPY[state.loc];
+    return row({ key: "general", icon: state.icon, hour: 18, label: c.general, heldOut: state.heldOut, on: state.on });
+  }
+  function toolRows() {
+    return TARGETS.map(function (t) {
+      return row({ key: t.key, icon: t.icon, hour: t.hour, label: t[state.loc], heldOut: !!t.heldOut, on: false, arrival: state.arrival && t.key === "gratitude" });
+    }).join("");
+  }
+  function render() {
+    var c = COPY[state.loc];
+    var masterOn = !state.masterOff;
+    var html = '<div class="scroll"><div class="column">';
+    html += '<div class="hdr"><h1 class="h1">' + c.title + '</h1><div class="muted" style="max-width:64ch">' + c.description + '</div></div>';
+    html += '<div class="card master"><div class="line"><div class="name">' + c.master + '</div><span class="sw' + (masterOn ? ' on' : '') + '" role="switch" aria-checked="' + masterOn + '" aria-label="' + c.master + '"></span></div><div class="hint">' + c.hint + '</div></div>';
+    if (state.arr === "A") {
+      html += '<div class="card rows" data-card="rows">' + generalRow() + toolRows() + '</div>';
+    } else if (state.arr === "B") {
+      html += '<div class="card rows" data-card="general">' + generalRow() + '</div>';
+      html += '<div class="group"><div class="eyebrow">' + c.run + '</div><div class="card rows" data-card="rows">' + toolRows() + '</div></div>';
+    } else {
+      html += '<div class="card rows" data-card="rows">' + generalRow() + '<div class="run">' + c.run + '</div>' + toolRows() + '</div>';
+    }
+    html += '</div></div>';
+    document.getElementById("screen").innerHTML = html;
+    syncControls();
+    measure();
+    try { localStorage.setItem("selftend-reminder-row", JSON.stringify(state)); } catch (e) {}
+  }
+  function syncControls() {
+    document.querySelectorAll("[data-arr]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.arr === state.arr)); });
+    document.querySelectorAll("[data-loc]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.loc === state.loc)); });
+    document.getElementById("st-heldout").checked = state.heldOut;
+    document.getElementById("st-on").checked = state.on;
+    document.getElementById("st-arrival").checked = state.arrival;
+    document.getElementById("st-master-off").checked = state.masterOff;
+    document.getElementById("st-icon").value = state.icon;
+  }
+  function px(n) { return Math.round(n * 10) / 10 + " px"; }
+  function measure() {
+    var m = document.getElementById("measure");
+    var kv = document.getElementById("kv");
+    var mt = document.getElementById("mt");
+    var body = document.querySelector('.row[data-row="gratitude"] .body');
+    var bodyW = body ? body.getBoundingClientRect().width : 0;
+    var longest = { key: "", w: 0, text: "" };
+    var rows = [];
+    document.querySelectorAll(".row").forEach(function (r) {
+      var lab = r.querySelector(".label");
+      m.textContent = lab.textContent;
+      var natural = m.getBoundingClientRect().width;
+      var lh = parseFloat(getComputedStyle(lab).lineHeight);
+      var lines = Math.max(1, Math.round(lab.getBoundingClientRect().height / lh));
+      if (natural > longest.w) longest = { key: r.dataset.row, w: natural, text: lab.textContent };
+      rows.push({ key: r.dataset.row, h: r.getBoundingClientRect().height, lines: lines, natural: natural, note: !!r.querySelector(".note") });
+    });
+    var master = document.querySelector(".master");
+    var screenH = document.querySelector(".column").getBoundingClientRect().height + 48;
+    var gen = document.querySelector('.row[data-row="general"]');
+    var masterSw = document.querySelector('.master .sw').getBoundingClientRect();
+    var genSw = gen.querySelector('.sw').getBoundingClientRect();
+    var kvHtml = '';
+    kvHtml += '<dt>Arrangement · locale</dt><dd>' + state.arr + ' · ' + state.loc + '</dd>';
+    kvHtml += '<dt>Row body width</dt><dd>' + px(bodyW) + ' (360 − 48 − 2 − 32 − 20 − 14 − 14 − 32)</dd>';
+    kvHtml += '<dt>Longest label</dt><dd>“' + longest.text + '” needs ' + px(longest.w) + (longest.w > bodyW ? ' → wraps to 2 lines' : ' → fits on 1 line') + '</dd>';
+    kvHtml += '<dt>Master card height</dt><dd>' + px(master.getBoundingClientRect().height) + '</dd>';
+    kvHtml += '<dt>Master switch → general switch</dt><dd>' + px(genSw.top - masterSw.bottom) + ' apart, vertically</dd>';
+    kvHtml += '<dt>Screen content height</dt><dd>' + px(screenH) + ' (' + Math.round(screenH / 700 * 10) / 10 + ' screens of 700)</dd>';
+    kv.innerHTML = kvHtml;
+    var t = '<tr><th>Row</th><th class="n">Height</th><th class="n">Lines</th><th class="n">Label width</th><th>Note</th></tr>';
+    rows.forEach(function (r) {
+      t += '<tr><td>' + r.key + '</td><td class="n">' + px(r.h) + '</td><td class="n">' + r.lines + '</td><td class="n">' + px(r.natural) + '</td><td>' + (r.note ? 'held-out note' : '') + '</td></tr>';
+    });
+    mt.innerHTML = t;
+  }
+
+  document.querySelectorAll("[data-arr]").forEach(function (b) { b.addEventListener("click", function () { state.arr = b.dataset.arr; render(); }); });
+  document.querySelectorAll("[data-loc]").forEach(function (b) { b.addEventListener("click", function () { state.loc = b.dataset.loc; render(); }); });
+  document.getElementById("st-heldout").addEventListener("change", function (e) { state.heldOut = e.target.checked; render(); });
+  document.getElementById("st-on").addEventListener("change", function (e) { state.on = e.target.checked; render(); });
+  document.getElementById("st-arrival").addEventListener("change", function (e) { state.arrival = e.target.checked; render(); });
+  document.getElementById("st-master-off").addEventListener("change", function (e) { state.masterOff = e.target.checked; render(); });
+  document.getElementById("st-icon").addEventListener("change", function (e) { state.icon = e.target.value; render(); });
+
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  window.addEventListener("resize", measure);
+})();
+</script>
