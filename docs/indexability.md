@@ -219,7 +219,9 @@ Built on [#2467](https://github.com/Selftend/selftend/issues/2467), decided on [
 - **On web the footer is a `<footer>` containing a `<nav>`** - react-native-web maps `role="contentinfo"` and `role="navigation"` to those elements. Nothing else on any page changes its element.
 - **The pin (the fourth on the index list):** `src/components/app/site-footer.test.tsx` renders the footer and asserts its `href`s equal `INDEX_LIST` minus `/`, **in list order**, importing the list from `scripts/lib/index-list.js`, and that the route → title-key map's keys equal the same. A route added to the list fails the footer test until the footer knows it, so a future public route cannot land orphaned. A source grep was refused: it matches a string, not an edge.
 
-Deliberately not done here: no card was added to the landing so that every future explainer gets a body link (structure chosen for the feature); the landing's `/sign-up` and `/sign-in` links stay off the list and keep answering 404 to a crawler (§ 6.4).
+**Read on the export, not only the component tree** (2026-09-16, `npm run export:web` on the branch): every one of the eight exported files carries an `<a href>` to every route on the list and one `<footer>` holding one `<nav>`; `privacy.html` carries `href="/security"` twice (the in-body anchor and the footer's), `security.html` `href="/privacy"` twice; `index.html` no longer contains the word "FAQ"; `sitemap.xml` lists the routes in the footer's order. The landing's `/sign-up` and `/sign-in` anchors are still there, off the list by design. The release's post-deploy check (#2472) repeats the same reading on the served HTML.
+
+Deliberately not done here: no card was added to the landing so that every future explainer gets a body link (structure chosen for the feature); the landing's `/sign-up` and `/sign-in` links stay off the list and keep answering 404 to a crawler (§ 6.4). Two buttons to routes on public pages stay `Pressable`s - the crisis callout on `/faq` and the cookie banner - because both are shared chrome rather than a page's own body; whether § 7.4's rule reaches them is [#2496](https://github.com/Selftend/selftend/issues/2496).
 
 ---
 

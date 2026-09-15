@@ -55,12 +55,14 @@ describe("SecurityScreen folds into the shared policy layout (#2146)", () => {
     renderWithProviders(<SecurityScreen />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // The title once as a HEADING, not twice: the one-crumb trail still hides
-    // itself, so the page name is not repeated above its own heading. Asserted
-    // by role rather than by text since #2467, because the site footer on this
-    // page lists `/security` under the same string (the anchor-text rule labels
-    // a link with its page's H1) - a link, not a heading.
+    // One heading, and the string exactly twice on the page: the heading and the
+    // site footer's `/security` entry, which the anchor-text rule labels with
+    // this page's H1 (#2467). The one-crumb trail still hides itself - a leaked
+    // crumb is a `Text` inside a link, not a heading, which is why the count is
+    // on TEXT hits: a third occurrence is the trail repeating the page name
+    // above its own heading.
     expect(screen.getAllByRole("heading", { name: enSecurity.page.pageTitle })).toHaveLength(1);
+    expect(screen.getAllByText(enSecurity.page.pageTitle)).toHaveLength(2);
     expect(screen.getByText(enSecurity.page.pageDescription)).toBeTruthy();
   });
 

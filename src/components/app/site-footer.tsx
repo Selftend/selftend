@@ -22,7 +22,7 @@ interface SiteFooterLink {
    * locales. The one exemption is the crisis row, which keeps its imperative:
    * an affordance, not a table of contents.
    */
-  label: `${string}:${string}`;
+  label: string;
   row: FooterRow;
 }
 
@@ -57,6 +57,17 @@ export const SITE_FOOTER_LINKS: readonly SiteFooterLink[] = [
 
 interface SiteFooterProps {
   className?: string;
+}
+
+/** One footer entry: a real anchor, labelled with its destination's H1 key. */
+function FooterLink({ link }: { link: SiteFooterLink }) {
+  const { t } = useTranslation(["common", "policies", "security"]);
+
+  return (
+    <LinkButton href={link.href} variant="link" size="sm">
+      <Text className="text-xs">{t(link.label)}</Text>
+    </LinkButton>
+  );
 }
 
 /**
@@ -98,7 +109,7 @@ interface SiteFooterProps {
  * instructions. Visible text in a row of short labels needs the short form.
  */
 export function SiteFooter({ className }: SiteFooterProps) {
-  const { t } = useTranslation(["common", "policies", "security", "navigation"]);
+  const { t } = useTranslation(["common", "navigation"]);
 
   const crisisRow = SITE_FOOTER_LINKS.filter((link) => link.row === "crisis");
   const explainers = SITE_FOOTER_LINKS.filter((link) => link.row === "explainers");
@@ -114,9 +125,7 @@ export function SiteFooter({ className }: SiteFooterProps) {
       </Text>
       <View className="flex-row flex-wrap items-center justify-center">
         {crisisRow.map((link) => (
-          <LinkButton key={link.href as string} href={link.href} variant="link" size="sm">
-            <Text className="text-xs">{t(link.label)}</Text>
-          </LinkButton>
+          <FooterLink key={String(link.href)} link={link} />
         ))}
       </View>
       <View role="navigation" className="items-center">
@@ -125,9 +134,7 @@ export function SiteFooter({ className }: SiteFooterProps) {
           .map((row) => (
             <View key={row[0].row} className="flex-row flex-wrap items-center justify-center">
               {row.map((link) => (
-                <LinkButton key={link.href as string} href={link.href} variant="link" size="sm">
-                  <Text className="text-xs">{t(link.label)}</Text>
-                </LinkButton>
+                <FooterLink key={String(link.href)} link={link} />
               ))}
             </View>
           ))}

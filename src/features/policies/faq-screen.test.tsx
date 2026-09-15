@@ -135,12 +135,14 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
     renderWithProviders(<FaqRoute />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // Once as a HEADING, not twice: `/faq` has no `STATIC_ROUTES` row, so the
-    // one-crumb trail still hides itself and the page name is not repeated above
-    // its own heading. By role rather than by text since #2467: the site footer
-    // on this page lists `/faq` under the same string (a link is labelled with
-    // its page's H1), and that is a link, not a heading.
+    // One heading, and the string exactly twice on the page: the heading and the
+    // site footer's `/faq` entry, which the anchor-text rule labels with this
+    // page's H1 (#2467). `/faq` has no `STATIC_ROUTES` row, so the one-crumb
+    // trail still hides itself - a leaked crumb is a `Text` inside a link, not
+    // a heading, which is why the count is on TEXT hits: a third occurrence is
+    // the trail repeating the page name above its own heading.
     expect(screen.getAllByRole("heading", { name: en.pageTitle })).toHaveLength(1);
+    expect(screen.getAllByText(en.pageTitle)).toHaveLength(2);
     expect(screen.getByText(en.pageDescription)).toBeTruthy();
   });
 
