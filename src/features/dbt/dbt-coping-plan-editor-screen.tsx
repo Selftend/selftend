@@ -48,7 +48,7 @@ import { useToastStore } from "@/src/stores/toast-store";
  * Three menus of app-written picks with the person's own lines beside them,
  * and one ordered fallback list drawn from whatever is on the plan. Editing is
  * in place: one document, one Save, no versions and no history. A plan is not
- * a record, so nothing here touches `record_days` and no day is ever marked.
+ * a record and carries no day of its own.
  *
  * ☠️ **An item must be ON the plan to be on the list.** Taking a pick out of a
  * section takes it off the fallback list too, and the list renumbers - which is

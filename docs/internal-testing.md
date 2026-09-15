@@ -65,8 +65,8 @@ navigation panel (#2085/#2106).
 The panel is the drawer behind the hamburger. It carries what surrounds the practice, never the
 practice itself.
 
-- the panel lists exactly seven rows, in this order: Home, Looking back, Routines, then a divider,
-  then Reminders, Settings, Support, Donate (six on a build whose `EXPO_PUBLIC_SPONSORS_URL` is set
+- the panel lists exactly six rows, in this order: Home, Routines, then a divider, then Reminders,
+  Settings, Support, Donate (five on a build whose `EXPO_PUBLIC_SPONSORS_URL` is set
   to an empty string — the Donate row drops rather than pointing at someone else's page, so check
   which build you are on; an unset variable falls back to the maintainer's page and keeps the row)
 - no tool or module row appears anywhere in it, and there are no group headings

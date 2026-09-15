@@ -19,7 +19,6 @@ import type {
   MeditationProgramStateInput,
   MeditationSessionInput,
 } from "@/src/features/meditation/types";
-import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -137,8 +136,7 @@ export function useSaveMeditationSession(userId: string | null) {
       // `list` left both stale until a remount (#337).
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: meditationKeys.all }),
-        invalidateRecordDays(queryClient),
-        // A sit moves Home's sits count and median too (#2212).
+        // A sit moves Home's sits count and median (#2212).
         invalidateHomeToolStats(queryClient),
       ]);
     },
@@ -159,12 +157,10 @@ export function useUpdateMeditationSessionReflection(userId: string | null) {
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: meditationKeys.all }),
-        // A reflection patch cannot move `completed_at`, so no mark moves.
-        // Invalidated anyway, under the rule the guard enforces: any mutation
-        // writing a source table invalidates it, rather than each one
-        // re-deciding whether its particular edit can reach a civil day.
-        invalidateRecordDays(queryClient),
-        // Same rule for Home's stats root (#2212).
+        // A reflection patch cannot move `completed_at`, so no Home figure
+        // moves. Invalidated anyway, under the rule the guard enforces (#2212):
+        // any mutation writing a source table invalidates it, rather than each
+        // one re-deciding whether its particular edit can reach a figure.
         invalidateHomeToolStats(queryClient),
       ]);
     },

@@ -20,7 +20,6 @@ export interface Breadcrumb {
 // Map of exact static paths to their i18n label keys
 const STATIC_ROUTES: Record<string, string> = {
   "/support": "sidebar.support",
-  "/progress": "breadcrumb.progress",
   "/routines": "sidebar.routines",
   "/routines/new": "breadcrumb.new",
   "/legal": "breadcrumb.legal",

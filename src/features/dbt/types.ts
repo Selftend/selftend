@@ -170,7 +170,7 @@ export interface OppositeActionPlan {
   dayKey: string;
   doneAt: string | null;
   doneOffsetMinutes: CapturedOffsetMinutes;
-  /** The DONE day - the programme's, routines' and Looking back's fact (#1988). Null while open. */
+  /** The DONE day - the programme's and routines' fact (#1988). Null while open. */
   doneDayKey: string | null;
   updatedAt: string;
 }

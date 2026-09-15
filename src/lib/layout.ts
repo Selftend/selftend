@@ -16,7 +16,7 @@
  * Where the constant sits decides what the reader gets. A module home puts
  * `HOME_COLUMN` on the View inside its padded scroll box, so its content reads
  * the full 720. The `ScreenHeader` pages that share Settings' 672 column
- * (`/support`, `/legal`, `/progress`) put it on the padded box itself - 720
+ * (`/support`, `/legal`) put it on the padded box itself - 720
  * outer minus the `p-6` gutters (#1721).
  */
 

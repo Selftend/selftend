@@ -1,6 +1,7 @@
 # ADR-0006: The panel may duplicate a fixed door, it may not mirror a collection
 
-Date: 2026-09-07 · Status: accepted · Origin: #2085 (decision; map #2083, from
+Date: 2026-09-07 · Status: accepted · Amended 2026-09-15 (#2431: Looking back
+left the panel) · Origin: #2085 (decision; map #2083, from
 the owner's line _"now that home contains all tools and modules, you can remove
 them from the sidebar"_; #2088 refused favourites in every shape) · Recorded by:
 #2107, after #2106 shipped the panel
@@ -32,10 +33,11 @@ That is the shape this decision is about. The question it had to answer was not
 
 **The panel may duplicate a fixed door. It may not mirror a collection.**
 
-Home is the doing; **the panel is everything around the doing** — the record
-(Looking back), the plans (Routines), the reminders, and the account. It is not
-a cross-app index. The panel is seven rows and no group headings: Home, Looking
-back, Routines · divider · Reminders, Settings, Support, Donate.
+Home is the doing; **the panel is everything around the doing** — the plans
+(Routines), the reminders, and the account. It is not a cross-app index. The
+panel is six rows and no group headings: Home, Routines · divider · Reminders,
+Settings, Support, Donate (seven until 2026-09-15, when the record's row left
+with Looking back, #2431).
 
 Both halves of the line are load-bearing:
 
@@ -70,8 +72,9 @@ are both two taps from any screen. What changes is scanning cost, not reach.
 - **Shorten the panel instead — keep some catalogue rows and drop others.**
   Refused, and this is the reasoning most worth keeping, because it is the one a
   later reader will try to reopen. **The argument was never length.** Length
-  was tested and rejected outright: Looking back and Routines are rows 2 and 3,
-  and Settings and Support each have a second door in `UserMenu`, so the only
+  was tested and rejected outright: Looking back and Routines are rows 2 and 3
+  (as the panel stood; #2431 removed row 2), and Settings and Support each have
+  a second door in `UserMenu`, so the only
   genuinely buried _unique_ row was Reminders. An argument resting on length
   evaporates the moment the panel is shortened for some other reason — and this
   change shortens it. The rule therefore has to be stated in terms of drift and
@@ -101,11 +104,11 @@ are both two taps from any screen. What changes is scanning cost, not reach.
 
 - `CONTEXT.md` § _Navigation_ defines **Panel** and carries the governing line;
   the reasoning behind it lives here.
-- The panel's unique payload is now Looking back (`/progress`), Routines
-  (`/routines`) and Reminders (`/notifications`) — reachable from nowhere else
-  in the app — plus the outbound Donate row. That is what the drawer earns its
-  existence on. Rationalising the Settings and Support overlap with `UserMenu`
-  is knowingly out of scope.
+- The panel's unique payload is now Routines (`/routines`) and Reminders
+  (`/notifications`), two since #2431 took Looking back (`/progress`) —
+  reachable from nowhere else in the app — plus the outbound Donate row. That
+  is what the drawer earns its existence on. Rationalising the Settings and
+  Support overlap with `UserMenu` is knowingly out of scope.
 - The principle binds **the panel**, not the app's screens. A screen that slices
   the same constant is a view, not a mirror.
 - What is refused here is refused rather than deferred: a catalogue in the

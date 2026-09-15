@@ -47,7 +47,6 @@ import {
   useWiseMindCheckinPages,
   useWiseMindCheckins,
 } from "@/src/features/dbt/queries";
-import { recordDaysKeys } from "@/src/features/progress/queries";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 // An explicit factory rather than an automock of the re-export barrel - the
@@ -285,9 +284,9 @@ describe.each(pagedHooks)("%s paging", (_name, useHook, repoFn) => {
 
 // ---------------------------------------------------------------------------
 // Writes. Every DBT mutation suppresses the global toast (its screen shows its
-// own), and every one that writes a `record_days` source invalidates the
-// record-days root as well as its own list - the rule #1906 set and
-// `test/record-days-invalidation.test.ts` derives from the migration.
+// own) and invalidates its own list. No DBT table feeds `home_tool_stats`, so
+// no cross-tool root is reached: the record-days root every write used to stale
+// left with Looking back (#2431).
 // ---------------------------------------------------------------------------
 const recordWriteHooks = [
   [
@@ -309,11 +308,10 @@ const recordWriteHooks = [
 ] as const;
 
 describe.each(recordWriteHooks)("%s", (_name, useHook, repoFn, listKey) => {
-  it("invalidates its own list and the record-days root", async () => {
+  it("invalidates its own list", async () => {
     (repoFn as jest.Mock).mockResolvedValue({ id: "r1" });
     const client = createTestQueryClient();
     client.setQueryData(listKey("u1"), []);
-    client.setQueryData(recordDaysKeys.all, []);
 
     const { result } = renderHook(
       () =>
@@ -326,7 +324,6 @@ describe.each(recordWriteHooks)("%s", (_name, useHook, repoFn, listKey) => {
 
     const stale = invalidatedKeys(client);
     expect(stale).toContainEqual([...listKey("u1")]);
-    expect(stale).toContainEqual([...recordDaysKeys.all]);
   });
 
   it("writes but invalidates nothing when there is no user", async () => {
@@ -372,11 +369,10 @@ const deleteHooks = [
 ] as const;
 
 describe.each(deleteHooks)("%s", (_name, useHook, repoFn, listKey) => {
-  it("removes the record and stales both its list and the record-days root", async () => {
+  it("removes the record and stales its list", async () => {
     (repoFn as jest.Mock).mockResolvedValue(undefined);
     const client = createTestQueryClient();
     client.setQueryData(listKey("u1"), []);
-    client.setQueryData(recordDaysKeys.all, []);
 
     const { result } = renderHook(
       () =>
@@ -388,7 +384,6 @@ describe.each(deleteHooks)("%s", (_name, useHook, repoFn, listKey) => {
     expect(repoFn).toHaveBeenCalledWith("u1", "r1");
     const stale = invalidatedKeys(client);
     expect(stale).toContainEqual([...listKey("u1")]);
-    expect(stale).toContainEqual([...recordDaysKeys.all]);
   });
 });
 
@@ -411,7 +406,7 @@ describe("the two done mutations", () => {
   ] as const;
 
   it.each(doneHooks)(
-    "%s reaches the list, the record's own detail and the record-days root",
+    "%s reaches the list and the record's own detail",
     async (_name, useHook, repoFn, listKey, detailKey) => {
       // The detail key is built from the RESOLVED row, not from the argument -
       // a done record whose detail stays fresh still reads "not done yet".
@@ -419,7 +414,6 @@ describe("the two done mutations", () => {
       const client = createTestQueryClient();
       client.setQueryData(listKey("u1"), []);
       client.setQueryData(detailKey("u1", "r1"), {});
-      client.setQueryData(recordDaysKeys.all, []);
 
       const { result } = renderHook(
         () =>
@@ -435,7 +429,6 @@ describe("the two done mutations", () => {
       const stale = invalidatedKeys(client);
       expect(stale).toContainEqual([...listKey("u1")]);
       expect(stale).toContainEqual([...detailKey("u1", "r1")]);
-      expect(stale).toContainEqual([...recordDaysKeys.all]);
     },
   );
 
@@ -463,23 +456,21 @@ describe("the two done mutations", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The coping plan is the one write that must NOT touch record days: it has no
-// day, so a plan saved today marks nothing on the timeline (#1992 §4).
+// The coping plan has no day and is no record (#1992 §4): it stales its own
+// key and nothing else - asserted as the whole invalidated set, so a cross-tool
+// root creeping in here fails rather than passing unnoticed.
 // ---------------------------------------------------------------------------
 describe("coping plan mutations", () => {
   it("saves through the insert path or the replace path, and stales only the plan", async () => {
     (repo.saveCopingPlan as jest.Mock).mockResolvedValue({ id: "p1" });
     const client = createTestQueryClient();
     client.setQueryData(dbtKeys.copingPlan("u1"), null);
-    client.setQueryData(recordDaysKeys.all, []);
 
     const { result } = renderHook(() => useSaveCopingPlan("u1"), { wrapper: wrap(client) });
     await result.current.mutateAsync({ plan: { items: [], fallback: [] }, existingId: null });
 
     expect(repo.saveCopingPlan).toHaveBeenCalledWith("u1", { items: [], fallback: [] }, null);
-    const stale = invalidatedKeys(client);
-    expect(stale).toContainEqual([...dbtKeys.copingPlan("u1")]);
-    expect(stale).not.toContainEqual([...recordDaysKeys.all]);
+    expect(invalidatedKeys(client)).toEqual([[...dbtKeys.copingPlan("u1")]]);
   });
 
   it("skips invalidation without a user", async () => {
@@ -497,15 +488,12 @@ describe("coping plan mutations", () => {
     (repo.deleteCopingPlan as jest.Mock).mockResolvedValue(undefined);
     const client = createTestQueryClient();
     client.setQueryData(dbtKeys.copingPlan("u1"), {});
-    client.setQueryData(recordDaysKeys.all, []);
 
     const { result } = renderHook(() => useDeleteCopingPlan("u1"), { wrapper: wrap(client) });
     await result.current.mutateAsync("p1");
 
     expect(repo.deleteCopingPlan).toHaveBeenCalledWith("u1", "p1");
-    const stale = invalidatedKeys(client);
-    expect(stale).toContainEqual([...dbtKeys.copingPlan("u1")]);
-    expect(stale).not.toContainEqual([...recordDaysKeys.all]);
+    expect(invalidatedKeys(client)).toEqual([[...dbtKeys.copingPlan("u1")]]);
   });
 
   it("deleting invalidates nothing without a user", async () => {

@@ -37,8 +37,9 @@ import {
  * This table is the guard on that, and it is the behavioural half: it proves the
  * invalidation actually FIRES, which the static scan in
  * `test/home-tool-stats-invalidation.test.ts` cannot see. That file proves no writing
- * hook was missed, which a hand-written table cannot see. Keep both — the same pair
- * `record_days` keeps (#1906), for the same reasons.
+ * hook was missed, which a hand-written table cannot see. Keep both — the pair
+ * `record_days` kept (#1906) until it left with Looking back (#2431), for the same
+ * reasons.
  *
  * With the client's 60s default `staleTime`, a missed write path means someone logs a
  * check-in, returns to Home, and reads yesterday's number on the card — and Home is
@@ -61,11 +62,6 @@ const UNREAD = undefined as never;
 
 jest.mock("@/src/stores/tool-save-store", () => ({
   noteToolSave: jest.fn(),
-}));
-
-jest.mock("@/src/features/progress/repository", () => ({
-  listRecordDays: jest.fn(async () => []),
-  viewerOffsetMinutes: jest.fn(() => 330),
 }));
 
 jest.mock("@/src/features/mood/repository", () => ({

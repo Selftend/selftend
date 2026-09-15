@@ -8,10 +8,11 @@ export function useDeleteMutation(
    * Further roots this delete has to reach, beyond the tool's own.
    *
    * These are the queries that span tools and so have no owning feature to nest
-   * under, which no tool prefix can reach: `recordDaysKeys.all` (#1906, ten
-   * tools) and `homeToolStatsKeys.all` (#2212, seven tables). The five deletes
-   * that remove a record day - check-ins, gratitude, journal, sleep and a whole
-   * habit - pass both. It was singular until the second one existed.
+   * under, which no tool prefix can reach: `homeToolStatsKeys.all` (#2212, seven
+   * tables) is the one such root today. The five deletes that move a Home figure
+   * - check-ins, gratitude, journal, sleep and a whole habit - pass it. Still
+   * varargs: there were two until `recordDaysKeys.all` left with Looking back
+   * (#2431), and the next cross-tool root takes the same slot.
    */
   ...alsoInvalidate: readonly (readonly unknown[])[]
 ) {

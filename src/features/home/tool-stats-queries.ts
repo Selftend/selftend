@@ -11,9 +11,9 @@ import { deviceTimeZone } from "@/src/utils/date";
  *
  * ADR-0001 keeps a stats query under the same query-key root as the list it
  * summarises, so the owning feature's save and delete invalidation reaches both.
- * That cannot apply here, for the reason it cannot apply to `record_days`:
- * `home_tool_stats` spans eight tools and seven tables, so it has no owning feature
- * and sits under its own root.
+ * That cannot apply here, for the reason it could not apply to `record_days`
+ * (#1906, gone with Looking back in #2431): `home_tool_stats` spans eight tools
+ * and seven tables, so it has no owning feature and sits under its own root.
  */
 export const homeToolStatsKeys = {
   all: ["home", "tool-stats"] as const,
@@ -41,7 +41,7 @@ export const homeToolStatsKeys = {
  * `20260913000000_home_tool_stats.sql`: check-ins, journal, gratitude, mindfulness
  * (breathing AND grounding), meditation, sleep, and habits with their ticks.
  *
- * ☠️ **The rule is deliberately coarse, exactly as `invalidateRecordDays`' is: ANY
+ * ☠️ **The rule is deliberately coarse, exactly as `invalidateRecordDays`' was: ANY
  * mutation writing one of those tables invalidates, whether or not that particular
  * edit could move a figure.** Deciding per mutation is the judgement that rots.
  * Over-invalidating costs one refetch of one small query; a stale card costs a

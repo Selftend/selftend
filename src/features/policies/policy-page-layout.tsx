@@ -40,8 +40,8 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  *
  * ☠️ **The column goes on the PADDED BOX, not the inner `View`** (#2148, ruled on
  * #2136). `HOME_COLUMN` is 720; merged into `contentContainerClassName` beside
- * `p-6` it reads 720 outer − 2×24 gutters = the **672** that `/support`,
- * `/legal` and `/progress` already show. On the inner `View` the same constant
+ * `p-6` it reads 720 outer − 2×24 gutters = the **672** that `/support` and
+ * `/legal` already show. On the inner `View` the same constant
  * would read the full 720 — the module-home width, not this page's. `layout.ts`
  * documents the distinction; #1721 is where it was learned, and a previous
  * ticket got it backwards.

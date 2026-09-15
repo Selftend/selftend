@@ -282,9 +282,10 @@ The navigation drawer behind the hamburger (`SidebarNav`, opened as an overlay),
 navigation chrome on every platform — there is no desktop rail (#667). Not a way _out_ of a screen
 but a way _across_ to a peer, which is why it navigates `dangerouslySingular` rather than pushing.
 
-What it is for: **Home is the doing; the panel is everything around the doing** — the record
-(Looking back), the plans (Routines), the reminders, and the account, plus the outbound Donate row.
-Seven rows, no group headings, nothing per-person and nothing contextual (#2085/#2106).
+What it is for: **Home is the doing; the panel is everything around the doing** — the plans
+(Routines), the reminders, and the account, plus the outbound Donate row. Six rows, no group
+headings, nothing per-person and nothing contextual (#2085/#2106; the record's row left with Looking
+back, #2431).
 
 It is **not an index of the app**. Home carries the whole catalogue of tools and modules, drawn from
 the one catalogue constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
