@@ -164,7 +164,7 @@ describe("useInsetPublisher", () => {
     // window. Deliberately NOT the all-zeros shape a detached DOM node answers
     // with, and deliberately still `isConnected`, so the effect-cleanup guard is
     // the only thing that can reject it and the guards stay independently
-    // tested. This is the RoutineFab/ReminderPromptCard path: they render null
+    // tested. This is the RoutineFab/StarterOfferCard path: they render null
     // between appearances, and a late callback would resurrect the entry their
     // own detach just cleared.
     const host = deferredNodeAt(726);
@@ -242,7 +242,7 @@ describe("useInsetPublisher", () => {
     act(() => result.current.onLayout());
     expect(insetBelowLayer(useLayeredInsetStore.getState().edges, INSET_LAYER.toast)).toBe(200);
 
-    // RoutineFab and ReminderPromptCard keep their component mounted and render
+    // RoutineFab and StarterOfferCard keep their component mounted and render
     // null between appearances; an unmount-only cleanup would leave the last
     // edge published forever.
     act(() => result.current.attachHost(null));

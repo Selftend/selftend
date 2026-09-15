@@ -83,8 +83,9 @@ None. The roadmap explicitly defers any opt-in journaling push reminder. The in-
 
 - `src/features/journal/schemas.test.ts` - zod validation: empty / whitespace-only body rejected; overlong title / body rejected; valid entry accepted.
 - `src/features/journal/repository.test.ts` - capped and paged lists, get, save (insert + update), delete; trim title/body; word-total and writing-bucket RPC calls, coercion, and errors.
-- `src/features/journal/journal-overview.test.ts` - adaptive chart labels, recent/all-history civil-day groups, preview extraction, and writing-range labels.
-- `src/features/journal/journal-list-screen.test.tsx` - split stats, selectable exact chart, range-empty latch, five grouped recent rows, empty state, fallback titles, and overview routing.
+- `src/features/journal/journal-overview.test.ts` - adaptive chart labels, recent/all-history civil-day groups, preview extraction, writing-range labels, and the bucket shape each range reserves while it loads.
+- `src/features/journal/journal-writing-chart.test.tsx` - the chart's bars and caption, and the reservation that holds their space: hidden from the accessibility tree, no fill, no control, and the same columns the loaded chart draws.
+- `src/features/journal/journal-list-screen.test.tsx` - split stats, selectable exact chart, range-empty latch, the reserved chart space while the read is in flight, five grouped recent rows, empty state, fallback titles, and overview routing.
 - `src/features/journal/journal-history-screen.test.tsx` - paging, groups, row routing, and honest pending/error/empty states.
 - `test/integration/journal-word-total.integration.test.ts` - `journal_word_total()` past the 50-entry cap, agreement with `countWords()`, per-user scoping, unauthenticated rejection.
 - `test/integration/journal-writing-days.integration.test.ts` - dense 14-day output, captured civil-day bucketing, per-user scoping, and unauthenticated rejection.

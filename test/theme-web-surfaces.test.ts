@@ -35,6 +35,66 @@ const appConfig = readFileSync(join(ROOT, "app.config.ts"), "utf8");
 const manifest = readFileSync(join(ROOT, "public", "manifest.webmanifest"), "utf8");
 
 /**
+ * The one-line hydration flag the static export writes into every page. Its
+ * text is expo-router's, not ours, so it is pinned here as the literal the
+ * exporter emits (#2293).
+ */
+const HYDRATE_FLAG = "globalThis.__EXPO_ROUTER_HYDRATE__=true;";
+
+/**
+ * The `script-src` directive as `public/_headers` actually ships it, split into
+ * its tokens.
+ *
+ * ☠️ Parsed, rather than substring-matched, because a substring match cannot
+ * see what has been ADDED. Cloudflare Web Analytics sat configured on the
+ * selftend.org zone for eight weeks (2026-07-18 → 2026-09-10), set to
+ * auto-inject a beacon into every page, while the shipped privacy promise said
+ * Selftend uses no analytics tracking services — so that promise was literally
+ * false for the period, broken by a vendor dashboard setting nobody in this
+ * repository ever touched (#2316, ADR-0007).
+ *
+ * This policy is the guard that would have made such an injection inert
+ * whatever the dashboard said: it is in the repo, deterministic in CI, and
+ * effective independently of the vendor. ⚠️ And it has to stay that way —
+ * Cloudflare re-enabled Web Analytics by default for free domains once already
+ * (2025-10-15), so "we turned it off" is not a durable state.
+ *
+ * ☠️ The assertions here used to be a denylist — `toContain(hash)` twice plus a
+ * single `not.toContain("script-src 'self' 'unsafe-inline'")` — and
+ * `script-src 'self' https://static.cloudflareinsights.com 'sha256-…' 'sha256-…'`
+ * passed all three. So the token set is compared EXACTLY below: a host, a
+ * scheme source (`https:`, `data:`) or any `'unsafe-*'` fails, whatever it is
+ * and however it is spelled.
+ *
+ * It throws rather than returning `[]`: if the file is reorganised past this
+ * parse, every assertion built on it would otherwise go vacuously green while
+ * still looking covered.
+ */
+function scriptSrcTokens(): string[] {
+  const headers = readFileSync(join(ROOT, "public", "_headers"), "utf8");
+  const policies = [...headers.matchAll(/^\s*Content-Security-Policy:[ \t]*(.+)$/gm)].map(
+    (match) => match[1],
+  );
+  if (policies.length !== 1) {
+    throw new Error(
+      `Expected exactly one Content-Security-Policy line in public/_headers, found ${policies.length}`,
+    );
+  }
+
+  const scriptSrc = policies[0]
+    .split(";")
+    .map((directive) => directive.trim())
+    .filter((directive) => /^script-src(\s|$)/.test(directive));
+  if (scriptSrc.length !== 1) {
+    throw new Error(
+      `Expected exactly one script-src directive in the CSP, found ${scriptSrc.length}`,
+    );
+  }
+
+  return scriptSrc[0].split(/\s+/).slice(1);
+}
+
+/**
  * The page-background map inlined in the first-paint script. It has to be
  * literals — the script runs before any module and nothing can inject a value
  * into it — so this parses the copy back out and pins it to the palettes.
@@ -110,12 +170,9 @@ describe("the web first paint follows the selected palette", () => {
   it("is allowed by the production CSP, by a hash that matches the script", () => {
     const script = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
     const digest = createHash("sha256").update(script, "utf8").digest("base64");
-    const headers = readFileSync(join(ROOT, "public", "_headers"), "utf8");
 
     expect(script.length).toBeGreaterThan(0);
-    expect(headers).toContain(`'sha256-${digest}'`);
-    // The weaker fix that must not creep back in.
-    expect(headers).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(scriptSrcTokens()).toContain(`'sha256-${digest}'`);
   });
 
   // The static export writes a second inline script into every page - the
@@ -123,14 +180,36 @@ describe("the web first paint follows the selected palette", () => {
   // refuses it and the app mounts with createRoot instead of hydrateRoot:
   // every prerendered page thrown away and rendered again from scratch, with
   // no error anywhere (measured on #2293). Its text is expo-router's, not
-  // ours, so it is pinned here as the literal the exporter emits; a different
-  // literal after an expo-router upgrade fails this test rather than hydration.
+  // ours, so a different literal after an expo-router upgrade fails this test
+  // rather than hydration.
   it("also allows the static export's hydration flag, by hash", () => {
-    const hydrateFlag = "globalThis.__EXPO_ROUTER_HYDRATE__=true;";
-    const digest = createHash("sha256").update(hydrateFlag, "utf8").digest("base64");
-    const headers = readFileSync(join(ROOT, "public", "_headers"), "utf8");
+    const digest = createHash("sha256").update(HYDRATE_FLAG, "utf8").digest("base64");
 
-    expect(headers).toContain(`'sha256-${digest}'`);
+    expect(scriptSrcTokens()).toContain(`'sha256-${digest}'`);
+  });
+
+  // ☠️ The two tests above are presence checks, and presence is the half that
+  // cannot catch a beacon. They are kept because each names a distinct cause of
+  // drift - edit the palette script, or upgrade expo-router - and a precise
+  // failure message is worth having. This one is the guard that stops the
+  // policy being WIDENED: see scriptSrcTokens() for why, and for the eight
+  // weeks a vendor dashboard spent contradicting the privacy promise.
+  //
+  // Set equality strictly subsumes the `not.toContain("script-src 'self'
+  // 'unsafe-inline'")` line this replaced: a set that is exactly {'self', two
+  // hashes} cannot contain 'unsafe-inline' under any spelling, including the
+  // ones that old substring missed ('unsafe-eval', or 'unsafe-inline' written
+  // after a hash rather than immediately after 'self').
+  it("allows exactly 'self' and those two hashes - nothing else", () => {
+    const script = indexHtml.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? "";
+    expect(script.length).toBeGreaterThan(0);
+
+    const paletteHash = createHash("sha256").update(script, "utf8").digest("base64");
+    const hydrateHash = createHash("sha256").update(HYDRATE_FLAG, "utf8").digest("base64");
+
+    expect([...scriptSrcTokens()].sort()).toEqual(
+      [`'self'`, `'sha256-${paletteHash}'`, `'sha256-${hydrateHash}'`].sort(),
+    );
   });
 
   // "system" is the default preference, so the overwhelmingly common path is

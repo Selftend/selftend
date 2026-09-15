@@ -14,6 +14,7 @@ import { appEnv } from "@/src/lib/env";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { openExternalUrl } from "@/src/lib/linking";
 import { captureError, isReportableError } from "@/src/lib/sentry";
+import { STORE_LINK_SOURCES, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { requireSupabase } from "@/src/lib/supabase";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -530,23 +531,23 @@ export default function SupportScreen() {
             inside the Android app is noise. Gated here, at the mount point, for
             the same `Children.toArray` reason as the Discord row.
           */}
-            {Platform.OS === "web" && appEnv.playStoreUrl ? (
+            {Platform.OS === "web" && taggedPlayStoreUrl(STORE_LINK_SOURCES.support) ? (
               <SettingsRow
                 icon="android"
                 label={t("supportPage.getAndroid")}
                 description={t("supportPage.playStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(appEnv.playStoreUrl)}
+                onPress={() => openExternalUrl(taggedPlayStoreUrl(STORE_LINK_SOURCES.support))}
                 testID="support-row-android"
               />
             ) : null}
-            {Platform.OS === "web" && appEnv.appStoreUrl ? (
+            {Platform.OS === "web" && taggedAppStoreUrl(STORE_LINK_SOURCES.support) ? (
               <SettingsRow
                 icon="phone-iphone"
                 label={t("supportPage.getIos")}
                 description={t("supportPage.appStore")}
                 trailing={{ kind: "external" }}
-                onPress={() => openExternalUrl(appEnv.appStoreUrl)}
+                onPress={() => openExternalUrl(taggedAppStoreUrl(STORE_LINK_SOURCES.support))}
                 testID="support-row-ios"
               />
             ) : null}

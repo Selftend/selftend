@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 import { Pressable, View } from "react-native";
 
 import { cn } from "@/lib/utils";
@@ -70,6 +70,21 @@ interface DisclosureProps {
    * already holds distinct.
    */
   id?: string;
+  /**
+   * A ref onto the TRIGGER itself, for a caller that has to put focus back on it.
+   *
+   * The case it exists for is a disclosure collapsed by something OTHER than its
+   * own trigger: the patterns fold (#2350) closes on a checkbox tick inside the
+   * content, so the element that had keyboard focus is one of the children this
+   * component unmounts and focus would otherwise land on the document body. The
+   * trigger is where it belongs - it is the control that now stands for what
+   * went. Nothing else passes this, and no existing call site changes shape.
+   *
+   * Typed onto the `Pressable`'s `View` because that is what react-native hands
+   * back; on react-native-web the same ref IS the DOM node, which is the half
+   * that has a `focus` (see `focusNode`).
+   */
+  triggerRef?: Ref<View>;
 }
 
 /**
@@ -101,6 +116,7 @@ export function Disclosure({
   layout = "inline",
   headingLevel,
   id,
+  triggerRef,
 }: DisclosureProps) {
   const generatedId = useId();
   const contentId = id ? `${id}-content` : generatedId;
@@ -127,6 +143,7 @@ export function Disclosure({
       aria-controls={contentId}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onToggle}
+      ref={triggerRef}
       className={cn(
         "flex-row items-center gap-2 active:opacity-70",
         isRow ? "w-full justify-between" : "self-start",

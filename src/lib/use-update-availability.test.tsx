@@ -247,6 +247,31 @@ describe("useUpdateAvailability (Android offers via Play, iOS suppressed)", () =
     openSpy.mockRestore();
   });
 
+  // ☠️☠️ The update path must NEVER carry an acquisition tag (#2324,
+  // `docs/measurement.md` § 5). This opens the store from inside the INSTALLED
+  // app, so a tag here would inject every updating user into the very dimension
+  // the tagging scheme exists to read - turning the number into something worse
+  // than not having it.
+  //
+  // ⚠️ Asserted on the parameters rather than on equality with
+  // `appEnv.playStoreUrl`. The equality check above would still pass if someone
+  // tagged the constant ITSELF, which is the likelier mistake: the tagged URLs
+  // live in `store-links.ts` precisely so the constants can stay bare.
+  it.each(["android", "ios"] as const)("act() on %s opens an UNTAGGED store URL", (os) => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", os);
+    const openSpy = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const { result } = renderHook(() => useUpdateAvailability());
+
+    act(() => result.current.act());
+
+    const opened = String(openSpy.mock.calls[0]?.[0] ?? "");
+    expect(opened.length).toBeGreaterThan(0);
+    for (const param of ["referrer", "utm_source", "utm_campaign", "utm_medium", "ct"]) {
+      expect(opened).not.toMatch(new RegExp(`[?&]${param}=`));
+    }
+    openSpy.mockRestore();
+  });
+
   // The AppState "active" listener is DELETED, not gated (#1474): Android is
   // launch-only, and a listener that merely gates presentation is how a later
   // cleanup would quietly reintroduce the mid-session modal.

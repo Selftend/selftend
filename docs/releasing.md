@@ -37,7 +37,7 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 ## Post-release: lift held-out reminder targets
 
-**A reminder target can be held out of the cron, and only a person lifts it.** `src/features/notifications/reminder-rollout.ts` holds `HELD_OUT_REMINDER_TARGETS` — targets whose deep link the SHIPPED native client cannot route yet ([#2213](https://github.com/Selftend/selftend/issues/2213)). While a target is on that list the edge function mints nothing for it, the post-save reminder offer never appears for it, and its row on the reminders screen is switched off under a "not ready yet" note ([#2260](https://github.com/Selftend/selftend/issues/2260)). Nothing lifts it automatically, and nothing goes red while it stays held out — which is exactly how a hold-out outlives its reason.
+**A reminder target can be held out of the cron, and only a person lifts it.** `src/features/notifications/reminder-rollout.ts` holds `HELD_OUT_REMINDER_TARGETS` — targets whose deep link the SHIPPED native client cannot route yet ([#2213](https://github.com/Selftend/selftend/issues/2213)). While a target is on that list the edge function mints nothing for it, and its row on the reminders screen is switched off under a "not ready yet" note ([#2260](https://github.com/Selftend/selftend/issues/2260)). (#2260 also suppressed the post-save reminder offer for a held-out target; that offer has since been removed for every target — ADR-0008.) Nothing lifts it automatically, and nothing goes red while it stays held out — which is exactly how a hold-out outlives its reason.
 
 **Check this list after every release that carried a new reminder target, once the build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the store listings, not the merge, are what says the client is out there.
 
@@ -48,6 +48,10 @@ The lift is one edit plus its tests, in one change:
 3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
 
 Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store.
+
+## Post-release, one-time: retire the `www` app-links carve-out
+
+The first native release carrying [#2298](https://github.com/Selftend/selftend/issues/2298) ships an iOS entitlement that claims `applinks:selftend.org` only. **Once that build is the current App Store version** (a person promotes it in App Store Connect, per [How iOS reaches users](#how-ios-reaches-users)), the Cloudflare redirect rule's `/.well-known/` carve-out has nothing left to serve: follow [launch/app-links-runbook.md](launch/app-links-runbook.md) § _Retiring the `www` carve-out_ - edit the rule, verify the 301, date the row in [deployment.md](deployment.md), update control-tower #132 - then delete this section.
 
 ## Posting the r/Selftend thread (by hand)
 

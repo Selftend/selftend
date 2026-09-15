@@ -8,7 +8,7 @@ import {
 } from "@/src/features/self-care/repository";
 import type { SelfCareLogInput } from "@/src/features/self-care/types";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 
 const selfCareKeys = {
   all: ["self-care"] as const,
@@ -54,7 +54,7 @@ export function useUpsertSelfCareLog(userId: string | null) {
     onSuccess: async (log) => {
       // The upsert merges on (user_id, log_date); only a fresh insert (audit
       // timestamps identical) is a completion, re-saving today's log is an edit.
-      if (log.createdAt === log.updatedAt) requestReminderPrompt("cbt");
+      if (log.createdAt === log.updatedAt) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: selfCareKeys.list(userId) }),

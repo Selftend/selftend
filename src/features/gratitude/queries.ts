@@ -16,7 +16,7 @@ import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/ty
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 export const GRATITUDE_HISTORY_PAGE_SIZE = 20;
@@ -115,7 +115,7 @@ export function useSaveGratitudeEntry(userId: string | null) {
       saveGratitudeEntry(userId!, input, entryId),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async (_data, { entryId }) => {
-      if (!entryId) requestReminderPrompt("gratitude");
+      if (!entryId) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: gratitudeKeys.all }),

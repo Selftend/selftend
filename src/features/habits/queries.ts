@@ -23,7 +23,7 @@ import type { HabitInput, HabitLog } from "@/src/features/habits/types";
 import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const habitKeys = {
@@ -231,7 +231,7 @@ export function useToggleHabitLog(userId: string | null) {
     },
     onSuccess: (data) => {
       // Only a tick (log created) is a completion; unticking is not.
-      if (data.ticked) requestReminderPrompt("habits");
+      if (data.ticked) noteToolSave();
     },
     // Both arms: a rollback restores a guess, not the server's answer, and the
     // insight/list caches never saw the optimistic write at all.

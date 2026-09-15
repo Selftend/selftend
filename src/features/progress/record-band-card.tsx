@@ -126,7 +126,16 @@ export function RecordBandCard() {
 
 /**
  * The band itself: marks placed by day index inside a horizontal scroller that
- * opens at today.
+ * opens with the LAST MARK at the right edge.
+ *
+ * ☠️☠️ **Not `scrollToEnd` (#2344).** The axis runs to today whether or not
+ * anything was recorded on it, so someone who recorded once and came back a
+ * month later has an axis wider than the card whose only mark is far to the
+ * left. Opening at the end put that mark off-screen under a month label, with
+ * `showsHorizontalScrollIndicator={false}` leaving no affordance to say so - a
+ * card titled "Your days" rendering a blank strip, which is the exact false
+ * absence this feature exists to prevent, reached by ordinary use. For anyone
+ * recording regularly the last mark IS today, so it is a no-op in spirit.
  *
  * ☠️ **A day with no record is not drawn at all** - the marks are positioned
  * absolutely into an axis that is otherwise blank, so an empty day occupies
@@ -147,6 +156,10 @@ function RecordBandStrip({
   label: string;
 }) {
   const scrollRef = useRef<ScrollView>(null);
+  // Refs, not state: both are read by an imperative call and nothing renders
+  // from either, so measuring must not cost a second pass.
+  const viewportWidthRef = useRef(0);
+  const placedForRef = useRef<number | null>(null);
 
   const axisWidth = (band.totalDays - 1) * DAY_PITCH + MARK_WIDTH;
   // Room for the final month label to finish, and no more: it is left-aligned on
@@ -157,6 +170,21 @@ function RecordBandStrip({
     0,
     MIN_TICK_GAP_DAYS * DAY_PITCH - (axisWidth - lastTick.index * DAY_PITCH),
   );
+
+  // The marks are sorted by index, and a band always has at least one.
+  const lastMarkRight = band.marks[band.marks.length - 1].index * DAY_PITCH + MARK_WIDTH;
+
+  /*
+   * The clamp at zero is what puts an early mark at the LEFT edge rather than
+   * scrolling the strip backwards past its own start - which is what makes the
+   * 8px band, and every axis narrower than the card, open where the eye is.
+   */
+  function placeLastMark() {
+    const viewportWidth = viewportWidthRef.current;
+    if (viewportWidth <= 0) return;
+    placedForRef.current = lastMarkRight;
+    scrollRef.current?.scrollTo({ x: Math.max(0, lastMarkRight - viewportWidth), animated: false });
+  }
 
   return (
     /*
@@ -173,10 +201,28 @@ function RecordBandStrip({
     <View accessible accessibilityRole="image" accessibilityLabel={label} testID="record-band">
       <ScrollView
         ref={scrollRef}
+        testID="record-band-scroll"
         horizontal
         showsHorizontalScrollIndicator={false}
-        // Opens at today; the past is reached by scrolling left.
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
+        /*
+         * Both events place the strip, because neither alone is enough and
+         * their order is not guaranteed: content size without a measured
+         * viewport cannot place anything, and a viewport measured before the
+         * content lands scrolls an axis that is not there yet - so the content
+         * signal has to be able to correct it afterwards.
+         *
+         * ☠️ But layout places only the FIRST time for a given last mark. A
+         * re-layout - rotation, the keyboard, a breakpoint change - is not an
+         * opening, and re-running the placement there would yank a reader who
+         * had scrolled back into their own history to the right-hand edge. The
+         * opening position is opinionated; where the person has scrolled to
+         * since is theirs.
+         */
+        onLayout={(event) => {
+          viewportWidthRef.current = event.nativeEvent.layout.width;
+          if (placedForRef.current !== lastMarkRight) placeLastMark();
+        }}
+        onContentSizeChange={placeLastMark}
       >
         <View style={{ width: axisWidth + tail }}>
           <View style={{ height: MARK_HEIGHT }}>

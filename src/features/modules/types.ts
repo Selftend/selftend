@@ -5,10 +5,6 @@ export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 // ("cbt:info"), or a home tour stop ("home:edit").
 export type ButtonTourKey = string;
 
-// A notification target key ("mood", "cbt", ...) the one-time contextual
-// reminder prompt has already been shown for.
-export type ReminderPromptedTool = string;
-
 export type GratitudeLevel = 1 | 2 | 3;
 
 export interface CookieConsent {
@@ -138,11 +134,11 @@ export interface UserPreferences {
   activeStrategies: string[];
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
-  reminderPromptedTools: ReminderPromptedTool[];
   /**
    * The once-ever starter-routine offer at the second action (#1677) has been
-   * shown. Marked on show, mirroring `reminderPromptedTools`: navigating away
-   * counts as asked, and declining writes nothing further.
+   * shown. Marked on show: navigating away counts as asked, and declining
+   * writes nothing further. Since #2342 this is the only offer the post-save
+   * moment can raise, and it takes the first qualifying save.
    */
   starterRoutineOffered: boolean;
   breathSoundId: string;
@@ -285,7 +281,6 @@ export const defaultUserPreferences: UserPreferences = {
   activeStrategies: [],
   startHereDismissedAt: null,
   shownButtonTours: [],
-  reminderPromptedTools: [],
   starterRoutineOffered: false,
   breathSoundId: "guided",
   ambientSoundId: "none",

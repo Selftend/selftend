@@ -106,7 +106,7 @@ The suggested sequence in which steps are presented and revealed. It is advisory
 _Avoid_: sequence-gate, prerequisite
 
 **Reminder** (of a routine):
-An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from the per-tool reminder prompt shown after a single tool use.
+An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders.
 _Avoid_: notification, alarm, schedule
 
 **Anchor**:
@@ -141,14 +141,12 @@ Restoring a lost reminder channel for a user who has already said yes, without a
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
 
 **Reminder consent**:
-Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces. Its three states are named because two of them are indistinguishable unless you also know whether the question was ever put:
+Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
 
-- **Never asked** — no answer recorded. The one-time post-completion prompt is offered.
-- **Declined** — asked, and the answer was no. The prompt is permanently withheld. It **has no positive rendering**: nothing draws differently for declined than for never asked, so declined is only ever the _absence_ of the prompt.
-- **Consented** — asked, and the answer was yes. The prompt is offered for any tool not already armed.
+The question is never put on its own: consent is recorded as a side effect of turning some reminder on, so the account either **has consented** or has **never been asked**. There is no declined state. The product used to carry one in theory — a post-completion prompt it would then withhold — but nothing ever wrote it, and that prompt was removed outright (ADR-0008). Consent itself stays load-bearing: delivery reads it on every send. What the prompt's removal orphaned is only the **date** the answer was recorded, which nothing reads any more; it is kept as a consent trail.
 
 Invariant: an account cannot hold an enabled reminder without consent.
-_Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (does not distinguish never asked from declined)
+_Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (names the tap, not the account-wide permission it leaves behind)
 
 ### Design language ("Color field")
 
@@ -301,6 +299,36 @@ chrome already says where the user is, without anything being opened)
 
 The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
 account exists from first use, and a sign-in identity is attached later, if ever.
+
+**Account origin**:
+How an account came into existence — which of the four doors into the app it was minted by, and
+therefore whether a person asked for it or the app made one on their behalf. Fixed at creation and
+never changed afterwards, including by conversion: an account minted by a native cold start stays
+that, whatever it later becomes. Unknown for every account minted before the fact was recorded, and
+never guessed at. Stored as `user_preferences.account_origin`, one of `native_cold_start`,
+`web_cta`, `native_signup`, `web_signup` (#2306; spec in `docs/measurement.md` § 4).
+_Avoid_: acquisition source, channel, referrer, attribution. All four say **who sent the person**,
+which is a different thing and is refused — the sender outright, and a surface label written onto an
+account row on principle, because such a value on a person's row is an inferred-mental-state field
+(#2307, `docs/marketing-plan.md` § 6). Also avoid "signup platform", which names half of it.
+⚠️ **Not the same four-way split as `age-gate.tsx`'s "four ways into the app"**, which is an
+**auth-method** axis — email/password, Google, Apple and the silent guest. That axis mostly
+describes a _conversion_, which by the rule above never changes an origin. Two different fours; do
+not cite one as evidence for the other.
+
+**Store link source**:
+Which Selftend surface an outbound link to Google Play or the App Store was placed on — a fact about
+our own link, carried on the URL so the store consoles can report it. Named in
+`src/lib/store-links.ts`, vocabulary and rules in `docs/measurement.md` § 5 (#2324).
+☠️ **This is the one place "source" is a legitimate word, and the reason is that it never touches a
+person or a row.** Nothing is collected, nothing returns to the database, and the value is read only
+in Google's and Apple's consoles. The moment such a value would be stored against an account it
+becomes the refused thing the entry above describes — so the boundary to check is _collection and
+disclosure_, never whether a file under `src/` changed.
+⚠️ A `web-` prefix means a visitor with no account can reach the surface; an `app-` prefix means it
+only ever fires for somebody already using Selftend on the web, whose install is not a new arrival.
+_Avoid_: calling it attribution, a channel, or a referrer. It says **where the link sat**, never
+where the click came from, and never who sent the person.
 
 **Guest account**:
 The account created silently on first use, with no sign-in identity attached. A full account — it

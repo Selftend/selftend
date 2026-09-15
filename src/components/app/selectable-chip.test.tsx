@@ -1,7 +1,13 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import type { ReactTestInstance } from "react-test-renderer";
 
-import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
+import {
+  CHIP_FRAME,
+  ChipRun,
+  ChipRunReservation,
+  SelectableChip,
+} from "@/src/components/app/selectable-chip";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -197,5 +203,89 @@ describe("ChipRun", () => {
     expect(run).toContain("flex-row");
     // The caller's own class lands on that same View, so the run stays composable.
     expect(run).toContain("mt-2");
+  });
+});
+
+/**
+ * The run's silhouette while its chips are still being fetched — ADR-0009 clause 2, tested
+ * beside the chips it stands in for, because "the same size as the real chip" is a relation
+ * between the two and belongs where both are visible.
+ *
+ * ⚠️ It does NOT assert the reserved HEIGHT, and cannot: NativeWind resolves no geometry into
+ * `props.style` under jest, so such an assertion is vacuously green (the reasoning is at
+ * `item-card.tsx`). `test/e2e/loading-reserves-space.e2e.test.ts` measures it in a real
+ * engine; what belongs here is the relation that height rests on.
+ */
+describe("ChipRunReservation", () => {
+  const CHIPS = [
+    { id: "happy", label: "Happy", emoji: "😊" },
+    { id: "anxious", label: "Anxious", emoji: "😰" },
+  ];
+
+  /** Host nodes only — `findAll` returns the composite element too, and both carry props. */
+  function hosts(predicate: (node: ReactTestInstance) => boolean): ReactTestInstance[] {
+    return screen.UNSAFE_root.findAll((node) => typeof node.type === "string" && predicate(node));
+  }
+
+  /**
+   * The class strings, read out while the tree is still mounted.
+   *
+   * ☠️ A `ReactTestInstance` resolves its props lazily off the fiber, so one held across
+   * `unmount()` throws "Unable to find node on an unmounted component" — the comparison has
+   * to carry strings between the two renders, not nodes.
+   */
+  function silhouetteClasses(): string[] {
+    return hosts(
+      (node) =>
+        typeof node.props.className === "string" && node.props.className.includes(CHIP_FRAME),
+    ).map((node) => String(node.props.className));
+  }
+
+  function realChipClass(selected: boolean): string {
+    screen.unmount();
+    renderWithProviders(
+      <SelectableChip label="Happy" emoji="😊" selected={selected} onToggle={jest.fn()} />,
+    );
+    return String(screen.getByLabelText("Happy").props.className);
+  }
+
+  it("builds each silhouette out of the chip's own frame, so the two cannot drift", () => {
+    renderWithProviders(<ChipRunReservation chips={CHIPS} />);
+    const reserved = silhouetteClasses();
+
+    // Identical, not merely similar — the shared frame IS the reason the reserved run wraps
+    // where the real one will, and a second literal would drift with no test noticing.
+    expect(reserved).toHaveLength(CHIPS.length);
+    expect(reserved[0]).toBe(realChipClass(false));
+  });
+
+  it("carries the glyph, which is width the class strings cannot see", () => {
+    renderWithProviders(<ChipRunReservation chips={CHIPS} />);
+
+    // Matching frames is not enough on its own: a silhouette that quietly stopped rendering
+    // the emoji would still pass every className assertion above while reserving a glyph's
+    // worth of width too little. Both come from the shared `ChipFace`.
+    expect(screen.getByText("😊", { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText("😰", { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it("mirrors the selected type, which is wider than the unselected one", () => {
+    renderWithProviders(<ChipRunReservation chips={CHIPS} selectedIds={["happy"]} />);
+    const reserved = silhouetteClasses();
+
+    // `font-semibold` is type, not decoration: a run reserved as though nothing were picked
+    // re-wraps the moment the real, heavier chips arrive.
+    expect(reserved[1]).not.toBe(reserved[0]);
+    expect(reserved[0]).toBe(realChipClass(true));
+  });
+
+  it("claims nothing: no fill behind the chips, and nothing to press", () => {
+    renderWithProviders(<ChipRunReservation chips={CHIPS} overlay={<ActivityIndicator />} />);
+
+    // The COUNT is exactly the fact the query is about to supply, so a grey pill per chip
+    // would tell a reader who has pruned the list to five that twenty-two are coming.
+    // The space is held and the spinner says it is loading; nothing else is asserted.
+    expect(hosts((node) => String(node.props.className).includes("bg-muted"))).toHaveLength(0);
+    expect(screen.queryAllByRole("checkbox", { includeHiddenElements: true })).toHaveLength(0);
   });
 });

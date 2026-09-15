@@ -453,19 +453,26 @@ describe("SupportScreen column (#1726)", () => {
     expect(screen.queryByRole("link", { name: "Get it on iOS" })).toBeNull();
   });
 
-  it("on web, both store rows open their live listing", () => {
+  // Both rows carry the `app-support` source tag (#2324). ⚠️ That name is
+  // self-identifying as internal on purpose: this row fires for someone ALREADY
+  // using the web app, so a marketing-style surface name would let existing
+  // users read as fresh acquisitions in the store consoles.
+  //
+  // ☠️ Play's tag rides URL-encoded inside `referrer=`; a top-level
+  // `?utm_source=` registers nothing, silently. Apple's rides in `ct`.
+  it("on web, both store rows open their live listing, tagged as app-support", () => {
     setPlatformOS("web");
     renderWithProviders(<SupportScreen />);
 
     fireEvent.press(screen.getByRole("link", { name: "Get it on Android" }));
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
-      "https://play.google.com/store/apps/details?id=org.selftend.app",
+      "https://play.google.com/store/apps/details?id=org.selftend.app&referrer=utm_source%3Dapp-support",
     );
     expect(screen.getByText("Google Play")).toBeTruthy();
 
     fireEvent.press(screen.getByRole("link", { name: "Get it on iOS" }));
     expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
-      "https://apps.apple.com/app/selftend/id0000000000",
+      "https://apps.apple.com/app/selftend/id0000000000?ct=app-support",
     );
     expect(screen.getByText("App Store")).toBeTruthy();
   });

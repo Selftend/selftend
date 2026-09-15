@@ -11,7 +11,7 @@ import {
 import type { ObservingSelfSessionInput } from "@/src/features/act/types";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { ACT_HISTORY_PAGE_SIZE, actKeys } from "./keys";
 
 export function useObservingSelfSessions(userId: string | null, limit = 30) {
@@ -68,7 +68,7 @@ export function useSaveObservingSelfSession(userId: string | null) {
     mutationFn: (input: ObservingSelfSessionInput) => saveObservingSelfSession(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
-      requestReminderPrompt("act");
+      noteToolSave();
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: actKeys.observingList(userId) });
     },

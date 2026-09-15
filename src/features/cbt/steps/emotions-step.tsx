@@ -2,7 +2,7 @@ import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
+import { CheckboxRow } from "@/src/components/app/checkbox-row";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NumberRating } from "@/src/components/app/number-rating";
@@ -14,6 +14,12 @@ interface EmotionsStepProps {
   errors: FieldErrors<ThoughtRecordFormSchema>;
 }
 
+/**
+ * ☠️ The twenty-two feelings and the seventeen patterns one section below are
+ * the same control, so they render the same `CheckboxRow` (#2349). Changing
+ * the row here changes it there; shipping one row shape above a different one
+ * is the defect the shared component exists to prevent.
+ */
 export function EmotionsStep({ control, errors }: EmotionsStepProps) {
   const { t } = useTranslation("cbt");
 
@@ -38,22 +44,18 @@ export function EmotionsStep({ control, errors }: EmotionsStepProps) {
                 {group.ids.map((emotion) => {
                   const checked = value.includes(emotion);
                   const emotionKey = emotion.toLowerCase();
-                  const label = t(`emotions.${emotionKey}`);
-                  const toggle = () => {
-                    const nextValues = checked
-                      ? value.filter((item) => item !== emotion)
-                      : [...value, emotion];
-                    onChange(nextValues);
-                  };
                   return (
-                    <View key={emotion} className="flex-row items-center gap-3">
-                      <Checkbox
-                        accessibilityLabel={label}
-                        checked={checked}
-                        onCheckedChange={toggle}
-                      />
-                      <Label onPress={toggle}>{label}</Label>
-                    </View>
+                    <CheckboxRow
+                      checked={checked}
+                      key={emotion}
+                      label={t(`emotions.${emotionKey}`)}
+                      onToggle={() =>
+                        onChange(
+                          checked ? value.filter((item) => item !== emotion) : [...value, emotion],
+                        )
+                      }
+                      testID={`emotion-row-${emotionKey}`}
+                    />
                   );
                 })}
               </View>

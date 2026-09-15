@@ -97,7 +97,15 @@ test.describe("manage emotions reorder", () => {
     await page.goto("/tools/check-in/new");
     await dismissPostSignInModals(page);
 
-    await page.getByRole("button", { name: "Manage emotions", exact: true }).click();
+    // ⚠️ Waited for explicitly, not left to actionability (#2360). The door is shut while
+    // `emotion_preferences` is in flight, and it says so with `aria-disabled` rather than the
+    // `disabled` attribute of a native control — which is what Playwright's own enabled check
+    // is specified against. `toBeEnabled` does read `aria-disabled`, so this is the one form
+    // that is correct whichever way the click's actionability treats it. Without it the read
+    // beating the click is the whole difference between green and red on a loaded runner.
+    const manage = page.getByRole("button", { name: "Manage emotions", exact: true });
+    await expect(manage).toBeEnabled({ timeout: 10_000 });
+    await manage.click();
     await expect(page.getByText("Manage emotions")).toBeVisible({ timeout: 10_000 });
     expect(await renderedOrder(page)).toEqual([NAMES.anxious, NAMES.grateful, NAMES.sad]);
 

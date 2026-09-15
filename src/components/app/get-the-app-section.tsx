@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { type StoreLinkSource, taggedAppStoreUrl, taggedPlayStoreUrl } from "@/src/lib/store-links";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 type StoreId = "android" | "ios";
@@ -19,6 +19,16 @@ const STORE_ICONS: Record<StoreId, "logo-google-playstore" | "logo-apple"> = {
 type GetTheAppSectionProps = {
   /** Tighter spacing for the user-menu popover. */
   compact?: boolean;
+  /**
+   * Which mount this is, tagged onto the store links (#2324).
+   *
+   * ☠️ **Required, and deliberately so.** This section mounts on the sign-in
+   * landing, where a visitor has no account, and in the signed-in user menu,
+   * where everyone already has one. A default would silently hand the next
+   * mount point whichever audience happened to be written here first - which is
+   * exactly how the user-menu mount came to be tagged `web-get-the-app`.
+   */
+  source: StoreLinkSource;
   /** Overridable in tests only; the app always uses the deployment config. */
   playStoreUrl?: string;
   appStoreUrl?: string;
@@ -26,8 +36,11 @@ type GetTheAppSectionProps = {
 
 export function GetTheAppSection({
   compact = false,
-  playStoreUrl = appEnv.playStoreUrl,
-  appStoreUrl = appEnv.appStoreUrl,
+  source,
+  // Tagged, so the stores can report which surface sent someone (#2324). The
+  // bare constants stay bare for the in-app update path; see `store-links.ts`.
+  playStoreUrl = taggedPlayStoreUrl(source),
+  appStoreUrl = taggedAppStoreUrl(source),
 }: GetTheAppSectionProps) {
   const { t } = useTranslation("navigation");
   const iconColor = useColorSchemeName() === "dark" ? "#fafafa" : "#0a0a0a";

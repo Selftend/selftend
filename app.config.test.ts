@@ -110,13 +110,14 @@ describe("apple-app-site-association", () => {
 });
 
 describe("app.config ios associated domains", () => {
-  it("claims both hosts that serve the app (production)", () => {
+  it("claims the apex and nothing else (production)", () => {
     const config = (require("./app.config") as { default: { ios?: unknown } }).default;
     const ios = config.ios as { associatedDomains?: string[] };
 
-    // `www` is included because it serves the app directly rather than
-    // redirecting to the apex - a link shared as www would otherwise miss.
-    expect(ios.associatedDomains).toEqual(["applinks:selftend.org", "applinks:www.selftend.org"]);
+    // The apex is the only serving origin (docs/launch/app-links-runbook.md);
+    // a host that redirects can never verify, so a second entry here means a
+    // second host that serves the association file directly.
+    expect(ios.associatedDomains).toEqual(["applinks:selftend.org"]);
   });
 
   it("keeps the entitlement off the dev variant, which can never associate", () => {

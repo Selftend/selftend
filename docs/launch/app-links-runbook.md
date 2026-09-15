@@ -69,10 +69,17 @@ only about links arriving from _outside_ the app.
 ## What is wired in the repo
 
 - `app.config.ts` — production-only `ios.associatedDomains`:
-  `applinks:selftend.org` and `applinks:www.selftend.org`. Both hosts are
-  claimed because both serve the app directly rather than redirecting to the
-  other, so a link typed or shared as `www` would otherwise miss. Emails only
-  ever produce the apex, since Supabase's SiteURL has no `www`.
+  `applinks:selftend.org`, the apex only. `https://selftend.org` is the only
+  serving origin ([indexability.md](../indexability.md) § 6.1, live since
+  2026-09-11): a zone-level Cloudflare rule answers every `www` URL with a 301
+  to the apex, and Apple refuses an association file served with a redirect,
+  so once that rule's temporary `/.well-known/` carve-out is retired (see
+  _Retiring the `www` carve-out_ below) a `www` claim cannot verify at all —
+  #2298 dropped the claim ahead of that. A link typed or shared as `www` is
+  not lost: Safari follows the 301 and the apex **web** app completes
+  `/auth-callback`; the native handoff only ever covers apex links, which is
+  all email produces, since Supabase's SiteURL has no `www`. Android is
+  unaffected: its intent filter names the apex only.
   Dev builds are excluded for the same shape of reason as Android: the dev
   variant is a different bundle id (`org.vasilyoshev.selftend.dev`), which the
   association file does not list, so iOS could never associate it — and the
@@ -104,13 +111,14 @@ Needs a **real device** and a **fresh install**: iOS caches association data
 per install, so an upgrade over an existing build may keep using stale data.
 This is why the ticket sat behind the first installable TestFlight build.
 
-> **Do not check the status code.** The web build is a client-rendered SPA, so
-> Cloudflare serves the HTML shell with **`200 OK`** for any path that does not
-> exist — including this one. Verified on 2026-07-31, before the file was
-> deployed: `200`, `Content-Type: text/html`, body `<!doctype html>`. A
-> `curl -sI ... | grep 200` check passes whether or not the file is there,
-> which is exactly the false green that would send someone hunting in the app.
-> Assert on the **content type and the body**.
+> **Do not check only the status code.** Since [#2295](https://github.com/Selftend/selftend/issues/2295)
+> an unknown path answers a real **404** with the app shell, so a mistyped
+> path does fail a `grep 200` — but a stale cached copy, a wrong
+> `Content-Type` or a body that is not JSON all answer `200` and still break
+> the handoff, silently. Assert on the **content type and the body**. (Until
+> #2295 the SPA fallback served the shell with `200 OK` for every path,
+> verified 2026-07-31 before the file was deployed, which is why this note
+> exists.)
 
 ```bash
 # 1. Content type must be application/json, NOT text/html.
@@ -124,18 +132,44 @@ curl -s -o /dev/null -w '%{content_type}\n' \
 curl -s https://selftend.org/.well-known/apple-app-site-association \
   | jq -e '.applinks.details[0].appIDs[0] == "C5GVSW74D2.org.vasilyoshev.selftend"'
 
-# 3. Same two checks against the www host, which is claimed separately.
-curl -s -o /dev/null -w '%{content_type}\n' \
-  https://www.selftend.org/.well-known/apple-app-site-association
-
-# 4. No redirect: Apple does not follow them, and a 30x is fatal.
+# 3. No redirect on the apex: Apple does not follow them, and a 30x is fatal.
 curl -s -o /dev/null -w '%{num_redirects}\n' \
   https://selftend.org/.well-known/apple-app-site-association
 #    -> 0
+
+# 4. The www host is not claimed. While the carve-out below stands it still
+#    answers 200 application/json; once retired, 301 to the apex. Either is
+#    fine for the app - only the apex is claimed.
+curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
+  https://www.selftend.org/.well-known/apple-app-site-association
+#    -> 200 application/json (carve-out standing) | 301 (retired)
 ```
 
-The same trap applies to `/.well-known/assetlinks.json` above, though it bites
-less there: a missing file would still return the shell with `200`, so check
+## Retiring the `www` carve-out (one-time owner step, after the release that drops the claim)
+
+The zone's `www` → apex redirect rule ([deployment.md](../deployment.md) § _Cloudflare zone
+settings_) carries a clause, `and not starts_with(http.request.uri.path,
+"/.well-known/")`, that keeps the association file answering 200 on `www` for
+as long as an installed build still claims `applinks:www.selftend.org`. The
+clause is retired **once a build without the `www` entitlement is the current
+App Store version** (the first native release carrying #2298):
+
+1. Cloudflare → Rules → Overview → the rule "www to apex" → edit the expression
+   to `http.host eq "www.selftend.org"` → Deploy.
+2. Verify: `curl -sI https://www.selftend.org/.well-known/apple-app-site-association`
+   → `301` with `location: https://selftend.org/.well-known/apple-app-site-association`;
+   the apex checks 1-3 above still pass.
+3. Record the date in the redirect-rule row of [deployment.md](../deployment.md) § _Cloudflare
+   zone settings_, delete the carve-out paragraph under that table, and update
+   the rule's expression in control-tower
+   [#132](https://github.com/vasilyoshev/control-tower/issues/132) (the
+   architecture rule: a public-URL rule changed).
+
+A build still carrying the old entitlement loses nothing meanwhile: a tapped
+`www` link opens Safari, follows the 301, and the apex web app completes
+`/auth-callback` as it does today.
+
+The same rule applies to `/.well-known/assetlinks.json` above: check
 `content_type` is `application/json` rather than trusting the status line.
 
 On device, after a fresh install: request a password reset, open the email on

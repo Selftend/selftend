@@ -15,10 +15,24 @@ import * as path from "node:path";
 
 const SCRIPTS_DIR = path.resolve(__dirname, "..", "scripts");
 
+const ALL_REPORTS = [
+  "analytics-engagement.sql",
+  "analytics-onboarding.sql",
+  "analytics-segment.sql",
+];
+
 /** Which report files must carry each shared block. */
 const EXPECTED_BLOCKS: Record<string, string[]> = {
-  accounts: ["analytics-engagement.sql", "analytics-onboarding.sql", "analytics-segment.sql"],
+  accounts: ALL_REPORTS,
   content_events: ["analytics-engagement.sql", "analytics-segment.sql"],
+  // k=5 cell suppression governs all three reports, not just the segment one
+  // where it was first implemented (#2373, docs/analytics.md).
+  k_suppression: ALL_REPORTS,
+  // Who is in the population: the owner count, the heuristic upper bound, and
+  // the standing line that the guest arm is not identifiable at all. Printed by
+  // each report separately and deliberately - every report runs independently,
+  // so a surviving one must carry its own population statement.
+  population_provenance: ALL_REPORTS,
 };
 
 const START = /^-- >>> shared:([a-z_]+)$/;
@@ -135,6 +149,207 @@ describe("analytics reports never read enabled_modules as an axis", () => {
   }
 });
 
+describe("analytics reports never read widget_preferences", () => {
+  // ☠️ #2376. `widget_preferences` fails the same test `enabled_modules` failed:
+  // the current app neither reads nor seeds it (#1958). ⚠️ And it is NOT frozen
+  // residue, which would be the safer failure - pre-Favourites native builds
+  // still write it, so a section over it prints LIVE data about a removed
+  // feature as though it were current behaviour. Favourites is the live
+  // successor and took the slot.
+  for (const file of reportFiles()) {
+    it(`${file} does not read widget_preferences`, () => {
+      expect(sqlLinesMatching(file, /widget_preferences/)).toEqual([]);
+    });
+  }
+
+  it("reads the live successor instead", () => {
+    // Guards the guard: deleting the section satisfies the ban just as well as
+    // replacing it, and that is the other way to lose the measurement.
+    expect(
+      sqlLinesMatching("analytics-onboarding.sql", /public\.favorites/).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe("the onboarding report keeps completion and conversion apart", () => {
+  // #2376. `CONTEXT.md` reserves CONVERSION for guest -> registered. This report
+  // used the same word for finishing the introduction, which is a different
+  // funnel step - and it is the one report that now measures both, so the two
+  // words have to stay on their own sections.
+  const source = fs.readFileSync(path.join(SCRIPTS_DIR, "analytics-onboarding.sql"), "utf8");
+  const heading = (n: number) =>
+    source.split("\n").find((line) => line.startsWith(`\\echo '=== ${n})`)) ?? "";
+
+  it("calls finishing the introduction completion", () => {
+    expect(heading(2)).toContain("completion");
+    expect(heading(2).toLowerCase()).not.toContain("conversion");
+  });
+
+  it("keeps the word conversion for guest to registered", () => {
+    expect(heading(4)).toContain("Guest-to-registered conversion");
+  });
+});
+
+describe("analytics reports never read notifications_enabled_global", () => {
+  // ☠️ #2375, and it is the `enabled_modules` mistake (#1672) waiting to happen
+  // on a newer column. `notifications_enabled_global` DEFAULTS TO TRUE and is
+  // true for very nearly everyone, so a report that counted it would measure a
+  // default and call it adoption. `reminder_consent` defaults to FALSE and is
+  // set only by someone choosing it - it is the column that varies, and the one
+  // that evidences the quiet-by-default guardrail actually holding.
+  //
+  // Reminder adoption is the section most at risk of being "improved" into
+  // uselessness by a later reader who notices the consent number is small and
+  // the global number is big, and swaps one for the other. This is what stops
+  // that being a convention someone has to remember.
+  for (const file of reportFiles()) {
+    it(`${file} does not read notifications_enabled_global`, () => {
+      expect(sqlLinesMatching(file, /notifications_enabled_global/)).toEqual([]);
+    });
+  }
+
+  it("still reads the column that does vary", () => {
+    // Guards the guard: the ban above is satisfied just as well by reporting no
+    // reminder figure at all, which is the other way to lose this measurement.
+    expect(sqlLinesMatching("analytics-engagement.sql", /reminder_consent/).length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
+describe("analytics reports never cohort by initial_concerns", () => {
+  // ☠️ #2377, and it is the third instance of one failure. `enabled_modules`
+  // (#1672) gates nothing; `notifications_enabled_global` (#2375) defaults to
+  // true; and `initial_concerns` was MEASURED (#2365) to have never held a value
+  // for a single account, ever - the migration that added it and the commit that
+  // removed the code writing it both shipped in tag v0.18.0, so it reached users
+  // in the very build that stopped asking.
+  //
+  // ⚠️ What it cost was worse than an unreadable table. The segment report
+  // cohorted W4 retention by this column, every account landed in its `unknown`
+  // arm, and the gate - which counts retention across the whole population and
+  // knows nothing about arms - could open anyway and declare the cross-tab
+  // readable over an empty table. A false green, where an unreachable gate would
+  // at least have been honestly silent.
+  //
+  // The column is deliberately KEPT: dropping it changes nothing observable and
+  // would cost an INTENTIONALLY_DROPPED entry in the export gate. So nothing in
+  // the schema stops a later reader reaching for it again, and the corrected
+  // schema comment is only a comment. This is what stops it.
+  for (const file of reportFiles()) {
+    it(`${file} does not read initial_concerns`, () => {
+      expect(sqlLinesMatching(file, /initial_concerns/)).toEqual([]);
+    });
+  }
+
+  it("cohorts the segment report by the two axes that do carry values", () => {
+    // Guards the guard: the ban above is satisfied just as well by a report with
+    // no cross-tab left in it, which is the other way to lose the instrument
+    // docs/positioning.md's segment slot is waiting on. Locale and module usage
+    // are what replaced the concern arms (#2377).
+    const segment = "analytics-segment.sql";
+    expect(sqlLinesMatching(segment, /p\.language in/).length).toBeGreaterThan(0);
+    expect(sqlLinesMatching(segment, /from module_labels/).length).toBeGreaterThan(0);
+  });
+
+  it("checks axis coverage before it prints either ordering", () => {
+    // ☠️ The precondition #2377 added, pinned statically as well as behaviourally
+    // (test/integration/analytics-reports.integration.test.ts runs the false-green
+    // case). Both orderings must be gated: gating one and forgetting the other is
+    // the shape this catches, and it is invisible in a report whose other axis
+    // happens to be covered.
+    const gated = sqlLinesMatching("analytics-segment.sql", /from axis_coverage ac where ac\.axis/);
+    expect(gated).toHaveLength(2);
+  });
+});
+
+describe("k=5 cell suppression is defined once, for all three reports", () => {
+  // #2373. The rule used to live in analytics-segment.sql alone, so the other
+  // two reports printed raw counts and nothing said so. A second definition
+  // anywhere is how they would drift apart again.
+  for (const file of reportFiles()) {
+    it(`${file} defines k_count and k_pct only inside shared:k_suppression`, () => {
+      const shared = blocksByFile.get(file)?.get("k_suppression") ?? "";
+      expect(shared).toContain("create function pg_temp.k_count");
+      expect(shared).toContain("create function pg_temp.k_pct");
+
+      const outsideTheBlock = fs
+        .readFileSync(path.join(SCRIPTS_DIR, file), "utf8")
+        .replace(shared, "");
+      expect(outsideTheBlock).not.toContain("create function pg_temp.k_");
+    });
+
+    it(`${file} puts its slicing cells through the helpers`, () => {
+      // Not a count of call sites - that would go stale on every edit - but the
+      // claim that every report actually suppresses something. A report with
+      // the block and no call site is the failure mode this catches: the
+      // helpers present, the cells still raw.
+      expect(sqlLinesMatching(file, /pg_temp\.k_(count|pct)\(/).length).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe("an email address never leaves the database", () => {
+  // ☠️ #2373 put `email` on the shared `accounts` view so the provenance block
+  // can classify an address without a second read of auth.users. Nothing about
+  // that view stops a later section selecting the column into a printed row,
+  // and every report is aggregate-only by policy: "no per-user rows, no user
+  // ids, no emails" (docs/analytics.md, and the header of all three files).
+  // So the column is confined to the two blocks that have a reason to hold it.
+  const ALLOWED_BLOCKS = ["accounts", "population_provenance"];
+
+  for (const file of reportFiles()) {
+    it(`${file} mentions email only inside ${ALLOWED_BLOCKS.join(" and ")}`, () => {
+      const blocks = blocksByFile.get(file);
+      const allowed = ALLOWED_BLOCKS.map((name) => blocks?.get(name) ?? "").join("\n");
+      const allowedLines = new Set(
+        allowed
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line !== ""),
+      );
+
+      const offenders = sqlLinesMatching(file, /\bemail\b/).filter(
+        (line) => !allowedLines.has(line.trim()),
+      );
+      expect(offenders).toEqual([]);
+    });
+  }
+});
+
+describe("the population-provenance block is exempt from k=5, with both reasons recorded", () => {
+  // ☠️ #2373. This block counts the project's OWN accounts and prints an upper
+  // bound, so both rationales behind k=5 are void here - one does not apply,
+  // the other is inverted. Suppressing it would hide the number precisely as
+  // cleanup succeeded and it finally became good news, leaving a reader unable
+  // to tell "almost none" from "withheld".
+  const block = blocksByFile.get("analytics-engagement.sql")?.get("population_provenance") ?? "";
+  const sql = block
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
+
+  it("prints raw counts, never suppressed ones", () => {
+    expect(sql).toContain("count(*) filter (where p.owner_address)");
+    expect(sql).not.toContain("pg_temp.k_");
+  });
+
+  it("records both reasons for the exemption beside it", () => {
+    expect(block).toContain("EXEMPT FROM THE k=5 RULE");
+    expect(block).toContain("PROJECT'S OWN accounts");
+    expect(block).toContain("upper bound is already the anti-false-precision form");
+  });
+
+  it("labels the wider count as a bound and never as a point estimate", () => {
+    expect(block).toContain("AN UPPER BOUND, never a point estimate");
+  });
+
+  it("states that the guest arm cannot be identified at all", () => {
+    expect(block).toContain("NOT IDENTIFIABLE AT ALL");
+    expect(block).toContain("no email");
+  });
+});
+
 describe("analytics reports carry the account split", () => {
   // Part A of #1613. Guest accounts are minted one per tap of the landing CTA,
   // so a report that counts auth.users without splitting on is_anonymous starts
@@ -146,9 +361,31 @@ describe("analytics reports carry the account split", () => {
       expect(source).toContain("'=== 0) Population split");
     });
 
-    it(`${file} reads auth.users only through the accounts view`, () => {
+    it(`${file} reads its account source only through the accounts view`, () => {
       // The one permitted mention is inside the shared accounts block.
-      expect(sqlLinesMatching(file, /auth\.users/)).toEqual(["  from auth.users;"]);
+      expect(sqlLinesMatching(file, /digest_auth_users/)).toEqual([
+        "  from public.digest_auth_users;",
+      ]);
+    });
+
+    it(`${file} never reaches into the auth schema directly`, () => {
+      // ☠️ #2393. The reports used to read `auth.users` here, and this guard
+      // asserted it appeared on exactly one code line. It still asserts exactly
+      // one read, of the view that replaced it - but the ORIGINAL property has
+      // to be kept too, or the rename would trade a real control for a cosmetic
+      // one.
+      //
+      // Two reasons the auth schema stays out of these files entirely:
+      //
+      //   * the digest's role CANNOT read it. The schema is owned by
+      //     `supabase_admin` and `postgres` holds USAGE without grant option, so
+      //     no grant can give a new role access. A report that reached into auth
+      //     would simply fail on the monthly run - and only there, since every
+      //     local and CI run is `postgres`, which can.
+      //   * the views expose four columns and two columns. `auth.users` also
+      //     holds `encrypted_password`, `confirmation_token` and `recovery_token`,
+      //     and this report family's whole output is posted into a GitHub comment.
+      expect(sqlLinesMatching(file, /\bauth\.\w+/)).toEqual([]);
     });
   }
 });

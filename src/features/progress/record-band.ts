@@ -63,10 +63,11 @@ export const DAY_PITCH = 5;
  * cell promotes absence to a first-class mark, which is what makes a lattice
  * read as a chain (#1834) - the calendar is not the problem, the grid is.
  *
- * The three states gate on SPAN, not count. The axis is anchored at the first
- * record, so a record made an hour ago gives it zero width and there is nothing
- * to draw: that is the `singleDay` state, which needs a string of its own
- * because "nothing here yet" would be a lie about the person's own record.
+ * The three states gate on SPAN, not count, and the single-day gate is a span
+ * of exactly zero. The axis is anchored at the first record, so a record made
+ * an hour ago gives it zero width and there is nothing to draw: that is the
+ * `singleDay` state, which needs a string of its own because "nothing here yet"
+ * would be a lie about the person's own record.
  */
 export function buildRecordBand(
   dayKeys: string[] | undefined,
@@ -96,8 +97,22 @@ export function buildRecordBand(
   // today would drop off the right-hand end of the axis (#250).
   const lastKey = dayRangeEndKey(days, now);
 
+  /*
+   * ☠️ **`span === 0` exactly, not `span < 2` (#2344).** Because `lastKey` is
+   * `max(today, latest record day)`, a zero span means first = last = today, so
+   * this branch means precisely "everything you have is today" - which is what
+   * lets `timelineSingleDay` state it. One day short of that and the person has
+   * a mark on a day that is not today; drawing it in an 8px band is an accepted
+   * render, because the alternative is a card promising "one mark for each day
+   * with a record" while showing a sentence instead of the mark.
+   *
+   * The one thing this cannot say for certain is that the day is today rather
+   * than tomorrow: a "tomorrow" entry carried west across the date line (#250)
+   * is also span 0. Accepted rather than gated - a second condition to catch a
+   * state that lasts hours would cost more edges than it buys.
+   */
   const span = dayKeyDiff(firstKey, lastKey);
-  if (span < 2) return { kind: "singleDay" };
+  if (span === 0) return { kind: "singleDay" };
 
   const marks = days
     .map((key) => ({ key, index: dayKeyDiff(firstKey, key) }))

@@ -53,6 +53,12 @@ this order - naming the pattern before hunting evidence is deliberate):
 6. balanced - the balanced thought, belief in the hot thought now (0-100), intensity after
    (0-100), and outcome notes
 
+The patterns part folds once a pattern is ticked: the seventeen options collapse to the chosen
+names, plus that pattern's description when exactly one is chosen, and a control that shows all
+seventeen again. Nothing folds before a first tick, the chosen names never leave the screen, and a
+restored draft or an edited record that already holds patterns arrives folded. On the web the block
+is put at the top of the scroll area as it folds, so the next field is the next thing on screen.
+
 Every part is on screen at once: parts can be answered in any order, and the rail's segments
 light per part as they hold something. "Finish later" leaves the screen over the persisted
 draft autosave; returning restores what was typed (drafts expire after 24 hours).

@@ -23,8 +23,9 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, focusNode } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
+import { STORE_LINK_SOURCES } from "@/src/lib/store-links";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
 import { useStyleName } from "@/src/lib/style";
@@ -33,17 +34,6 @@ import type { TriggerRef } from "@rn-primitives/popover";
 
 /** Which view the menu body is showing. See `pane` in `UserMenu` for why. */
 type MenuPane = "root" | "palette";
-
-/**
- * `.focus()` on whatever a `Pressable`'s ref hands back.
- *
- * Native gives a `View` with no `focus`, react-native-web gives the DOM node
- * that does - so the call is optional at both hops rather than cast to one
- * platform's shape. `calendar-roving-focus.ts` reaches for a node the same way.
- */
-function focusNode(node: unknown) {
-  (node as { focus?: () => void } | null)?.focus?.();
-}
 
 export function UserMenu() {
   const { t } = useTranslation("navigation");
@@ -471,7 +461,10 @@ export function UserMenu() {
                 <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
               </Pressable>
 
-              <GetTheAppSection compact />
+              {/* `userMenu`, not `getTheApp`: everyone reading this menu already
+              has an account, so these installs are existing web users rather
+              than fresh acquisitions (#2324). */}
+              <GetTheAppSection compact source={STORE_LINK_SOURCES.userMenu} />
               {/* Community links (#668): this social row is the app's only
               community surface. Community spaces first in order of
               interactivity, GitHub last as the transparency door. Each

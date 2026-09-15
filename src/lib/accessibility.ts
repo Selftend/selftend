@@ -218,6 +218,23 @@ export function politeLiveRegionProps() {
 }
 
 /**
+ * `.focus()` on whatever a `Pressable`'s ref hands back.
+ *
+ * Native gives a `View` with no `focus`, react-native-web gives the DOM node
+ * that does - so the call is optional at both hops rather than cast to one
+ * platform's shape. `calendar-roving-focus.ts` reaches for a node the same way.
+ *
+ * The case it exists for is focus that would otherwise be DROPPED: a control
+ * that unmounts as a result of being pressed leaves focus on the document body,
+ * and a keyboard user loses their place in the form. Move it to the control that
+ * replaced the one that went (`user-menu.tsx`, and the patterns fold's
+ * disclosure trigger in `distortions-step.tsx`).
+ */
+export function focusNode(node: unknown) {
+  (node as { focus?: () => void } | null)?.focus?.();
+}
+
+/**
  * Fire-and-forget screen-reader announcement on native. No-op on web
  * (react-native-web does not implement announceForAccessibility) - render the
  * message inside a node with politeLiveRegionProps() there instead.

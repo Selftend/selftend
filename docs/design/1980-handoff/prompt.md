@@ -10,6 +10,12 @@
   and `../1825-handoff/prompt.md` do. Nothing in it is copy to ship. The spec
   every line here is taken from is `docs/modules/dbt-mckay-skills-workbook.md`;
   the ticket links are in `README.md` beside this file.
+
+  ⚠️ DATED SNAPSHOT, left as sent. Two rows below describe "the once-ever
+  reminder offer" as a shipped post-completion card; it was removed outright on
+  2026-09-12 (ADR-0008) and no such card exists. The brief's instruction is
+  unaffected - both rows say "not drawn" - so the block is not rewritten. Read
+  the spec, never this file, for what ships.
 -->
 
 ## What you are designing

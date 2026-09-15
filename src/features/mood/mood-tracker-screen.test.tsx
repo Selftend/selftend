@@ -127,10 +127,55 @@ describe("MoodTrackerScreen", () => {
       renderWithProviders(<MoodTrackerScreen />);
 
       // The section is there (the account has check-ins) but says nothing about
-      // this week yet.
+      // this week yet. Both words are in the tree now - the reservation below
+      // holds the block's space with the hero itself at `opacity-0` - so what
+      // these two assert is that none of it is READ OUT or drawn, which is the
+      // half clause 1 is about.
       expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
       expect(screen.queryByText("No emotions tagged yet")).toBeNull();
       expect(screen.queryByText("Felt most often")).toBeNull();
+    });
+
+    /**
+     * ADR-0009 clause 2. What stood here was a spinner in a `py-8` box, about half
+     * the week block's real height, so the trend and the two stats sections below
+     * snapped up while the week was in flight and back down when it landed.
+     *
+     * ⚠️ jest cannot see the height - NativeWind resolves no width or padding into
+     * `props.style`, so an assertion about the reserved size would be vacuously
+     * green. What it CAN see is that the space is held by the hero's own markup
+     * rather than by a spinner alone, and that the sections below it still render
+     * in the same order throughout.
+     */
+    it("holds the week block's space while it is in flight, rather than collapsing it", () => {
+      mockLogged({ points: 2, count: 3 });
+      mockUseMoodLogs.mockReturnValue({
+        data: [],
+      } as unknown as ReturnType<typeof useMoodHistory>);
+      mockUseMoodWeek.mockReturnValue({
+        data: undefined,
+        isError: false,
+        refetch: jest.fn(),
+      } as unknown as ReturnType<typeof useMoodWeek>);
+
+      renderWithProviders(<MoodTrackerScreen />);
+
+      const reservation = screen.getByTestId("week-hero-reservation");
+      // The hero's own strip, at `opacity-0` - not a stand-in silhouette, which is
+      // what makes the reservation exact without a measured number.
+      expect(
+        within(reservation).getAllByRole("image", { includeHiddenElements: true }).length,
+      ).toBeGreaterThan(0);
+      expect(
+        within(reservation).getByText("Felt most often", { includeHiddenElements: true }),
+      ).toBeTruthy();
+      // And nothing inside it is reachable: an invisible door would still take Tab.
+      expect(within(reservation).queryAllByRole("link", { includeHiddenElements: true })).toEqual(
+        [],
+      );
+      // The sections the collapse used to drag are on screen while it loads.
+      expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Mood map" })).toBeTruthy();
     });
 
     it("offers a retry instead of an empty week when the week query fails", () => {

@@ -10,7 +10,7 @@ import {
 } from "@/src/features/activities/repository";
 import type { ActivityInput } from "@/src/features/activities/types";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 
 const activityKeys = {
   list: (userId: string) => ["activities", "list", userId] as const,
@@ -75,7 +75,7 @@ export function useSaveActivity(userId: string | null) {
     mutationFn: ({ input, activityId }: { input: ActivityInput; activityId?: string }) =>
       saveActivity(userId!, input, activityId),
     onSuccess: async (activity, { activityId }) => {
-      if (!activityId) requestReminderPrompt("cbt");
+      if (!activityId) noteToolSave();
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),

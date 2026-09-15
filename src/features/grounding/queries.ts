@@ -10,7 +10,7 @@ import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
-import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 export const GROUNDING_HISTORY_PAGE_SIZE = 20;
@@ -66,7 +66,7 @@ export function useSaveGroundingSession(userId: string | null) {
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
-      requestReminderPrompt("grounding");
+      noteToolSave();
       if (!userId) return;
       // Shares the mindfulness_sessions table with breathing/mindfulness - refresh all three.
       await Promise.all([

@@ -18,6 +18,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CountrySelectField } from "@/src/components/app/country-select-field";
+import { deriveAccountOrigin } from "@/src/features/auth/account-origin";
 import {
   isAttestationComplete,
   readAttestation,
@@ -118,7 +119,15 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
     }
 
     try {
-      await attest.mutateAsync(outcome.country);
+      // ☠️ `deriveAccountOrigin` is read HERE and nowhere later (#2323). This
+      // gate is the earliest one, which is the only place the derivation is
+      // sound: a guest who converts afterwards reads as native + registered,
+      // and a gate that ran after that point would relabel a
+      // `native_cold_start` a `native_signup`. See `docs/measurement.md` §4.
+      await attest.mutateAsync({
+        country: outcome.country,
+        accountOrigin: deriveAccountOrigin(user),
+      });
       forgetDateOfBirth();
       onAttested();
     } catch {

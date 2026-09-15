@@ -6,6 +6,7 @@ import { SignInForm } from "@/src/components/app/sign-in-form";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { STORE_LINK_SOURCES } from "@/src/lib/store-links";
 
 export function AuthLandingBlock() {
   const { t } = useTranslation(["auth", "common", "policies"]);
@@ -28,7 +29,7 @@ export function AuthLandingBlock() {
         <Text className="text-center text-muted-foreground">{t("auth:landing.subtitle")}</Text>
       </View>
       <SignInForm />
-      <GetTheAppSection />
+      <GetTheAppSection source={STORE_LINK_SOURCES.getTheApp} />
       <View className="items-center gap-2 pt-1">
         <Text className="text-center text-xs text-muted-foreground">
           {t("common:safety.description")}
