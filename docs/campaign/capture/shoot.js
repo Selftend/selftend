@@ -293,10 +293,6 @@ const SHOTS = {
   },
   async lookback(h) {
     const { page } = h;
-    await page.goto("https://selftend.org/progress", { waitUntil: "networkidle", timeout: 60000 });
-    await lib.sleep(4500);
-    await lib.smoothScroll(page, 500, 1800);
-    await lib.sleep(2500);
     await page.goto("https://selftend.org/tools/journal", {
       waitUntil: "networkidle",
       timeout: 60000,
