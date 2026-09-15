@@ -122,9 +122,30 @@ jobs:
     if: needs.gate.outputs.enabled == 'true'
     # Pinned deliberately - see the header. Free on public repos; never -large.
     runs-on: macos-26
-    # Measured 12-25 min on comparable Expo repos, and local builds get no
-    # cache, so this is headroom rather than an expectation.
-    timeout-minutes: 60
+    # ☠️ THIS BUDGET COVERS TWO THINGS, AND ITS OLD COMMENT MEASURED ONLY ONE
+    # (#2337). The build is 12-25 min on comparable Expo repos. The job then
+    # WAITS OUT APPLE'S PROCESSING QUEUE, which is not ours to predict: on
+    # v0.19.0 the build took ~20 min and the wait took 40+ more, so the job was
+    # killed at 60 while sitting idle on `- Submitting`.
+    #
+    # ⚠️ WHAT MAKES THAT WORSE THAN A RED TICK: the submission SUCCEEDED anyway.
+    # `eas submit` runs on EAS's workers and the CLI is only watching, so Apple
+    # finished the upload 25 minutes after GitHub cancelled the job. The run
+    # reported `cancelled`, `Summarise the release` was skipped, and the release
+    # read as "no iOS build shipped" when a build was on TestFlight. Re-running
+    # on that reading burns another build number (`autoIncrement` consumes one
+    # per attempt, failures included) and puts a second identical binary in front
+    # of TestFlight.
+    #
+    # 120 is headroom over the worst observed (v0.19.0's ~60+, v0.18.0's 36m48s),
+    # not an expectation. The runner is free on this public repo and `concurrency`
+    # already stops long jobs piling up, so the cost of being generous is nil and
+    # the cost of being tight is a misreported release.
+    #
+    # ☠️ Do NOT diagnose a future failure from the job's status alone. Read the
+    # EAS submission record whose URL is printed in the step log - that is what
+    # says whether the build reached TestFlight.
+    timeout-minutes: 120
     environment: ${{ inputs.environment || 'production' }}
     # Scoped like the Android job so a manual dispatch cannot kill an in-flight
     # release build. Not cancel-in-progress: an iOS release must not be halted
