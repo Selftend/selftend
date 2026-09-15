@@ -39,9 +39,10 @@ alter table public.device_push_tokens
 -- newest declaration WHOLESALE rather than patching it - two in-flight
 -- migrations once silently dropped each other's columns (#429). Checked on the
 -- way in: 20260915000000 is the newest declaration as of 2026-09-16 (20260916
--- and 20260917 do not touch it), and the body below differs from it by exactly
--- two lines - the four `general_reminder*` columns joining the reminder-prefs
--- projection - plus the comment above the schema reload.
+-- and 20260917 do not touch it), and the body below differs from it by one
+-- changed line and two added ones - the four `general_reminder*` columns
+-- joining the reminder-prefs projection - plus the comment above the schema
+-- reload. `diff` the two declarations to see exactly that and nothing else.
 --
 -- The four columns are user data (a preference the person sets), so they are
 -- exported; `test/integration/export-user-data-completeness.integration.test.ts`

@@ -5774,8 +5774,9 @@ const SEEDED_ROUTINES = [
   // Every reminder switch on `user_preferences` - the eleven per-tool ones and
   // the general one. Listed rather than globbed: a new target's column has to
   // be added here on purpose, and a guard that silently stopped covering one
-  // would be worse than no guard. ☠️ It did exactly that once: `dbt` was
-  // missing for a week and nothing failed (#2415). Twelve since #2489.
+  // would be worse than no guard. ☠️ It did exactly that once: `dbt` shipped
+  // its columns without joining this list, and nothing failed (#2415). Twelve
+  // since #2489.
   const TARGET_COLUMNS = [
     "act_reminders_enabled",
     "breathing_reminders_enabled",
