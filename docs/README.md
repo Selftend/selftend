@@ -23,7 +23,8 @@ Use this as the map for project docs. Each entry below links to the doc that own
 ## Launch And Operations
 
 - [deployment.md](deployment.md) - web deployment and Supabase callbacks
-- [indexability.md](indexability.md) - the indexability spec (decided, not built): how selftend.org is made readable by search engines, the instruments, and the owner's dashboard steps
+- [indexability.md](indexability.md) - the indexability spec (§§ 2-6 as built, released in v0.19.0): how selftend.org is made readable by search engines, the instruments, and the owner's dashboard steps
+- [public-pages.md](public-pages.md) - the public pages spec (decided, not built): which pages selftend.org publishes and why, how they link to each other, and what its structured data may truthfully claim
 - [android-development.md](android-development.md) - Android dev-build setup
 - [internal-testing.md](internal-testing.md) - internal build and testing checklist
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness

@@ -401,4 +401,21 @@ a page of their own, the pages the sitemap lists, and therefore the pages that c
 three are one fact, never three: a route is on the index list or it is not, and there is no third
 state such as "published but hidden" (#2287, #2288). Adding a public page means adding it to the
 index list; nothing else makes a page findable, and nothing off the list is.
+
+**The motive test**:
+How the plan tells a surface kept _readable_ from one that is _pursued_, when the artifact looks
+identical either way - remove every search engine from the world, and ask whether this page, page
+set, string or property still exists and still reads the same way. If not, the difference is
+pursuit. Asked of a set, it is sharper: if removing the search consideration changes which pages
+are in the set, the set is written to rank (#2399, `marketing-plan.md` § 4, square 3). Search
+benefit may be noticed; it may never be counted.
+_Avoid_: calling something "SEO-safe" or inventing a third category beside readable and pursuit.
+
+**Explainer page**:
+A public page carrying content the app already holds, because that content exists to explain a
+concept to someone who does not know it yet. Its opposite is content a person _operates_ - a form,
+a record, a log, a session - which stays behind the gate. The test is what the content is for, not
+which screen it sits on, so a module with no `learn` screen can still have one (#2403,
+`public-pages.md` § 3).
+_Avoid_: landing page, marketing page, content page.
 _Avoid_: keep-list, allow-list, prune list (mechanism words, not the term); whitelist
