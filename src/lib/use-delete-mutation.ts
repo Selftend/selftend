@@ -12,7 +12,7 @@ export function useDeleteMutation(
    * tables) is the one such root today. The five deletes that move a Home figure
    * - check-ins, gratitude, journal, sleep and a whole habit - pass it. Still
    * varargs: there were two until `recordDaysKeys.all` left with Looking back
-   * (#2431), and the next cross-tool root takes the same slot.
+   * (#2431), and the five DBT deletes pass none.
    */
   ...alsoInvalidate: readonly (readonly unknown[])[]
 ) {
