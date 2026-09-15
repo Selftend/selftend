@@ -126,6 +126,10 @@ describe("export_user_data() (integration)", () => {
     expect(Array.isArray(data.devicePushTokens)).toBe(true);
     // Reminder preferences for every notification target (20260582 - GDPR completeness:
     // the base 'preferences' block only carried CBT reminders before this).
+    // ☠️ A hand list, not a gate: it had drifted to ten while the registry held
+    // eleven (`dbt` was missing and nothing failed - #2415). Twelve since #2489,
+    // `general` included; a target missing here is a target this test never
+    // checks, so add the key when you add the columns.
     for (const target of [
       "cbt",
       "meditation",
@@ -137,6 +141,8 @@ describe("export_user_data() (integration)", () => {
       "breathing",
       "sleep",
       "habits",
+      "dbt",
+      "general",
     ]) {
       expect(data.preferences).toHaveProperty(`${target}_reminders_enabled`);
       expect(data.preferences).toHaveProperty(`${target}_reminder_hour`);
