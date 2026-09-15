@@ -125,6 +125,42 @@ jobs:
       - name: Export web app
         run: npm run export:web
 
+      - name: Check every sameAs URL is its own canonical
+        # ☠️ #2410. `sameAs` is the site's own statement of which accounts are
+        # THE SAME ENTITY as this one. For four months it named
+        # github.com/vasilyoshev/mental-health, which 301s to the renamed repo -
+        # the one thing docs/indexability.md § 5 exists to prevent, since the
+        # block is supposed to be unable to disagree with the truth.
+        #
+        # ⚠️ NOTHING COULD HAVE CAUGHT IT, and that is the real defect. The value
+        # comes from a repository VARIABLE that shadows a correct default in
+        # src/lib/env.ts, so a local build is right and only the deployed bundle
+        # is wrong. Source tests cannot see it; only the artifact can.
+        #
+        # So this reads the EXPORTED html, not the source. It fails only on a
+        # definite 3xx - a redirect is the repo speaking, and it means the URL is
+        # not canonical. A network error is NOT a failure: an unreachable GitHub
+        # must never redden a deploy, and the check is worthless if people start
+        # ignoring it for flakiness.
+        run: |
+          set -uo pipefail
+          urls="$(grep -o '"sameAs":\[[^]]*\]' dist/index.html \
+                  | grep -o 'https://[^"]*' || true)"
+          if [ -z "$urls" ]; then
+            echo "::warning::No sameAs block found in dist/index.html - skipping the canonical check."
+            exit 0
+          fi
+          bad=0
+          for url in $urls; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' -I --max-time 15 "$url" || echo "000")"
+            case "$code" in
+              3??) echo "::error::sameAs names $url, which redirects ($code). Name the canonical URL instead."; bad=1 ;;
+              000) echo "::warning::Could not reach $url - not treating an unreachable host as a failure." ;;
+              *)   echo "ok  $code  $url" ;;
+            esac
+          done
+          exit "$bad"
+
       - name: Write version document
         # The update surface's source of truth (#388 spec section 2): the
         # deployed app version plus when it went out. publishedAt gates the
