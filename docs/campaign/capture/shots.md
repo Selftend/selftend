@@ -23,7 +23,7 @@ in frame before keeping the take (notably the CBT learn-page copy).
 | CHECKIN        | `/tools/check-in/new`                     | pick mood, short note, save                             | trailer b3, GS-3, MJ-1               |
 | JOURNAL        | `/tools/journal/new`                      | type a short entry, save                                | trailer b5, MJ-2                     |
 | GRATITUDE      | `/tools/gratitude-log/new`                | three items, save                                       | MJ-3                                 |
-| LOOKBACK       | `/progress` + entry lists                 | scroll history views (seeded weeks)                     | MJ-4                                 |
+| LOOKBACK       | `/tools/journal` (entry list)             | scroll history views (seeded weeks)                     | MJ-4                                 |
 | BREATHE        | `/tools/breathing/new` → `session`        | configure box, run 2 full cycles                        | trailer b4, BG-1                     |
 | GROUND         | `/tools/grounding/[slug]`                 | 5-senses exercise, 2–3 steps                            | BG-2                                 |
 | MEDITATE       | `/tools/meditation/stages` → session log  | open a stage, log a session                             | BG-3                                 |
@@ -56,6 +56,11 @@ Capture notes:
   lists the same eight tools and the three modules besides. The scroll is the same scroll,
   one screen further up. ⚠️ Nothing here calls for a **re-shoot**: the campaign is parked
   pending a UI redesign, and this edit exists so a parked script does not encode a dead URL.
+- **LOOKBACK:** the shot's subject was **cut, and half of it stays.** `/progress` left the
+  product on [#2431](https://github.com/Selftend/selftend/issues/2431) and redirects to Home;
+  the journal history the shot already visited second now carries MJ-4 alone. The shot id
+  stays - it is a manifest key. Same rule as TOOLS: no re-shoot, the script just stops
+  encoding a dead URL.
 - **Segment slack:** record each shot with ≥2s of still hold at both ends — the edit needs
   trim room, and the walkthrough VO lines run 2–7s each.
 - **NOTIF-OPTIN:** the browser permission dialog is chrome, not page — grant notification
