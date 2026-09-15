@@ -426,3 +426,14 @@ a listed page, read on the monthly Ahrefs audit; always a GitHub build issue, ne
 reading (#2424). Its opposite is an expected row.
 _Avoid_: SEO regression, ranking drop (a reading, never a ranking); health-score drop (the score can
 fall on an expected row's count and rise on a hidden defect)
+
+**Standings reading**:
+The once-a-year act of reading where the site stands in search - Search Console's impressions,
+clicks and named query rows, plus Ahrefs Free's referring-domain and organic-keywords snapshot -
+taken at the 2026-12-10 sitting beside the coverage read and nowhere else, and written to a dated
+file that is never edited (#2425). Distinct from the marketing plan's **standing-surface reading**,
+which says what those numbers _are_ - never an arrival, never a judgement on a channel's window
+(marketing-plan.md § 3). One is the act, the other is the status of what the act produces, and a
+standings reading may fire exactly one marketing finding: a named query row whose text is Bulgarian.
+_Avoid_: monitoring, tracking (both imply a cadence and an alert this has neither of); SEO report;
+rank check (position is deliberately not read)

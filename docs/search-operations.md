@@ -175,7 +175,7 @@ Each amendment names the ticket that forced it. Nothing else in those documents 
 - **[indexability.md](indexability.md) § 9** - the Search Console bullet gains the once-a-year sentence; the Ahrefs bullet and owner step 6 read the URL sources and the plan as they are now (auto-detected sitemap, no custom list; cancelled, Free from 2026-10-10); **§ 11** - the Performance-report line ([#2425](https://github.com/Selftend/selftend/issues/2425), [#2461](https://github.com/Selftend/selftend/issues/2461)).
 - **[costs.md](costs.md) § _Search instrument: Ahrefs_** - "no reading buys a tier; a fresh month follows a promoted pond, never precedes the call" ([#2425](https://github.com/Selftend/selftend/issues/2425)).
 - **[deployment.md](deployment.md) § _Cloudflare zone settings_** - the managed robots.txt row records that `www` and `http` answer 200 with only the managed block ([#2420](https://github.com/Selftend/selftend/issues/2420); owner ruling on [#2426](https://github.com/Selftend/selftend/issues/2426)).
-- **`CONTEXT.md`, _The public website_** - the terms **expected row** and **audit regression** ([#2424](https://github.com/Selftend/selftend/issues/2424)).
+- **`CONTEXT.md`, _The public website_** - the terms **expected row** and **audit regression** ([#2424](https://github.com/Selftend/selftend/issues/2424)), and **standings reading**, which exists to be distinguished from the plan's _standing-surface reading_: one is the act, the other is the status of what the act produces ([#2425](https://github.com/Selftend/selftend/issues/2425); owner ruling on [#2426](https://github.com/Selftend/selftend/issues/2426)).
 - **[README.md](README.md)** - this file's entry.
 
 ---
