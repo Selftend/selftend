@@ -7,24 +7,13 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/security";
 
-jest.mock("expo-router", () => {
-  const React = require("react");
-  return {
-    router: { push: jest.fn(), replace: jest.fn() },
-    usePathname: () => mockPathname,
-    // Mirror Link asChild: the privacy page's cross-links are anchors (#2476),
-    // so the wrapped pressable receives the href and keeps its own onPress.
-    Link: ({
-      href,
-      asChild: _asChild,
-      children,
-    }: {
-      href: string;
-      asChild?: boolean;
-      children: React.ReactElement;
-    }) => React.cloneElement(React.Children.only(children), { href }),
-  };
-});
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: () => mockPathname,
+  // The privacy page's cross-links are anchors (#2476): the mock forwards the
+  // href onto the wrapped pressable and leaves its own onPress in place.
+  Link: require("@/test/expo-router-link-mock").MockLink,
+}));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
 

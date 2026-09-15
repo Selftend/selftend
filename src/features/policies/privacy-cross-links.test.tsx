@@ -3,29 +3,17 @@ import { router } from "expo-router";
 
 import PrivacyScreen from "../../../app/privacy";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { linkHref } from "@/test/expo-router-link-mock";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => {
-  const React = require("react");
-  return {
-    router: { push: jest.fn(), replace: jest.fn() },
-    usePathname: () => "/privacy",
-    // Mirror Link asChild: forward the href onto the wrapped pressable so the
-    // test can assert real link targets. Navigation itself is the Link's and is
-    // not simulated - which is the point: a press must reach the router through
-    // NOTHING else.
-    Link: ({
-      href,
-      asChild: _asChild,
-      children,
-    }: {
-      href: string;
-      asChild?: boolean;
-      children: React.ReactElement;
-    }) => React.cloneElement(React.Children.only(children), { href }),
-  };
-});
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: () => "/privacy",
+  // Navigation itself is the Link's and is not simulated - which is the point:
+  // a press must reach the router through NOTHING else.
+  Link: require("@/test/expo-router-link-mock").MockLink,
+}));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
 
@@ -37,10 +25,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   useNavigationOriginStore.setState({ pending: null });
 });
-
-function linkHref(name: string) {
-  return screen.getByRole("link", { name }).props.href as string;
-}
 
 /**
  * `/security` and `/account-deletion` were the site's two orphans (#2476): the

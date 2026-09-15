@@ -2,25 +2,13 @@ import { fireEvent, screen } from "@testing-library/react-native";
 
 import { LandingFooter } from "./landing-footer";
 import { appEnv } from "@/src/lib/env";
+import { linkHref } from "@/test/expo-router-link-mock";
 import { openExternalUrl } from "@/src/lib/linking";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => {
-  const React = require("react");
-  return {
-    // Mirror Link asChild: forward the href onto the wrapped pressable so
-    // tests can assert real link targets instead of spying on router.push.
-    Link: ({
-      href,
-      asChild: _asChild,
-      children,
-    }: {
-      href: string;
-      asChild?: boolean;
-      children: React.ReactElement;
-    }) => React.cloneElement(React.Children.only(children), { href }),
-  };
-});
+jest.mock("expo-router", () => ({
+  Link: require("@/test/expo-router-link-mock").MockLink,
+}));
 
 jest.mock("@/src/lib/linking", () => ({
   openExternalUrl: jest.fn(),
@@ -39,10 +27,6 @@ jest.mock("@/src/lib/env", () => ({
 }));
 
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
-
-function linkHref(name: string) {
-  return screen.getByRole("link", { name }).props.href as string;
-}
 
 beforeEach(() => {
   appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";

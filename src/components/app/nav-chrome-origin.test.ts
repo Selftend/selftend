@@ -106,7 +106,10 @@ describe("global nav chrome opts out of recording an Origin", () => {
     const source = read(file);
 
     expect(source).not.toContain("usePushWithOrigin");
-    expect(source).not.toContain("recordOrigin");
+    // Case-insensitive on purpose: `useRecordOrigin` (#2476, the record alone
+    // for an anchor) contains `RecordOrigin`, which a `toContain("recordOrigin")`
+    // would never see - and the store's `recordOrigin` is the third spelling.
+    expect(source).not.toMatch(/recordorigin/i);
   });
 
   /**

@@ -17,9 +17,9 @@ import { useRecordOrigin } from "@/src/lib/escape-origin";
  *
  * The Origin the old button recorded (#1267, clause O3) is kept on the anchor:
  * the Escape on the destination returns here rather than jumping Up to Home.
- * Radix's Slot composes the Button's `onPress` BEFORE the Link's own, so the
- * record lands before the navigation does; `policy-origin.test.tsx` pins the
- * store and `privacy-cross-links.test.tsx` pins the hrefs.
+ * `useRecordOrigin` says why the record is safe beside a Link's own handler;
+ * `policy-origin.test.tsx` pins the store and `privacy-cross-links.test.tsx`
+ * pins the hrefs.
  *
  * No new copy: the security link keeps its string, and the deletion link reuses
  * the label the gated legal screen already gives the same destination - which
