@@ -411,3 +411,18 @@ an _instrument_ - a form, a record, a log, a session - which a person operates, 
 the gate: a public copy of one has no reason to exist except to be found (#2403). The test is what the
 content is for, never which screen it sits on.
 _Avoid_: learn page, article, content page (a route, not the reason); guide (implies someone guiding)
+
+**Expected row**:
+An audit finding the search-operations policy names as by design or as the instrument's own
+artefact - the `www` seed's 3XX, the one-inlink notice - which recurs every month with a stated count
+and is never a regression (#2424). A row is expected by its name and its count together: the same name at a
+different count is a fact to read, not a row to ignore.
+_Avoid_: known issue, ignored issue (the row is true; it is just not a defect); false positive (the
+instrument is right about what it sees)
+
+**Audit regression**:
+A new Error on an index-list URL, a new issue type, or a changed status, canonical or description on
+a listed page, read on the monthly Ahrefs audit; always a GitHub build issue, never a marketing
+reading (#2424). Its opposite is an expected row.
+_Avoid_: SEO regression, ranking drop (a reading, never a ranking); health-score drop (the score can
+fall on an expected row's count and rise on a hidden defect)
