@@ -9,6 +9,8 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/crisis";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
 }));
@@ -53,6 +55,26 @@ describe("PolicyPageLayout", () => {
     // The trail is still hidden at one crumb, so the title is not repeated above
     // itself - only the Escape was decoupled from the trail.
     expect(screen.getAllByText("Crisis support")).toHaveLength(1);
+  });
+
+  /**
+   * Every page through this layout closes with the site footer (#2467,
+   * docs/brand-result.md § 7): one footer, on the landing and on all seven
+   * policy routes, so a person who landed cold here can reach every other
+   * public page. What the footer lists is pinned to the index list in
+   * `site-footer.test.tsx`; this only proves the layout mounts it, through the
+   * one link every page must carry - the crisis row, a real anchor.
+   */
+  it("closes with the site footer, so the crisis row is on every policy page", () => {
+    renderWithProviders(
+      <PolicyPageLayout
+        description="If you need help now."
+        subtitle="If you need help now."
+        title="Crisis support"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Open crisis guidance" }).props.href).toBe("/crisis");
   });
 
   /**

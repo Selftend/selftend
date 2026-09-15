@@ -91,8 +91,8 @@ describe("scripts/lib/index-list", () => {
       const locs = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
       expect(locs).toEqual([
         `${SITE_ORIGIN}/`,
-        `${SITE_ORIGIN}/faq`,
         `${SITE_ORIGIN}/crisis`,
+        `${SITE_ORIGIN}/faq`,
         `${SITE_ORIGIN}/privacy`,
         `${SITE_ORIGIN}/terms`,
         `${SITE_ORIGIN}/cookies`,

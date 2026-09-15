@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { RouteHead } from "@/src/components/app/route-head";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { SiteFooter } from "@/src/components/app/site-footer";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,14 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  * assertion that proves it lives in this file's test rather than
  * `info-screen.test.tsx`, where it was really a `ScreenHeader` test wearing an
  * `InfoScreen` costume.
+ *
+ * **The site footer closes every page that goes through here** (#2467,
+ * docs/brand-result.md § 7): the same `SiteFooter` the landing renders, so a
+ * person who lands cold on any policy page can reach every other public page
+ * in one click, and crisis guidance is on every public page in the same place
+ * every time. Rendered by the layout rather than by each screen so that a
+ * public route cannot forget it - the footer's own test pins its links to the
+ * index list, and this is what puts the footer on every route the list names.
  */
 export function PolicyPageLayout({
   children,
@@ -78,6 +87,7 @@ export function PolicyPageLayout({
 
           {children}
         </View>
+        <SiteFooter className="mt-12" />
       </ScrollView>
     </SafeAreaView>
   );

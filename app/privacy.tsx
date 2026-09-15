@@ -1,15 +1,20 @@
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LinkButton } from "@/src/components/app/link-button";
 import { InfoScreen } from "@/src/features/policies/info-screen";
 import { LEGAL_REVIEW_PENDING } from "@/src/features/policies/policy-content";
-import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useRecordOrigin } from "@/src/lib/escape-origin";
 
 export default function PrivacyScreen() {
-  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("policies");
+  // A real anchor since #2467 (docs/brand-result.md § 7.4): this used to be a
+  // `Button` with a press handler and no `href`, which is why `/security` was
+  // an orphan to a crawler while looking linked to a mouse. The Origin is still
+  // recorded on press - `Link asChild` calls this before it navigates - so the
+  // Escape on `/security` keeps returning here.
+  const recordOriginFor = useRecordOrigin();
 
   return (
     <InfoScreen
@@ -19,15 +24,16 @@ export default function PrivacyScreen() {
       subtitle={t("privacy.pageDescription")}
       title={t("privacy.pageTitle")}
     >
-      <Button
+      <LinkButton
+        href="/security"
         variant="outline"
         className="justify-start"
-        onPress={() => pushWithOrigin("/security")}
+        onPress={() => recordOriginFor("/security")}
       >
         <Icon name="shield" size={18} />
         <Text className="flex-1">{t("privacy.openSecurity")}</Text>
         <Icon name="chevron-right" size={18} className="text-muted-foreground" />
-      </Button>
+      </LinkButton>
     </InfoScreen>
   );
 }

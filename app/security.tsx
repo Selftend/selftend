@@ -4,11 +4,12 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { LinkButton } from "@/src/components/app/link-button";
 import { PolicyPageLayout } from "@/src/features/policies/policy-page-layout";
 import type { PolicySection } from "@/src/features/policies/policy-section-cards";
 import { PolicySectionCards } from "@/src/features/policies/policy-section-cards";
 import { contactEmails } from "@/src/lib/env";
-import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useRecordOrigin } from "@/src/lib/escape-origin";
 
 /**
  * The seventh policy page, and the one that used to hand-roll the layout the
@@ -27,12 +28,17 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
  * now, so the level cannot drift again; `policy-heading-outline.test.tsx` is the
  * guard, and it renders this screen beside `/privacy` to prove they agree.
  *
- * The two trailing Buttons are this page's own and both stay: nothing else links
- * a reader from the security summary to the full policy, and the security
- * contact is the address a reporter is meant to use.
+ * The two trailing controls are this page's own and both stay: nothing else in
+ * the body links a reader from the security summary to the full policy, and the
+ * security contact is the address a reporter is meant to use. The first is a
+ * real anchor since #2467 (docs/brand-result.md § 7.4) - it was a `Button` with
+ * a press handler and no `href`, so `/privacy` ↔ `/security` looked linked to a
+ * mouse and was no edge at all to a crawler. It still records the Origin on
+ * press, so the Escape on `/privacy` keeps returning here. The second opens
+ * `mailto:`, not a route, and stays a `Button`.
  */
 export default function SecurityScreen() {
-  const pushWithOrigin = usePushWithOrigin();
+  const recordOriginFor = useRecordOrigin();
   const { t } = useTranslation("security");
   const sections = t("page.sections", { returnObjects: true }) as PolicySection[];
 
@@ -55,15 +61,16 @@ export default function SecurityScreen() {
       {Array.isArray(sections) ? <PolicySectionCards sections={sections} /> : null}
 
       {/* Link to full Privacy Policy */}
-      <Button
+      <LinkButton
+        href="/privacy"
         variant="outline"
         className="justify-start"
-        onPress={() => pushWithOrigin("/privacy")}
+        onPress={() => recordOriginFor("/privacy")}
       >
         <Icon name="privacy-tip" size={18} />
         <Text className="flex-1">{t("page.privacyPolicyLink")}</Text>
         <Icon name="chevron-right" size={18} className="text-muted-foreground" />
-      </Button>
+      </LinkButton>
 
       {/* Security contact */}
       <Button

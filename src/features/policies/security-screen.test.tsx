@@ -9,6 +9,8 @@ import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => "/security",
 }));
@@ -53,9 +55,12 @@ describe("SecurityScreen folds into the shared policy layout (#2146)", () => {
     renderWithProviders(<SecurityScreen />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // The title once, not twice: the one-crumb trail still hides itself, so the
-    // page name is not repeated above its own heading.
-    expect(screen.getAllByText(enSecurity.page.pageTitle)).toHaveLength(1);
+    // The title once as a HEADING, not twice: the one-crumb trail still hides
+    // itself, so the page name is not repeated above its own heading. Asserted
+    // by role rather than by text since #2467, because the site footer on this
+    // page lists `/security` under the same string (the anchor-text rule labels
+    // a link with its page's H1) - a link, not a heading.
+    expect(screen.getAllByRole("heading", { name: enSecurity.page.pageTitle })).toHaveLength(1);
     expect(screen.getByText(enSecurity.page.pageDescription)).toBeTruthy();
   });
 

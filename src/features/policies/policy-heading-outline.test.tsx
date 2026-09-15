@@ -8,6 +8,8 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/security";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
 }));

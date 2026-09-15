@@ -63,6 +63,25 @@ export function targetPathname(href: Href): string {
 }
 
 /**
+ * Records an Origin for a navigation something else performs - an anchor.
+ *
+ * `usePushWithOrigin` below is for call sites that navigate imperatively. A
+ * cross-link that is a real `<a href>` (`LinkButton`, #2476) navigates through
+ * expo-router's `Link`, and a bare `href` carries no Origin - so the anchor's
+ * `onPress` records one here and lets the Link do the moving. Radix's Slot runs
+ * the child's handler before the Link's own, so the record precedes the push.
+ * Same `forPathname` derivation as the push helper, so the destination's
+ * consuming read matches it the same way.
+ */
+export function useRecordOrigin() {
+  const pathname = usePathname();
+
+  return (href: Href) => {
+    recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
+  };
+}
+
+/**
  * The one navigation helper that records an Origin (#1261, O3).
  *
  * Recording is **opt-out, not opt-in**: every push through this helper records
@@ -90,10 +109,10 @@ export function targetPathname(href: Href): string {
  * compete with the sidebar itself as the way back.
  */
 export function usePushWithOrigin() {
-  const pathname = usePathname();
+  const recordOriginFor = useRecordOrigin();
 
   return (href: Href, options?: PushOptions) => {
-    recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
+    recordOriginFor(href);
     // Forwarded only when given, never as an explicit `undefined`. Jest's
     // `toHaveBeenCalledWith(href)` does not match a call of `(href, undefined)`,
     // so passing it unconditionally would break the existing navigation

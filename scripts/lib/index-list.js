@@ -36,13 +36,18 @@ const SITE_ORIGIN = "https://selftend.org";
 
 /**
  * The index list: every public route, as its runtime pathname. Order is the
- * sitemap's order. Adding a public route means adding it here; nothing else
- * makes a page findable, and nothing off the list is (§ 3).
+ * sitemap's order, and since #2467 it is also the site footer's order: the
+ * footer renders the crisis row first and then the nav list (explainers, then
+ * policies), and `src/components/app/site-footer.test.tsx` asserts the footer's
+ * hrefs equal this list minus `/` as ORDERED arrays (docs/brand-result.md
+ * § 7.6). Adding a public route means adding it here; nothing else makes a
+ * page findable, and nothing off the list is (§ 3) - and the footer's pin then
+ * fails until the footer knows the route, which is the point.
  */
 const INDEX_LIST = Object.freeze([
   "/",
-  "/faq",
   "/crisis",
+  "/faq",
   "/privacy",
   "/terms",
   "/cookies",
