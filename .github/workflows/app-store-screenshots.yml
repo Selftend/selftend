@@ -306,8 +306,7 @@ jobs:
             03-mood
             04-journal
             05-breathing
-            06-insights
-            07-tools
+            06-tools
           )
 
           bad=0
