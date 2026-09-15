@@ -48,6 +48,7 @@ const INDEX_LIST = Object.freeze([
   "/cookies",
   "/security",
   "/account-deletion",
+  "/cbt",
 ]);
 
 /** What `expo export` names the `+not-found` route's file. */

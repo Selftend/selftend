@@ -26,6 +26,7 @@ const EXPORT_FIXTURE = {
   "cookies.html": "<html>cookies</html>",
   "security.html": "<html>security</html>",
   "account-deletion.html": "<html>account-deletion</html>",
+  "cbt.html": "<html>cbt</html>",
   "+not-found.html": "<html>not found</html>",
   "_sitemap.html": "<html>expo's dev sitemap route</html>",
   "sign-in.html": "<html>sign-in</html>",
@@ -98,6 +99,7 @@ describe("scripts/lib/index-list", () => {
         `${SITE_ORIGIN}/cookies`,
         `${SITE_ORIGIN}/security`,
         `${SITE_ORIGIN}/account-deletion`,
+        `${SITE_ORIGIN}/cbt`,
       ]);
     });
 

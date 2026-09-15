@@ -67,6 +67,7 @@ describe("the index list ↔ the route tree", () => {
       "/cookies",
       "/security",
       "/account-deletion",
+      "/cbt",
     ]);
   });
 
