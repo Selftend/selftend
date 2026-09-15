@@ -58,7 +58,13 @@ const MARK_COLUMN = "w-8 shrink-0";
  *    and the star. A star nested inside the navigating pressable is `role="button"` inside
  *    `role="button"` on react-native-web, with the outer press firing on every star tap.
  *    (`arrange-row.tsx`'s shape; that file went with the dashboard in #1959, so the shape
- *    was copied, not imported.) The press wash covers the navigating region only.
+ *    was copied, not imported.) The PRESS wash covers the navigating region only — it is
+ *    what the press does. The web HOVER wash belongs to the CARD (#2407): a wash on the
+ *    inner region alone is inset by the card's padding, has a smaller radius than the
+ *    card, and stops short of the star, so it read as a box drawn inside the box. On the
+ *    outer box it fills the card to its border; the star's own, darker circle layers on
+ *    top and still marks it as a separate target. NativeWind's `hover:` is plain CSS
+ *    `:hover`, so it takes on the inert `View`.
  * 2. The navigating region carries NO `accessibilityLabel` and NO `accessibilityHint`.
  *    The hint is a prop react-native-web never implements, and an explicit label hides
  *    the rendered children from assistive tech on the web — which would make the stat
@@ -93,17 +99,19 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
   const name = t(item.nameKey);
 
   return (
-    <View className="min-w-[260px] flex-1 basis-[260px] flex-row items-start gap-1 rounded-2xl border border-border bg-card p-4">
+    <View
+      className={cn(
+        "min-w-[260px] flex-1 basis-[260px] flex-row items-start gap-1 rounded-2xl border border-border bg-card p-4",
+        Platform.select({ web: "hover:bg-accent/40" }),
+      )}
+    >
       <Pressable
         accessibilityRole="button"
         role="button"
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         testID={`card-${item.kind}-${item.key}`}
         onPress={() => pushWithOrigin(item.href)}
-        className={cn(
-          "min-w-0 flex-1 flex-row items-start gap-3 rounded-xl active:bg-accent/40",
-          Platform.select({ web: "hover:bg-accent/40" }),
-        )}
+        className="min-w-0 flex-1 flex-row items-start gap-3 rounded-xl active:bg-accent/40"
       >
         {item.kind === "tool" ? (
           <View
