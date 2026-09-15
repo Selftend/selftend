@@ -402,3 +402,12 @@ three are one fact, never three: a route is on the index list or it is not, and 
 state such as "published but hidden" (#2287, #2288). Adding a public page means adding it to the
 index list; nothing else makes a page findable, and nothing off the list is.
 _Avoid_: keep-list, allow-list, prune list (mechanism words, not the term); whitelist
+
+**Explainer**:
+Content the app already holds that exists to explain a concept to someone who does not know it yet -
+what the thinking patterns are, what DBT is, the meditation framework. An explainer may also be a
+public page on the website, because it would exist with every search engine removed. Its opposite is
+an _instrument_ - a form, a record, a log, a session - which a person operates, and which stays behind
+the gate: a public copy of one has no reason to exist except to be found (#2403). The test is what the
+content is for, never which screen it sits on.
+_Avoid_: learn page, article, content page (a route, not the reason); guide (implies someone guiding)
