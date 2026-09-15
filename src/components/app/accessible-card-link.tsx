@@ -17,11 +17,8 @@ interface AccessibleCardLinkProps {
 }
 
 /**
- * A card that is also a link. Six consumers are CBT **index** screens:
- * `activities`, `anger`, `beliefs`, `exposure`, `goals`, `tasks`. The seventh
- * is the recovery-plan door on Looking back (#1905) - not an index, but the
- * same shape: a card-sized target whose title fully names where it goes, on a
- * screen that is otherwise all reading.
+ * A card that is also a link. Its six consumers are CBT **index** screens:
+ * `activities`, `anger`, `beliefs`, `exposure`, `goals`, `tasks`.
  *
  * ⚠️ **The divergence is deliberate and recorded here (#1386).** Three former
  * consumers left for `HairlineRow` - the overview's recent records, the

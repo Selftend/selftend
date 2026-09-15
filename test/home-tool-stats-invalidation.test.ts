@@ -7,8 +7,9 @@ import { sourceFiles, stripComments, stripCommentsAndStrings } from "@/test/sour
  * **Every mutation that writes a `home_tool_stats` source table has to invalidate
  * it** (#2212).
  *
- * ☠️ **This is the second query in the app no feature's own invalidation can reach**
- * — `record_days` (#1906) was the first, and this file is its sibling. ADR-0001 keeps
+ * ☠️ **This is the one query in the app no feature's own invalidation can reach**
+ * — `record_days` (#1906) was the first, and this file was written as its sibling;
+ * that query left with Looking back (#2431) and this guard outlives it. ADR-0001 keeps
  * a stats query under the same key root as the list it summarises, so a feature's
  * save and delete invalidation covers both. That cannot apply here: `home_tool_stats`
  * spans seven tables across eight tools, so it has no owning feature and sits under
@@ -17,7 +18,7 @@ import { sourceFiles, stripComments, stripCommentsAndStrings } from "@/test/sour
  * screen the person sees — and Home is mounted behind every tool, so a
  * refetch-on-mount would not cover it either.
  *
- * ☠️☠️ **PER EXPORTED HOOK, not per module** — the lesson `record-days-invalidation`
+ * ☠️☠️ **PER EXPORTED HOOK, not per module** — the lesson the record-days guard
  * paid for: a file-level scan lets a second writing hook in an already-covered module
  * through (`useUpsertHabitLogNote` was exactly that bug), and deleting one call site
  * of two stays green.
@@ -36,7 +37,7 @@ const ROOT = join(__dirname, "..");
 
 /**
  * The migration whose `home_tool_stats` declaration wins — the newest by version
- * order, resolved the way `record-days-invalidation.test.ts` resolves its own. ☠️
+ * order, so a redeclaration is the one that counts. ☠️
  * Pinning the original file would leave a redeclaration's new legs unguarded.
  */
 const DECLARATION = "create or replace function public.home_tool_stats";

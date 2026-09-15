@@ -12,7 +12,6 @@ import {
 } from "@/src/features/dbt/repository";
 import type { ScriptDoneInput, ScriptInput } from "@/src/features/dbt/types";
 import { noteToolSave } from "@/src/stores/tool-save-store";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { DBT_HISTORY_PAGE_SIZE, dbtKeys } from "./keys";
@@ -77,10 +76,7 @@ export function useSaveScript(userId: string | null) {
     onSuccess: async () => {
       noteToolSave();
       if (!userId) return;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: dbtKeys.scriptList(userId) }),
-        invalidateRecordDays(queryClient),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: dbtKeys.scriptList(userId) });
     },
   });
 }
@@ -97,12 +93,11 @@ export function useMarkScriptDone(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: dbtKeys.scriptList(userId) }),
         queryClient.invalidateQueries({ queryKey: dbtKeys.scriptDetail(userId, script.id) }),
-        invalidateRecordDays(queryClient),
       ]);
     },
   });
 }
 
 export function useDeleteScript(userId: string | null) {
-  return useDeleteMutation(userId, deleteScript, dbtKeys.scriptList(userId), recordDaysKeys.all);
+  return useDeleteMutation(userId, deleteScript, dbtKeys.scriptList(userId));
 }

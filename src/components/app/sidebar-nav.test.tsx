@@ -66,14 +66,13 @@ function textsInRow(accessibilityLabel: string): string[] {
  * back in, and a surviving row going missing.
  */
 describe("SidebarNav panel contents", () => {
-  it("renders exactly the seven destinations, in order", () => {
+  it("renders exactly the six destinations, in order", () => {
     renderWithProviders(<SidebarNav />);
 
     const labels = screen.getAllByRole("link").map((link) => String(link.props.accessibilityLabel));
 
     expect(labels).toEqual([
       "Home",
-      "Looking back",
       "Routines",
       "Reminders",
       "Settings",
@@ -86,7 +85,7 @@ describe("SidebarNav panel contents", () => {
    * ☠️ The two branches `isActive` has left, asserted together because they are each
    * other's counterexample. The hub rows took the exact-match `activeWhen` predicate with
    * them (#2106) and with it every case that moved `usePathname` - leaving `matchPrefix`
-   * and Home's `null` branch, which six rows and one row respectively depend on, with no
+   * and Home's `null` branch, which five rows and one row respectively depend on, with no
    * coverage at all. Home is the one that can only fail silently: its `null` means "current
    * on `/` alone", and a row that quietly claims to be the current page everywhere is a
    * wrong `aria-current`, not a visible break.
@@ -144,7 +143,7 @@ describe("SidebarNav link identity", () => {
   // satisfied forever by a render that produces no links at all. Named destinations rather
   // than a count, so adding a nav item doesn't fail a test about something else - and
   // containment rather than equality on purpose, because the ordered set at the top of this
-  // file is already the one place the seven rows are enumerated. A wrong href still fails
+  // file is already the one place the six rows are enumerated. A wrong href still fails
   // here: the expected one is then absent.
   it("actually renders the destinations that assertion is about", () => {
     renderWithProviders(<SidebarNav />);
@@ -157,7 +156,6 @@ describe("SidebarNav link identity", () => {
     expect(hrefs).toEqual(
       expect.arrayContaining([
         "/(app)",
-        "/(app)/progress",
         "/(app)/routines",
         "/(app)/notifications",
         "/(app)/settings",
@@ -264,29 +262,5 @@ describe("SidebarNav donate row", () => {
         expect(anchor.props.onKeyDown).toBeUndefined();
       }
     });
-  });
-});
-
-/**
- * ☠️ `history` — a clock turning back — and NOT `insights` (#1903).
- * `insights` is an UPWARD-TRENDING CHART glyph: it draws the improvement
- * implication #1837 rejected in words, on a screen that computes nothing and
- * makes no claim about direction. `timeline` fails the same way.
- *
- * Pinned because reverting the glyph passed the ENTIRE suite — an acceptance
- * criterion of #1903 that shipped with no coverage at all. Found by mutation.
- */
-describe("SidebarNav Looking back glyph", () => {
-  it("uses a clock turning back, never an upward-trending chart", () => {
-    renderWithProviders(<SidebarNav />);
-
-    const row = screen.getByLabelText("Looking back");
-    const glyphs = row
-      .findAll((node) => typeof node.props?.name === "string")
-      .map((node) => String(node.props.name));
-
-    expect(glyphs).toContain("history");
-    expect(glyphs).not.toContain("insights");
-    expect(glyphs).not.toContain("timeline");
   });
 });

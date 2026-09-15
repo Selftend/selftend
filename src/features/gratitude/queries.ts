@@ -13,7 +13,6 @@ import {
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { noteToolSave } from "@/src/stores/tool-save-store";
@@ -119,7 +118,6 @@ export function useSaveGratitudeEntry(userId: string | null) {
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: gratitudeKeys.all }),
-        invalidateRecordDays(queryClient),
         invalidateHomeToolStats(queryClient),
       ]);
     },
@@ -127,13 +125,7 @@ export function useSaveGratitudeEntry(userId: string | null) {
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteGratitudeEntry,
-    gratitudeKeys.all,
-    recordDaysKeys.all,
-    homeToolStatsKeys.all,
-  );
+  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all, homeToolStatsKeys.all);
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {
@@ -156,16 +148,13 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.historyPages(userId) });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.favoriteCount(userId) });
-      // Starring cannot move `logged_at`, so no mark moves either. Invalidated
-      // anyway, under the rule the guard enforces: any mutation writing a
-      // source table invalidates it, rather than each one re-deciding whether
-      // its particular edit can reach a civil day. ⚠️ Cheap even here, where
-      // the comment above is careful about refetch cost: the record-days root
-      // has no observer outside "Looking back", so this only marks it stale.
-      void invalidateRecordDays(queryClient);
-      // Same coarse rule, same cheapness argument: starring moves no figure on a
-      // Home card, but deciding that per mutation is the judgement that rots, and
-      // the aggregate is one small query with at most eight observers (#2212).
+      // Starring moves no figure on a Home card. Invalidated anyway, under the
+      // coarse rule the guard enforces (#2212): any mutation writing a source
+      // table invalidates it, rather than each one re-deciding whether its
+      // particular edit can reach a figure - deciding that per mutation is the
+      // judgement that rots. ⚠️ Cheap even here, where the comment above is
+      // careful about refetch cost: the aggregate is one small query with at
+      // most eight observers.
       void invalidateHomeToolStats(queryClient);
     },
   });

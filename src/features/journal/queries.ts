@@ -13,7 +13,6 @@ import {
 } from "@/src/features/journal/repository";
 import type { JournalInput, JournalWritingRange } from "@/src/features/journal/types";
 import { deviceTimeZone } from "@/src/utils/date";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { noteToolSave } from "@/src/stores/tool-save-store";
@@ -115,7 +114,6 @@ export function useSaveJournalEntry(userId: string | null) {
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: journalKeys.all }),
-        invalidateRecordDays(queryClient),
         invalidateHomeToolStats(queryClient),
       ]);
     },
@@ -123,11 +121,5 @@ export function useSaveJournalEntry(userId: string | null) {
 }
 
 export function useDeleteJournalEntry(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteJournalEntry,
-    journalKeys.all,
-    recordDaysKeys.all,
-    homeToolStatsKeys.all,
-  );
+  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all, homeToolStatsKeys.all);
 }

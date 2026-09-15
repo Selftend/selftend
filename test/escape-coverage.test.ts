@@ -256,7 +256,7 @@ describe("the route population (pinned, G5)", () => {
     expect(ROUTES).toHaveLength(156);
   });
 
-  it("derives exactly the ten <Redirect>-only stubs", () => {
+  it("derives exactly the eleven <Redirect>-only stubs", () => {
     expect(redirectStubs).toEqual([
       // #1379 folded the alignment check-in onto the values screen, so this
       // route became a stub. The file is MANDATORY rather than deletable: the
@@ -272,6 +272,12 @@ describe("the route population (pinned, G5)", () => {
       // `ROUTES` is still 156 - and neither URL moved. Each file's own docblock
       // says why it survives its screen.
       "app/(app)/modules/index.tsx",
+      // 10 → 11 with #2431: Looking back left the product and `/progress` became
+      // a redirect to Home. The file re-exported the screen and sat in `covered`
+      // below; it now renders `<Redirect href="/" />` and nothing else. No route
+      // file was added or removed - `ROUTES` is still 156 - and the URL did not
+      // move. Its docblock says why it survives its screen.
+      "app/(app)/progress.tsx",
       "app/(app)/tools/act.tsx",
       "app/(app)/tools/index.tsx",
       "app/(app)/tools/meditation/stages/[n].tsx",
@@ -297,7 +303,9 @@ describe("the route population (pinned, G5)", () => {
     // above, because both stopped re-exporting a hub screen and now render only
     // `<Redirect href="/" />`. Nothing left the route population - this is the
     // gate watching its subject change shape, not a screen losing its Escape.
-    expect(covered).toHaveLength(144);
+    // Then 144 → 143 with #2431: `app/(app)/progress.tsx` made the same move, for
+    // the same reason - Looking back left and the file is now a redirect to Home.
+    expect(covered).toHaveLength(143);
   });
 });
 

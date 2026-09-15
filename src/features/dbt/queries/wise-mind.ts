@@ -10,7 +10,6 @@ import {
 } from "@/src/features/dbt/repository";
 import type { WiseMindCheckinInput } from "@/src/features/dbt/types";
 import { noteToolSave } from "@/src/stores/tool-save-store";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { DBT_HISTORY_PAGE_SIZE, dbtKeys } from "./keys";
@@ -60,19 +59,11 @@ export function useSaveWiseMindCheckin(userId: string | null) {
     onSuccess: async () => {
       noteToolSave();
       if (!userId) return;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: dbtKeys.wiseMindList(userId) }),
-        invalidateRecordDays(queryClient),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: dbtKeys.wiseMindList(userId) });
     },
   });
 }
 
 export function useDeleteWiseMindCheckin(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteWiseMindCheckin,
-    dbtKeys.wiseMindList(userId),
-    recordDaysKeys.all,
-  );
+  return useDeleteMutation(userId, deleteWiseMindCheckin, dbtKeys.wiseMindList(userId));
 }

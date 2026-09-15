@@ -10,7 +10,6 @@ import {
 } from "@/src/features/dbt/repository";
 import type { EmotionRecordInput } from "@/src/features/dbt/types";
 import { noteToolSave } from "@/src/stores/tool-save-store";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { DBT_HISTORY_PAGE_SIZE, dbtKeys } from "./keys";
@@ -60,19 +59,11 @@ export function useSaveEmotionRecord(userId: string | null) {
     onSuccess: async () => {
       noteToolSave();
       if (!userId) return;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: dbtKeys.emotionRecordList(userId) }),
-        invalidateRecordDays(queryClient),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: dbtKeys.emotionRecordList(userId) });
     },
   });
 }
 
 export function useDeleteEmotionRecord(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteEmotionRecord,
-    dbtKeys.emotionRecordList(userId),
-    recordDaysKeys.all,
-  );
+  return useDeleteMutation(userId, deleteEmotionRecord, dbtKeys.emotionRecordList(userId));
 }

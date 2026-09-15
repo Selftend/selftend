@@ -30,7 +30,7 @@ import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 // The exact-match predicate existed for the two hub rows and the CBT row; the
 // accessibility override existed for the three module rows. The catalogue left the
 // panel, so both reached zero users, and an optional field nothing sets is a corpse
-// waiting for a caller. `matchPrefix` stays - six of the seven rows use it, and Home
+// waiting for a caller. `matchPrefix` stays - five of the six rows use it, and Home
 // is still the `null` branch.
 interface NavItemDef {
   labelKey: string;
@@ -46,19 +46,8 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
-// `history` (a clock turning back) and not `insights`: that glyph is an
-// upward-trending chart, which draws the improvement claim the screen refuses
-// to make in words (#1837). `timeline` fails the same way - it reads as a
-// direction of travel. This icon names the past and carries no direction.
-const PROGRESS_ITEM: NavItemDef = {
-  labelKey: "sidebar.progress",
-  href: "/(app)/progress",
-  icon: "history",
-  matchPrefix: "/progress",
-};
-
-// Routines lives with the Home & Looking back pair (spec #37, "Navigation
-// placement") - not a fourth module pillar and not another tools entry.
+// Routines lives beside Home (spec #37, "Navigation placement") - not a fourth
+// module pillar and not another tools entry.
 const ROUTINES_ITEM: NavItemDef = {
   labelKey: "sidebar.routines",
   href: "/(app)/routines",
@@ -241,7 +230,6 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
       <ScrollView contentContainerClassName="grow px-3 py-4">
         <View className="gap-1">
           {renderNavItem(TODAY_ITEM)}
-          {renderNavItem(PROGRESS_ITEM)}
           {renderNavItem(ROUTINES_ITEM)}
         </View>
 

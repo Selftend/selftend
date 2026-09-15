@@ -10,7 +10,7 @@ import { dbtKeys } from "./keys";
  * iOS and Android for a day after the module was last opened (#1986) - web is
  * memory-only by design, and the card says nothing about either.
  *
- * The plan has no day and is no record, so nothing here touches `record_days`.
+ * The plan has no day and is no record: it invalidates nothing beyond itself.
  */
 export function useCopingPlan(userId: string | null) {
   return useQuery({
