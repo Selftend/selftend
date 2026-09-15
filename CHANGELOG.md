@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.20.0](https://github.com/Selftend/selftend/compare/v0.19.0...v0.20.0) (2026-09-15)
+
+
+### Features
+
+* **analytics:** first occurrences ([#2379](https://github.com/Selftend/selftend/issues/2379)) ([#2392](https://github.com/Selftend/selftend/issues/2392)) ([787cfa4](https://github.com/Selftend/selftend/commit/787cfa45260f7f5911e1797be82c5023077bbec7))
+* **analytics:** gate the content-table list against the live schema ([#2374](https://github.com/Selftend/selftend/issues/2374)) ([#2383](https://github.com/Selftend/selftend/issues/2383)) ([f277192](https://github.com/Selftend/selftend/commit/f277192841d2e48efccc81b979487612c1538c29))
+* **analytics:** guest-to-registered conversion, favourites, and the word completion ([#2376](https://github.com/Selftend/selftend/issues/2376)) ([#2387](https://github.com/Selftend/selftend/issues/2387)) ([0a144be](https://github.com/Selftend/selftend/commit/0a144bea6019a8ad5c369fd0bcc6b3cd2c583696))
+* **analytics:** k=5 governs all three reports, and each one says who is in its population ([#2373](https://github.com/Selftend/selftend/issues/2373)) ([#2382](https://github.com/Selftend/selftend/issues/2382)) ([86f5a18](https://github.com/Selftend/selftend/commit/86f5a18a593c40982fa0ea89337250928758ba1a))
+* **analytics:** open-shape sections say when they have no rows ([#2378](https://github.com/Selftend/selftend/issues/2378)) ([#2391](https://github.com/Selftend/selftend/issues/2391)) ([2b69c64](https://github.com/Selftend/selftend/commit/2b69c649352246a5cb8045ce06062e8af6fc0f20))
+* **analytics:** re-base the segment report onto locale and module usage ([#2377](https://github.com/Selftend/selftend/issues/2377)) ([#2390](https://github.com/Selftend/selftend/issues/2390)) ([d242f77](https://github.com/Selftend/selftend/commit/d242f77dc66adec66dae89f233c2bc961eca3318))
+* **analytics:** read auth through digest-owned views, so the digest role can exist ([#2393](https://github.com/Selftend/selftend/issues/2393)) ([#2394](https://github.com/Selftend/selftend/issues/2394)) ([9ae0cd6](https://github.com/Selftend/selftend/commit/9ae0cd6bae4af10cde166d1f6d4272be6664a46b))
+* **analytics:** report the programme funnel and reminder adoption ([#2375](https://github.com/Selftend/selftend/issues/2375)) ([#2385](https://github.com/Selftend/selftend/issues/2385)) ([bb0a2a1](https://github.com/Selftend/selftend/commit/bb0a2a10ea25b2a86bd006d88e57cb198eb45eae))
+* **analytics:** the scheduled monthly digest ([#2381](https://github.com/Selftend/selftend/issues/2381)) ([#2395](https://github.com/Selftend/selftend/issues/2395)) ([b2ff36a](https://github.com/Selftend/selftend/commit/b2ff36a2010eece6e1973f61268dd7d726412bb7))
+* **cbt:** the patterns and the feelings become rows ([#2349](https://github.com/Selftend/selftend/issues/2349)) ([#2351](https://github.com/Selftend/selftend/issues/2351)) ([89187a9](https://github.com/Selftend/selftend/commit/89187a9394b4591b6b38a2e94eabdbbddfa7d1d8))
+* **cbt:** the patterns list folds to what was chosen ([#2350](https://github.com/Selftend/selftend/issues/2350)) ([#2352](https://github.com/Selftend/selftend/issues/2352)) ([625bd86](https://github.com/Selftend/selftend/commit/625bd86c72baa96d62ffede08a2e832ac0ddf967))
+* **ios:** the app claims the apex only for universal links, and the www carve-out has its retirement step ([#2298](https://github.com/Selftend/selftend/issues/2298)) ([#2321](https://github.com/Selftend/selftend/issues/2321)) ([da13182](https://github.com/Selftend/selftend/commit/da131824bcdc1ad17e9dea1ac37bb2e9690d5ac2))
+* **journal:** the writing chart reserves its space while it loads ([#2347](https://github.com/Selftend/selftend/issues/2347)) ([#2358](https://github.com/Selftend/selftend/issues/2358)) ([f957161](https://github.com/Selftend/selftend/commit/f957161091e03c7251d9fd591fdde407d5e70152))
+* **measurement:** every new account records which of the four doors it came through ([#2323](https://github.com/Selftend/selftend/issues/2323)) ([#2326](https://github.com/Selftend/selftend/issues/2326)) ([7a52220](https://github.com/Selftend/selftend/commit/7a52220fe47359663cb99c9af53d5fb88cb66140))
+* **measurement:** the three web-facing store links carry a source tag ([#2324](https://github.com/Selftend/selftend/issues/2324)) ([#2339](https://github.com/Selftend/selftend/issues/2339)) ([196d409](https://github.com/Selftend/selftend/commit/196d409a3169dab672959eafdcd7758f56813e37))
+* **mood:** the emotion grid holds its space, and ADR-0009 says why ([#2345](https://github.com/Selftend/selftend/issues/2345)) ([#2354](https://github.com/Selftend/selftend/issues/2354)) ([e5f046b](https://github.com/Selftend/selftend/commit/e5f046b26977bba68d14aa48190dcf204727372f))
+* **mood:** the emotion grid moves to the end of its column ([#2348](https://github.com/Selftend/selftend/issues/2348)) ([#2359](https://github.com/Selftend/selftend/issues/2359)) ([83e37a9](https://github.com/Selftend/selftend/commit/83e37a94aa9a17e41acbf0c86da90210d6937629))
+* **mood:** the week block holds its space while it loads ([#2346](https://github.com/Selftend/selftend/issues/2346)) ([#2357](https://github.com/Selftend/selftend/issues/2357)) ([13e6958](https://github.com/Selftend/selftend/commit/13e6958d0ce951035065540d68389918599c1f14))
+* **notifications:** the completion moment stops asking ([#2342](https://github.com/Selftend/selftend/issues/2342)) ([#2355](https://github.com/Selftend/selftend/issues/2355)) ([06dabc9](https://github.com/Selftend/selftend/commit/06dabc9c3a648d71186d34a15cc81159d923dc24))
+* **privacy:** drop reminder_prompted_tools, column and rows ([#2343](https://github.com/Selftend/selftend/issues/2343)) ([#2356](https://github.com/Selftend/selftend/issues/2356)) ([0b79698](https://github.com/Selftend/selftend/commit/0b79698691f4f276cbaeb13cc53d56563d1f92b4))
+* **progress:** Your days gates on span, and opens on the last mark ([#2344](https://github.com/Selftend/selftend/issues/2344)) ([#2353](https://github.com/Selftend/selftend/issues/2353)) ([382e5df](https://github.com/Selftend/selftend/commit/382e5df9b6dd8389e29362e50633f968eb2e93e1))
+
+
+### Bug Fixes
+
+* **ci:** the iOS release job waits out Apple's queue, not just the build ([#2337](https://github.com/Selftend/selftend/issues/2337)) ([#2397](https://github.com/Selftend/selftend/issues/2397)) ([3d9be78](https://github.com/Selftend/selftend/commit/3d9be7854f8f5b815376fe8033e2c27825edad66))
+* **measurement:** the user menu is not a visitor surface, and the tag guards say what they cannot see ([#2324](https://github.com/Selftend/selftend/issues/2324)) ([#2340](https://github.com/Selftend/selftend/issues/2340)) ([fc55d0d](https://github.com/Selftend/selftend/commit/fc55d0dbce0e2ec1ec6a142a35911f7ed5af92cd))
+* **mood:** the manage-emotions door stays shut while its read is in flight ([#2360](https://github.com/Selftend/selftend/issues/2360)) ([#2361](https://github.com/Selftend/selftend/issues/2361)) ([8f95a8c](https://github.com/Selftend/selftend/commit/8f95a8c92920393a23518d1048808cd247a97ea0))
+
 ## [0.19.0](https://github.com/Selftend/selftend/compare/v0.18.0...v0.19.0) (2026-09-10)
 
 
