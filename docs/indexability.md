@@ -241,8 +241,8 @@ The marketing-plan side ([#2289](https://github.com/Selftend/selftend/issues/228
 
 Both instruments were live before the map ([#2282](https://github.com/Selftend/selftend/issues/2282), control-tower [#131](https://github.com/vasilyoshev/control-tower/issues/131)). Neither adds a script to the site; both read it from outside.
 
-- **Google Search Console** - domain property `selftend.org`, DNS-verified, since 2026-07-28; covers every host and scheme. It is the coverage reading (are the eight files indexed, is anything else) and the links reading. Impressions and clicks are a standing-surface reading in the plan's words - never an arrival, never a window judgement.
-- **Ahrefs** - project 10345616 (Site Audit with Execute JavaScript on; URL sources: the website plus a custom list of the eight routes; monthly audit on the 9th), verified 2026-09-08 on Free, **Starter at $29/month since 2026-09-10**, next billing 2026-10-10, on the owner's individual account. Starter paid for the demand read the channel ruling needed and for the first audit of the readable site. Web Analytics is off and stays off. **Owner action: downgrade to Free before 2026-10-10** unless the 2026-12-10 call promotes a pond search serves (`docs/costs.md`).
+- **Google Search Console** - domain property `selftend.org`, DNS-verified, since 2026-07-28; covers every host and scheme. It is the coverage reading (are the eight files indexed, is anything else) and the links reading. Impressions and clicks are a standing-surface reading in the plan's words - never an arrival, never a window judgement. Read once a year at the 2026-12-10 sitting, coverage and standings together ([marketing-plan.md](marketing-plan.md) § 7; [search-operations.md](search-operations.md) § 6, from [#2425](https://github.com/Selftend/selftend/issues/2425)).
+- **Ahrefs** - project 10345616 (Site Audit with Execute JavaScript on; URL sources: the website plus the auto-detected sitemap, no custom list, since [#2461](https://github.com/Selftend/selftend/issues/2461); monthly audit on the 9th, read against the policy in [search-operations.md](search-operations.md) § 3-5), verified 2026-09-08 on Free, Starter at $29/month from 2026-09-10 for the demand read the channel ruling needed and the first audit of the readable site, **cancelled 2026-09-11** ([#2308](https://github.com/Selftend/selftend/issues/2308)) - access to 2026-10-10, free Webmaster Tools after, on the owner's individual account. Web Analytics is off and stays off. A fresh month follows only a pond the 2026-12-10 call promotes and search serves, never a reading (`docs/costs.md`).
 - **Bing Webmaster Tools** - one owner step, added by [#2290](https://github.com/Selftend/selftend/issues/2290): import the Search Console property (no site script, no DNS work) and submit the same sitemap once. **No reading duty** - the plan gains no line and the 2026-12-10 sitting stays one sitting.
 
 **Owner steps, in order, all after the release that ships the export:**
@@ -252,7 +252,7 @@ Both instruments were live before the map ([#2282](https://github.com/Selftend/s
 3. Cloudflare → AI Crawl Control → Signals → Managed robots.txt (it sat under Security → Bots when this was decided): already on; confirm and record the date in `docs/deployment.md`.
 4. Search Console → Sitemaps: submit `https://selftend.org/sitemap.xml` once.
 5. Bing Webmaster Tools: import from Search Console; submit the sitemap once.
-6. Ahrefs: re-run the Site Audit on the readable site (the first audit Starter paid for), then downgrade to Free before 2026-10-10.
+6. Ahrefs: re-run the Site Audit on the readable site (the first audit Starter paid for), then downgrade to Free before 2026-10-10 - done: cancelled 2026-09-11 ([#2308](https://github.com/Selftend/selftend/issues/2308)); the audit's settings and expected rows are [search-operations.md](search-operations.md) § 4-5.
 
 ---
 
@@ -281,7 +281,7 @@ For `/to-tickets`. The order is the dependency order, not a schedule; items with
 
 **Out of scope of the map, recorded on it** - work beyond the destination, returning only as a fresh effort:
 
-- A content programme (new public pages written to rank) · store keyword work · any analytics script on the site · link building or outreach · rewriting the landing page's body copy · browser-tab titles for the gated `(app)` screens · **Core Web Vitals as a ranking input** - performance work done for ranking is pursuit by the plan's definition ("ranking as a target"), and performance work done for people is product work with its own review.
+- A content programme (new public pages written to rank) · store keyword work · any analytics script on the site · link building or outreach · rewriting the landing page's body copy · browser-tab titles for the gated `(app)` screens · **Core Web Vitals as a ranking input** - performance work done for ranking is pursuit by the plan's definition ("ranking as a target"), and performance work done for people is product work with its own review · **the Ahrefs Site Audit's Performance report** - no reading duty in this spec or in [search-operations.md](search-operations.md); product review may read it on its own clock, as product performance work ([#2425](https://github.com/Selftend/selftend/issues/2425)).
 
 ---
 

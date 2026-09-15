@@ -25,6 +25,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [deployment.md](deployment.md) - web deployment and Supabase callbacks
 - [indexability.md](indexability.md) - the indexability spec, as built in v0.19.0: how selftend.org is made readable by search engines, the instruments, and the owner's dashboard steps
 - [brand-result.md](brand-result.md) - the brand-result spec (decided, not built): what a search for Selftend can truthfully show - explainer pages from content the app already holds, one footer linking every public page, two more structured-data properties, and the honest ceiling on sitelinks and knowledge panels
+- [search-operations.md](search-operations.md) - the search-operations spec (decided; the Ahrefs settings applied, the two privacy-page links not built): what the monthly Ahrefs audit is allowed to hide and what it must show, the once-a-year standings reading beside the December coverage read, and the never-edited baseline it compares against
 - [android-development.md](android-development.md) - Android dev-build setup
 - [internal-testing.md](internal-testing.md) - internal build and testing checklist
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness
