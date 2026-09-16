@@ -126,15 +126,15 @@ describe("the demo seed's routines", () => {
     expect(SEEDED.map((routine) => routine.cadence)).not.toContain("custom");
   });
 
-  it("carries exactly one reminder, on the routine the continue sheet can show both branches with", () => {
+  it("carries exactly one reminder, armed on one named routine", () => {
+    // Which routine holds it no longer changes what any screen renders: the
+    // continue sheet's completion state shows the record and a Close for every
+    // routine, armed or not (#2488). The count and the name stay pinned so that
+    // seeding a second nudge is a deliberate edit rather than a slip - and the
+    // equality already says every other seeded routine has none.
     const armed = SEEDED.filter((routine) => routine.reminder !== null);
     expect(armed.map((routine) => routine.name)).toEqual(["Back on my feet"]);
     expect(armed[0].reminder).toEqual({ hour: 8, minute: 0, timezone: "Europe/Sofia" });
-    // Not on the routine the sheet selects: `firstOpenRoutineView` prefers the
-    // routine with progress, and `continue-routine-sheet.tsx` swaps its
-    // reminder-OFFER card for a bare Close as soon as `reminderEnabled` is true.
-    const morningReset = SEEDED.find((routine) => routine.name === "Morning reset");
-    expect(morningReset?.reminder).toBeNull();
   });
 
   it("orders the roster so the FAB queues the richer routine first", () => {
@@ -149,8 +149,11 @@ describe("the demo seed's routines", () => {
 
   it("keeps the reminder off the routine that would render it nowhere", () => {
     // `routine-detail-screen.tsx` and `routines-home-screen.tsx` never read
-    // `reminderEnabled`, and a complete routine is never selected by the sheet, so
-    // a reminder on "Steadying myself" renders on zero surfaces (#1541).
+    // `reminderEnabled`, and since #2488 neither does the continue sheet - its
+    // completion state is one branch for every routine - so a seeded reminder
+    // renders only inside the routine's own editor. That is what made a reminder
+    // on "Steadying myself" render on zero surfaces when #1541 ruled here, and
+    // the seed still keeps it off.
     const steadying = SEEDED.find((routine) => routine.name === "Steadying myself");
     expect(steadying?.reminder).toBeNull();
     expect(steadying?.cadence).toBe("weekdays");

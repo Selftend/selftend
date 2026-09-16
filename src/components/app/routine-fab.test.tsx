@@ -291,14 +291,16 @@ describe("RoutineFab", () => {
   });
 
   // #102: on-demand routines never nudge - and this is the seam where that is
-  // really enforced (#1542). The continue sheet carries a defensive
-  // `cadence === "on-demand"` guard on its reminder offer, but the sheet is
-  // mounted in exactly one place and fed `scheduledViews`, so the guard is
-  // unreachable: the offer can never be put in front of an on-demand routine
-  // because the sheet never opens on one. These pin the composition end to
-  // end - if a future change widened the sheet's input, the guard alone would
-  // hold the rule, and these would be the tests that noticed the widening.
-  describe("the reminder offer never reaches an on-demand routine (#102)", () => {
+  // really enforced (#1542). The sheet's completion state used to carry a
+  // reminder offer behind a defensive `cadence === "on-demand"` guard; the
+  // offer is gone (#2488, ADR-0010), so the scheduled-today filter pinned here
+  // is now the WHOLE of the rule, not its outer layer. The FAB is the sheet's
+  // only mount point and it passes `scheduledViews`, so an on-demand routine
+  // is never counted, never latched as the completed routine, and never opened
+  // on. These pin that composition end to end: if a future change widened the
+  // sheet's input, nothing downstream would catch it and these are the tests
+  // that would notice.
+  describe("no reminder ever reaches an on-demand routine (#102)", () => {
     beforeEach(() => {
       jest.useFakeTimers();
     });
@@ -331,13 +333,13 @@ describe("RoutineFab", () => {
       expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
     });
 
-    it("pins the offer to the scheduled routine even when an on-demand one is mid-flight", () => {
+    it("opens the sheet on the scheduled routine even when an on-demand one is mid-flight", () => {
       // r-2 is on-demand and IN PROGRESS (journal done, gratitude open), which
       // is exactly what firstOpenRoutineView prefers (#121) - so if the
       // schedule filter ever stopped excluding on-demand, r-2 would become the
       // counted routine, then the latched `completedRoutineId`, and the sheet
       // would open on ITS completion. r-1 is the only scheduled routine, so it
-      // must be the one counted, pinned, and offered a reminder.
+      // must be the one counted, pinned, and shown.
       setRoutines([
         makeRoutine("r-1", "Morning reset", ["mood"]),
         makeRoutine("r-2", "Reset kit", ["journal", "gratitude"], { cadence: "on-demand" }),
@@ -361,11 +363,11 @@ describe("RoutineFab", () => {
 
       fireEvent.press(screen.getByTestId("routine-fab-complete"));
 
-      // The offer is live, and it belongs to the scheduled routine...
+      // The sheet is open on the scheduled routine's completion...
       expect(screen.getByText("Morning reset")).toBeTruthy();
-      expect(screen.getByText("Set a daily reminder")).toBeTruthy();
-      // ...while the on-demand routine never entered the sheet at all, so its
-      // completion state - and the defensive cadence guard - is never reached.
+      expect(screen.getByText("That was the last step")).toBeTruthy();
+      // ...while the on-demand routine never entered the sheet at all, so
+      // nothing of it - not its completion state, not its reminder - is reached.
       expect(screen.queryByText("Reset kit")).toBeNull();
     });
   });

@@ -236,7 +236,6 @@ export function RoutineFab() {
         </View>
       ) : null}
       <ContinueRoutineSheet
-        userId={userId}
         views={today.scheduledViews}
         visible={sheetOpen}
         initialRoutineId={showCompleted ? completedRoutineId : null}
