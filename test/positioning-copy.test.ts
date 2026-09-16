@@ -1827,6 +1827,14 @@ describe("the store listings are in scope (#1760)", () => {
  *
  * What is left is what this repository ships and can fix inside a PR.
  */
+/**
+ * The one field in `APP_STORE_CAPS` whose cap does not bind, and therefore the
+ * one that carries the frame sentence rather than the short form (#2524). Named
+ * rather than inlined so the two exclusions below can each say which of them it
+ * belongs to.
+ */
+const SHORT_FIELD_EXCEPTION = "description";
+
 describe("the frame's second beat survives on the surfaces this repo ships (#1790)", () => {
   /**
    * The method as beat two names it, per locale.
@@ -2211,16 +2219,50 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
    * this goes red if the world moves under it — if the short form ever gains a
    * method, the capped fields become pinnable and this exclusion needs
    * re-arguing rather than inheriting.
+   *
+   * ⚠️ `description` is held out of THIS check and asserted in the next one
+   * instead, under exclusion 2's reasoning. It is the one capped field whose
+   * cap does not bind, so it carries the frame sentence rather than the short
+   * form and does name the method (#2524). The skip is narrow and named on
+   * purpose: a bare `continue` over an unnamed field would let a second one
+   * slip out of the check silently.
    */
   it("leaves the capped store fields out, because the short form they carry has no method in it", () => {
     const APPLE = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
 
     for (const field of Object.keys(APP_STORE_CAPS)) {
+      if (field === SHORT_FIELD_EXCEPTION) continue;
       expect({ field, namesTheMethod: METHOD.en.test(APPLE[field]) }).toEqual({
         field,
         namesTheMethod: false,
       });
     }
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-info"))).toBe(false);
+  });
+
+  /**
+   * ☠️ **THE EXCLUSION ABOVE WENT RED ON ARRIVAL WHEN `description` WAS
+   * COMMITTED, EXACTLY AS ITS DOCBLOCK SAID IT WOULD** (#2524). That block
+   * pins "the short form they carry has no method in it" as the FACT
+   * justifying the exclusion, and promises the check goes red "if the world
+   * moves under it … rather than inheriting". It moved: `description` is an
+   * uncapped-in-practice field, so § *The short form*'s escape clause has no
+   * referent there and it carries the FRAME SENTENCE, which names the method
+   * by construction.
+   *
+   * ⚠️ So the exclusion is re-argued here rather than the assertion widened to
+   * swallow it. `description` is out for **exclusion 2's** reason, not
+   * exclusion 1's — the same reason as the Play transcript below: it is a
+   * mirror of a record only an owner can change in App Store Connect, so a
+   * future divergence is fixed in the console and never by editing this file.
+   * It is NOT out because it lacks the method, and asserting that it HAS one
+   * keeps this honest — a silent `continue` with no positive claim would be
+   * the tolerated violation exclusion 2 exists to refuse.
+   */
+  it("leaves the App Store description out, though it carries the method today", () => {
+    const APPLE = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
+
+    expect(METHOD.en.test(APPLE[SHORT_FIELD_EXCEPTION])).toBe(true);
     expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-info"))).toBe(false);
   });
 
