@@ -15,6 +15,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [architecture.md](architecture.md) - routes, providers, auth, data, reminders
 - [data-privacy-model.md](data-privacy-model.md) - stored data, ownership, export, deletion
 - [accessibility.md](accessibility.md) - accessibility baseline
+- [sound.md](sound.md) - the sound spec (decided, not built): how the app plays a looping bed, the per-platform looper and why only web changes, what a bed swap sounds like, and the sound door and panel that change the bed from inside a running sit
 - [modules/cbt.md](modules/cbt.md) - CBT thought-record flow and data contract
 - [modules/tools.md](modules/tools.md) - the module contract
 - [modules/gratitude-log.md](modules/gratitude-log.md) - gratitude log scope and data contract

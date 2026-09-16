@@ -148,6 +148,24 @@ The question is never put on its own: consent is recorded as a side effect of tu
 Invariant: an account cannot hold an enabled reminder without consent.
 _Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (names the tap, not the account-wide permission it leaves behind)
 
+### Sound
+
+**Bed**:
+The looping background sound under a meditation sit or a breathing session. Chosen from a fixed catalogue whose first and default entry is `None`, and always optional — a session with no bed is the ordinary case, not an unfinished one. Distinct from the cues the app fires at a moment (a bell, a guided voice line), which are one-shots and never loop.
+_Avoid_: soundscape, track, ambience (names a mood, not the thing), background music (none of them are music)
+
+**Swap**:
+Replacing the bed under a running session with another one. Distinct from starting a bed (nothing is outgoing) and from choosing `None` (a stop, not a swap). A swap crossfades, and it is the only moment a lane holds two live players.
+_Avoid_: change (too broad — a volume move is a change too), switch, transition
+
+**Sound door**:
+The control on a session's focus surface that opens the sound panel. It is always shown and always plain: it names no bed and carries no marker, because a marker when a bed is playing reads as a suggestion when none is.
+_Avoid_: toggle (it opens something, it does not turn anything on), sound button
+
+**Sound panel**:
+Where the bed and its volume are changed from inside a running session. Everything in it applies live and persists; it has no confirm and no cancel, so closing it changes nothing. The pick belongs to the session in progress: what is playing is what was picked here, whether or not the write reached the server.
+_Avoid_: sound settings (settings are a place you leave the session for), picker, mixer
+
 ### Design language ("Color field")
 
 The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).

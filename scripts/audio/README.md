@@ -766,15 +766,38 @@ disk, `audition.json` for the same data machine-readable.
 ☠️ **The bed loop is tiled on decoded PCM, not by looping the `.m4a`.** Splicing
 AAC frames would put the codec's priming gap at every join — inventing precisely
 the artifact the listen exists to detect, and failing a bed for a defect the app
-would never play. #1138 established that no platform loops by buffer wrap anyway
-(iOS duplicates an `AVPlayerItem`, Android sets `REPEAT_MODE_ONE`, web sets
-`HTMLAudioElement.loop`), so what goes in front of an ear is the file's own seam,
+would never play. What the tiling puts in front of an ear is the file's own seam,
 sample-exact and encoded once. Only beds are tiled: textures never loop (#1137)
 and bells are one-shots. ⚠️ Since #1571 the ear and the ratio no longer see the
 identical join — the listen crosses the decoded file's boundary, the gate
 measures the master's — because the encoder's two end frames are an artifact of
 the encode and not a seam. The wrap-step half is what would catch an audible
 click there, and it is unchanged.
+
+☠️☠️ **The tiled listen is not the app's loop, and #1137's platform listen was
+never run until 2026-09-15.** #1137 required a human to hear each bed looped ten
+times on web and native, on the reasoning that a gap at the loop point is a
+player artifact no file can fix. The audition tiles decoded PCM, so what it
+approved is the file's seam; #1138's "no platform loops by buffer wrap" describes
+the mechanism correctly and says nothing about what each platform's wrap costs.
+It costs a great deal on web. The per-platform record, measured on the shipped
+beds (#2439) and heard on the shipped app (#2440, 2026-09-15, v0.20.0, `rain` and
+`brown-noise`, four wraps each):
+
+| Platform    | How it loops                                                                                                                           | At the wrap                                                                                                                                                                                                                                                                                                                                      |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **iOS**     | `expo-audio` `player.loop`: an `AVQueuePlayer` with one duplicate `AVPlayerItem` queued behind the current one (since `expo-audio@56`) | **Seamless to the ear.** Apple's headers say "as gaplessly as possible … not guaranteed", so this is measured, not contracted                                                                                                                                                                                                                    |
+| **Android** | `expo-audio` `player.loop`: Media3 `REPEAT_MODE_ONE`                                                                                   | **Gapless by construction** — an ordinary period transition, priming re-trimmed every iteration — and seamless to the ear                                                                                                                                                                                                                        |
+| **Web**     | `HTMLAudioElement.loop`                                                                                                                | ☠️ **A full pipeline seek.** ~22 ms then ~19 ms of digital silence on Chromium (Edge 153, Chromium 147, three beds), ~10 ms on Firefox 148, plus ~10 ms of the bed skipped per wrap. No fade. Chromium ruled it infeasible to fix in 2024; WebKit's bug is open since 2021. Gecko's documented seamless looping does **not** hold on these files |
+
+⚠️ **Repeat the phone listen when — and only when — one of two things happens:**
+an `expo-audio` upgrade whose changelog or diff touches the iOS looper
+(`AVQueuePlayer`, the duplicate `AVPlayerItem`), or a Safari major. Nothing else
+in this pipeline can change what a platform does at a wrap.
+
+The web row is what `docs/sound.md` changes: the looping bed moves to a Web Audio
+buffer loop, which measured sample-exact in every engine, and the media element
+stays as a silent fallback. Update this row when that lands.
 
 ☠️ **Choices go in `choices.jsonl`, never in `manifest.jsonl`.** `planSlot`
 classifies any row without an `attempt` and a `dbtp` as a superseded take, so a
