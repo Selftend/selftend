@@ -40,9 +40,12 @@ import { dismissPostSignInModals } from "./helpers";
 const learnRoots = (page: Page) =>
   page.locator('h1:text-is("Habit building - core ideas")').count();
 
-/** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
+/**
+ * One per mounted `/privacy` screen — the ANCHOR to `/security`, since security's <h1>
+ * shares its words. It was `[role="button"]` until #2476 made the cross-link a real link.
+ */
 const privacyRoots = (page: Page) =>
-  page.locator('[role="button"]:has-text("How we protect your data")').count();
+  page.locator('a[href="/security"]:has-text("How we protect your data")').count();
 
 /**
  * ☠️ The counts below are CSS/text locators, never `getByRole`. A backgrounded screen is
@@ -52,8 +55,8 @@ const privacyRoots = (page: Page) =>
  * text engines match the real DOM, hidden or not, which is the only way to see this bug.
  *
  * They are also scoped tightly enough to exclude look-alikes: the security page's <h1>
- * carries the same words as privacy's button, so the privacy count names the role
- * attribute rather than the text alone.
+ * carries the same words as privacy's link, so the privacy count names the anchor and
+ * its href rather than the text alone.
  */
 
 test("a breadcrumb returns to its ancestor instead of stacking a second copy", async ({ page }) => {
