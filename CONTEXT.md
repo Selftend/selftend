@@ -255,9 +255,10 @@ and is **never** inferred from navigation history: `dangerouslySingular` replace
 rather than adding them, and the Escape itself navigates with `replace`, so history here does not
 describe where the user came from.
 
-It is carried in memory — `navigation-origin-store.ts`, recorded through the one helper
-`usePushWithOrigin` and **consumed on mount**, so a screen holds the Origin it arrived with and the
-next arrival at the same route finds nothing (#1261). Never a route param: Expo Router serialises
+It is carried in memory — `navigation-origin-store.ts`, recorded through `usePushWithOrigin` (a
+push) or `useRecordOrigin` (the record alone, for an anchor that navigates as a `Link`, #2476) and
+**consumed on mount**, so a screen holds the Origin it arrived with and the next arrival at the same
+route finds nothing (#1261). Never a route param: Expo Router serialises
 params into the address bar, and on this app a route names which therapy module the user was in.
 Recording is **opt-out** — everything that pushes through the helper records, and only the global
 nav chrome stays out, because opt-in fails invisibly (a cross-link that forgets just quietly shows
