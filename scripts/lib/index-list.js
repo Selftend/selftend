@@ -44,8 +44,11 @@ const SITE_ORIGIN = "https://selftend.org";
  * page findable, and nothing off the list is (§ 3) - and the footer's pin then
  * fails until the footer knows the route, which is the point.
  *
- * `/meditation` sits between `/crisis` and `/faq` because the explainers are
- * the nav list's first row and the policies its second (#2469). Each entry's
+ * `/meditation` and `/habits` sit between `/crisis` and `/faq` because the
+ * explainers are the nav list's first row and the policies its second (#2469,
+ * #2470). They are the only two of the spec's five explainers the module gate
+ * does not reach; the three module pages join this row with their modules'
+ * return (docs/brand-result.md § 3.3). Each entry's
  * reason for existing is recorded in docs/indexability.md § 3, not here: the
  * list is machinery, and motive is invisible in the finished artifact unless it
  * is written down somewhere a person reads (docs/brand-result.md § 0).
@@ -60,6 +63,7 @@ const INDEX_LIST = Object.freeze([
   "/",
   "/crisis",
   "/meditation",
+  "/habits",
   "/faq",
   "/privacy",
   "/terms",

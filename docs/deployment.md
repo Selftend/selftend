@@ -161,7 +161,7 @@ iOS and iPadOS web push requires the user to install the web app to the Home Scr
 The reusable `.github/workflows/web-deploy.yml` workflow (called by `release.yml` for prod and `staging.yml` for staging; also manually dispatchable):
 
 - checks out the release tag (prod) or the triggering `dev` SHA (staging)
-- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web` (the Expo export, then the index-list step that prunes `dist/` to the nine HTML files and writes `sitemap.xml` — "Web Build" below)
+- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web` (the Expo export, then the index-list step that prunes `dist/` to the eleven HTML files and writes `sitemap.xml` — "Web Build" below)
 - on staging only, appends `X-Robots-Tag: noindex` to `dist/_headers`, deletes `dist/sitemap.xml` and strips the `Sitemap:` line from `dist/robots.txt`
 - switches to Node 22 and deploys `dist` (+ the `worker`-less static-assets config) via `cloudflare/wrangler-action@v3`, selecting `wrangler.toml` (prod) or `wrangler.staging.toml` (staging)
 
@@ -227,7 +227,7 @@ npm run serve:web:production
 
 `npm run export:web` is the export the deploy runs (`.github/workflows/web-deploy.yml`, "GitHub Actions Web Deploy" above). It is two steps. The web build uses `web.output = "static"` in [app.config.ts](../app.config.ts) (since [#2293](https://github.com/Selftend/selftend/issues/2293)): `expo export` renders every route in Node and writes one HTML file per route - `dist/index.html`, `dist/faq.html`, `dist/crisis.html` and so on, some three hundred files including the whole signed-in tree and the auth screens - around the document in [app/+html.tsx](../app/+html.tsx), which replaced `public/index.html`. Each public file carries the page's own `<head>` and full body, so it reads without JavaScript; the head each file carries is specified in [indexability.md](indexability.md) § 4.
 
-Then `node scripts/apply-index-list.js dist` applies the **index list** ([scripts/lib/index-list.js](../scripts/lib/index-list.js); [indexability.md](indexability.md) § 3, [#2295](https://github.com/Selftend/selftend/issues/2295)) - the one list of the public routes, in the site footer's order: `/`, `/crisis`, `/meditation`, `/faq`, `/privacy`, `/terms`, `/cookies`, `/security`, `/account-deletion`. It deletes every other HTML file (the gated `(app)` tree, the `(auth)` screens, Expo's `_sitemap.html`), moves `+not-found.html` to `404.html`, and writes `dist/sitemap.xml` from the same list - absolute `https://selftend.org` URLs, the root with its slash and the rest without, no `lastmod`, `hreflang`, `priority` or `changefreq`. After it, `dist/` holds exactly ten HTML files: the nine listed routes plus `404.html`. The step fails the export if a listed file did not export, so a public page cannot silently drop out of a deploy. `public/robots.txt` (allow all, no `Disallow`, one `Sitemap:` line) is copied into `dist/` unchanged by the export; Cloudflare prepends its managed AI-crawler block to it at the edge, which is expected. `test/index-list.test.ts` pins the list to the route tree (every route file outside `(app)` and `(auth)` is on it, and nothing else), and pins `robots.txt`, both `wrangler*.toml` and the staging strip; `scripts/lib/index-list.test.js` covers the prune and the sitemap. Adding a public route means adding it to the list - the test fails until you do. The sitemap is submitted once in Search Console after the first production deploy that ships it ([indexability.md](indexability.md) § 9).
+Then `node scripts/apply-index-list.js dist` applies the **index list** ([scripts/lib/index-list.js](../scripts/lib/index-list.js); [indexability.md](indexability.md) § 3, [#2295](https://github.com/Selftend/selftend/issues/2295)) - the one list of the public routes, in the site footer's order: `/`, `/crisis`, `/meditation`, `/habits`, `/faq`, `/privacy`, `/terms`, `/cookies`, `/security`, `/account-deletion`. It deletes every other HTML file (the gated `(app)` tree, the `(auth)` screens, Expo's `_sitemap.html`), moves `+not-found.html` to `404.html`, and writes `dist/sitemap.xml` from the same list - absolute `https://selftend.org` URLs, the root with its slash and the rest without, no `lastmod`, `hreflang`, `priority` or `changefreq`. After it, `dist/` holds exactly eleven HTML files: the ten listed routes plus `404.html`. The step fails the export if a listed file did not export, so a public page cannot silently drop out of a deploy. `public/robots.txt` (allow all, no `Disallow`, one `Sitemap:` line) is copied into `dist/` unchanged by the export; Cloudflare prepends its managed AI-crawler block to it at the edge, which is expected. `test/index-list.test.ts` pins the list to the route tree (every route file outside `(app)` and `(auth)` is on it, and nothing else), and pins `robots.txt`, both `wrangler*.toml` and the staging strip; `scripts/lib/index-list.test.js` covers the prune and the sitemap. Adding a public route means adding it to the list - the test fails until you do. The sitemap is submitted once in Search Console after the first production deploy that ships it ([indexability.md](indexability.md) § 9).
 
 Two things to keep straight after that change:
 
@@ -287,11 +287,12 @@ The HSTS header in `public/_headers` carries the `preload` token, and the domain
 
 ## Public Routes To Verify
 
-These routes must be reachable without signing in. The nine on the index list answer **200** with their own file, in the list's own order (the site footer's):
+These routes must be reachable without signing in. The ten on the index list answer **200** with their own file, in the list's own order (the site footer's):
 
 - `/` (the landing page)
 - `/crisis`
 - `/meditation` (the meditation framework — the whole page must read with no account)
+- `/habits` (the ten core ideas — all ten bodies must read with no account, and no card is a link)
 - `/faq`
 - `/privacy`
 - `/terms`
@@ -305,7 +306,7 @@ Everything else answers **404** with `404.html`, which still loads the app:
 - a deliberately unknown route, such as `/missing-test` — 404 status, and the simple not-found screen with a home link renders
 - a gated deep link, such as `/modules/cbt` — 404 status, and the real screen renders after hydration (for a signed-out visitor, whatever the app shows a signed-out visitor there)
 
-`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the nine, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
+`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the ten, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
 
 The Google Play privacy policy URL should use the production domain:
 
@@ -375,7 +376,7 @@ npm run serve:web:production
 
 Manual smoke:
 
-- open `/privacy`, `/terms`, `/crisis`, `/account-deletion`, and `/meditation` (the explainer page - it must read in full with no account)
+- open `/privacy`, `/terms`, `/crisis`, `/account-deletion`, and the two explainer pages `/meditation` and `/habits` (each must read in full with no account)
 - open `/auth-callback` directly and confirm the missing-link state renders
 - open `/missing-test` and confirm the not-found screen renders (the status line reads 404; that is intended)
 - sign in with Google on web

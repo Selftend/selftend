@@ -261,7 +261,12 @@ describe("the route population (pinned, G5)", () => {
     // `PolicyPageLayout` → `ScreenHeader`. The gated `/tools/meditation/learn`
     // is untouched - its body moved to a shared component, which is not a route
     // change.
-    expect(ROUTES).toHaveLength(157);
+    // 157 → 158: #2470 added `app/habits.tsx`, the second public explainer -
+    // the ten core ideas of habit building, readable with no account. Same
+    // shape as `/meditation` above and the same reason it lands in `covered`.
+    // The gated `/tools/habits/learn` is untouched - its ten rows moved to a
+    // shared component, which is not a route change.
+    expect(ROUTES).toHaveLength(158);
   });
 
   it("derives exactly the eleven <Redirect>-only stubs", () => {
@@ -317,7 +322,10 @@ describe("the route population (pinned, G5)", () => {
     // real screen, so it joins this class too. A public page is not exempt from
     // G3 - a reader who lands on it cold from a search result needs the way out
     // more than a signed-in one does, not less.
-    expect(covered).toHaveLength(144);
+    // Then 144 → 145 with #2470: `app/habits.tsx`, on the same reasoning - a
+    // reader who lands cold on a public page from a search result needs the way
+    // out more than a signed-in one does, not less.
+    expect(covered).toHaveLength(145);
   });
 });
 

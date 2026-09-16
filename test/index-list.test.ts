@@ -61,11 +61,12 @@ describe("the index list ↔ the route tree", () => {
   // the explainers, then the policies (#2469). The footer pin in
   // `src/components/app/site-footer.test.tsx` compares ordered arrays against
   // this list, so the two sequences cannot drift.
-  it("holds the nine routes the spec's § 3 table names, explainers before policies", () => {
+  it("holds the ten routes the spec's § 3 table names, explainers before policies", () => {
     expect(INDEX_LIST).toEqual([
       "/",
       "/crisis",
       "/meditation",
+      "/habits",
       "/faq",
       "/privacy",
       "/terms",
@@ -93,7 +94,7 @@ describe("the sitemap ↔ the canonical tags", () => {
     }
   });
 
-  it("lists the nine canonical URLs and no other loc", () => {
+  it("lists the ten canonical URLs and no other loc", () => {
     const locs = [...buildSitemap().matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
     expect(locs).toEqual(INDEX_LIST.map(canonicalUrl));
   });
