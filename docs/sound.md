@@ -455,20 +455,20 @@ eviction. The crossfade twins land on top of that growth, not beside it.
 `AudioContext` with `createBufferSource` / `createGain` / `decodeAudioData` /
 `resume` / `suspend` / `state`, and a fake `fetch` returning an `ArrayBuffer`.
 
-**New `mdhd` test** reading each shipped bed's duration and timescale as bytes
-and asserting it matches the declared `nominalSeconds`. Pure byte reading - no
-`ffprobe` in CI.
+**New `mdhd` test** reading each shipped bed's authored length out of its bytes
+and asserting it matches the declared `nominalSeconds`. The length is
+`(mdhd.duration − elst.media_time) / mdhd.timescale` - **both boxes, not
+`mdhd` alone**. Pure byte reading - no `ffprobe` in CI.
 
-☠️ **The `mdhd` duration is not the nominal length, and build item 1 measured
-the gap.** `rain.m4a` reads 1324024 / 44100 = **30.023220 s** for a bed authored
-to exactly 30 s: `mdhd` counts the 1024 samples of AAC encoder priming at the
-head of the file. The edit list says how many to drop - every bed carries
-`elst` with `media_time = 1024` - so the authored length is
-`(mdhd.duration − elst.media_time) / mdhd.timescale`, which lands on 30.000,
-29.520 and 29.600 with no remainder. A reader that stops at `mdhd` is off by
-exactly the 23 ms hole §3.1.6's loop window exists to skip, so it would pin
-every bed to the wrong number. `test/audio-bed-nominal-length.test.ts` reads
-both boxes.
+☠️ **Why both boxes: the `mdhd` duration on its own is not the nominal length.**
+This paragraph asked for `mdhd`'s duration and timescale and nothing else until
+build item 1 measured it. `rain.m4a` reads 1324024 / 44100 = **30.023220 s** for
+a bed authored to exactly 30 s, because `mdhd` counts the 1024 samples of AAC
+encoder priming at the head of the file. The edit list says how many to drop -
+every bed carries `elst` with `media_time = 1024` - and subtracting them lands
+on 30.000, 29.520 and 29.600 with no remainder. A reader that stops at `mdhd` is
+off by exactly the 23 ms hole §3.1.6's loop window exists to skip, so it would
+pin every bed to the wrong number.
 
 **`meditation-sit-screen.test.tsx`** gains the panel's cases, including the one
 §2 requires: pick `ocean` mid-sit, simulate the rollback (`mockPreferences.data`
