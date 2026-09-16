@@ -6,8 +6,8 @@ type Node = Record<string, unknown>;
 
 const URL = "https://selftend.org/";
 
-const graphOf = (description = "A frame sentence.") => {
-  const block = landingStructuredData({ url: URL, description });
+const graphOf = (description = "A frame sentence.", inLanguage = "en") => {
+  const block = landingStructuredData({ url: URL, description, inLanguage });
   const [organization, webSite] = block["@graph"] as Node[];
   return { block, organization, webSite };
 };
@@ -74,25 +74,34 @@ describe("landingStructuredData (#2296)", () => {
       const isolated =
         require("@/src/lib/structured-data") as typeof import("@/src/lib/structured-data");
 
-      const [organization] = isolated.landingStructuredData({ url: URL, description: "x" })[
-        "@graph"
-      ] as Node[];
+      const [organization] = isolated.landingStructuredData({
+        url: URL,
+        description: "x",
+        inLanguage: "en",
+      })["@graph"] as Node[];
 
       expect(organization.sameAs).toEqual(["https://github.com/fork/selftend"]);
     });
   });
 
-  // § 5: name, url, publisher by @id - no alternateName, no SearchAction, and
-  // no id of its own: nothing points at the WebSite.
+  // § 5: name, url, publisher by @id, and the two properties #2405 added -
+  // `isAccessibleForFree` (the landing renders "Free · Open source · Private"
+  // and "No ads, no subscriptions") and `inLanguage` (the rendered `<html
+  // lang>`). No alternateName, no SearchAction, and no id of its own: nothing
+  // points at the WebSite.
   it("gives the WebSite exactly the decided properties, publisher by id", () => {
     const { webSite, organization } = graphOf();
 
-    expect(Object.keys(webSite).sort()).toEqual(["@type", "name", "publisher", "url"].sort());
+    expect(Object.keys(webSite).sort()).toEqual(
+      ["@type", "inLanguage", "isAccessibleForFree", "name", "publisher", "url"].sort(),
+    );
     expect(webSite).toEqual({
       "@type": "WebSite",
       name: SITE_NAME,
       url: URL,
       publisher: { "@id": organization["@id"] },
+      isAccessibleForFree: true,
+      inLanguage: "en",
     });
   });
 
@@ -102,6 +111,7 @@ describe("landingStructuredData (#2296)", () => {
     const [organization, webSite] = landingStructuredData({
       url: "https://example.test/",
       description: "x",
+      inLanguage: "en",
     })["@graph"] as Node[];
 
     expect(organization.url).toBe("https://example.test/");
@@ -110,11 +120,28 @@ describe("landingStructuredData (#2296)", () => {
     expect(webSite.publisher).toEqual({ "@id": "https://example.test/#organization" });
   });
 
-  // Each of these is a decision on #2291, not an omission: no registered
-  // entity exists, no person is the product, no contact channel, no store
-  // listing, no rating or review, and no refused type.
+  // brand-result.md § 6: `inLanguage` follows the language, never a fixed
+  // "en". § 4.4 already rules the block is English in the file and the
+  // visitor's language after hydration, so a hardcoded value would be false
+  // in the DOM for a Bulgarian-preference visitor. The module takes it from
+  // the caller the way it takes the address, and only the WebSite - a
+  // CreativeWork - carries it; an Organization has no language.
+  it("takes the language from the caller, on the WebSite only", () => {
+    const { webSite, organization } = graphOf("x", "bg");
+
+    expect(webSite.inLanguage).toBe("bg");
+    expect(organization).not.toHaveProperty("inLanguage");
+    expect(organization).not.toHaveProperty("isAccessibleForFree");
+  });
+
+  // Each of these is a decision on #2291 or #2405, not an omission: no
+  // registered entity exists, no person is the product, no contact channel,
+  // no store listing, no rating or review, no refused type - and none of the
+  // properties #2405 refused for saying what no page displays.
   it("carries none of the refused properties, values or types", () => {
-    const text = JSON.stringify(landingStructuredData({ url: URL, description: "The frame." }));
+    const text = JSON.stringify(
+      landingStructuredData({ url: URL, description: "The frame.", inLanguage: "en" }),
+    );
 
     for (const refused of [
       "nonprofitStatus",
@@ -129,6 +156,12 @@ describe("landingStructuredData (#2296)", () => {
       "potentialAction",
       "FAQPage",
       "SoftwareApplication",
+      "knowsAbout",
+      "foundingDate",
+      "slogan",
+      "publishingPrinciples",
+      "license",
+      "BreadcrumbList",
       appEnv.playStoreUrl,
       appEnv.appStoreUrl,
       appEnv.discordUrl,

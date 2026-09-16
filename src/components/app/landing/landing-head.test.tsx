@@ -147,6 +147,65 @@ describe("the structured-data block (#2296)", () => {
     expect(organization.description).toBe(meta("description")[0].props.content);
   });
 
+  /** The `lang` the site head renders on `<html>` - § 4.4's sole owner. */
+  const htmlLang = () => {
+    const html = tags().filter(({ type }) => type === "html");
+    expect(html).toHaveLength(1);
+    return html[0].props.lang;
+  };
+
+  // brand-result.md § 6 (#2405): `inLanguage` restates the rendered `<html
+  // lang>` - the same `i18n.language` read the site head renders, so the two
+  // cannot drift - and only the WebSite carries it. Read back from the tag,
+  // not from the i18n instance.
+  it("pins the WebSite's inLanguage to the rendered <html lang>", () => {
+    render(
+      <>
+        <SiteHead />
+        <LandingHead />
+      </>,
+    );
+
+    const { webSite, organization } = block();
+    expect(htmlLang()).toBe("en");
+    expect(webSite.inLanguage).toBe(htmlLang());
+    expect(organization).not.toHaveProperty("inLanguage");
+  });
+
+  // § 4.4: English in the file, the visitor's language after hydration. A
+  // hardcoded "en" would pass the case above and be false in the DOM for a
+  // Bulgarian-preference visitor; this case is what makes it a derivation.
+  it("follows the visitor's language after hydration, with <html lang>", async () => {
+    i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
+    await act(() => i18n.changeLanguage("bg"));
+
+    render(
+      <>
+        <SiteHead />
+        <LandingHead />
+      </>,
+    );
+
+    const { webSite } = block();
+    expect(htmlLang()).toBe("bg");
+    expect(webSite.inLanguage).toBe("bg");
+  });
+
+  // § 6's pin, on the property a string cannot carry: `isAccessibleForFree` is
+  // true because the landing renders "Free · Open source · Private" and "No
+  // ads, no subscriptions" - the hero eyebrow and support the screen shows.
+  // Both are pinned as literals beside the flag, so a rewording that drops the
+  // claim fails here, next to the property that restates it.
+  it("asserts isAccessibleForFree only because the landing says so", () => {
+    render(<LandingHead />);
+
+    const { webSite, organization } = block();
+    expect(webSite.isAccessibleForFree).toBe(true);
+    expect(organization).not.toHaveProperty("isAccessibleForFree");
+    expect(enAuth.landingPage.heroEyebrow).toBe("Free · Open source · Private");
+    expect(enAuth.landingPage.heroSupport).toContain("No ads, no subscriptions.");
+  });
+
   // The block is a data block: nothing executable, and it is the only script
   // this head emits - no JavaScript for the CSP's inline hashes to cover.
   it("is the only script this head emits, and it is not JavaScript", () => {
