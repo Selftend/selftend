@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { Dimensions, Platform } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -160,6 +160,77 @@ describe("NotificationsScreen", () => {
     expect(general.props.accessibilityState.disabled).toBe(true);
     expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
     expect(screen.getByText("6:00 PM")).toBeTruthy();
+  });
+
+  /**
+   * One card, two runs (#2416, arrangement C; spec § 6): the general row, then an
+   * eyebrow INSIDE the same card - "For each tool" in the `eyebrow` text variant -
+   * then the eleven tool rows in registry order. Not a second card (arrangement B:
+   * three stacked switch-bearing cards) and not a bare twelfth row (arrangement A:
+   * "Selftend" reads as a tool with an odd name). Order is asserted as the card's
+   * document order, so the eyebrow cannot drift above the general row or below a
+   * tool row without failing here.
+   */
+  it("renders one card, two runs: the general row, the eyebrow, then the tool rows (#2492)", () => {
+    renderWithProviders(<NotificationsScreen />);
+
+    const order = screen
+      .getAllByTestId(/^notification-(row-[a-z]+|run-per-tool)$/)
+      .map((node) => node.props.testID);
+    expect(order).toEqual([
+      "notification-row-general",
+      "notification-run-per-tool",
+      ...NOTIFICATION_TARGETS.slice(1).map((target) => `notification-row-${target.key}`),
+    ]);
+    // Inside the rows card, not between cards.
+    expect(
+      within(screen.getByTestId("notification-rows-card")).getByTestId("notification-run-per-tool"),
+    ).toBeTruthy();
+
+    const eyebrow = screen.getByText("For each tool");
+    // A level-2 header, as the settings page's run labels are: one jump point under the
+    // screen's h1. The level is explicit because react-native-web renders a level-less
+    // header as a literal <h1> (settings-group-label.tsx).
+    expect(screen.getByRole("header", { name: "For each tool" })).toBe(eyebrow);
+    expect(eyebrow.props["aria-level"]).toBe(2);
+    // The `eyebrow` variant's own tokens (text.tsx): small, bold, upper-case, tracked, muted.
+    expect(eyebrow.props.className).toContain("uppercase");
+    expect(eyebrow.props.className).toContain("tracking-[0.14em]");
+    expect(eyebrow.props.className).toContain("text-[11px]");
+    expect(eyebrow.props.className).toContain("text-muted-foreground");
+  });
+
+  /**
+   * ADR-0009: the loading surface reserves the space it will occupy. The eyebrow is
+   * static content whose arrival is guaranteed, so it is drawn visibly in BOTH
+   * branches, at the same position with the same box, and nothing below it moves
+   * when the data lands (#981).
+   */
+  it("carries the same eyebrow at the same position while loading (#2492, ADR-0009)", () => {
+    const loaded = renderWithProviders(<NotificationsScreen />);
+    const loadedEyebrow = screen.getByTestId("notification-run-per-tool");
+    const loadedBox = loadedEyebrow.props.className;
+    const loadedText = screen.getByText("For each tool").props.className;
+    loaded.unmount();
+
+    setPreferences(null);
+    renderWithProviders(<NotificationsScreen />);
+
+    const order = screen
+      .getAllByTestId(/^notification-(row-skeleton-body-[a-z]+|run-per-tool)$/, {
+        includeHiddenElements: true,
+      })
+      .map((node) => node.props.testID);
+    expect(order).toEqual([
+      "notification-row-skeleton-body-general",
+      "notification-run-per-tool",
+      ...NOTIFICATION_TARGETS.slice(1).map(
+        (target) => `notification-row-skeleton-body-${target.key}`,
+      ),
+    ]);
+    expect(screen.getByTestId("notification-run-per-tool").props.className).toBe(loadedBox);
+    // Visible, not hidden with the skeletons: it is real content, not a placeholder.
+    expect(screen.getByText("For each tool").props.className).toBe(loadedText);
   });
 
   it("renders a row per registry target, in the registry's order, each switch named", () => {
@@ -556,6 +627,31 @@ describe("NotificationsScreen arrival focus (#1071)", () => {
     for (const target of NOTIFICATION_TARGETS.filter((t) => t.key !== "sleep")) {
       expect(screen.queryByTestId(`notification-row-focus-${target.key}`)).toBeNull();
     }
+  });
+
+  /**
+   * A bell arrival lands on its TOOL row, past both the general row and the eyebrow
+   * (#967's ruling, unchanged by #2412): the anchor is keyed by target, not index,
+   * so two extra nodes above it change nothing. Gratitude is the spec's named case
+   * (§ 9) - a row in the second run. The general row is never an arrival target:
+   * no bell mints `?target=general`, and here it carries no overlay.
+   */
+  it("scrolls to and highlights the gratitude row past the general row and the eyebrow (#2492)", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "gratitude" });
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getByTestId("notification-row-focus-gratitude")).toBeTruthy();
+    expect(screen.queryByTestId("notification-row-focus-general")).toBeNull();
+    expect(screen.queryByTestId(/^notification-row-focus-(?!gratitude$)/)).toBeNull();
+
+    fireEvent(screen.getByTestId("notifications-column"), "layout", layoutEvent(24));
+    fireEvent(screen.getByTestId("notification-rows-card"), "layout", layoutEvent(320));
+    expect(mockScrollTo).not.toHaveBeenCalled();
+    // The gratitude row's own offset, which now sits below the general row and the eyebrow.
+    fireEvent(screen.getByTestId("notification-row-gratitude"), "layout", layoutEvent(402));
+
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: 24 + 320 + 402 - 16, animated: true });
   });
 
   it("scrolls to the row once every anchor has measured, and only once", () => {
