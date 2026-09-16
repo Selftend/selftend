@@ -367,31 +367,56 @@ describe("every section that claims a partition prints the partition caveat", ()
   }
 });
 
-describe("the series caveat prints once per report, beside no section", () => {
+describe("the series caveat prints once per report, ahead of every table", () => {
   // ☠️ #2557. The two caveats differ in SHAPE, not just in wording, and the
   // difference is the whole census: route 1 names three qualifying sections, so
   // its caveat is echoed per section; route 2 has nothing to exempt, because
   // every suppressed cell in all three reports can move between publications.
   // A series caveat that drifted into a per-section echo would say, by
   // repetition, that some sections are exposed and others are not.
-  const STANDING_NOTE = "STANDING NOTE - THE SERIES IS THE RELEASE";
+  const SERIES_NOTE = "THE SERIES IS THE RELEASE, NOT EACH COMMENT";
+  const A_SECTION_HEADING = /^\\echo '=== /m;
+
+  /** The line that prints the note, wherever it sits. */
+  const printedNote = (source: string) =>
+    source.split("\n").filter((line) => line.startsWith("\\echo") && line.includes(SERIES_NOTE));
 
   for (const file of reportFiles()) {
+    const source = () => fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
+
     it(`${file} prints it exactly once`, () => {
-      const printed = fs
-        .readFileSync(path.join(SCRIPTS_DIR, file), "utf8")
-        .split("\n")
-        .filter((line) => line.startsWith("\\echo") && line.includes(STANDING_NOTE));
-      expect(printed).toHaveLength(1);
+      expect(printedNote(source())).toHaveLength(1);
     });
 
-    it(`${file} prints it before its first numbered section`, () => {
-      // A standing note a reader meets after the tables it qualifies has
-      // already failed: the digest comment is read top to bottom.
-      const source = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
-      expect(source.indexOf(STANDING_NOTE)).toBeLessThan(source.indexOf("\\echo '=== 0)"));
+    it(`${file} prints it before its first section, under no heading of its own`, () => {
+      // ⚠️ A note qualifying every table has to arrive before them - the digest
+      // comment is read top to bottom. And it must not trail the population
+      // block: by the section-slicing every helper here uses, a line after a
+      // `=== ` heading BELONGS to that heading, which would attach a note about
+      // suppression to the one block exempt from the rule.
+      const text = source();
+      const firstHeading = text.search(A_SECTION_HEADING);
+      expect(firstHeading).toBeGreaterThan(-1);
+      const [note] = printedNote(text);
+      expect(note).toBeDefined();
+      expect(text.indexOf(note)).toBeLessThan(firstHeading);
     });
   }
+
+  it("says the same thing the document says", () => {
+    // ☠️ The one pairing the byte-identity gate cannot see. It compares the
+    // three SQL copies to each other, so all three can agree and still
+    // contradict docs/analytics.md - and the reports exist precisely because
+    // the document does not travel with the table. Pinned on the discriminator,
+    // which is the sentence a reader acts on.
+    const doc = fs.readFileSync(path.resolve(__dirname, "..", "docs", "analytics.md"), "utf8");
+    const block = blocksByFile.get("analytics-segment.sql")?.get("series_caveat") ?? "";
+
+    expect(doc).toContain("the series is the release");
+    expect(doc).toContain("nothing suppressed in these reports is immutable");
+    expect(block).toContain("THE SERIES IS THE RELEASE");
+    expect(block).toContain("nothing suppressed in these reports is immutable");
+  });
 });
 
 describe("an email address never leaves the database", () => {

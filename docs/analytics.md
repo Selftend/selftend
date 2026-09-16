@@ -245,11 +245,10 @@ a limit two of these routes break.
 
 ###### The worst case, composed
 
-☠️ Route 4 at `b = 1` composed with route 2 gives
-the strongest disclosure these reports
-admit: a cell flipping from `0` in one digest to `<5` in the next is an **exact,
-time-localised fact about one individual**, identified by cohort. It is written
-here rather than left for a reader to assemble from the routes, because a
+☠️ Route 4 at `b = 1` composed with route 2 gives the strongest disclosure these
+reports admit: a cell flipping from `0` in one digest to `<5` in the next is an
+**exact, time-localised fact about one individual**, identified by cohort. It is
+written here rather than left for a reader to assemble from the routes, because a
 document that knows something it does not say is the same overclaiming in
 different clothes.
 
