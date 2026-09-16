@@ -85,6 +85,18 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
 -- information, and it discloses nothing.
 --
+-- ⚠️ THAT ORDERING DESCRIBES THE SUPPRESSED-COUNT ROUTES, not every route
+-- out of these tables. Where a rate prints `0.0%` or `100.0%` the
+-- false-precision leg is not engaged at all — those two figures are exactly
+-- true, and are the least falsely-precise numbers these reports can print —
+-- and privacy is the only leg in play.
+--
+-- ☠️ THE RULE REASONS ABOUT CELL SIZE, NEVER ABOUT CELL VALUE, and never
+-- about what a reader derives from the cells printed BESIDE it. What it
+-- therefore does NOT guarantee is written out in docs/analytics.md, "What the
+-- floor does not guarantee": the routes that bound or recover a suppressed
+-- cell, and the guards that were priced against them and refused.
+--
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
