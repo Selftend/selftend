@@ -367,7 +367,16 @@ export default function NotificationsScreen() {
               className="rounded-xl border border-border bg-card px-4"
               onLayout={anchorLayoutHandler("card")}
             >
-              {preferences
+              {/*
+                One card, two runs (#2416, spec § 6): the general row leads (registry
+                order, #2412), then the "For each tool" eyebrow INSIDE this card, then
+                the eleven tool rows. `rows` is built whole for whichever branch is
+                live and split around the eyebrow below, so the two branches cannot
+                place it differently. The first row of EACH run carries no top
+                hairline - row 0 sits at the card's top, row 1 sits under the
+                eyebrow's own rule - hence `index > 1`, not `index > 0`.
+              */}
+              {(preferences
                 ? NOTIFICATION_TARGETS.map((target, index) => {
                     const isArrival = target.key === arrivalKey;
                     return (
@@ -377,7 +386,7 @@ export default function NotificationsScreen() {
                       // handler attached to an already-mounted wrapper is never heard.
                       <View
                         key={isArrival ? `${target.key}-arrival` : target.key}
-                        className={cn(index > 0 && "border-t border-border")}
+                        className={cn(index > 1 && "border-t border-border")}
                         onLayout={isArrival ? rowLayoutHandler(target.key) : undefined}
                       >
                         {isArrival ? (
@@ -412,11 +421,30 @@ export default function NotificationsScreen() {
                     // either. Remounting is what arms the arrival anchor.
                     <View
                       key={`skeleton-${target.key}`}
-                      className={cn(index > 0 && "border-t border-border")}
+                      className={cn(index > 1 && "border-t border-border")}
                     >
                       <NotificationRowSkeleton target={target} />
                     </View>
-                  ))}
+                  ))
+              ).flatMap((row, index) =>
+                index === 1
+                  ? [
+                      // The divider between the two runs. Static content whose arrival is
+                      // guaranteed, so it is drawn visibly in BOTH branches at the same
+                      // position and with the same box (ADR-0009): nothing below it
+                      // moves when the data lands. Its top rule closes the general
+                      // run; the tool row under it therefore carries none of its own.
+                      <View
+                        key="run-per-tool"
+                        testID="notification-run-per-tool"
+                        className="border-t border-border pb-1 pt-4"
+                      >
+                        <Text variant="eyebrow">{t("runs.perTool")}</Text>
+                      </View>,
+                      row,
+                    ]
+                  : [row],
+              )}
             </View>
           ) : null}
         </View>
