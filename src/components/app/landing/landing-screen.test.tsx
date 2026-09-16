@@ -59,6 +59,20 @@ describe("LandingScreen", () => {
     ).toBeTruthy();
   });
 
+  // #2468: the structured-data block asserts `isAccessibleForFree` on its
+  // WebSite node, and `docs/brand-result.md` § 6 admits that property for one
+  // reason only - this page says it. The eyebrow is the shortest statement of
+  // it, and the support line above carries the rest. If the hero stops saying
+  // it, the block is making a claim the page does not, which is the failure
+  // this case exists to catch: the property's justification is rendered text,
+  // so it is pinned where the text renders rather than in the head's test.
+  it("states in the hero the free access the structured-data block asserts", () => {
+    renderWithProviders(<LandingScreen />);
+
+    expect(screen.getByText("Free · Open source · Private")).toBeTruthy();
+    expect(screen.getByText(/No ads, no subscriptions\./)).toBeTruthy();
+  });
+
   // #1441: the primary CTA is an action, not a link - it creates the guest
   // session in place and the index route's session redirect enters the app.
   it("starts a guest from the primary CTA", async () => {

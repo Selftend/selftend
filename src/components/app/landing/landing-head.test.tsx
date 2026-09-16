@@ -21,6 +21,12 @@ afterEach(async () => {
   await act(() => i18n.changeLanguage("en"));
 });
 
+/** A Bulgarian-preference visitor, after hydration - the § 4.4 case. */
+const switchToBulgarian = async () => {
+  i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
+  await act(() => i18n.changeLanguage("bg"));
+};
+
 describe("LandingHead (#2293)", () => {
   const TITLE = enAuth.landingPage.metaTitle;
   const DESCRIPTION = enAuth.landingPage.metaDescription;
@@ -73,8 +79,7 @@ describe("LandingHead (#2293)", () => {
   });
 
   it("follows the visitor's language after hydration", async () => {
-    i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
-    await act(() => i18n.changeLanguage("bg"));
+    await switchToBulgarian();
 
     render(<LandingHead />);
 
@@ -137,8 +142,7 @@ describe("the structured-data block (#2296)", () => {
   });
 
   it("follows the visitor's language after hydration, with the meta description", async () => {
-    i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
-    await act(() => i18n.changeLanguage("bg"));
+    await switchToBulgarian();
 
     render(<LandingHead />);
 
@@ -176,8 +180,7 @@ describe("the structured-data block (#2296)", () => {
   // hardcoded "en" would pass the case above and be false in the DOM for a
   // Bulgarian-preference visitor; this case is what makes it a derivation.
   it("follows the visitor's language after hydration, with <html lang>", async () => {
-    i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
-    await act(() => i18n.changeLanguage("bg"));
+    await switchToBulgarian();
 
     render(
       <>
@@ -191,19 +194,17 @@ describe("the structured-data block (#2296)", () => {
     expect(webSite.inLanguage).toBe("bg");
   });
 
-  // § 6's pin, on the property a string cannot carry: `isAccessibleForFree` is
-  // true because the landing renders "Free · Open source · Private" and "No
-  // ads, no subscriptions" - the hero eyebrow and support the screen shows.
-  // Both are pinned as literals beside the flag, so a rewording that drops the
-  // claim fails here, next to the property that restates it.
-  it("asserts isAccessibleForFree only because the landing says so", () => {
+  // § 6 admits `isAccessibleForFree` only because the landing's hero says so.
+  // The proof that it still says it belongs where the hero renders, and
+  // `landing-screen.test.tsx` holds it as rendered text; asserting the
+  // translation keys here would pin the JSON and not the page. So this case
+  // pins what this head emits: the flag, on the WebSite alone.
+  it("asserts isAccessibleForFree on the WebSite alone", () => {
     render(<LandingHead />);
 
     const { webSite, organization } = block();
     expect(webSite.isAccessibleForFree).toBe(true);
     expect(organization).not.toHaveProperty("isAccessibleForFree");
-    expect(enAuth.landingPage.heroEyebrow).toBe("Free · Open source · Private");
-    expect(enAuth.landingPage.heroSupport).toContain("No ads, no subscriptions.");
   });
 
   // The block is a data block: nothing executable, and it is the only script

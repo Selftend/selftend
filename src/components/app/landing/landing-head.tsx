@@ -25,7 +25,8 @@ import { STRUCTURED_DATA_TYPE, landingStructuredData } from "@/src/lib/structure
  * Its address and description are the same `url` and `description` reads the
  * tags above render, so the block cannot drift from them, and it follows the
  * language the same way - its `inLanguage` is the `i18n.language` the root
- * layout's `SiteHead` renders as `<html lang>` (§ 4.4), never a fixed "en",
+ * layout's `SiteHead` renders as `<html lang>` (`docs/indexability.md` § 4.4),
+ * never a fixed "en",
  * which would be false in the DOM for a Bulgarian-preference visitor
  * (`docs/brand-result.md` § 6, #2405). A JSON-LD script is a data block: the
  * CSP's inline-script hashes never apply to it.

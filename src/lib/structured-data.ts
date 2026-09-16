@@ -78,12 +78,8 @@ export function landingStructuredData({
         name: SITE_NAME,
         url,
         publisher: { "@id": organizationId },
-        // The landing renders "Free · Open source · Private" and "No ads, no
-        // subscriptions"; free-to-users is a standing guardrail. On a WebSite
-        // this asserts the site's content is free to access - narrower than
-        // the product claim, which would need the refused SoftwareApplication.
+        // Both restate the page, and only the page - see the docblock above.
         isAccessibleForFree: true,
-        // Restates the rendered <html lang>, from the same i18n read.
         inLanguage,
       },
     ],
