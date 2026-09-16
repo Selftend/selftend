@@ -111,12 +111,37 @@ const withDevelopmentCleartextTraffic: ConfigPlugin = (config) => {
 // are what React Native's own docs suggest for larger projects.
 const GRADLE_JVM_ARGS = "-Xmx4096m -XX:MaxMetaspaceSize=1024m";
 
+// Optimised resource shrinking (#2335). Play Console suggests it on 0.19.0.
+// ☠️ The property is `android.r8.optimizedResourceShrinking`. The Play card's
+// write-up named an `android.` + `enableOptimizedResourceShrinking` spelling
+// instead, and no such property exists: Gradle ignores an unknown property
+// silently, so that spelling builds green, audits clean and shrinks nothing. It is an AGP 8.12 opt-in
+// (React Native 0.86 pins exactly 8.12.0) and AGP 9.0 turns it on by default,
+// so this is an early opt-in to a default, not a divergence from one.
+// It folds resources into R8's single reference graph instead of a separate
+// AAPT2 pass, which drops the unconditional keeps AAPT2 used to generate - so
+// it is strictly more aggressive, and the risk it carries is to the images
+// React Native resolves by runtime name. `tools:keep` stays the documented
+// mechanism and Expo still generates `res/raw/keep.xml`, which is why it
+// holds. Verified on a local release build, not assumed - see
+// docs/releasing.md, "Android app optimisation (R8)".
+const GRADLE_OPTIMIZED_RESOURCE_SHRINKING = "android.r8.optimizedResourceShrinking";
+
 const withReleaseGradleJvmArgs: ConfigPlugin = (config) =>
   withGradleProperties(config, (config) => {
     config.modResults = config.modResults.filter(
-      (item) => !(item.type === "property" && item.key === "org.gradle.jvmargs"),
+      (item) =>
+        !(
+          item.type === "property" &&
+          (item.key === "org.gradle.jvmargs" || item.key === GRADLE_OPTIMIZED_RESOURCE_SHRINKING)
+        ),
     );
     config.modResults.push({ type: "property", key: "org.gradle.jvmargs", value: GRADLE_JVM_ARGS });
+    config.modResults.push({
+      type: "property",
+      key: GRADLE_OPTIMIZED_RESOURCE_SHRINKING,
+      value: "true",
+    });
     return config;
   });
 
