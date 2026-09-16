@@ -34,6 +34,29 @@ jest.mock("@/src/lib/supabase", () => ({
   },
 }));
 
+/**
+ * The hero pills bearing `name`.
+ *
+ * ☠️ A bare `getByText` is no longer unambiguous on this screen. Since #2469 the
+ * site footer the landing renders (#2467) lists `/meditation`, labelled - by the
+ * anchor-text rule - with that page's H1, "Meditation": the same word the
+ * meditation pill carries, so `getByText("Meditation")` throws "Found multiple
+ * elements". Taking the first match instead would be a coin toss on tree order
+ * and would keep passing if the pill itself disappeared.
+ *
+ * ☠️ Disambiguating on the pill's `text-[13.5px]` was the first fix and was
+ * WRONG: that utility is not unique to this row - `how-it-works-section.tsx`
+ * sets the same scale - so the filter only worked by the accident that no step
+ * body's text equals a tool name. The pill carries a `testID` instead, which is
+ * a structural handle rather than a styling coincidence, and a restyle no longer
+ * reds this test.
+ *
+ * The count is asserted rather than the presence, so a pill that stops being
+ * rendered fails here even while the footer still says the word.
+ */
+const heroPills = (name: string) =>
+  screen.getAllByTestId("hero-tool-pill").filter((node) => node.props.children === name);
+
 describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {
     renderWithProviders(<LandingScreen />);
@@ -124,7 +147,7 @@ describe("LandingScreen", () => {
       "Sleep",
       "Habits",
     ]) {
-      expect(screen.getByText(name)).toBeTruthy();
+      expect(heroPills(name)).toHaveLength(1);
     }
   });
 });

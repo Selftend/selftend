@@ -3,6 +3,7 @@ import { View } from "react-native";
 
 import { SITE_FOOTER_LINKS, SiteFooter } from "./site-footer";
 import enCommon from "@/src/i18n/locales/en/common.json";
+import enMeditation from "@/src/i18n/locales/en/meditation.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
 import enSecurity from "@/src/i18n/locales/en/security.json";
 import { appEnv } from "@/src/lib/env";
@@ -116,6 +117,22 @@ describe("SiteFooter", () => {
   });
 
   /**
+   * The same rule on the first explainer (#2469), and the one entry where the
+   * destination's H1 is NOT its screen's own title: `/meditation` is titled with
+   * the module's name because `meditation:module.learn.title` - "Learn the
+   * framework" - is an instruction that names no topic to a stranger, and this
+   * footer is exactly where it would be read as one, on every public page
+   * (docs/brand-result.md § 3.2). Both halves are asserted: the label that IS
+   * used, and the label that must not be.
+   */
+  it("labels the explainer row with the module's name, not the learn screen's instruction", () => {
+    renderWithProviders(<SiteFooter />);
+
+    expect(linkHref(enMeditation.module.home.title)).toBe("/meditation");
+    expect(screen.queryByText(enMeditation.module.learn.title)).toBeNull();
+  });
+
+  /**
    * `/` is not listed: the header's brand mark links it on every page, and it is
    * also the explainer pages' quiet route into the app (§ 7.2). A second entry
    * beside the brand mark would be a call to action wearing a footer.
@@ -140,7 +157,7 @@ describe("SiteFooter", () => {
     const expected = INDEX_LIST.filter((route) => route !== "/");
     // Anti-vacuity: the list is read at runtime, so an empty read would make
     // the equality below pass on a footer that renders nothing.
-    expect(expected.length).toBeGreaterThanOrEqual(7);
+    expect(expected.length).toBeGreaterThanOrEqual(8);
     expect(renderedHrefs()).toEqual(expected);
   });
 
@@ -186,7 +203,16 @@ describe("SiteFooter", () => {
     expect(indexOf(enCommon.safety.openCrisis)).toBeGreaterThan(
       indexOf(enCommon.safety.description),
     );
-    expect(indexOf(enPolicies.faq.pageTitle)).toBeGreaterThan(indexOf(enCommon.safety.openCrisis));
+    // The nav list's two rows in their own order (#2469): the explainers, then
+    // the policies. Asserted here rather than only through the ordered pin
+    // because this is the reading order a person meets, and the pin would still
+    // pass on a list that put the policies first.
+    expect(indexOf(enMeditation.module.home.title)).toBeGreaterThan(
+      indexOf(enCommon.safety.openCrisis),
+    );
+    expect(indexOf(enPolicies.faq.pageTitle)).toBeGreaterThan(
+      indexOf(enMeditation.module.home.title),
+    );
     expect(indexOf(enPolicies.accountDeletion.pageTitle)).toBeGreaterThan(
       indexOf(enPolicies.faq.pageTitle),
     );

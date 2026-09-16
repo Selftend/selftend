@@ -21,6 +21,7 @@ const EXPORT_FIXTURE = {
   "index.html": "<html>landing</html>",
   "faq.html": "<html>faq</html>",
   "crisis.html": "<html>crisis</html>",
+  "meditation.html": "<html>meditation</html>",
   "privacy.html": "<html>privacy</html>",
   "terms.html": "<html>terms</html>",
   "cookies.html": "<html>cookies</html>",
@@ -87,11 +88,12 @@ describe("scripts/lib/index-list", () => {
   describe("buildSitemap", () => {
     const sitemap = buildSitemap();
 
-    it("lists exactly the eight apex URLs, the root with its slash and the rest without", () => {
+    it("lists exactly the nine apex URLs, the root with its slash and the rest without", () => {
       const locs = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
       expect(locs).toEqual([
         `${SITE_ORIGIN}/`,
         `${SITE_ORIGIN}/crisis`,
+        `${SITE_ORIGIN}/meditation`,
         `${SITE_ORIGIN}/faq`,
         `${SITE_ORIGIN}/privacy`,
         `${SITE_ORIGIN}/terms`,
@@ -126,7 +128,7 @@ describe("scripts/lib/index-list", () => {
   });
 
   describe("applyIndexList", () => {
-    it("leaves exactly the eight listed files plus 404.html as the HTML of the export", () => {
+    it("leaves exactly the nine listed files plus 404.html as the HTML of the export", () => {
       writeFixture(dist);
 
       applyIndexList(dist);

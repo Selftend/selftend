@@ -103,7 +103,7 @@ Android's update popup runs on Google Play Core, which no automated layer can dr
 - web build loads
 - authenticated flow works
 - thought records save and reload
-- `/privacy`, `/terms`, `/crisis`, and `/account-deletion` load without sign-in
+- `/privacy`, `/terms`, `/crisis`, `/account-deletion` and `/meditation` load without sign-in
 - `/auth-callback` loads directly and shows the missing-link state
 
 ### Future data separation docs smoke
