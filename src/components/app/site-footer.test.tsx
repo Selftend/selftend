@@ -3,6 +3,7 @@ import { View } from "react-native";
 
 import { SITE_FOOTER_LINKS, SiteFooter } from "./site-footer";
 import enCommon from "@/src/i18n/locales/en/common.json";
+import enHabits from "@/src/i18n/locales/en/habits.json";
 import enMeditation from "@/src/i18n/locales/en/meditation.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
 import enSecurity from "@/src/i18n/locales/en/security.json";
@@ -133,6 +134,21 @@ describe("SiteFooter", () => {
   });
 
   /**
+   * The same rule on the second explainer (#2470), where it applies with NO
+   * exception: `/habits` is labelled `habits:learn.indexTitle`, because that is
+   * already its learn screen's own title and it is a name rather than an
+   * instruction. The negative half is the landing's word for the same tool - the
+   * footer says what the PAGE is called, and the hero pill says what the TOOL is
+   * called, which is a different string for a different job.
+   */
+  it("labels the habits explainer with its learn screen's own title", () => {
+    renderWithProviders(<SiteFooter />);
+
+    expect(linkHref(enHabits.learn.indexTitle)).toBe("/habits");
+    expect(screen.queryByText("Habits")).toBeNull();
+  });
+
+  /**
    * `/` is not listed: the header's brand mark links it on every page, and it is
    * also the explainer pages' quiet route into the app (§ 7.2). A second entry
    * beside the brand mark would be a call to action wearing a footer.
@@ -157,7 +173,7 @@ describe("SiteFooter", () => {
     const expected = INDEX_LIST.filter((route) => route !== "/");
     // Anti-vacuity: the list is read at runtime, so an empty read would make
     // the equality below pass on a footer that renders nothing.
-    expect(expected.length).toBeGreaterThanOrEqual(8);
+    expect(expected.length).toBeGreaterThanOrEqual(9);
     expect(renderedHrefs()).toEqual(expected);
   });
 
@@ -210,9 +226,10 @@ describe("SiteFooter", () => {
     expect(indexOf(enMeditation.module.home.title)).toBeGreaterThan(
       indexOf(enCommon.safety.openCrisis),
     );
-    expect(indexOf(enPolicies.faq.pageTitle)).toBeGreaterThan(
+    expect(indexOf(enHabits.learn.indexTitle)).toBeGreaterThan(
       indexOf(enMeditation.module.home.title),
     );
+    expect(indexOf(enPolicies.faq.pageTitle)).toBeGreaterThan(indexOf(enHabits.learn.indexTitle));
     expect(indexOf(enPolicies.accountDeletion.pageTitle)).toBeGreaterThan(
       indexOf(enPolicies.faq.pageTitle),
     );

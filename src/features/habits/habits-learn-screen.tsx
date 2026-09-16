@@ -1,5 +1,5 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -10,11 +10,14 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import {
+  HabitsLearnCardRow,
+  HabitsLearnCardsBody,
+} from "@/src/features/habits/habits-learn-cards-body";
+import {
   findLearnCard,
   HABITS_LEARN_CARDS,
   type HabitsLearnCard,
 } from "@/src/features/habits/learn";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface HabitsLearnDetailProps {
   slug: string;
@@ -67,9 +70,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
 }
 
 function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
-  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
-  const palette = useHabitChipPalette();
   const others = HABITS_LEARN_CARDS.filter((card) => card.slug !== activeSlug);
 
   return (
@@ -78,51 +79,32 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
         {t("learn.indexTitle")}
       </Text>
       <View className="gap-2">
-        {others.map((card) => {
-          const chip = palette[card.tone];
-          const cardKey = `learn.cards.${card.slug}` as const;
-          return (
-            <Pressable
-              key={card.slug}
-              accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() =>
-                pushWithOrigin({
-                  pathname: "/tools/habits/learn/[slug]",
-                  params: { slug: card.slug },
-                })
-              }
-              className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
-              role="button"
-            >
-              <View
-                className="size-10 items-center justify-center rounded-xl"
-                style={{ backgroundColor: chip.fill }}
-              >
-                <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-              </View>
-              <View className="flex-1 gap-0.5">
-                <Text className="text-sm font-semibold">
-                  {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-                </Text>
-                <Text variant="muted" className="text-xs" numberOfLines={2}>
-                  {t(`${cardKey}.short` as Parameters<typeof t>[0])}
-                </Text>
-              </View>
-              <Icon name="chevron-right" className="size-5 text-muted-foreground" />
-            </Pressable>
-          );
-        })}
+        {others.map((card) => (
+          <HabitsLearnCardRow key={card.slug} card={card} />
+        ))}
       </View>
     </View>
   );
 }
 
+/**
+ * The gated index of the ten core ideas: this tool's chrome around the shared
+ * cards body.
+ *
+ * The ten rows moved to `habits-learn-cards-body.tsx` on #2470 so that
+ * `app/habits.tsx` can render the same ten for a reader with no account
+ * (docs/brand-result.md § 4). A **pure move** - this screen renders exactly what
+ * it rendered before, and its test passes unedited. What stays here is what a
+ * signed-in reader gets and a stranger does not: the safe area, the scroll
+ * column, the header block, and rows that open the ten gated article routes.
+ *
+ * ☠️ `presentation="links"` is what keeps that true, and the public page passes
+ * `"articles"` instead - the one difference between the two audiences here is
+ * not chrome, because a stranger has nowhere to be sent. The body's docblock
+ * has the full reasoning.
+ */
 export function HabitsLearnIndexScreen() {
-  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
-  const palette = useHabitChipPalette();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -132,44 +114,7 @@ export function HabitsLearnIndexScreen() {
           <Text variant="muted">{t("learn.indexSubtitle")}</Text>
         </View>
 
-        <View className="gap-2">
-          {HABITS_LEARN_CARDS.map((card) => {
-            const chip = palette[card.tone];
-            const cardKey = `learn.cards.${card.slug}` as const;
-            return (
-              <Pressable
-                key={card.slug}
-                accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
-                accessibilityRole="button"
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() =>
-                  pushWithOrigin({
-                    pathname: "/tools/habits/learn/[slug]",
-                    params: { slug: card.slug },
-                  })
-                }
-                className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
-                role="button"
-              >
-                <View
-                  className="size-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: chip.fill }}
-                >
-                  <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-                </View>
-                <View className="flex-1 gap-0.5">
-                  <Text className="text-sm font-semibold">
-                    {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-                  </Text>
-                  <Text variant="muted" className="text-xs" numberOfLines={2}>
-                    {t(`${cardKey}.short` as Parameters<typeof t>[0])}
-                  </Text>
-                </View>
-                <Icon name="chevron-right" className="size-5 text-muted-foreground" />
-              </Pressable>
-            );
-          })}
-        </View>
+        <HabitsLearnCardsBody presentation="links" />
       </ScrollView>
     </SafeAreaView>
   );

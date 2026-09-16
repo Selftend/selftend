@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react-native";
 
+import HabitsScreen from "../../../app/habits";
 import MeditationScreen from "../../../app/meditation";
 import PrivacyScreen from "../../../app/privacy";
 import SecurityScreen from "../../../app/security";
@@ -144,6 +145,27 @@ describe("a policy page's heading outline never skips a level (#2133)", () => {
 
     // Anti-vacuity: the page title plus the three framework cards.
     expect(levels.length).toBeGreaterThanOrEqual(4);
+    expect(levels[0]).toBe(1);
+    expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
+  });
+
+  /**
+   * The second explainer, and the one where the level had to be ADDED rather
+   * than inherited (#2470). `/meditation`'s body arrived at level 2 because the
+   * gated learn screen already passed it; `/habits` renders ten cards the gated
+   * index screen never rendered as headings at all - its rows are buttons in a
+   * table of contents - so `aria-level={2}` on the article titles is new code
+   * with nothing but this assertion behind it. Eleven headings, not four: the
+   * page title and all ten articles.
+   */
+  it("gives /habits the same outline across all ten article cards", () => {
+    mockPathname = "/habits";
+    renderWithProviders(<HabitsScreen />);
+
+    const levels = levelsOf();
+
+    // Anti-vacuity: the page title plus the ten cards, all of them.
+    expect(levels).toHaveLength(11);
     expect(levels[0]).toBe(1);
     expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
   });

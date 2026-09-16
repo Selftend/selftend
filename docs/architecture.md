@@ -50,6 +50,7 @@ app/
 ├── cookies.tsx            public
 ├── crisis.tsx             public
 ├── meditation.tsx         public - the meditation framework, readable with no account
+├── habits.tsx             public - the ten core ideas of habit building, readable with no account
 ├── account-deletion.tsx   public
 ├── faq.tsx                public
 ├── security.tsx           public
