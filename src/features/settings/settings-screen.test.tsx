@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
+import bgSettings from "@/src/i18n/locales/bg/settings.json";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -243,9 +244,16 @@ describe("SettingsScreen structure", () => {
       ).toBeTruthy();
       expect(screen.queryByText("Off by default. You choose which ones to turn on.")).toBeNull();
       expect(screen.queryByText(/Reminders stay explicit/)).toBeNull();
+      // The bg sentence, pinned to the ruled wording as well: locale parity proves the key
+      // exists in both files, not that either says what #2413 decided.
+      expect(bgSettings.reminders.description).toBe(
+        "Едно напомняне от Selftend в час, който избираш, или по едно за всеки инструмент. Всички са изключени, докато не ги включиш.",
+      );
       // No switch on the row: a switch here would be a second arming point that bypasses
       // the Reminders screen's permission flow.
-      expect(screen.queryByRole("switch", { name: /Reminders/ })).toBeNull();
+      expect(
+        within(screen.getByTestId("settings-row-reminders")).queryAllByRole("switch"),
+      ).toHaveLength(0);
     });
 
     /**
