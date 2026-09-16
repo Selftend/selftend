@@ -1,4 +1,6 @@
 import { groundingSlugs } from "@/src/constants/grounding";
+import bgNotifications from "@/src/i18n/locales/bg/notifications.json";
+import enNotifications from "@/src/i18n/locales/en/notifications.json";
 
 import {
   activityWindowsForTarget,
@@ -221,8 +223,12 @@ describe("activityWindowsForTarget", () => {
     // function and by no earlier one, so a DBT push to a 0.17.0 phone is a
     // dead tap with no switch on that phone to stop it. Named, not derived -
     // the list is the delta between the shipped allowlist and this one.
-    expect([...HELD_OUT_TARGETS]).toEqual(["dbt"]);
+    // `general` (#2491) is the same shape one release later: its url is Home,
+    // `/`, allowlisted by the client shipping with this function and by no
+    // earlier one. Lifted by #2494 once that build is live on both stores.
+    expect([...HELD_OUT_TARGETS]).toEqual(["dbt", "general"]);
     expect(TARGETS).not.toContain("dbt");
+    expect(TARGETS).not.toContain("general");
     // The two lists partition the configured set: a target in neither is a
     // reminder silently never sent, a target in both is the hold-out undone.
     expect([...TARGETS, ...HELD_OUT_TARGETS].sort()).toEqual([...CONFIGURED_TARGETS].sort());
@@ -230,13 +236,93 @@ describe("activityWindowsForTarget", () => {
     expect([...CONFIGURED_TARGETS].sort()).toEqual(Object.keys(TARGET_CONFIGS).sort());
   });
 
+  /**
+   * The suppression discriminant (#2413 § 3.5, spec § 7.3). A tool target
+   * suppresses on use because a tool has a *satisfied* (#1655, #1668); a target
+   * with no tool to read declares `"never"`, and that is today exactly the
+   * general reminder. The two tests below hold each other up: the first walks
+   * only the `"on-use"` targets, so the second has to pin the `"never"` set to
+   * exactly one key - otherwise a tool could slip into the exemption, or the
+   * exemption could widen, with nothing failing.
+   */
   it("every tool reminder suppresses on same-day use - none is exempt (#1668)", () => {
     // Map #1655's rule: a nudge vanishes when satisfied. Breathing and ACT were exempt for
     // wiring reasons, not design reasons; the config now has to name a source per tool.
-    for (const target of TARGETS) {
-      expect(TARGET_CONFIGS[target].activitySources.length).toBeGreaterThan(0);
+    const onUse = CONFIGURED_TARGETS.filter(
+      (target) => TARGET_CONFIGS[target].suppression === "on-use",
+    );
+    expect(onUse).toHaveLength(CONFIGURED_TARGETS.length - 1);
+    for (const target of onUse) {
+      const config = TARGET_CONFIGS[target];
+      if (config.suppression !== "on-use") throw new Error(`${target} is not on-use`);
+      expect(config.activitySources.length).toBeGreaterThan(0);
       expect(activityWindowsForTarget(target, "UTC", FIXED)).not.toHaveLength(0);
     }
+  });
+
+  it("exactly the general target never suppresses: the clock is the trigger, never absence (#2413)", () => {
+    const never = CONFIGURED_TARGETS.filter(
+      (target) => TARGET_CONFIGS[target].suppression === "never",
+    );
+    expect(never).toEqual(["general"]);
+    // Nothing to read, so nothing is read: no windows, no activity lookup, no
+    // table joined. Use does not cancel it; dedup is one per day per channel
+    // through its own last-key column exactly as every target's is.
+    expect(activityWindowsForTarget("general", "UTC", FIXED)).toEqual([]);
+    expect(TARGET_CONFIGS.general).not.toHaveProperty("activitySources");
+    expect(TARGET_CONFIGS.general.lastKeyField).toBe("last_general_reminder_key");
+  });
+
+  it("mints the general reminder to Home under its own tag (#2413 § 3.4)", () => {
+    expect(TARGET_CONFIGS.general.url).toBe("/");
+    expect(TARGET_CONFIGS.general.tag).toBe("selftend-general-reminder");
+    expect(TARGET_CONFIGS.general.enabledField).toBe("general_reminders_enabled");
+    expect(TARGET_CONFIGS.general.hourField).toBe("general_reminder_hour");
+    expect(TARGET_CONFIGS.general.minuteField).toBe("general_reminder_minute");
+    expect(TARGET_CONFIGS.general.timezoneField).toBe("general_reminder_timezone");
+  });
+
+  /**
+   * ☠️ `send-web-reminders/index.ts` reads `copy.<target>` through a type cast
+   * (`Record<ReminderTarget | "routine", …>`), so a locale missing the key
+   * compiles and sends `undefined` as the title. Pinned here, for every
+   * configured target and both locales, so the cast can hide nothing.
+   */
+  it.each(CONFIGURED_TARGETS)("carries push copy for %s in both locales", (target) => {
+    for (const copy of [enNotifications.copy, bgNotifications.copy] as Record<
+      string,
+      { title?: unknown; body?: unknown }
+    >[]) {
+      expect(typeof copy[target]?.title).toBe("string");
+      expect(typeof copy[target]?.body).toBe("string");
+      expect(String(copy[target]?.title).length).toBeGreaterThan(0);
+      expect(String(copy[target]?.body).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("the general reminder's copy is the ruled wording, and names no tool, no record and no absence (#2413)", () => {
+    expect(enNotifications.copy.general).toEqual({
+      title: "One small thing",
+      body: "A few minutes with whichever tool helps. Whenever you're ready.",
+    });
+    expect(bgNotifications.copy.general).toEqual({
+      title: "Едно малко нещо",
+      body: "Няколко минути с инструмента, който помага. Когато ти е удобно.",
+    });
+    // "Check-in" is the mood tool's name in both locales (three push titles already end in
+    // it; the bg mood title is "Проверка на настроението"), so the general copy avoids it.
+    for (const text of [
+      enNotifications.copy.general.title,
+      enNotifications.copy.general.body,
+      bgNotifications.copy.general.title,
+      bgNotifications.copy.general.body,
+      enNotifications.targets.general.label,
+      bgNotifications.targets.general.label,
+    ]) {
+      expect(text).not.toMatch(/check-?in|проверка/i);
+    }
+    expect(enNotifications.targets.general.label).toBe("Selftend");
+    expect(bgNotifications.targets.general.label).toBe("Selftend");
   });
 
   it("anchors start-of-day to the user's timezone, not UTC", () => {

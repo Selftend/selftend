@@ -34,6 +34,11 @@ export const HELD_OUT_REMINDER_TARGETS = [
   // `/modules/dbt` in ALLOWED_REMINDER_ROUTES is live on Google Play and the
   // App Store.
   "dbt",
+  // The general reminder (#2491, spec docs/reminders.md § 3.4): its deep link
+  // is Home, `/`, allowlisted by the client that ships with this list and by
+  // no earlier one. Lift (#2494) once the native build carrying `/` in
+  // ALLOWED_REMINDER_ROUTES is live on Google Play and the App Store.
+  "general",
 ] as const;
 
 /** Is `target` held out right now? A string predicate so both sides can ask without sharing a type. */

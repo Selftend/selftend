@@ -34,7 +34,7 @@
   },
   "reminders": {
     "title": "Reminders",
-    "description": "Off by default. You choose which ones to turn on."
+    "description": "One reminder from Selftend at a time you pick, or one per tool. All off until you turn them on."
   },
   "onboarding": {
     "saving": "Saving...",
