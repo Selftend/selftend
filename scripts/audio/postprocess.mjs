@@ -67,9 +67,12 @@ const DBTP_EPSILON = 0.1;
  * aimed at a file by hand, so the command that produces what the app ships could
  * report PASS on a clip that starts late.
  *
- * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set and only
- * the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms —
- * while every bed, texture and bell measures 0.0. It matters because every trigger
+ * ⚠️ On the FINISHED file it is in practice a VOICE-clip rule. #1138 measured the
+ * shipped set and only the four `guide_*` files carry any lead there — 36.2 / 34.1
+ * / 15.0 / 3.2 ms — while every bed, texture and bell measures 0.0. ☠️ On the
+ * MASTER that was never true: all nine beds carried 4.97 ms (#2460), invisible
+ * here because the encoder fills digital silence with pre-echo. The master half of
+ * the rule is beds-only and lives beside the seam gate. It matters because every trigger
  * in the app is *already* up to 250 ms late (`TICK_MS` polling, #1134), so silence
  * in the file adds to a lateness the user can already hear.
  *
@@ -694,7 +697,17 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
         "-af",
         // `level=disabled` stops alimiter applying its own auto make-up gain,
         // which would move the loudness this chain is about to measure.
-        `alimiter=limit=${BED_LIMITER_PEAK}:level=disabled`,
+        //
+        // ☠️☠️ `latency=1` IS LOAD-BEARING AND IT IS NOT A TUNING KNOB (#2460).
+        // At ffmpeg's default `latency=0` the limiter cannot see a peak coming,
+        // so it PREPENDS 219 frames (4.97 ms) of digital zeros as its lookahead
+        // and DROPS the source's last 219 frames to compensate. Every shipped bed
+        // carried that hole: a 5-12 ms head the AAC encoder then filled with
+        // pre-echo 10-30 dB down, which reads as a fade-in and is not one. Turning
+        // it on makes the limiter delay-compensate its own lookahead instead, so
+        // the head is the take's own first sample. Removing this token puts all
+        // nine holes back, and the master lead gate below is what would say so.
+        `alimiter=limit=${BED_LIMITER_PEAK}:level=disabled:latency=1`,
         "-c:a",
         "pcm_f32le",
         limited,
@@ -749,9 +762,17 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     // clip that starts late, on the one class that has ever started late (#1138:
     // the four `guide_*` files carry 3.2-36.2 ms and nothing else carries any).
     //
-    // ⚠️ On the FINISHED file, not the master. Encoding is where a delay would be
-    // introduced — #1210's own wording is "confirm ffmpeg strips the encoder delay"
-    // — so measuring the input would answer a question nobody asked.
+    // ⚠️ BOTH FILES, and until #2460 this measured only the finished one. The old
+    // wording here was "On the FINISHED file, not the master. Encoding is where a
+    // delay would be introduced … so measuring the input would answer a question
+    // nobody asked." That was wrong, and it was wrong about a defect already in
+    // the shipped set: `alimiter` at ffmpeg's default `latency=0` PREPENDS 219
+    // frames (4.97 ms) of digital zeros to every bed, and the AAC encoder then
+    // fills that silence with pre-echo at −10…−31 dBFS. On the finished file
+    // those frames sit far ABOVE the −60 dBFS floor, so the gate saw a clip that
+    // started on time; on the master they are exact zeros and it sees 4.97 ms.
+    // The encoder is not the only thing that can put silence at a head — the
+    // CHAIN can, and the master is the only place that is visible.
     step("lead-in check");
     const finishedPath = join(dir, "finished.wav");
     const finished = await decodeToFloatWav(outPath, finishedPath, {
@@ -779,11 +800,31 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     // ⚠️ Reading `normalised` and not `working`: the gate must see the same gain
     // the file ships at, and a limiter (beds only) runs before it. Everything
     // after this point is the encode, which is what we are deliberately excluding.
+    //
+    // ☠️ THE MASTER'S OWN LEAD IS MEASURED HERE TOO, AND ONLY FOR BEDS (#2508).
+    // The defect it exists for is the LIMITER's — `alimiter`'s lookahead — and
+    // `spec.limit` is true for exactly one class, so scoping it here is the same
+    // fact stated twice rather than a narrowing. Two reasons it must not run on
+    // voice or bells:
+    //
+    //   1. #1359's invariant. A `guide_hold` whose TAKE starts 3.2 ms late fails
+    //      the finished-file gate above, and its master starts 3.2 ms late too —
+    //      so an unscoped check prints TWO failures for ONE defect, which is the
+    //      exact shape the hint/failure split next door exists to prevent.
+    //   2. It would assert a false cause. The master gate's message says "suspect
+    //      the chain rather than the take", and for a voice cue that is backwards:
+    //      the take really does start late, and re-drawing it is the remedy.
+    //
+    // One parse serves both checks — they read the same bytes for the same
+    // reason, that this is the audio as it ships with everything but the encode
+    // applied.
     let seam = null;
+    let masterEdges = null;
     if (spec.klass === "beds") {
       step("seam gate");
       const master = parseWav(await readFile(normalised));
       seam = seamMetrics(master.samples, master.channels, master.sampleRate);
+      masterEdges = edgeSilence(master.samples, master.channels, master.sampleRate);
     }
 
     return {
@@ -793,6 +834,7 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
       size,
       seam,
       edges,
+      masterEdges,
       durationSeconds,
       foldNote,
       gain,
@@ -810,10 +852,18 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
  * ☠️ THE TILING HAPPENS ON DECODED PCM, NOT ON THE ENCODED FILE. Looping the
  * `.m4a` would splice AAC frames, putting the codec's own priming gap at every
  * join — inventing precisely the artifact the listen exists to detect, and
- * failing a bed for a defect the app would never play. #1138 established that no
- * platform loops by buffer wrap anyway (iOS duplicates an `AVPlayerItem`, Android
- * sets `REPEAT_MODE_ONE`, web sets `HTMLAudioElement.loop`), so the honest thing
- * to put in front of an ear is the file's own seam, sample-exact and once-encoded.
+ * failing a bed for a defect the app would never play. So the honest thing to put
+ * in front of an ear is the file's own seam, sample-exact and once-encoded.
+ *
+ * ⚠️ This used to justify itself with "#1138 established that no platform loops
+ * by buffer wrap anyway (iOS duplicates an `AVPlayerItem`, Android sets
+ * `REPEAT_MODE_ONE`, web sets `HTMLAudioElement.loop`)". **Web no longer does
+ * either half of that.** #2439 measured the element's wrap as a seek with ~10-22
+ * ms of silence in it on every engine, and #2441 moved the web bed onto a Web
+ * Audio buffer loop — which IS a buffer wrap, and is sample-exact. The per-platform
+ * record lives in `README.md`; `docs/sound.md` §3 is the ruling. The REASON above
+ * is unaffected: it was never really about what the platform does, only about not
+ * measuring an artifact the encode invented.
  *
  * ⚠️ Since #1571 the ear and the ratio no longer judge the identical boundary,
  * and that is deliberate. This listen crosses the DECODED file's join; the gate
@@ -854,8 +904,19 @@ export async function repeatLoop(input, outPath, times, clipId) {
 }
 
 export function report(clipId, result) {
-  const { spec, pre, post, size, seam, edges, durationSeconds, foldNote, gain, ceilingBound } =
-    result;
+  const {
+    spec,
+    pre,
+    post,
+    size,
+    seam,
+    edges,
+    masterEdges,
+    durationSeconds,
+    foldNote,
+    gain,
+    ceilingBound,
+  } = result;
   const failures = [];
   /** Things to try next. Printed, but never counted against the file. */
   const hints = [];
@@ -899,6 +960,37 @@ export function report(clipId, result) {
         : "this take cannot be re-drawn in matching style — trim the head of the master " +
             "before re-running, or choose another candidate.",
     );
+  }
+
+  // ☠️ THE SAME RULE ON THE MASTER, and it is not redundant with the check
+  // above — it catches a class of defect that one is blind to by construction
+  // (#2460). Digital silence at the head of the master comes back from the encoder
+  // filled with pre-echo, well above the −60 dBFS floor, so the finished file
+  // reads as starting on time while the audio begins 5 ms late. That is exactly
+  // what `alimiter`'s default `latency=0` did to all nine shipped beds, and the
+  // finished-file gate passed every one of them.
+  //
+  // ⚠️ Gated on `spec.limit`, the same flag that decides whether the limiter ran
+  // at all — see `postprocess` for why this must not reach voice or bells (it
+  // would double-report one late take and blame the wrong thing). Written as the
+  // class's own condition rather than `if (masterEdges)`, so a bed that somehow
+  // arrives WITHOUT the measurement still fails the "not measured is not passed"
+  // rule instead of quietly skipping it.
+  if (spec.limit) {
+    if (!masterEdges) {
+      failures.push(
+        "leading silence was not measured on the master, so a head hole the encoder " +
+          "would disguise is unverified for this file",
+      );
+    } else if (masterEdges.leadMs > LEAD_SILENCE_LIMIT_MS) {
+      failures.push(
+        `the master starts ${masterEdges.leadMs.toFixed(2)} ms late ` +
+          `(limit ${LEAD_SILENCE_LIMIT_MS} ms), which the finished file hides: the encoder ` +
+          "lifts digital silence to a level the -60 dBFS floor no longer sees. " +
+          "Suspect the chain rather than the take — a filter that reports latency " +
+          "prepends zeros unless it is told not to (#2460).",
+      );
+    }
   }
   if (seam) {
     if (seam.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
@@ -954,6 +1046,18 @@ export function report(clipId, result) {
     console.log(
       `   edges     lead ${edges.leadMs.toFixed(2)} ms · tail ${edges.tailMs.toFixed(2)} ms` +
         (Number.isFinite(durationSeconds) ? `   (${durationSeconds.toFixed(3)}s)` : ""),
+    );
+  }
+  // Printed on its own line rather than folded into the one above: the two
+  // numbers answer different questions, and #2460 is the case where they
+  // disagree. Seeing 0.00 / 4.97 side by side is the whole diagnosis.
+  // Scoped like the gate above, and for the same reason: outside the limiter's
+  // class there is no second number to disagree with the first, so printing one
+  // would invite a reader to compare two measurements of the same thing.
+  if (spec.limit && masterEdges) {
+    console.log(
+      `   master    lead ${masterEdges.leadMs.toFixed(2)} ms · ` +
+        `tail ${masterEdges.tailMs.toFixed(2)} ms   (pre-encode)`,
     );
   }
   if (seam) {

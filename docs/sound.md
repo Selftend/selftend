@@ -20,11 +20,12 @@ player, not the file, not the app's fades, and not a defect on the phones at all
 This document is the decided answer to both, and it is also the standing home of
 the in-app playback rules - the lanes, their invariants, the per-platform looper,
 the sound door and the sound panel. §10 is the build, in dependency order, and
-**items 1-4 have shipped** (#2504, #2505, #2506, #2507): the catalogue's nominal
+**items 1-5 have shipped** (#2504, #2505, #2506, #2507, #2508): the catalogue's nominal
 lengths, the two lifted controls, the two-player lane with the web buffer loop,
-and the sound door and panel on the sit. What is left is item 5, the `:latency=1`
-master re-run, and item 6, the owner's post-build listen on web - both
-independent of everything above. Every ruling below was made on its own ticket and
+the sound door and panel on the sit, and the `:latency=1` master re-run that took
+the limiter's 4.97 ms head hole out of all nine beds. What is left is **item 6
+alone**, the owner's post-build listen on web - the one thing here nobody reading
+this can supply for themselves. Every ruling below was made on its own ticket and
 is linked at its heading; the ticket's resolution comment holds the reasoning and
 the numbers, and this file holds what was decided.
 
