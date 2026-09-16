@@ -28,7 +28,7 @@ interface SegmentedControlProps<T extends string | number> {
   onChange: (value: T) => void;
   /**
    * Names the GROUP, for when the segments alone do not say what they choose
-   * between ("AM"/"PM" in one of ten reminder rows). It belongs on the tablist
+   * between ("AM"/"PM" in one of twelve reminder rows). It belongs on the tablist
    * itself — an `aria-label` on a plain wrapping View names nothing.
    */
   accessibilityLabel?: string;

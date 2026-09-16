@@ -6,7 +6,7 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { disableDevicePushToken, ensureDevicePushToken } from "@/src/lib/push-token";
 
-// `ReminderTarget` lived here as a second list of the ten reminder targets, existing only
+// `ReminderTarget` lived here as a second list of the reminder targets, existing only
 // because `scheduleReminder` took a target it then ignored. With the channel API taking just
 // a user (#981), `NotificationTargetKey` in the notifications registry is the only list.
 

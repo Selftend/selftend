@@ -252,7 +252,7 @@ describe("NotificationsScreen", () => {
   it.each([
     [390, "items-start gap-1"],
     [1280, "flex-row items-center gap-3"],
-  ])("renders ten skeleton rows in the real %ipx row box while loading", (width, layout) => {
+  ])("renders twelve skeleton rows in the real %ipx row box while loading", (width, layout) => {
     const spy = jest
       .spyOn(Dimensions, "get")
       .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
@@ -262,7 +262,7 @@ describe("NotificationsScreen", () => {
 
       for (const target of NOTIFICATION_TARGETS) {
         // `includeHiddenElements` because the skeletons are deliberately hidden from
-        // assistive tech - ten empty rows are worth nothing to announce.
+        // assistive tech - twelve empty rows are worth nothing to announce.
         const body = screen.getByTestId(`notification-row-skeleton-body-${target.key}`, {
           includeHiddenElements: true,
         });
@@ -588,7 +588,7 @@ describe("NotificationsScreen", () => {
 
     const sleep = screen.getByLabelText("Sleep");
     expect(sleep.props.accessibilityState.disabled).toBe(true);
-    // Still ON, because it IS on. `checked && master` would show ten off switches under a
+    // Still ON, because it IS on. `checked && master` would show twelve off switches under a
     // sentence that says the times are kept.
     expect(sleep.props.accessibilityState.checked).toBe(true);
     expect(screen.getByTestId("notification-row-sleep").props.className).toContain(

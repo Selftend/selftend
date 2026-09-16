@@ -86,7 +86,7 @@ Current persisted CBT reminder preference fields live on `user_preferences`:
 - `cbt_reminder_minute`
 - `cbt_reminder_timezone`
 
-Web push reminder subscriptions live in `web_push_subscriptions`. Native Android and iOS reminders remain local device schedules through Expo Notifications. Browser reminders use the Push API, the app service worker, and the scheduled Supabase Edge Function; iOS and iPadOS web push requires the app to be installed to the Home Screen.
+Web push reminder subscriptions live in `web_push_subscriptions`. **Delivery is server-driven on every platform**: the client only arms a channel — a Web Push subscription in the browser, an Expo push token on Android and iOS — and the cron'd Supabase Edge Function reads the columns above at send time and mints the push. Nothing is scheduled on the device. Browser reminders use the Push API and the app service worker; iOS and iPadOS web push requires the app to be installed to the Home Screen. See `docs/reminders.md`.
 
 Current persisted `ThoughtRecord` fields:
 
