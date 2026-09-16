@@ -1,0 +1,644 @@
+<title>Sit Sound Door</title>
+<meta charset="utf-8">
+<!--
+  PROTOTYPE - throwaway. Map #2428, ticket #2442, built to the #2436 ruling.
+
+  Question: what does the in-sit sound control look like on the focus surface,
+  at 360dp and desktop, light and dark, en and bg, with reduce-motion - closed
+  and open - and what does the open sheet cover?
+
+  Three arrangements of the SOUND DOOR in the control row x three layouts of
+  the SOUND PANEL (the bottom sheet), every state toggle the ruling names, and
+  the two numbers that decide it self-measured on the rendered phone: the
+  control row's width against the 312px content column, and where the sheet's
+  top edge lands against the ring.
+
+  Copy is the shipped en/bg strings (timer, meditation, cbt, common namespaces)
+  plus the ONE new key the ruling adds: `Sound` / `Звук`. Tokens are the
+  quiet-lilac pair from global.css; the focus wash is FOCUS_WASH_ALPHA over
+  FOCUS_WASH_BASE exactly as focus-session-shell.tsx composites it.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Nunito:wght@800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<style>
+  :root {
+    --background: 260 28% 96%;
+    --foreground: 260 18% 14%;
+    --card: 260 28% 99%;
+    --primary: 262 62% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-ink: 262 62% 28%;
+    --accent: 260 28% 93%;
+    --muted: 260 14% 95%;
+    --muted-foreground: 260 8% 42%;
+    --border: 260 14% 87%;
+    --ring: 262 62% 64%;
+    --desk: 260 10% 90%;
+    --radius: 0.625rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --background: 260 20% 9%;
+      --foreground: 260 30% 96%;
+      --card: 260 16% 16%;
+      --primary: 264 72% 72%;
+      --primary-foreground: 260 22% 12%;
+      --primary-ink: 264 72% 80%;
+      --accent: 260 20% 24%;
+      --muted: 260 12% 18%;
+      --muted-foreground: 260 12% 72%;
+      --border: 260 12% 24%;
+      --ring: 264 72% 72%;
+      --desk: 260 14% 6%;
+    }
+  }
+  :root[data-theme="dark"] {
+    --background: 260 20% 9%;
+    --foreground: 260 30% 96%;
+    --card: 260 16% 16%;
+    --primary: 264 72% 72%;
+    --primary-foreground: 260 22% 12%;
+    --primary-ink: 264 72% 80%;
+    --accent: 260 20% 24%;
+    --muted: 260 12% 18%;
+    --muted-foreground: 260 12% 72%;
+    --border: 260 12% 24%;
+    --ring: 264 72% 72%;
+    --desk: 260 14% 6%;
+  }
+  /* The frames carry their OWN theme, independent of the page: the owner flips
+     the phone light/dark without flipping the notes around it. */
+  .theme-light {
+    --background: 260 28% 96%; --foreground: 260 18% 14%; --card: 260 28% 99%;
+    --primary: 262 62% 56%; --primary-foreground: 0 0% 100%; --primary-ink: 262 62% 28%;
+    --accent: 260 28% 93%; --muted: 260 14% 95%; --muted-foreground: 260 8% 42%;
+    --border: 260 14% 87%; --ring: 262 62% 64%;
+    --wash-alpha: 0.04; --wash-base: var(--card);
+    color-scheme: light;
+  }
+  .theme-dark {
+    --background: 260 20% 9%; --foreground: 260 30% 96%; --card: 260 16% 16%;
+    --primary: 264 72% 72%; --primary-foreground: 260 22% 12%; --primary-ink: 264 72% 80%;
+    --accent: 260 20% 24%; --muted: 260 12% 18%; --muted-foreground: 260 12% 72%;
+    --border: 260 12% 24%; --ring: 264 72% 72%;
+    --wash-alpha: 0.07; --wash-base: var(--background);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: hsl(var(--desk));
+    color: hsl(var(--foreground));
+    font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 24px 64px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 860px) {
+    .wrap { grid-template-columns: 372px 1fr; align-items: start; }
+    .phone-col { position: sticky; top: env(safe-area-inset-top, 0px); }
+  }
+  h1.page { font: 800 22px/1.2 Nunito, "Noto Sans", sans-serif; margin: 0 0 4px; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { color: hsl(var(--muted-foreground)); margin: 0 0 16px; max-width: 62ch; }
+  .panel { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 14px 16px; }
+  .panel + .panel { margin-top: 14px; }
+  .panel h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: hsl(var(--muted-foreground)); margin: 0 0 10px; }
+  .controls { display: grid; grid-template-columns: 1fr; gap: 10px 14px; align-items: center; }
+  @media (min-width: 620px) { .controls { grid-template-columns: auto 1fr; } }
+  .controls label.k { font-size: 12px; font-weight: 600; color: hsl(var(--muted-foreground)); }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid hsl(var(--border)); border-radius: 999px; padding: 2px; background: hsl(var(--background)); }
+  .seg button {
+    font: 600 13px/1 "Noto Sans", sans-serif; border: 0; background: transparent; color: hsl(var(--muted-foreground));
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+  .seg button:focus-visible { outline: 3px solid hsl(var(--primary) / 0.5); outline-offset: 1px; }
+  table.m { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+  table.m th, table.m td { text-align: left; padding: 5px 6px; border-bottom: 1px solid hsl(var(--border)); vertical-align: top; }
+  table.m th { font-weight: 600; color: hsl(var(--muted-foreground)); font-size: 12px; }
+  table.m td.n { text-align: right; }
+  .bad { color: hsl(0 72% 42%); font-weight: 600; }
+  .theme-dark .bad, :root[data-theme="dark"] .bad { color: hsl(0 68% 70%); }
+  .ok { color: hsl(160 46% 32%); font-weight: 600; }
+  :root[data-theme="dark"] .ok { color: hsl(160 56% 60%); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ok { color: hsl(160 56% 60%); } :root:not([data-theme="light"]) .bad { color: hsl(0 68% 70%); } }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; font-variant-numeric: tabular-nums; margin: 0; }
+  .kv dt { color: hsl(var(--muted-foreground)); }
+  .kv dd { margin: 0; }
+  .notes p { margin: 0 0 8px; max-width: 66ch; }
+  .notes ol, .notes ul { padding-left: 20px; margin: 0; }
+  .notes li { margin-bottom: 8px; max-width: 66ch; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: hsl(var(--primary-ink)); background: hsl(var(--primary) / 0.12); padding: 2px 7px; border-radius: 999px; margin-right: 6px; }
+  code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; background: hsl(var(--muted)); padding: 1px 5px; border-radius: 5px; }
+
+  /* ================= the phone ================= */
+  .phone {
+    width: 360px; max-width: 100%;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px hsl(260 20% 10% / 0.18);
+    position: relative;
+  }
+  .status { height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: hsl(var(--muted-foreground)); letter-spacing: 0.04em; }
+  .screen { position: relative; overflow: hidden; }
+  /* FocusSessionShell: bg-card (light) / bg-background (dark) + the accent wash */
+  .focus { position: absolute; inset: 0; background: hsl(var(--wash-base)); display: flex; flex-direction: column; }
+  .wash { position: absolute; inset: 0; background: hsl(var(--primary) / var(--wash-alpha)); pointer-events: none; }
+  .scroll { position: relative; flex: 1; display: flex; flex-direction: column; padding: 12px 24px 32px; }
+  .col { flex: 1; display: flex; flex-direction: column; width: 100%; max-width: 620px; margin-inline: auto; }
+  .toprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .escape { display: flex; align-items: center; gap: 4px; color: hsl(var(--muted-foreground)); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; min-width: 0; }
+  .escape .material-icons { font-size: 16px; }
+  .eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(var(--muted-foreground)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .centre { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-block: 32px; }
+  .ring { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+  .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .clock { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .clock .num { font: 700 40px/1.1 "Noto Sans", sans-serif; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .clock .sub { font-size: 13px; color: hsl(var(--muted-foreground)); font-variant-numeric: tabular-nums; }
+
+  /* controls row (pb-1 pt-6, gap-2, centred) */
+  .ctrl { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 0 4px; }
+  .ctrl .row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+  .ctrl .row.nowrap { flex-wrap: nowrap; }
+  .btn {
+    height: 40px; padding: 0 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: 500 14px/1 "Noto Sans", sans-serif; color: hsl(var(--foreground)); background: transparent; border: 1px solid transparent; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .btn .material-icons { font-size: 18px; }
+  .btn.outline { border-color: hsl(var(--border)); background: hsl(var(--background)); }
+  .theme-dark .btn.outline { background: hsl(var(--muted) / 0.3); border-color: hsl(var(--border)); }
+  .btn.ghost:hover { background: hsl(var(--accent)); }
+  .btn.primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); height: 44px; }
+  .btn.lg { height: 44px; width: 100%; }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5); border-color: hsl(var(--ring)); }
+  .btn.door.iconleft { padding-left: 12px; }
+
+  /* ================= the sheet ================= */
+  .backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / 0.4); display: flex; flex-direction: column; justify-content: flex-end; }
+  .backdrop[hidden] { display: none; }
+  .sheet {
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    border-radius: 16px 16px 0 0; padding-bottom: 12px; max-height: 92%;
+    display: flex; flex-direction: column;
+    transform: translateY(0); transition: transform 250ms ease-out;
+  }
+  .sheet.entering { transform: translateY(100%); }
+  .phone.reduce .sheet { transition: none; }
+  .sheet .hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 24px 0; }
+  .sheet h3 { font: 800 20px/1.2 Nunito, "Noto Sans", sans-serif; margin: 0; letter-spacing: -0.01em; }
+  .sheet .body { padding: 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 44px; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px;
+    border-radius: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--foreground));
+    font: 400 13px/1.2 "Noto Sans", sans-serif; cursor: pointer; font-variant-numeric: tabular-nums;
+  }
+  .chip[aria-checked="true"] { border-color: hsl(var(--primary)); background: hsl(var(--primary) / 0.1); color: hsl(var(--primary-ink)); font-weight: 600; }
+  .chip:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5); }
+  .rows { display: flex; flex-direction: column; }
+  .rowitem {
+    min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px;
+    border: 0; border-bottom: 1px solid hsl(var(--border)); background: transparent; color: hsl(var(--foreground)); font: 400 15px "Noto Sans", sans-serif; cursor: pointer; text-align: left;
+  }
+  .rowitem:last-child { border-bottom: 0; }
+  .rowitem[aria-checked="true"] { font-weight: 600; color: hsl(var(--primary-ink)); }
+  .rowitem .material-icons { font-size: 20px; color: hsl(var(--primary)); visibility: hidden; }
+  .rowitem[aria-checked="true"] .material-icons { visibility: visible; }
+  .rowitem:focus-visible { outline: none; box-shadow: inset 0 0 0 3px hsl(var(--ring) / 0.5); border-radius: 6px; }
+  .volblock { display: flex; flex-direction: column; gap: 8px; }
+  .volblock .lab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .volblock .lab .l { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(var(--muted-foreground)); }
+  .volblock .lab .v { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rail { display: flex; align-items: center; gap: 14px; }
+  .rail .material-icons { font-size: 18px; color: hsl(var(--muted-foreground)); }
+  .rail .l { width: 78px; font-size: 13px; color: hsl(var(--muted-foreground)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rail .v { width: 34px; text-align: right; font-size: 12px; color: hsl(var(--muted-foreground)); font-variant-numeric: tabular-nums; }
+  .rail .track { flex: 1; }
+  /* VolumeSlider: 6px track, 18px thumb */
+  input[type="range"].vs { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: transparent; margin: 0; cursor: pointer; }
+  input[type="range"].vs::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, hsl(var(--primary)) var(--pct), hsl(var(--muted-foreground) / 0.25) var(--pct)); }
+  input[type="range"].vs::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: hsl(var(--primary)); margin-top: -6px; border: 2px solid hsl(var(--background)); }
+  input[type="range"].vs::-moz-range-track { height: 6px; border-radius: 999px; background: hsl(var(--muted-foreground) / 0.25); }
+  input[type="range"].vs::-moz-range-progress { height: 6px; border-radius: 999px; background: hsl(var(--primary)); }
+  input[type="range"].vs::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: hsl(var(--primary)); border: 2px solid hsl(var(--background)); }
+  input[type="range"].vs:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5); border-radius: 999px; }
+  .toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 12px; background: hsl(var(--foreground)); color: hsl(var(--background)); padding: 6px 10px; border-radius: 999px; opacity: 0; transition: opacity 200ms; pointer-events: none; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+  .phone.reduce .toast { transition: none; }
+
+  /* ================= the desktop frame ================= */
+  .desk-frame-outer { width: 100%; overflow-x: auto; }
+  .desk-frame { width: 1024px; height: 640px; transform-origin: top left; transform: scale(0.62); }
+  .desk-frame-outer .sizer { height: calc(640px * 0.62 + 8px); width: calc(1024px * 0.62); }
+  .desktop {
+    width: 1024px; height: 640px; background: hsl(var(--background)); color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border)); border-radius: 12px; overflow: hidden; position: relative; display: flex; flex-direction: column;
+  }
+  .desktop .invhdr { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; color: hsl(var(--muted-foreground)); }
+  .desktop .invhdr .material-icons { font-size: 22px; }
+  .desktop .screen { flex: 1; }
+  .desktop .sheet { width: 100%; }
+  .desktop.sheet-column .sheet { width: 620px; margin-inline: auto; }
+  .desktop.sheet-column .backdrop { align-items: center; }
+  .desk-note { font-size: 12px; color: hsl(var(--muted-foreground)); margin: 6px 0 0; }
+  .focus-note { font-size: 12px; color: hsl(var(--muted-foreground)); margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+  .measure-stage { position: absolute; left: -9999px; top: 0; width: 312px; visibility: hidden; }
+</style>
+
+<div class="wrap">
+  <div class="phone-col">
+    <div class="phone theme-light" id="phone">
+      <div class="status"><span id="status-label">360 × 780 · en · light</span></div>
+      <div class="screen" id="screen" style="height:780px">
+        <div class="focus">
+          <div class="wash"></div>
+          <div class="scroll">
+            <div class="col">
+              <div class="toprow">
+                <div class="escape"><span class="material-icons" aria-hidden="true">arrow_back</span><span data-t="origin">Meditation</span></div>
+                <div class="eyebrow" data-t="eyebrow">Sitting · stage 1</div>
+              </div>
+              <div class="centre">
+                <div class="ring" id="ring">
+                  <svg width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                    <circle cx="110" cy="110" r="100" fill="none" stroke="hsl(var(--muted-foreground))" stroke-opacity="0.18" stroke-width="2"></circle>
+                    <circle id="arc" cx="110" cy="110" r="100" fill="none" stroke="hsl(var(--primary))" stroke-linecap="round" stroke-width="2" stroke-dasharray="628.3" stroke-dashoffset="0"></circle>
+                  </svg>
+                  <div class="clock">
+                    <div class="num" id="clock-num">18:42</div>
+                    <div class="sub" id="clock-sub">of 19 min · bell at 5</div>
+                  </div>
+                </div>
+              </div>
+              <div class="ctrl" id="ctrl"></div>
+            </div>
+          </div>
+        </div>
+        <div class="backdrop" id="backdrop" hidden>
+          <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+    <p class="focus-note" id="focus-note">Focus: nowhere yet · Playing: none</p>
+  </div>
+
+  <div>
+    <h1 class="page">The sound door and the sound panel, on the sit</h1>
+    <p class="lede">Prototype for the in-sit background-sound control (#2442, built to the #2436 ruling). Everything is throwaway; the two measured numbers are the point. Open the sheet with the door, close it with <strong>Done</strong> or <kbd>Esc</kbd>; a tap on the backdrop does nothing, on purpose.</p>
+
+    <div class="panel">
+      <h2>Door in the control row</h2>
+      <div class="controls">
+        <label class="k">Arrangement</label>
+        <div class="seg" id="seg-door">
+          <button aria-pressed="true" data-v="row3">A · row of three</button>
+          <button aria-pressed="false" data-v="below">B · door below the pair</button>
+          <button aria-pressed="false" data-v="lead">C · door leads the row</button>
+        </div>
+        <label class="k">Sheet layout</label>
+        <div class="seg" id="seg-sheet">
+          <button aria-pressed="true" data-v="chips">1 · chips + Done button</button>
+          <button aria-pressed="false" data-v="list">2 · list rows, Done in header</button>
+          <button aria-pressed="false" data-v="rail">3 · chips + volume rail</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>State</h2>
+      <div class="controls">
+        <label class="k">Sheet</label>
+        <div class="seg" id="seg-open"><button aria-pressed="true" data-v="closed">closed</button><button aria-pressed="false" data-v="open">open</button></div>
+        <label class="k">Bed</label>
+        <div class="seg" id="seg-bed"><button aria-pressed="true" data-v="none">None</button><button aria-pressed="false" data-v="rain">Rain</button><button aria-pressed="false" data-v="brown-noise">Brown noise</button></div>
+        <label class="k">Sit</label>
+        <div class="seg" id="seg-paused"><button aria-pressed="true" data-v="running">running</button><button aria-pressed="false" data-v="paused">paused</button></div>
+        <label class="k">Locale</label>
+        <div class="seg" id="seg-locale"><button aria-pressed="true" data-v="en">en</button><button aria-pressed="false" data-v="bg">bg</button></div>
+        <label class="k">Theme</label>
+        <div class="seg" id="seg-theme"><button aria-pressed="true" data-v="light">light</button><button aria-pressed="false" data-v="dark">dark</button></div>
+        <label class="k">Motion</label>
+        <div class="seg" id="seg-motion"><button aria-pressed="true" data-v="normal">normal</button><button aria-pressed="false" data-v="reduce">reduce motion</button></div>
+        <label class="k">Phone height</label>
+        <div class="seg" id="seg-height"><button aria-pressed="true" data-v="780">780 (Pixel-class)</button><button aria-pressed="false" data-v="640">640 (short)</button></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Measured on the rendered phone (real fonts, 312px content column)</h2>
+      <table class="m" id="m-row">
+        <thead><tr><th>Control row</th><th class="n">en width</th><th class="n">bg width</th><th>Fits 312?</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <table class="m" id="m-sheet" style="margin-top:12px">
+        <thead><tr><th>Sheet (bed chosen, bg)</th><th class="n">height</th><th class="n">top edge</th><th>Ring (bottom edge)</th><th>Clock numeral</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="desk-note" id="m-note"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Desktop · 1024 × 640 at 62%</h2>
+      <div class="controls" style="margin-bottom:10px">
+        <label class="k">Sheet width</label>
+        <div class="seg" id="seg-deskwidth"><button aria-pressed="true" data-v="column">620 column, centred</button><button aria-pressed="false" data-v="full">full viewport width</button></div>
+      </div>
+      <div class="desk-frame-outer"><div class="sizer"><div class="desk-frame">
+        <div class="desktop theme-light sheet-column" id="desktop">
+          <div class="invhdr"><span class="material-icons" aria-hidden="true">menu</span><span>Selftend</span><span class="material-icons" aria-hidden="true">more_vert</span></div>
+          <div class="screen" id="dscreen">
+            <div class="focus">
+              <div class="wash"></div>
+              <div class="scroll">
+                <div class="col">
+                  <div class="toprow">
+                    <div class="escape"><span class="material-icons" aria-hidden="true">arrow_back</span><span data-t="origin">Meditation</span></div>
+                    <div class="eyebrow" data-t="eyebrow">Sitting · stage 1</div>
+                  </div>
+                  <div class="centre">
+                    <div class="ring">
+                      <svg width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                        <circle cx="110" cy="110" r="100" fill="none" stroke="hsl(var(--muted-foreground))" stroke-opacity="0.18" stroke-width="2"></circle>
+                        <circle class="darc" cx="110" cy="110" r="100" fill="none" stroke="hsl(var(--primary))" stroke-linecap="round" stroke-width="2" stroke-dasharray="628.3" stroke-dashoffset="0"></circle>
+                      </svg>
+                      <div class="clock"><div class="num dnum">18:42</div><div class="sub dsub">of 19 min · bell at 5</div></div>
+                    </div>
+                  </div>
+                  <div class="ctrl" id="dctrl"></div>
+                </div>
+              </div>
+            </div>
+            <div class="backdrop" id="dbackdrop" hidden><div class="sheet" id="dsheet" role="dialog" aria-modal="true"></div></div>
+          </div>
+        </div>
+      </div></div></div>
+      <p class="desk-note">The desktop frame mirrors the phone's arrangement, layout, locale, theme and open state. Its own toggle is the sheet's width: the content column is 620px, and a sheet the full width of a 1024px window is the thing to react to.</p>
+    </div>
+
+    <div class="panel notes">
+      <h2>What is fixed by the ruling, and what this page varies</h2>
+      <p><span class="tag">fixed</span>Bed and its volume only. A door beside Pause / Finish early: <code>music_note</code> + one word, <strong>Sound</strong> / <strong>Звук</strong>, ghost, always shown, always plain. A bottom sheet with the <em>Background sound</em> heading, the chip radiogroup with None first, the slider only while a bed is chosen, one Done. Live and persisted; no confirm, no cancel; the clock does not pause; the door works while paused. Escape and Done close, focus returns to the door, tap-outside is off, no slide under reduce-motion.</p>
+      <p><span class="tag">varied</span>Where the door sits in the row (three controls in one row vs the pair as today with the door beneath vs the door leading the row), and how the sheet lays the ten names out (the home card's wrapping chips with a full-width Done; a list of rows with Done in the header; chips with breathing's volume rail).</p>
+      <p><span class="tag">to react to</span>1. Does the door read as a session control, not chrome? 2. What the open sheet covers: at 360 × 780 the ring's lower part is under the sheet in every layout, and the numeral is under it in the list layout; the table above says by how many pixels. 3. bg at 360: arrangement A is measured against the 312px column. 4. Slider appears once a bed is picked; None first; nothing expectant.</p>
+      <h2 style="margin-top:14px">Not built here</h2>
+      <ul>
+        <li>No audio. The "Playing" line under the phone is the state a real build would hand <code>useAmbientLane</code>.</li>
+        <li>The sheet's focus trap is a plain Tab cycle inside the dialog; the real one is <code>PressShieldModal</code> with <code>surface="sheet"</code>, which also registers with the overlay count.</li>
+        <li>The chip radiogroup is the home card's <code>ChoiceRow</code> shape, which the build must first lift out of <code>meditation-home-screen.tsx</code>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="measure-stage theme-light" id="stage" aria-hidden="true"></div>
+
+<script>
+(function () {
+  const COPY = {
+    en: {
+      origin: "Meditation", eyebrow: "Sitting · stage 1", pause: "Pause", resume: "Resume", finishEarly: "Finish early",
+      sound: "Sound", heading: "Background sound", volume: "Background sound volume", volumeShort: "Volume", done: "Done", paused: "Paused",
+      sub: "of 19 min · bell at 5", tapOutside: "Tap outside does nothing (ruling 9)",
+      beds: { none: "None", rain: "Rain", ocean: "Ocean", stream: "Stream", forest: "Forest", night: "Night", fire: "Fireplace", "brown-noise": "Brown noise", "pink-noise": "Pink noise", "white-noise": "White noise" },
+    },
+    bg: {
+      origin: "Медитация", eyebrow: "Седене · етап 1", pause: "Пауза", resume: "Продължи", finishEarly: "Завърши по-рано",
+      sound: "Звук", heading: "Фонов звук", volume: "Сила на фоновия звук", volumeShort: "Сила", done: "Готово", paused: "На пауза",
+      sub: "от 19 мин · звън на 5", tapOutside: "Докосване извън панела не прави нищо",
+      beds: { none: "Без звук", rain: "Дъжд", ocean: "Океан", stream: "Поток", forest: "Гора", night: "Нощ", fire: "Камина", "brown-noise": "Кафяв шум", "pink-noise": "Розов шум", "white-noise": "Бял шум" },
+    },
+  };
+  const BED_ORDER = ["none", "rain", "ocean", "stream", "forest", "night", "fire", "brown-noise", "pink-noise", "white-noise"];
+
+  const state = { door: "row3", sheet: "chips", open: false, bed: "none", volume: 0.5, paused: false, locale: "en", theme: "light", motion: "normal", height: 780, deskwidth: "column", focus: "nowhere yet" };
+  const t = (k) => COPY[state.locale][k];
+
+  const $ = (id) => document.getElementById(id);
+  const phone = $("phone"), screen = $("screen"), ctrl = $("ctrl"), backdrop = $("backdrop"), sheet = $("sheet"), toast = $("toast");
+  const desktop = $("desktop"), dctrl = $("dctrl"), dbackdrop = $("dbackdrop"), dsheet = $("dsheet");
+
+  function icon(name) { return `<span class="material-icons" aria-hidden="true">${name}</span>`; }
+
+  function btnPause() {
+    return `<button class="btn outline" type="button" data-act="pause">${icon(state.paused ? "play_arrow" : "pause")}<span>${state.paused ? t("resume") : t("pause")}</span></button>`;
+  }
+  function btnFinish() { return `<button class="btn ghost" type="button" data-act="finish"><span>${t("finishEarly")}</span></button>`; }
+  function btnDoor(id) {
+    return `<button class="btn ghost door iconleft" type="button" data-act="door" id="${id}" aria-label="${t("heading")}" aria-haspopup="dialog">${icon("music_note")}<span>${t("sound")}</span></button>`;
+  }
+  function rowHtml(arr, doorId) {
+    if (arr === "row3") return `<div class="row nowrap">${btnPause()}${btnFinish()}${btnDoor(doorId)}</div>`;
+    if (arr === "below") return `<div class="row nowrap">${btnPause()}${btnFinish()}</div><div class="row nowrap">${btnDoor(doorId)}</div>`;
+    return `<div class="row nowrap">${btnDoor(doorId)}${btnPause()}${btnFinish()}</div>`;
+  }
+
+  function chipsHtml() {
+    return `<div class="chips" role="radiogroup" aria-label="${t("heading")}">` + BED_ORDER.map((id) =>
+      `<button class="chip" type="button" role="radio" aria-checked="${state.bed === id}" data-bed="${id}">${COPY[state.locale].beds[id]}</button>`).join("") + `</div>`;
+  }
+  function listHtml() {
+    return `<div class="rows" role="radiogroup" aria-label="${t("heading")}">` + BED_ORDER.map((id) =>
+      `<button class="rowitem" type="button" role="radio" aria-checked="${state.bed === id}" data-bed="${id}"><span>${COPY[state.locale].beds[id]}</span>${icon("check")}</button>`).join("") + `</div>`;
+  }
+  function pct() { return Math.round(state.volume * 100); }
+  function sliderHtml() {
+    return `<input class="vs" type="range" min="0" max="100" value="${pct()}" style="--pct:${pct()}%" aria-label="${t("volume")}" data-act="vol">`;
+  }
+  function volBlockHtml() {
+    if (state.bed === "none") return "";
+    return `<div class="volblock"><div class="lab"><span class="l">${t("volume")}</span><span class="v">${pct()}%</span></div>${sliderHtml()}</div>`;
+  }
+  function railHtml() {
+    if (state.bed === "none") return "";
+    return `<div class="rail">${icon("graphic_eq")}<span class="l">${t("volumeShort")}</span><span class="track">${sliderHtml()}</span><span class="v">${pct()}%</span></div>`;
+  }
+  function sheetHtml(layout) {
+    const doneGhost = `<button class="btn ghost" type="button" data-act="done"><span>${t("done")}</span></button>`;
+    if (layout === "chips") {
+      return `<div class="hd"><h3 id="sheet-title">${t("heading")}</h3></div><div class="body">${chipsHtml()}${volBlockHtml()}<button class="btn primary lg" type="button" data-act="done"><span>${t("done")}</span></button></div>`;
+    }
+    if (layout === "list") {
+      return `<div class="hd"><h3 id="sheet-title">${t("heading")}</h3>${doneGhost}</div><div class="body">${listHtml()}${volBlockHtml()}</div>`;
+    }
+    return `<div class="hd"><h3 id="sheet-title">${t("heading")}</h3>${doneGhost}</div><div class="body">${chipsHtml()}${railHtml()}</div>`;
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg; toast.classList.add("show");
+    clearTimeout(showToast.h); showToast.h = setTimeout(() => toast.classList.remove("show"), 1400);
+  }
+
+  function setFocusNote(where) {
+    state.focus = where;
+    const bedName = COPY[state.locale].beds[state.bed];
+    $("focus-note").textContent = `Focus: ${where} · Playing: ${state.bed === "none" ? "none" : bedName + " at " + pct() + "%"}${state.paused ? " (silent while paused)" : ""} · Sheet: ${state.open ? "open" : "closed"} · Clock: running`;
+  }
+
+  function openSheet(fromKeyboard) {
+    state.open = true;
+    render();
+    const first = sheet.querySelector('[role="radio"][aria-checked="true"]') || sheet.querySelector("button");
+    // preventScroll: the sheet is still translated off-screen during its
+    // entrance, and a plain focus() would scroll the overflow-hidden screen
+    // to reach it - the ring would appear to jump 300px up.
+    if (first) { first.focus({ preventScroll: true }); setFocusNote("first control in the sheet (" + (first.dataset.bed ? "the chosen bed" : "Done") + ")"); }
+    screen.scrollTop = 0;
+  }
+  function closeSheet() {
+    state.open = false;
+    render();
+    const door = $("door");
+    if (door) { door.focus({ preventScroll: true }); setFocusNote("returned to the sound door"); }
+    screen.scrollTop = 0;
+  }
+
+  function render() {
+    // frames
+    phone.className = "phone theme-" + state.theme + (state.motion === "reduce" ? " reduce" : "");
+    desktop.className = "desktop theme-" + state.theme + (state.motion === "reduce" ? " reduce" : "") + (state.deskwidth === "column" ? " sheet-column" : "");
+    screen.style.height = state.height + "px";
+    $("status-label").textContent = `360 × ${state.height} · ${state.locale} · ${state.theme}${state.motion === "reduce" ? " · reduce motion" : ""}`;
+    document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
+    $("clock-sub").textContent = state.paused ? t("paused") : t("sub");
+    document.querySelector(".dsub").textContent = state.paused ? t("paused") : t("sub");
+    ctrl.innerHTML = rowHtml(state.door, "door");
+    dctrl.innerHTML = rowHtml(state.door, "ddoor");
+    const wasHidden = backdrop.hidden;
+    backdrop.hidden = !state.open; dbackdrop.hidden = !state.open;
+    sheet.innerHTML = sheetHtml(state.sheet); dsheet.innerHTML = sheetHtml(state.sheet);
+    if (state.open && wasHidden && state.motion !== "reduce") {
+      [sheet, dsheet].forEach((s) => { s.classList.add("entering"); requestAnimationFrame(() => requestAnimationFrame(() => s.classList.remove("entering"))); });
+    }
+    // seg buttons
+    const map = { "seg-door": state.door, "seg-sheet": state.sheet, "seg-open": state.open ? "open" : "closed", "seg-bed": state.bed, "seg-paused": state.paused ? "paused" : "running", "seg-locale": state.locale, "seg-theme": state.theme, "seg-motion": state.motion, "seg-height": String(state.height), "seg-deskwidth": state.deskwidth };
+    Object.entries(map).forEach(([id, v]) => $(id).querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === v))));
+    setFocusNote(state.focus);
+    measure();
+  }
+
+  // ---- interactions inside both frames ----
+  function onFrameClick(e) {
+    const act = e.target.closest("[data-act]");
+    const bed = e.target.closest("[data-bed]");
+    if (bed) { state.bed = bed.dataset.bed; render(); const again = sheet.querySelector(`[data-bed="${state.bed}"]`); if (again) { again.focus(); setFocusNote("the chosen bed"); } return; }
+    if (!act) {
+      if (e.target.closest(".backdrop") && !e.target.closest(".sheet")) showToast(t("tapOutside"));
+      return;
+    }
+    switch (act.dataset.act) {
+      case "door": openSheet(); break;
+      case "done": closeSheet(); break;
+      case "pause": state.paused = !state.paused; render(); break;
+      case "finish": showToast(state.locale === "bg" ? "Диалогът за завършване (без промяна)" : "Finish-early confirm would open (unchanged)"); break;
+    }
+  }
+  function onFrameInput(e) {
+    const r = e.target.closest('[data-act="vol"]');
+    if (!r) return;
+    state.volume = Number(r.value) / 100;
+    r.style.setProperty("--pct", pct() + "%");
+    const v = r.closest(".volblock, .rail")?.querySelector(".v"); if (v) v.textContent = pct() + "%";
+    setFocusNote("the volume slider");
+  }
+  screen.addEventListener("click", onFrameClick);
+  screen.addEventListener("input", onFrameInput);
+  $("dscreen").addEventListener("click", onFrameClick);
+  $("dscreen").addEventListener("input", onFrameInput);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && state.open) { e.preventDefault(); closeSheet(); return; }
+    if (e.key === "Tab" && state.open && sheet.contains(document.activeElement)) {
+      const f = [...sheet.querySelectorAll("button, input")].filter((el) => !el.disabled);
+      const i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i === 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  screen.addEventListener("focusin", (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.bed) setFocusNote("bed " + COPY[state.locale].beds[el.dataset.bed]);
+    else if (el.dataset && el.dataset.act === "done") setFocusNote("Done");
+    else if (el.dataset && el.dataset.act === "door") setFocusNote("the sound door");
+    else if (el.dataset && el.dataset.act === "pause") setFocusNote("Pause");
+    else if (el.dataset && el.dataset.act === "finish") setFocusNote("Finish early");
+  });
+
+  // ---- the page's own toggles ----
+  document.querySelectorAll(".seg").forEach((seg) => seg.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const v = b.dataset.v;
+    switch (seg.id) {
+      case "seg-door": state.door = v; break;
+      case "seg-sheet": state.sheet = v; break;
+      case "seg-open": v === "open" ? openSheet() : closeSheet(); return;
+      case "seg-bed": state.bed = v; break;
+      case "seg-paused": state.paused = v === "paused"; break;
+      case "seg-locale": state.locale = v; break;
+      case "seg-theme": state.theme = v; break;
+      case "seg-motion": state.motion = v; break;
+      case "seg-height": state.height = Number(v); break;
+      case "seg-deskwidth": state.deskwidth = v; break;
+    }
+    render();
+  }));
+
+  // ---- measurement: rows in both locales, all three arrangements; sheets in bg with a bed chosen ----
+  const stage = $("stage");
+  function measureRowWidth(arr, locale) {
+    const saved = state.locale; state.locale = locale;
+    stage.innerHTML = `<div class="ctrl">${rowHtml(arr, "m-door")}</div>`;
+    state.locale = saved;
+    const rows = [...stage.querySelectorAll(".row")];
+    return Math.max(...rows.map((r) => [...r.children].reduce((w, c) => w + c.getBoundingClientRect().width, 0) + 8 * (r.children.length - 1)));
+  }
+  function measureSheet(layout) {
+    const saved = { locale: state.locale, bed: state.bed }; state.locale = "bg"; if (state.bed === "none") state.bed = "brown-noise";
+    stage.style.width = "360px";
+    stage.innerHTML = `<div class="sheet" style="transition:none">${sheetHtml(layout)}</div>`;
+    const h = stage.firstChild.getBoundingClientRect().height;
+    stage.style.width = "312px";
+    Object.assign(state, saved);
+    return h;
+  }
+  function measure() {
+    const names = { row3: "A · row of three", below: "B · door below the pair (widest of its two rows)", lead: "C · door leads the row" };
+    const tb = document.querySelector("#m-row tbody"); tb.innerHTML = "";
+    ["row3", "below", "lead"].forEach((arr) => {
+      const en = measureRowWidth(arr, "en"), bg = measureRowWidth(arr, "bg");
+      const fits = bg <= 312 && en <= 312;
+      tb.insertAdjacentHTML("beforeend", `<tr><td>${names[arr]}</td><td class="n">${en.toFixed(0)}</td><td class="n">${bg.toFixed(0)}</td><td class="${fits ? "ok" : "bad"}">${fits ? "yes" : "no · over by " + (Math.max(en, bg) - 312).toFixed(0) + "px in " + (bg > en ? "bg" : "en")}</td></tr>`);
+    });
+    // ring geometry as laid out right now (closed layout is what the sheet opens over)
+    const sr = screen.getBoundingClientRect(), rr = $("ring").getBoundingClientRect();
+    const ringBottom = rr.bottom - sr.top, ringTop = rr.top - sr.top;
+    const numeral = $("clock-num").getBoundingClientRect(); const numBottom = numeral.bottom - sr.top;
+    const layouts = { chips: "1 · chips + Done button", list: "2 · list rows, Done in header", rail: "3 · chips + volume rail" };
+    const ts = document.querySelector("#m-sheet tbody"); ts.innerHTML = "";
+    Object.keys(layouts).forEach((l) => {
+      const h = Math.min(measureSheet(l), state.height * 0.92);
+      const top = state.height - h;
+      const ringCovered = Math.max(0, ringBottom - top);
+      const numCovered = numBottom > top;
+      ts.insertAdjacentHTML("beforeend", `<tr><td>${layouts[l]}</td><td class="n">${h.toFixed(0)}</td><td class="n">${top.toFixed(0)}</td><td class="${ringCovered > 0 ? "bad" : "ok"}">${ringCovered > 0 ? "covered by " + ringCovered.toFixed(0) + "px of " + (ringBottom - ringTop).toFixed(0) : "clear"}</td><td class="${numCovered ? "bad" : "ok"}">${numCovered ? "under the sheet" : "visible"}</td></tr>`);
+    });
+    $("m-note").textContent = `Ring spans ${ringTop.toFixed(0)}–${ringBottom.toFixed(0)}px of the ${state.height}px screen in the ${state.door === "below" ? "two-row" : "one-row"} arrangement; the numeral's baseline is at ${numBottom.toFixed(0)}px. A sheet clears the ring only if it is shorter than ${(state.height - ringBottom).toFixed(0)}px.`;
+  }
+
+  document.fonts && document.fonts.ready ? document.fonts.ready.then(render) : render();
+  render();
+})();
+</script>
