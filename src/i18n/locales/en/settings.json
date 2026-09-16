@@ -97,11 +97,6 @@
     "deleteAccount": "Delete account",
     "version": "Selftend v{{version}}"
   },
-  "home": {
-    "title": "A calm starting point",
-    "description": "The app starts with a single complete CBT section. Other modules stay out of the way until they are justified.",
-    "recentActivity": "Recent activity"
-  },
   "avatarCrop": {
     "title": "Crop profile picture",
     "cancel": "Cancel",
