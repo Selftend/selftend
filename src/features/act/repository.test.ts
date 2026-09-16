@@ -59,7 +59,6 @@ describe("act repository - getACTProgramState", () => {
         myths_acknowledged: true,
         onboarding_completed_at: "2026-05-10T07:00:00.000Z",
         last_check_in_at: "2026-05-16T07:00:00.000Z",
-        preferred_check_in_time: "19:00",
         created_at: "2026-05-10T07:00:00.000Z",
         updated_at: "2026-05-16T07:00:00.000Z",
       },
@@ -79,7 +78,6 @@ describe("act repository - getACTProgramState", () => {
       mythsAcknowledged: true,
       onboardingCompletedAt: "2026-05-10T07:00:00.000Z",
       lastCheckInAt: "2026-05-16T07:00:00.000Z",
-      preferredCheckInTime: "19:00",
       createdAt: "2026-05-10T07:00:00.000Z",
       updatedAt: "2026-05-16T07:00:00.000Z",
     });
@@ -96,7 +94,6 @@ describe("act repository - upsertACTProgramState", () => {
         myths_acknowledged: false,
         onboarding_completed_at: null,
         last_check_in_at: null,
-        preferred_check_in_time: null,
         created_at: "2026-05-17T00:00:00.000Z",
         updated_at: "2026-05-17T00:00:00.000Z",
       },

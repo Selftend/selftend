@@ -4311,7 +4311,6 @@ function alignmentFor(domain, dayIndex) {
       myths_acknowledged: true,
       onboarding_completed_at: onboardedAt,
       last_check_in_at: latestReview.reviewed_at,
-      preferred_check_in_time: "20:30",
       created_at: onboardedAt,
       updated_at: latestReview.reviewed_at,
     },
