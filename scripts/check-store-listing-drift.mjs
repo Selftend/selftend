@@ -33,7 +33,7 @@ export const EXPECTED_LOCALE = "en-US";
  * @param {Record<string, unknown>} committed Fields read from the live record and committed.
  * @param {Record<string, Record<string, unknown>>} locales The pulled `apple.info` block.
  * @param {string} [expectedLocale] Overridable so a test can drive the branch without faking the constant.
- * @returns {{ ok: boolean, reason?: string, drifted: string[], locales: string[] }}
+ * @returns {{ ok: boolean, reason?: string, absent: string[], drifted: string[], fields: string[], locales: string[] }}
  */
 export function findListingDrift(committed, locales, expectedLocale = EXPECTED_LOCALE) {
   const localeNames = Object.keys(locales ?? {});
@@ -45,7 +45,9 @@ export function findListingDrift(committed, locales, expectedLocale = EXPECTED_L
     return {
       ok: false,
       reason: "no-info-block",
+      absent: [],
       drifted: [],
+      fields: [],
       locales: [],
     };
   }
@@ -59,20 +61,55 @@ export function findListingDrift(committed, locales, expectedLocale = EXPECTED_L
     return {
       ok: false,
       reason: "expected-locale-absent",
+      absent: [],
       drifted: [],
+      fields: [],
       locales: localeNames,
     };
   }
 
   const pulled = locales[expectedLocale] ?? {};
+
+  // The third not-drift branch, and the last one this shape can have (#2540).
+  //
+  // A committed field the pulled locale does not carry AT ALL is not the live
+  // listing drifting away from this repository - there is no live value to have
+  // drifted. It means either the field was never entered in App Store Connect,
+  // or `metadata:pull` does not carry it under this name. Both fixes are on
+  // this side; "decide which side is wrong" sends the reader to edit the
+  // listing back, which is the wrong side, and a guard that names the wrong
+  // side is how a guard gets muted (store/README.md).
+  //
+  // ☠️ This is the distinction the ADVISORY half of the same workflow has drawn
+  // since #1611 - "a committed key that does not exist in the pulled block
+  // almost always means the field name is wrong" - which the listing half was
+  // simply missing. It cost a weekly red on `promoText` that reads as drift and
+  // is not (#2540).
+  //
+  // ⚠️ It does NOT relax anything: an absent field still fails. The one thing
+  // that must never happen here is an absent field passing on
+  // `undefined === undefined`, which is what the field-presence check below is
+  // for - `Object.hasOwn`, never a truthiness or `!= null` test, so a committed
+  // empty string is still compared rather than waved through.
+  const absent = Object.keys(committed).filter((field) => !Object.hasOwn(pulled, field));
+
   const drifted = Object.entries(committed)
-    .filter(([field, value]) => pulled[field] !== value)
+    .filter(([field, value]) => Object.hasOwn(pulled, field) && pulled[field] !== value)
     .map(
       ([field, value]) =>
         `${field}: committed ${JSON.stringify(value)}, ${expectedLocale} has ${JSON.stringify(pulled[field])}`,
     );
 
-  return { ok: drifted.length === 0, drifted, locales: localeNames };
+  return {
+    ok: absent.length === 0 && drifted.length === 0,
+    absent,
+    drifted,
+    // Keys only, never values: this is logged, and the values are listing copy
+    // that does not belong in a public CI log. It is what tells the next reader
+    // whether the field is missing from App Store Connect or from the pull.
+    fields: Object.keys(pulled).sort(),
+    locales: localeNames,
+  };
 }
 
 function main() {
@@ -91,6 +128,11 @@ function main() {
   console.log("Committed listing text:");
   console.log(JSON.stringify(committed, null, 2));
   console.log(`Locales present in the pulled metadata: ${result.locales.join(", ") || "(none)"}`);
+  // Field NAMES only - see `fields` above for why the values stay out of here.
+  // Without this line the pulled shape was unknowable after the fact: the job
+  // deletes store.config.json on the way out, so a field that comes back
+  // missing looked identical to a field that came back changed (#2540).
+  console.log(`Fields present under ${EXPECTED_LOCALE}: ${result.fields.join(", ") || "(none)"}`);
 
   if (result.reason === "no-info-block") {
     console.error("::error::The pulled metadata has no apple.info block at all.");
@@ -110,12 +152,29 @@ function main() {
     process.exit(1);
   }
 
-  if (!result.ok) {
+  // Reported before drift, and separately, because the remedy is the opposite
+  // one: nothing here drifted, so there is no "which side is wrong" to decide.
+  if (result.absent.length > 0) {
+    console.error(
+      `::error::store/apple-info.json commits fields the ${EXPECTED_LOCALE} pull does not carry: ${result.absent.join(", ")}`,
+    );
+    console.error(
+      "::error::That is not drift - there is no live value to have drifted from. Either the field is unset in App Store Connect, or metadata:pull does not carry it under this name.",
+    );
+    console.error(
+      "::error::Both fixes are on this side: enter the value in App Store Connect, or stop committing it. Do not edit the listing back, and do not silence this check.",
+    );
+  }
+
+  if (result.drifted.length > 0) {
     console.error("::error::App Store Connect no longer matches store/apple-info.json:");
     for (const line of result.drifted) console.error(`::error::${line}`);
     console.error(
       "::error::Decide which side is wrong - store/README.md explains both cases. Do not silence this check.",
     );
+  }
+
+  if (!result.ok) {
     process.exit(1);
   }
 
