@@ -17,8 +17,8 @@ const HOUR_FIELD = "Check-in reminder time, hour";
 const MINUTE_FIELD = "Check-in reminder time, minute";
 
 /**
- * Every locator is scoped to one row. The screen renders ten reminder targets, so
- * an unscoped `getByRole("tab", { name: "AM" })` matches ten identical tabs - the
+ * Every locator is scoped to one row. The screen renders twelve reminder targets, so
+ * an unscoped `getByRole("tab", { name: "AM" })` matches twelve identical tabs - the
  * hour and minute inputs are the only sub-controls whose names carry the target.
  */
 const moodRow = (page: import("@playwright/test").Page) =>

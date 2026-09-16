@@ -5843,7 +5843,7 @@ const SEEDED_ROUTINES = [
       `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
         `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
         "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
-        "the Reminders screen is ten off toggles and an armed row is never rendered without " +
+        "the Reminders screen is twelve off toggles and an armed row is never rendered without " +
         "a reviewer arming one by hand.",
     );
   }

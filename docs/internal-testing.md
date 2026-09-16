@@ -77,7 +77,7 @@ practice itself.
 
 - reminders are off by default
 - enabling reminders asks for permission
-- disabling native reminders cancels the scheduled local notification
+- disabling a native reminder stops the server sending it; there is no device-side schedule to cancel
 - disabling web reminders unsubscribes the browser push subscription
 - web reminders are tested only after VAPID keys, Edge Function secrets, and the Supabase cron job are configured
 
