@@ -74,6 +74,29 @@ function section(name: string, number: number): string {
 }
 
 /**
+ * The statements of one printed section, in order.
+ *
+ * ⚠️ A numbered section is not always one query. Section 7 prints the programme
+ * funnel and then block A - the people who left, by exit phase (#2552) - under
+ * ONE caveat, deliberately: the caveat states what the instrument cannot see,
+ * and splitting it across two numbered sections would mean maintaining it twice.
+ * So a test that wants the funnel's rows has to say which statement it means,
+ * or it silently parses both tables as one and every fixed-shape assertion
+ * counts the wrong thing.
+ */
+function sectionStatements(name: string, number: number): string[] {
+  const statements = section(name, number)
+    .split(/;\s*\n/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "" && !/^(--[^\n]*\n?)*$/.test(statement))
+    .map((statement) => `${statement};`);
+  if (statements.length === 0) {
+    throw new Error(`analytics-${name}.sql section ${number} has no statements`);
+  }
+  return statements;
+}
+
+/**
  * A printed section addressed by the start of its heading line, so a section
  * with no number - the first-occurrences section (#2379) - can be run too.
  */
@@ -350,6 +373,13 @@ function insertProgrammeRows(
     programme?: "cbt" | "act" | "dbt";
     startedAtSql?: string;
     phaseIndex?: number;
+    /**
+     * ☠️ The other half of the FOSSIL. Set beside a null `startedAtSql`, this is
+     * what a programme somebody LEFT looks like (#2530, ADR-0012) - and until
+     * #2552 no fixture in this file could express one, which is why nothing
+     * tested a left run anywhere.
+     */
+    phaseStartedAtSql?: string;
     completedAtSql?: string;
     graduationDismissedAtSql?: string;
     reminderConsentSql?: string;
@@ -365,6 +395,7 @@ function insertProgrammeRows(
       ? `
         ${row.programme}_program_started_at = ${row.startedAtSql ?? "null"},
         ${row.programme}_program_phase_index = ${row.phaseIndex ?? 0},
+        ${row.programme}_program_phase_started_at = ${row.phaseStartedAtSql ?? "null"},
         ${row.programme}_program_completed_at = ${row.completedAtSql ?? "null"},
         ${row.programme}_graduation_dismissed_at = ${row.graduationDismissedAtSql ?? "null"},`
       : "";
@@ -1601,11 +1632,20 @@ describe("aggregate analytics reports (integration)", () => {
     // asserted only for row presence and zeros - so breaking the join on
     // `pp.account` would leave every other test in this suite passing.
     const GUESTS_ON_ACT = [96, 97, 98, 99, 110];
+    // ☠️ THE FOSSIL: a phase start with NO programme start, which is what
+    // `abandonProgram` leaves behind. Five at phase 3 so the cell clears k=5 and
+    // prints a real number rather than `<5`.
+    const LEFT_AT_PHASE_3 = [111, 112, 113, 114, 115];
 
-    /** Section 7 as shipped, over this suite's fixtures, keyed `account/programme/step`. */
+    /** Section 7's FIRST statement - the funnel proper. Block A is the second. */
+    const funnelStatement = () => sectionStatements("engagement", 7)[0]!;
+    /** Section 7's SECOND statement - block A, the people who left (#2552). */
+    const leftStatement = () => sectionStatements("engagement", 7)[1]!;
+
+    /** The funnel as shipped, over this suite's fixtures, keyed `account/programme/step`. */
     function funnel(): Map<string, { users: string; pct: string }> {
       return new Map(
-        queryWithinCohort("engagement", section("engagement", 7)).map(
+        queryWithinCohort("engagement", funnelStatement()).map(
           ([account, programme, step, users, pct]) => [
             `${account}/${programme}/${step}`,
             { users, pct },
@@ -1614,10 +1654,20 @@ describe("aggregate analytics reports (integration)", () => {
       );
     }
 
+    /** Block A, keyed `account/programme/exit phase`. */
+    function leftAt(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("engagement", leftStatement()).map(
+          ([account, programme, exitPhase, users]) =>
+            [`${account}/${programme}/${exitPhase}`, users!] as const,
+        ),
+      );
+    }
+
     beforeAll(() => {
       deleteSuiteUsers();
       insertAuthUsers([
-        ...[...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED].map((n) => ({
+        ...[...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED, ...LEFT_AT_PHASE_3].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
         })),
@@ -1660,6 +1710,21 @@ describe("aggregate analytics reports (integration)", () => {
           startedAtSql: "now() - interval '30 days'",
           phaseIndex: 4,
           completedAtSql: "now() - interval '2 days'",
+        })),
+        // ☠️ LEFT. Exactly what `abandonProgram` writes: the start nulled, the
+        // phase pair standing. `phase_index: 2` is 0-based, so they left DURING
+        // phase 3 and block A prints them at "left at phase 3".
+        //
+        // ⚠️ These five must appear at NO funnel step - they have no
+        // `started_at`, so the funnel's own guard already excludes them - and
+        // they must NOT be confused with NEVER_STARTED above, which carries a
+        // default phase index and no phase start. That is the distinction block
+        // A turns on, and the two fixtures exist side by side to prove it.
+        ...LEFT_AT_PHASE_3.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          phaseIndex: 2,
+          phaseStartedAtSql: "now() - interval '15 days'",
         })),
       ]);
     });
@@ -1730,11 +1795,74 @@ describe("aggregate analytics reports (integration)", () => {
       // tell which.
       const empty = rowsAfterMarker(
         definitionsWithPopulation("engagement", "false"),
-        section("engagement", 7),
+        funnelStatement(),
         "engagement",
       );
       expect(empty).toHaveLength(2 * (7 + 6 + 6));
       for (const row of empty) expect(row[3]).toBe("0");
+    });
+
+    it("☠️ block A prints its whole fixed shape on an empty population too", () => {
+      // Same reasoning as the funnel above, and the same failure if the phase
+      // list is ever derived from the rows present rather than from
+      // `programme_labels.total_phases`: a block that prints nothing reads as
+      // "nobody left" when it means "this query is broken".
+      const empty = rowsAfterMarker(
+        definitionsWithPopulation("engagement", "false"),
+        leftStatement(),
+        "engagement",
+      );
+      // One row per phase, per programme, per account type: CBT 5, ACT 4, DBT 4.
+      expect(empty).toHaveLength(2 * (5 + 4 + 4));
+      for (const row of empty) expect(row[3]).toBe("0");
+    });
+
+    /**
+     * ☠️ #2552. The first assertion anywhere in this repo that a LEFT programme
+     * is visible. Before this the five fixtures above appeared in no number the
+     * product prints - which is exactly what #2386 was filed about, and what
+     * made the funnel's drop-off optimistic.
+     */
+    it("☠️ counts the people who left, at the phase they left at", () => {
+      const rows = leftAt();
+      expect(rows.get("registered/cbt/left at phase 3")).toBe("5");
+    });
+
+    /**
+     * ☠️ The distinction the whole block turns on, and the one a careless
+     * rewrite loses. NEVER_STARTED carries a phase index of 4 and NO phase
+     * start - the shape every untouched account has, because `phase_index`
+     * defaults to 0 and nothing has to write it. A block reading `phase_index`
+     * alone would report those five as having left at phase 5.
+     */
+    it("☠️ never counts a phase index that no phase start supports", () => {
+      const rows = leftAt();
+      // NEVER_STARTED sits at phase index 4 → would print here as "phase 5".
+      expect(rows.get("registered/cbt/left at phase 5")).toBe("0");
+    });
+
+    it("keeps the people who left out of the funnel entirely", () => {
+      // They have no `started_at`, so they are in neither the numerator nor the
+      // denominator - the funnel is a snapshot of runs in progress and runs
+      // completed, and block A stands beside it rather than inside it.
+      const rows = funnel();
+      expect(rows.get("registered/cbt/started")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 3")?.users).toBe("5");
+      expect([...rows.keys()].filter((key) => key.includes("left"))).toEqual([]);
+    });
+
+    it("prints every phase for every programme and both account types", () => {
+      const phases = [...leftAt().keys()];
+      expect(phases).toHaveLength(2 * (5 + 4 + 4));
+      for (const account of ["guest", "registered"]) {
+        expect(phases).toContain(`${account}/cbt/left at phase 5`);
+        expect(phases).toContain(`${account}/act/left at phase 4`);
+        expect(phases).toContain(`${account}/dbt/left at phase 1`);
+      }
+      // ⚠️ And no phase 5 for the four-phase programmes: the shape comes from
+      // each programme's own length, not from CBT's.
+      expect(phases).not.toContain("registered/act/left at phase 5");
+      expect(phases).not.toContain("registered/dbt/left at phase 5");
     });
 
     it("prints every step for every programme and both account types", () => {
@@ -2283,15 +2411,25 @@ describe("aggregate analytics reports (integration)", () => {
       }
     });
 
-    it("records why the undatable fact is excluded rather than faked", () => {
+    it("records why the undatable facts are excluded rather than faked", () => {
       // ☠️ `age_floor_met` is a boolean with NO timestamp column anywhere, and
       // `*_program_phase_started_at` holds only the CURRENT phase's start. Both
       // facts are in the ticket's watch list and NEITHER can be dated. An
       // exclusion with no recorded reason is indistinguishable from an omission,
       // and this is the repo where an undecided exemption has bitten before.
       const source = reportSql("engagement");
-      expect(source).toContain("ONE FACT THE SCHEMA CANNOT DATE");
+      // ⚠️ TWO facts since #2552, not one: a leave joined the list. The fossil
+      // says THAT somebody left and AT WHICH PHASE, never WHEN.
+      expect(source).toContain("TWO FACTS THE SCHEMA CANNOT DATE");
       expect(source).toContain("PER-PHASE PROGRAMME MILESTONES");
+      expect(source).toContain("A PROGRAMME BEING LEFT");
+      // ☠️ The highest-value line in #2552, and the reason the block was worth
+      // extending rather than just adding a bullet: `prompt_dismissed_at` sits
+      // in the schema looking exactly like a leave timestamp, and
+      // `dismissProgramPrompt` overwrites it with no trace. A reader who dates
+      // a leave from it produces a number that is quietly wrong.
+      expect(source).toContain("DO NOT DATE");
+      expect(source).toContain("dismissProgramPrompt");
       // And the state-not-event caveat that applies to several of the rest.
       expect(source).toContain("STATE, NOT EVENTS");
       // ☠️ The near miss, kept deliberately: age-gate attestation was almost

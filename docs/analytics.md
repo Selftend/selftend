@@ -380,17 +380,20 @@ report is read by people who did not write it:
   and it is the only section that re-bases. Every other percentage in these
   reports is a share of that account type's population. Drop-off is the question
   a funnel answers, and a share of everyone answers a different one.
-- ☠️ **It cannot see abandonment, and must not be described as if it can.** The
-  columns are current state, not events: abandoning writes `started_at = null`
-  and leaves `phase_index`, so a person who quit part way is counted at no step
-  and is absent from the denominator too. The table is a snapshot of runs in
-  progress and runs completed, so the drop-off it shows is **optimistic**.
-  Replaying **no longer** clears `completed_at`
-  ([#2530](https://github.com/Selftend/selftend/issues/2530), ADR-0012), so a
-  graduate who begins again still counts as having completed. Fixing the
-  remaining blindness to abandonment means changing what the report reads, since
-  the app already writes the record — see
-  [#2552](https://github.com/Selftend/selftend/issues/2552).
+- ☠️ **It sees that people left, not when — and that is ruled, not pending
+  ([#2530](https://github.com/Selftend/selftend/issues/2530)).** The columns are
+  current state: leaving writes `started_at = null`, so a person who quit is
+  counted at no funnel step and is absent from the denominator, and the drop-off
+  the funnel prints is **optimistic as a funnel**. Standing beside it now is a
+  count of the people who left and the phase they left at, read from
+  `*_program_phase_started_at` outliving a null `*_program_started_at` — a record
+  the app keeps on purpose, with a test holding it
+  (`test/programme-fossil-contract.test.ts`). Replaying no longer clears
+  `completed_at` either, so a graduate who begins again still counts as having
+  completed. What is deliberately **not** kept, and so can never be reported:
+  when a left run started, when it was left, and that a previous run existed.
+  Those were refused on data minimisation, not deferred —
+  [ADR-0012](adr/0012-a-programme-records-where-you-stopped-never-when.md).
 
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
