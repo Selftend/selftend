@@ -62,13 +62,35 @@ export const SITE_FOOTER_LINKS: readonly SiteFooterLink[] = [
   { href: "/account-deletion", label: "policies:accountDeletion.pageTitle", row: "policies" },
 ];
 
+/**
+ * The namespaces the labels above live in, derived from the map rather than
+ * listed beside it, so the two cannot disagree.
+ *
+ * ⚠️ **This is tidiness, NOT a bug fix, and the distinction is written down
+ * because a review got it wrong.** The tempting story is that a hand-maintained
+ * list is a raw key waiting to render - add `/habits`, forget `"habits"`, and
+ * the footer of every public page shows "habits:learn.indexTitle". **That story
+ * is false here.** `src/i18n/index.ts` registers all twenty namespaces in `ns`
+ * and bundles every one of them in `resources`; nothing is lazily loaded. So a
+ * NAMESPACE-PREFIXED key resolves whatever this array says, and what
+ * `useTranslation` takes only sets the DEFAULT namespace for unprefixed keys -
+ * of which the footer has none.
+ *
+ * Verified rather than reasoned: dropping `"meditation"` from the old array left
+ * the footer rendering "Meditation" correctly, so a test written to catch the
+ * omission passed with the omission present. Don't write that test - it cannot
+ * fail. And if a future change makes namespaces lazy, this line stops being
+ * decorative and the whole note needs rereading.
+ */
+const FOOTER_NAMESPACES = [...new Set(SITE_FOOTER_LINKS.map(({ label }) => label.split(":")[0]))];
+
 interface SiteFooterProps {
   className?: string;
 }
 
 /** One footer entry: a real anchor, labelled with its destination's H1 key. */
 function FooterLink({ link }: { link: SiteFooterLink }) {
-  const { t } = useTranslation(["common", "policies", "security", "meditation"]);
+  const { t } = useTranslation(FOOTER_NAMESPACES);
 
   return (
     <LinkButton href={link.href} variant="link" size="sm">
