@@ -12,6 +12,7 @@ jest.mock("expo-router", () => ({
   Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
+  // The privacy page's cross-links are anchors (#2476): the mock forwards the
 }));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
