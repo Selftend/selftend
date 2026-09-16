@@ -15,6 +15,7 @@
 import { HELD_OUT_REMINDER_TARGETS } from "../../../src/features/notifications/reminder-rollout.ts";
 
 export type ReminderTarget =
+  | "general"
   | "cbt"
   | "meditation"
   | "act"
@@ -33,6 +34,7 @@ export interface WebPushSubscriptionRow {
   failure_count: number;
   id: string;
   last_routine_reminder_keys: Record<string, string> | null;
+  last_general_reminder_key: string | null;
   last_cbt_reminder_key: string | null;
   last_meditation_reminder_key: string | null;
   last_act_reminder_key: string | null;
@@ -54,6 +56,10 @@ export interface UserPreferenceRow {
   notifications_enabled_global: boolean | null;
   reminder_consent: boolean;
   language: string | null;
+  general_reminders_enabled: boolean;
+  general_reminder_hour: number;
+  general_reminder_minute: number;
+  general_reminder_timezone: string | null;
   cbt_reminders_enabled: boolean;
   cbt_reminder_hour: number;
   cbt_reminder_minute: number;
@@ -160,7 +166,36 @@ const DBT_PRACTICE_SOURCES: readonly [ActivitySource, ...ActivitySource[]] = [
   { table: "dbt_scripts", timestampColumn: "created_at" },
 ];
 
-export interface TargetConfig {
+/**
+ * Whether, and from where, a target reads "already done today" (spec
+ * docs/reminders.md § 7.3, ruled on #2413).
+ *
+ * A tool target suppresses on use because a tool has a *satisfied*: every tool
+ * reminder vanishes when the tool was used that day (map #1655; breathing and
+ * act were the last two exempt, #1668). `activitySources` is where that is read
+ * from, any-of - a row in ANY listed source suppresses - and it is non-empty by
+ * type, so an `"on-use"` target with nothing to read is not a configuration this
+ * module accepts.
+ *
+ * A target with no tool to read declares `"never"`. Today that is exactly the
+ * general reminder: it names no tool, so there is nothing honest to read - "any
+ * tool used today" would be 21 tables per channel row per tick, in the sender's
+ * zone, measuring "wrote a row" rather than "opened the app", paid exactly when
+ * the person used nothing (#2415). It fires at the time the person chose, every
+ * day, identically whether or not the app was opened: **the clock is the
+ * trigger, never absence** (ADR-0004, ADR-0010). Dedup is one per day per
+ * channel through its own last-key column, exactly as every target's is.
+ *
+ * ☠️ A tool target may not declare `"never"`. `web-reminders.test.ts` walks the
+ * `"on-use"` targets for the #1668 rule and pins the `"never"` set to exactly
+ * `["general"]`, so a tool cannot slip into the exemption and the exemption
+ * cannot silently widen.
+ */
+export type TargetSuppression =
+  | { suppression: "on-use"; activitySources: readonly [ActivitySource, ...ActivitySource[]] }
+  | { suppression: "never" };
+
+export type TargetConfig = {
   enabledField: keyof UserPreferenceRow;
   hourField: keyof UserPreferenceRow;
   minuteField: keyof UserPreferenceRow;
@@ -168,14 +203,23 @@ export interface TargetConfig {
   lastKeyField: keyof WebPushSubscriptionRow;
   url: string;
   tag: string;
-  // Where "the user already used this tool today" is read from. Any-of: a row in ANY listed
-  // source suppresses the reminder. Required and non-empty by type: every tool reminder
-  // vanishes when satisfied (map #1655), so a target with nothing to read is not a
-  // configuration this module accepts - breathing and act were the last two exempt (#1668).
-  activitySources: readonly [ActivitySource, ...ActivitySource[]];
-}
+} & TargetSuppression;
 
 export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
+  general: {
+    enabledField: "general_reminders_enabled",
+    hourField: "general_reminder_hour",
+    minuteField: "general_reminder_minute",
+    timezoneField: "general_reminder_timezone",
+    lastKeyField: "last_general_reminder_key",
+    // Home (#2413 § 3.4): greeting, Favourites, Tools, Modules - every door in one
+    // place, and the reminder names no tool. Allowlisted by the client shipping with
+    // this function and by no earlier one, so the target is held out (see
+    // HELD_OUT_TARGETS) until that build is live on both stores.
+    url: "/",
+    tag: "selftend-general-reminder",
+    suppression: "never",
+  },
   cbt: {
     enabledField: "cbt_reminders_enabled",
     hourField: "cbt_reminder_hour",
@@ -184,6 +228,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_cbt_reminder_key",
     url: "/modules/cbt",
     tag: "selftend-cbt-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "thought_records", timestampColumn: "created_at" }],
   },
   meditation: {
@@ -194,6 +239,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_meditation_reminder_key",
     url: "/tools/meditation",
     tag: "selftend-meditation-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "meditation_sessions", timestampColumn: "completed_at" }],
   },
   act: {
@@ -204,6 +250,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_act_reminder_key",
     url: "/modules/act",
     tag: "selftend-act-reminder",
+    suppression: "on-use",
     // No single ACT activity table, so the practice logs are read any-of (#1668).
     activitySources: ACT_PRACTICE_SOURCES,
   },
@@ -215,6 +262,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_dbt_reminder_key",
     url: "/modules/dbt",
     tag: "selftend-dbt-reminder",
+    suppression: "on-use",
     // Six tables, read any-of, the way ACT's practice logs are. ☠️ The coping
     // plan is NOT among them: its `updated_at` moves when someone reorders a
     // list, which is not a day's practice and would suppress a reminder the
@@ -236,6 +284,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     // for anyone who has not updated. `test/check-in-route-compat.test.tsx` guards both sides.
     url: "/tools/mood-tracker",
     tag: "selftend-mood-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "mood_logs", timestampColumn: "logged_at" }],
   },
   journal: {
@@ -246,6 +295,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_journal_reminder_key",
     url: "/tools/journal",
     tag: "selftend-journal-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "journal_entries", timestampColumn: "created_at" }],
   },
   gratitude: {
@@ -256,6 +306,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_gratitude_reminder_key",
     url: "/tools/gratitude-log",
     tag: "selftend-gratitude-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "gratitude_entries", timestampColumn: "logged_at" }],
   },
   grounding: {
@@ -266,6 +317,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_grounding_reminder_key",
     url: "/tools/grounding",
     tag: "selftend-grounding-reminder",
+    suppression: "on-use",
     // Grounding logs to mindfulness_sessions (exercise_name in the grounding slugs), not the
     // dropped noticing_logs table. Suppress a grounding reminder when the user completed a
     // grounding exercise today, in their timezone.
@@ -286,6 +338,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_breathing_reminder_key",
     url: "/tools/breathing",
     tag: "selftend-breathing-reminder",
+    suppression: "on-use",
     // Breathing sessions share mindfulness_sessions with grounding and are everything in it
     // that is NOT a grounding slug (#1668) - see ActivitySource.excludedNameValues.
     activitySources: [
@@ -305,6 +358,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_sleep_reminder_key",
     url: "/tools/sleep",
     tag: "selftend-sleep-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "sleep_logs", timestampColumn: "logged_at" }],
   },
   habits: {
@@ -315,6 +369,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_habits_reminder_key",
     url: "/tools/habits",
     tag: "selftend-habits-reminder",
+    suppression: "on-use",
     activitySources: [{ table: "habit_logs", dateColumn: "logged_on" }],
   },
 };
@@ -325,6 +380,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
  * {@link HELD_OUT_TARGETS}.
  */
 export const CONFIGURED_TARGETS: readonly ReminderTarget[] = [
+  "general",
   "cbt",
   "meditation",
   "act",
@@ -496,20 +552,23 @@ export function startOfZonedDay(now: Date, timeZone: string): Date | null {
 }
 
 // Describes the "did the user use this tool today, in their timezone?" queries for a target,
-// one per activity source - a hit in ANY of them suppresses. Empty only for an invalid
-// timezone (every target has at least one source, by type). Pure + Deno-free so it is
-// unit-tested; index.ts turns each window into a supabase query.
+// one per activity source - a hit in ANY of them suppresses. Empty for a `"never"` target
+// (nothing to read - see TargetSuppression) or an invalid timezone; an `"on-use"` target
+// has at least one source, by type. Pure + Deno-free so it is unit-tested; index.ts turns
+// each window into a supabase query, and skips the lookup outright for a `"never"` target.
 export function activityWindowsForTarget(
   target: ReminderTarget,
   timeZone: string,
   now: Date,
 ): ActivityWindow[] {
+  const config = TARGET_CONFIGS[target];
+  if (config.suppression === "never") return [];
   const parts = getZonedParts(now, timeZone);
   if (!parts) return [];
   const startOfDay = startOfZonedDay(now, timeZone);
   if (!startOfDay) return [];
 
-  return TARGET_CONFIGS[target].activitySources.map((source) => {
+  return config.activitySources.map((source) => {
     const nameFilter =
       source.nameColumn && source.nameValues
         ? { inColumn: source.nameColumn, inValues: source.nameValues }
@@ -544,10 +603,11 @@ export function activityWindowsForTarget(
 // mechanism: the same 5-minute due window and day-key stamp, but the stamp lives
 // in a `{ routineId: 'YYYY-MM-DD' }` jsonb map per delivery-channel row
 // (last_routine_reminder_keys), guaranteeing <= 1 notification per routine per
-// day per channel. Routines are the ONE reminder with no server-side activity
-// suppression: deriving "routine complete today" would need every step tool's
-// table joined per routine, so they simply never suppress. Every per-tool
-// target does (#1668 closed the breathing/act gap).
+// day per channel. Routines have no server-side activity suppression: deriving
+// "routine complete today" would need every step tool's table joined per
+// routine, so they simply never suppress. Every per-tool target does (#1668
+// closed the breathing/act gap); the general target declares `"never"` for the
+// same reason routines have none - nothing honest to read (TargetSuppression).
 
 /**
  * When a routine runs (#103/#113). Mirrors RoutineCadence in
