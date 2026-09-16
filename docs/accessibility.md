@@ -131,7 +131,11 @@ persisted on `user_preferences`:
   the global audio session is never configured at all.
 - `meditation_ambient_volume` — the meditation sit's looping bed, its own preference rather
   than the breathing one so a bed chosen for breathing never plays under a sit uninvited.
-  `meditation_ambient_sound_id` defaults to `none`, which is the off switch.
+  `meditation_ambient_sound_id` defaults to `none`, which is the off switch. Reachable in
+  **two** places: the sit setup on the meditation home screen, and — since #2507 — the sound
+  panel inside a running sit, opened by the sound door beneath `Pause` / `Finish early`
+  (`docs/sound.md` §1). The panel's rail appears only once a bed is chosen, so silence still
+  asks for no decision; what it removes is having to leave a sit to turn the bed down.
 
 A new audio lane without a volume control is an accessibility regression, not a follow-up.
 

@@ -16,8 +16,10 @@
     "hapticHint": "A tap for each bell and each breath phase, alongside the sound or instead of it."
   },
   "ambient": {
+    "door": "Sound",
     "label": "Background sound",
-    "volumeLabel": "Background sound volume"
+    "volumeLabel": "Background sound volume",
+    "volumeShort": "Volume"
   },
   "timer": {
     "start": "Start",
