@@ -68,11 +68,10 @@ interface SiteFooterProps {
 
 /** One footer entry: a real anchor, labelled with its destination's H1 key. */
 function FooterLink({ link }: { link: SiteFooterLink }) {
-  // Every namespace the map above labels a row from. The `ns:key` prefix would
-  // resolve without this list - `src/i18n/index.ts` bundles every namespace at
-  // init - but naming them keeps the component honest about what it reads, and
-  // an explainer page arriving with its own namespace (#2470 and the module
-  // pages after it) adds one entry here.
+  // Every namespace the map above labels a row from, declared rather than
+  // relied on: the footer's labels are keys belonging to other features, so an
+  // explainer page arriving with its own namespace (#2470 and the module pages
+  // after it) adds one entry here beside its row.
   const { t } = useTranslation(["common", "meditation", "policies", "security"]);
 
   return (

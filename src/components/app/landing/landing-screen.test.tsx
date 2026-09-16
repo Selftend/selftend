@@ -44,16 +44,18 @@ jest.mock("@/src/lib/supabase", () => ({
  * elements". Taking the first match instead would be a coin toss on tree order
  * and would keep passing if the pill itself disappeared.
  *
- * So the pill is identified by the thing that makes it a pill - its own type
- * scale, which the footer's `text-xs` links do not share - and the count is
- * asserted rather than the presence. A pill that stops being rendered fails
- * here even while the footer still says the word, which is exactly the case
- * that made the old assertion ambiguous.
+ * ☠️ Disambiguating on the pill's `text-[13.5px]` was the first fix and was
+ * WRONG: that utility is not unique to this row - `how-it-works-section.tsx`
+ * sets the same scale - so the filter only worked by the accident that no step
+ * body's text equals a tool name. The pill carries a `testID` instead, which is
+ * a structural handle rather than a styling coincidence, and a restyle no longer
+ * reds this test.
+ *
+ * The count is asserted rather than the presence, so a pill that stops being
+ * rendered fails here even while the footer still says the word.
  */
 const heroPills = (name: string) =>
-  screen
-    .getAllByText(name)
-    .filter((node) => String(node.props.className ?? "").includes("text-[13.5px]"));
+  screen.getAllByTestId("hero-tool-pill").filter((node) => node.props.children === name);
 
 describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {

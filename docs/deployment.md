@@ -62,7 +62,7 @@ GitHub Actions is the only deployer. It builds the Expo web export and publishes
 
 The deploy step uses `cloudflare/wrangler-action@v3` on Node 22, selecting the config by environment:
 
-- [`wrangler.toml`](../wrangler.toml) — production Worker `selftend`, assets from `dist/`, real 404s (`not_found_handling = "404-page"`, since [#2295](https://github.com/Selftend/selftend/issues/2295)): the eight files on the index list answer 200, and every other path — a gated screen, an auth screen, a typo — answers **404** with `dist/404.html`, which is the app shell and hydrates into the real screen.
+- [`wrangler.toml`](../wrangler.toml) — production Worker `selftend`, assets from `dist/`, real 404s (`not_found_handling = "404-page"`, since [#2295](https://github.com/Selftend/selftend/issues/2295)): the files on the index list answer 200, and every other path — a gated screen, an auth screen, a typo — answers **404** with `dist/404.html`, which is the app shell and hydrates into the real screen.
 - [`wrangler.staging.toml`](../wrangler.staging.toml) — staging Worker `selftend-staging`, the same fallback mode.
 
 Build env comes from GitHub Actions **variables** (`EXPO_PUBLIC_*`); the deploy needs the `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets (see below). Security headers ship via `public/_headers` (copied into `dist/`), which Cloudflare Workers static assets applies natively; the staging deploy injects `X-Robots-Tag: noindex` into the existing `/*` block, deletes `dist/sitemap.xml` and strips the `Sitemap:` line from `dist/robots.txt` (the sitemap names production URLs; [indexability.md](indexability.md) § 6.7). It adds no `Disallow` — a disallowed URL is never fetched, so its `noindex` would never be read.
@@ -287,11 +287,12 @@ The HSTS header in `public/_headers` carries the `preload` token, and the domain
 
 ## Public Routes To Verify
 
-These routes must be reachable without signing in. The eight on the index list answer **200** with their own file:
+These routes must be reachable without signing in. The nine on the index list answer **200** with their own file, in the list's own order (the site footer's):
 
 - `/` (the landing page)
-- `/faq`
 - `/crisis`
+- `/meditation` (the meditation framework — the whole page must read with no account)
+- `/faq`
 - `/privacy`
 - `/terms`
 - `/cookies`
@@ -304,7 +305,7 @@ Everything else answers **404** with `404.html`, which still loads the app:
 - a deliberately unknown route, such as `/missing-test` — 404 status, and the simple not-found screen with a home link renders
 - a gated deep link, such as `/modules/cbt` — 404 status, and the real screen renders after hydration (for a signed-out visitor, whatever the app shows a signed-out visitor there)
 
-`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the eight, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
+`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the nine, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
 
 The Google Play privacy policy URL should use the production domain:
 
@@ -423,7 +424,7 @@ Web launch is acceptable only when:
 
 ### Unknown routes return 404 instead of the app
 
-A **404 status** on an unknown or gated route is the intended answer since [#2295](https://github.com/Selftend/selftend/issues/2295) (`not_found_handling = "404-page"`; [indexability.md](indexability.md) § 6.4): only the eight files on the index list answer 200, and every other path is served `dist/404.html` with a 404 - the app shell, which hydrates into the real screen. The failure is a 404 that shows Cloudflare's plain error page, a blank page, or a page that never becomes the app. Check in this order:
+A **404 status** on an unknown or gated route is the intended answer since [#2295](https://github.com/Selftend/selftend/issues/2295) (`not_found_handling = "404-page"`; [indexability.md](indexability.md) § 6.4): only the files on the index list answer 200, and every other path is served `dist/404.html` with a 404 - the app shell, which hydrates into the real screen. The failure is a 404 that shows Cloudflare's plain error page, a blank page, or a page that never becomes the app. Check in this order:
 
 1. Confirm `dist/404.html` is in the deployed export. The index-list step (`node scripts/apply-index-list.js dist`, the second half of `npm run export:web`) moves `+not-found.html` there and fails the export if that file is missing; a deploy that ran `expo export` alone ships no `404.html`, and Cloudflare then answers with its own bare 404.
 2. Confirm both [wrangler.toml](../wrangler.toml) and [wrangler.staging.toml](../wrangler.staging.toml) have `not_found_handling = "404-page"` under `[assets]` (`test/index-list.test.ts` pins it, so a drift fails `verify` first).

@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react-native";
 
 import MeditationScreen from "../../../app/meditation";
+import { MeditationFrameworkBody } from "./meditation-framework-body";
 import MeditationLearnScreen from "./meditation-learn-screen";
 import enMeditation from "@/src/i18n/locales/en/meditation.json";
 import { STRUCTURED_DATA_TYPE } from "@/src/lib/structured-data";
@@ -104,19 +105,24 @@ describe("/meditation - the public explainer page", () => {
   });
 
   /**
-   * ☠️ The body is ONE component with two renderers, and a duplicated copy
-   * would pass every assertion above. This is the assertion that fails on a
-   * fork: the gated learn screen and the public page render the same three
-   * headings, in the same order, out of the same file.
+   * ☠️ **Comparing the rendered headings does NOT prove the body is shared** -
+   * a forked copy-paste of the three cards renders the same three headings in
+   * the same order and passes that comparison happily. So the identity is
+   * asserted where it actually lives: the same COMPONENT is mounted in both
+   * trees, read off the tree by type. The text comparison stays beside it, for
+   * the different failure of a shared body that renders the wrong three.
    */
-  it("renders the same three cards the gated learn screen does", () => {
+  it("renders the gated learn screen's three cards, out of the one shared body", () => {
     renderWithProviders(<MeditationScreen />);
     const publicHeadings = headingTexts().filter((text) => text !== enMeditation.module.home.title);
+
+    expect(screen.UNSAFE_getAllByType(MeditationFrameworkBody)).toHaveLength(1);
 
     screen.unmount();
     renderWithProviders(<MeditationLearnScreen />);
     const gatedHeadings = headingTexts().filter((text) => text !== learnTitle);
 
+    expect(screen.UNSAFE_getAllByType(MeditationFrameworkBody)).toHaveLength(1);
     expect(publicHeadings).toEqual([attentionTitle, gardenerTitle, nonLinearTitle]);
     expect(gatedHeadings).toEqual(publicHeadings);
   });

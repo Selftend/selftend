@@ -49,10 +49,10 @@ app/
 ├── terms.tsx              public
 ├── cookies.tsx            public
 ├── crisis.tsx             public
+├── meditation.tsx         public - the meditation framework, readable with no account
 ├── account-deletion.tsx   public
 ├── faq.tsx                public
 ├── security.tsx           public
-├── meditation.tsx         public - the meditation framework, readable with no account
 ├── (auth)/                sign-in, sign-up, verify-email, reset-password, update-password, auth-callback
 └── (app)/                 protected app shell
     ├── index.tsx          home
