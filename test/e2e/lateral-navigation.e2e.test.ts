@@ -40,9 +40,15 @@ import { dismissPostSignInModals } from "./helpers";
 const learnRoots = (page: Page) =>
   page.locator('h1:text-is("Habit building - core ideas")').count();
 
-/** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
-const privacyRoots = (page: Page) =>
-  page.locator('[role="button"]:has-text("How we protect your data")').count();
+/**
+ * One per mounted `/privacy` screen - its `<h1>`. It used to count the in-body
+ * "How we protect your data" BUTTON, chosen because security's <h1> shares those
+ * words; since #2467 that control is a link, and the site footer on every page
+ * carries "Privacy policy" too - as an `<a>`, never an `<h1>`, and `/security`'s
+ * heading reads differently, so the h1 text is the one thing only a mounted
+ * privacy screen renders.
+ */
+const privacyRoots = (page: Page) => page.locator('h1:text-is("Privacy policy")').count();
 
 /**
  * ☠️ The counts below are CSS/text locators, never `getByRole`. A backgrounded screen is
