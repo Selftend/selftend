@@ -38,6 +38,8 @@ jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
 }));
 
 jest.mock("expo-router", () => ({
+  // `CrisisSupportCallout`'s button became a `LinkButton` on #2496.
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
@@ -285,13 +287,23 @@ describe("SupportScreen column (#1726)", () => {
     ).toBeTruthy();
   });
 
-  it("carries one crisis notice - the callout - whose button pushes /crisis", () => {
+  /**
+   * ⚠️ **The claim is unchanged and it is the count: exactly ONE crisis door on
+   * this screen.** What moved on #2496 is the door's kind - the callout's button
+   * became a real anchor when `docs/brand-result.md` § 7.4 was ruled to reach
+   * shared chrome - so the query is `role: "link"` and the target is read off the
+   * href rather than off a `router.push` spy. ☠️ The role is the part that would
+   * silently pass a weaker test: `getAllByRole("button", …)` now matches nothing
+   * here, so a `toHaveLength(1)` left on the old role would fail loudly rather
+   * than drift - which is why it is changed rather than broadened to both roles.
+   */
+  it("carries one crisis notice - the callout - whose link targets /crisis", () => {
     renderWithProviders(<SupportScreen />);
 
-    const doors = screen.getAllByRole("button", { name: "Open crisis guidance" });
+    const doors = screen.getAllByRole("link", { name: "Open crisis guidance" });
     expect(doors).toHaveLength(1);
-    fireEvent.press(doors[0]);
-    expect(router.push).toHaveBeenCalledWith("/crisis");
+    expect(doors[0].props.href).toBe("/crisis");
+    expect(router.push).not.toHaveBeenCalled();
 
     // The form's only crisis reminder is now the second sentence of its intro.
     expect(

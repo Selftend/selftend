@@ -156,7 +156,17 @@ test.describe("support page", () => {
     await test.step("the column reads h1 → callout h2 → form h2 → four h3s, and the callout opens /crisis", async () => {
       expect(await readOutline(page)).toEqual(EXPECTED_OUTLINE);
 
-      await page.getByRole("button", { name: safety.openCrisis, exact: true }).click();
+      // ☠️ A LINK since #2496, not a button - `docs/brand-result.md` § 7.4 was
+      // ruled to reach shared chrome, so the callout renders a real `<a href>`.
+      // The role is asserted by querying it: a stale `role: "button"` here
+      // matched nothing and timed out, which is the failure that caught this.
+      const crisisLink = page.getByRole("link", { name: safety.openCrisis, exact: true });
+      // Only a real browser can prove the anchor carries its target - jest sees
+      // the prop, not the rendered `<a>`. Cheap here, and this is the safety
+      // door, so it is worth asserting before the click rather than inferring it
+      // from where we land.
+      await expect(crisisLink).toHaveAttribute("href", "/crisis");
+      await crisisLink.click();
       await expect(page).toHaveURL(/\/crisis$/);
       await page.goBack();
       await expect(
