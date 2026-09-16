@@ -14,13 +14,25 @@
  * App Store Connect's own caps, per the EAS Metadata schema
  * (https://docs.expo.dev/eas/metadata/schema/) and App Store Connect's editor.
  *
- * ⚠️ `keywords` and `description` are deliberately NOT here, and their absence
- * is the finding rather than an omission - see store/README.md. `keywords` is a
- * hidden field that cannot be read from outside App Store Connect at all, and
- * only the first line and second paragraph of `description` were ever captured.
- * Committing a truncated description would make the weekly drift check red on
- * arrival. The file is a verified subset; anything never read stays absent
- * rather than guessed at.
+ * ⚠️ `keywords` is deliberately NOT here, and its absence is a finding rather
+ * than an omission - see store/README.md. The file is a verified subset;
+ * anything never read stays absent rather than guessed at.
+ *
+ * ☠️ **`description` used to sit in that sentence too, and the reason was
+ * wrong** (#2524). It said only the first line and second paragraph had ever
+ * been captured, so committing a truncated description would turn the weekly
+ * drift check red on arrival. The whole field is readable without credentials
+ * from the public lookup endpoint, and the weekly pull carries it as well; the
+ * real blocker was that the LIVE copy opened with the one phrase
+ * `docs/positioning.md` calls unsafe. It was rewritten in App Store Connect on
+ * 2026-09-16, and the committed value below is that record, so the field is a
+ * read value rather than a guess like every other entry here.
+ *
+ * ⚠️ 4000 is a cap that does not bind. The committed text spends 1215 of it,
+ * and that is the point of the row rather than a note beside it: the escape
+ * clause in § *The short form* - "if length is ever genuinely capped somewhere
+ * new, the answer is the short form" - has no referent here, so the field
+ * carries the frame sentence, which is what an uncapped surface takes.
  *
  * ☠️ **Adding a field here is half the change.** `docs/positioning.md`
  * § *The short form* writes this inventory out in prose - because "where length
@@ -33,5 +45,6 @@
  */
 export const APP_STORE_CAPS: Record<string, number> = {
   subtitle: 30,
+  description: 4000,
   promoText: 170,
 };
