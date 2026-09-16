@@ -37,7 +37,12 @@ describe("the privacy page's cross-links are anchors", () => {
   it("links to the security page under its existing string", () => {
     renderWithProviders(<PrivacyScreen />);
 
-    expect(linkHref("How we protect your data")).toBe("/security");
+    // Two links carry this name since #2467: the in-body anchor and the site
+    // footer's /security entry, labelled with that page's H1. Both point at
+    // /security; the in-body one comes first in tree order.
+    const [inBody, footer] = screen.getAllByRole("link", { name: "How we protect your data" });
+    expect(inBody.props.href).toBe("/security");
+    expect(footer.props.href).toBe("/security");
   });
 
   it("links to account deletion under the legal screen's existing string", () => {
@@ -56,7 +61,7 @@ describe("the privacy page's cross-links are anchors", () => {
   it("records /privacy as the Origin for each destination without pushing the router itself", () => {
     renderWithProviders(<PrivacyScreen />);
 
-    fireEvent.press(screen.getByText("How we protect your data"));
+    fireEvent.press(screen.getAllByRole("link", { name: "How we protect your data" })[0]);
     expect(useNavigationOriginStore.getState().pending).toEqual({
       origin: "/privacy",
       forPathname: "/security",

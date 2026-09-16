@@ -57,11 +57,14 @@ describe("the index list ↔ the route tree", () => {
     expect([...INDEX_LIST].sort()).toEqual(publicRouteFiles.map(pathnameOf).sort());
   });
 
+  // In the site footer's order (#2467): the crisis row, then the nav list. The
+  // footer pin in `src/components/app/site-footer.test.tsx` compares ordered
+  // arrays against this list, so the two sequences cannot drift.
   it("holds the eight routes the spec's § 3 table names", () => {
     expect(INDEX_LIST).toEqual([
       "/",
-      "/faq",
       "/crisis",
+      "/faq",
       "/privacy",
       "/terms",
       "/cookies",

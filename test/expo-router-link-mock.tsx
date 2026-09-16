@@ -15,17 +15,25 @@ import { screen } from "@testing-library/react-native";
  * href: a press must reach the router through nothing else, so a screen that
  * still pushed for itself would show up as a `router.push` call.
  *
- * ⚠️ `dangerouslySingular` is dropped here. `sidebar-nav.test.tsx` keeps its own
- * variant because that flag is half of what a panel link IS (#989); a test that
- * asserts on it must not switch to this mock.
+ * ☠️ Why this is a file: since #2467 every public page renders the site
+ * footer, and the footer is made of `LinkButton`s. A suite that mocks
+ * `expo-router` as `{ router, usePathname }` alone - the shape every policy
+ * suite had - then renders `undefined` where `Link` should be and fails on an
+ * element-type error that has nothing to do with what it asserts.
+ *
+ * ⚠️ `dangerouslySingular` is accepted and dropped here. `sidebar-nav.test.tsx`
+ * keeps its own variant because that flag is half of what a panel link IS
+ * (#989); a test that asserts on it must not switch to this mock.
  */
 export function MockLink({
   href,
   asChild: _asChild,
+  dangerouslySingular: _dangerouslySingular,
   children,
 }: {
   href: string;
   asChild?: boolean;
+  dangerouslySingular?: unknown;
   children: React.ReactElement<{ href?: string }>;
 }) {
   return React.cloneElement(React.Children.only(children), { href });

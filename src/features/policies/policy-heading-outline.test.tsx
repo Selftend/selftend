@@ -8,11 +8,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/security";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
   // The privacy page's cross-links are anchors (#2476): the mock forwards the
-  // href onto the wrapped pressable and leaves its own onPress in place.
-  Link: require("@/test/expo-router-link-mock").MockLink,
 }));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));

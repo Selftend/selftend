@@ -11,6 +11,8 @@ import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => "/faq",
 }));
@@ -133,9 +135,14 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
     renderWithProviders(<FaqRoute />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // Once, not twice: `/faq` has no `STATIC_ROUTES` row, so the one-crumb trail
-    // still hides itself and the page name is not repeated above its own heading.
-    expect(screen.getAllByText(en.pageTitle)).toHaveLength(1);
+    // One heading, and the string exactly twice on the page: the heading and the
+    // site footer's `/faq` entry, which the anchor-text rule labels with this
+    // page's H1 (#2467). `/faq` has no `STATIC_ROUTES` row, so the one-crumb
+    // trail still hides itself - a leaked crumb is a `Text` inside a link, not
+    // a heading, which is why the count is on TEXT hits: a third occurrence is
+    // the trail repeating the page name above its own heading.
+    expect(screen.getAllByRole("heading", { name: en.pageTitle })).toHaveLength(1);
+    expect(screen.getAllByText(en.pageTitle)).toHaveLength(2);
     expect(screen.getByText(en.pageDescription)).toBeTruthy();
   });
 
@@ -197,7 +204,11 @@ describe("FaqScreen renders its own page rather than InfoScreen's cards (#2147)"
     renderWithProviders(<FaqRoute />);
 
     expect(screen.getAllByText(enCommon.safety.title)).toHaveLength(1);
-    expect(screen.getByText(enCommon.safety.openCrisis)).toBeTruthy();
+    // The callout's routed button, plus the site footer's crisis row (#2467) -
+    // the footer is on every public page, this one included, and its row is the
+    // page's one real anchor to `/crisis`. The callout is still asserted once,
+    // through its title above.
+    expect(screen.getAllByText(enCommon.safety.openCrisis)).toHaveLength(2);
 
     expect(orderOf(enCommon.safety.title, entryOf("crisis").title)).toEqual([
       enCommon.safety.title,
