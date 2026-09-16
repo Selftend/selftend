@@ -3,11 +3,17 @@ import { router } from "expo-router";
 
 import { CrisisSupportCallout } from "./safety-callout";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { linkHref } from "@/test/expo-router-link-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/modules/act";
 
 jest.mock("expo-router", () => ({
+  // ☠️ Added on #2496, when the callout's button became a `LinkButton`. Without
+  // a `Link` in this factory the component renders `undefined` where the anchor
+  // should be and every test here dies on an element-type error - including the
+  // heading-level ones, which have nothing to do with the link.
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
 }));
@@ -30,12 +36,24 @@ beforeEach(() => {
  * from a number less than half the real one.
  */
 describe("CrisisSupportCallout", () => {
-  it("opens the crisis page", () => {
+  /**
+   * ☠️ **An href, not a `router.push` spy, since #2496** — the callout's button
+   * became a real anchor when `docs/brand-result.md` § 7.4 was ruled to reach
+   * shared chrome. The assertion is *stronger*, not weaker: it proves the thing
+   * that changed. A link target is what middle-click, "copy link" and a screen
+   * reader's link role all read, and `router.push` could never have told a real
+   * anchor from a press handler that happened to navigate.
+   *
+   * ⚠️ The negative is the other half and is why this is not a restatement: the
+   * mock does not simulate navigation, so a call site that still pushed *for
+   * itself* beside the href would show up here as a `router.push` call. That is
+   * exactly the half-migrated shape this conversion could have left behind.
+   */
+  it("opens the crisis page as a real link, and pushes nothing itself", () => {
     renderWithProviders(<CrisisSupportCallout />);
 
-    fireEvent.press(screen.getByText("Open crisis guidance"));
-
-    expect(router.push).toHaveBeenCalledWith("/crisis");
+    expect(linkHref("Open crisis guidance")).toBe("/crisis");
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   /**
@@ -77,6 +95,13 @@ describe("CrisisSupportCallout", () => {
    * On the store rather than on `router.push`: the helper pushes through
    * `router.push`, so the assertion above cannot tell a migrated call site from
    * an unmigrated one.
+   *
+   * ⚠️ **Still a press, and still the point, after #2496.** The anchor navigates
+   * itself now, but the Origin record is a handler *beside* the href, and the
+   * Slot leaves the child's own `onPress` in place — so this is what proves the
+   * conversion kept the Origin rather than dropping it. § 7.4 called that record
+   * "a build detail, not a decision - kept on the anchor, or its drop
+   * documented"; it is kept, and this is where that is true.
    */
   it("records the module home it left as the Origin for /crisis", () => {
     renderWithProviders(<CrisisSupportCallout />);
