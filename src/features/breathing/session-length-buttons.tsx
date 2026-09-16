@@ -7,7 +7,7 @@
 //
 // The selected state is the shared chip treatment - `border-primary
 // bg-primary/10` behind `text-primary-ink`, the same shape as
-// selectable-chip.tsx and meditation's ChoiceRow - not the pattern's colour:
+// selectable-chip.tsx and choice-row.tsx - not the pattern's colour:
 // #926 moved the setup controls onto theme tokens, and "how long do I want to
 // sit" is a setting the user is making, not the categorical pattern datum the
 // dot and the live pacer carry.
