@@ -11,8 +11,10 @@ import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import {
+  getNotificationTarget,
   NOTIFICATION_TARGETS,
   readEnabled,
+  type NotificationTarget,
   type NotificationTargetKey,
 } from "@/src/features/notifications/registry";
 import {
@@ -250,6 +252,69 @@ export default function NotificationsScreen() {
     }
   }
 
+  /**
+   * Two runs (#2412, spec § 6): the general target leads the registry - pinned in
+   * `registry.test.ts`, and named here rather than indexed so the split reads as the
+   * rule it is - and every other target is a tool. The order inside the second run
+   * is the registry's.
+   */
+  const generalTarget = getNotificationTarget("general");
+  const toolTargets = NOTIFICATION_TARGETS.filter((target) => target !== generalTarget);
+
+  /**
+   * One row of the rows card in whichever branch is live: the real row once
+   * preferences are in hand, its skeleton while they load. The first row of EACH run
+   * carries no top hairline - the general row sits at the card's top, the first
+   * tool row under the eyebrow's own rule - so the caller says which rows lead.
+   */
+  function renderRow(target: NotificationTarget, firstOfRun: boolean) {
+    const hairline = cn(!firstOfRun && "border-t border-border");
+    if (!preferences) {
+      return (
+        // Keyed apart from the real row's wrapper ON PURPOSE. With a shared key React
+        // updates the mounted View in place, and react-native-web only starts
+        // observing layout for a node whose onLayout existed at mount - a handler
+        // attached by the update is never heard, and the skeleton matching the row's
+        // height means no resize ever fires either. Remounting is what arms the
+        // arrival anchor.
+        <View key={`skeleton-${target.key}`} className={hairline}>
+          <NotificationRowSkeleton target={target} />
+        </View>
+      );
+    }
+    const isArrival = target.key === arrivalKey;
+    return (
+      // The arrival target folds into the key so becoming (or ceasing to be) the
+      // target REMOUNTS the wrapper - react-native-web only observes layout for nodes
+      // whose onLayout existed at mount, so a handler attached to an already-mounted
+      // wrapper is never heard.
+      <View
+        key={isArrival ? `${target.key}-arrival` : target.key}
+        className={hairline}
+        onLayout={isArrival ? rowLayoutHandler(target.key) : undefined}
+      >
+        {isArrival ? (
+          <Animated.View
+            pointerEvents="none"
+            testID={`notification-row-focus-${target.key}`}
+            style={[focusOverlayStyle, { opacity: highlightOpacity }]}
+          >
+            <View className="flex-1 rounded-lg bg-primary/10" />
+          </Animated.View>
+        ) : null}
+        <NotificationTargetRow
+          target={target}
+          preferences={preferences}
+          userId={userId}
+          masterEnabled={globalEnabled}
+          channel={channel}
+          locked={Boolean(pendingControl)}
+          onRequestChange={(pending) => setPendingControl(pending ? target.key : null)}
+        />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView ref={scrollRef} contentContainerClassName="grow p-6">
@@ -367,56 +432,30 @@ export default function NotificationsScreen() {
               className="rounded-xl border border-border bg-card px-4"
               onLayout={anchorLayoutHandler("card")}
             >
-              {preferences
-                ? NOTIFICATION_TARGETS.map((target, index) => {
-                    const isArrival = target.key === arrivalKey;
-                    return (
-                      // The arrival target folds into the key so becoming (or ceasing to
-                      // be) the target REMOUNTS the wrapper - react-native-web only
-                      // observes layout for nodes whose onLayout existed at mount, so a
-                      // handler attached to an already-mounted wrapper is never heard.
-                      <View
-                        key={isArrival ? `${target.key}-arrival` : target.key}
-                        className={cn(index > 0 && "border-t border-border")}
-                        onLayout={isArrival ? rowLayoutHandler(target.key) : undefined}
-                      >
-                        {isArrival ? (
-                          <Animated.View
-                            pointerEvents="none"
-                            testID={`notification-row-focus-${target.key}`}
-                            style={[focusOverlayStyle, { opacity: highlightOpacity }]}
-                          >
-                            <View className="flex-1 rounded-lg bg-primary/10" />
-                          </Animated.View>
-                        ) : null}
-                        <NotificationTargetRow
-                          target={target}
-                          preferences={preferences}
-                          userId={userId}
-                          masterEnabled={globalEnabled}
-                          channel={channel}
-                          locked={Boolean(pendingControl)}
-                          onRequestChange={(pending) =>
-                            setPendingControl(pending ? target.key : null)
-                          }
-                        />
-                      </View>
-                    );
-                  })
-                : NOTIFICATION_TARGETS.map((target, index) => (
-                    // Keyed apart from the real row's wrapper ON PURPOSE. With a shared
-                    // key React updates the mounted View in place, and react-native-web
-                    // only starts observing layout for a node whose onLayout existed at
-                    // mount - a handler attached by the update is never heard, and the
-                    // skeleton matching the row's height means no resize ever fires
-                    // either. Remounting is what arms the arrival anchor.
-                    <View
-                      key={`skeleton-${target.key}`}
-                      className={cn(index > 0 && "border-t border-border")}
-                    >
-                      <NotificationRowSkeleton target={target} />
-                    </View>
-                  ))}
+              {/*
+                One card, two runs (#2416, spec § 6): the general row, then the
+                "For each tool" eyebrow INSIDE this card, then the eleven tool rows.
+                `renderRow` draws the live branch (row or skeleton) for both runs, so
+                the two branches cannot lay the card out differently.
+              */}
+              {renderRow(generalTarget, true)}
+              {/*
+                The divider between the two runs. Static content whose arrival is
+                guaranteed, so it is drawn visibly in BOTH branches - never hidden
+                with the skeletons, which are fills - at the same position and with
+                the same box (ADR-0009): nothing below it moves when the data lands.
+                Its top rule closes the general run; the tool row under it therefore
+                carries none of its own. A level-2 header, as the settings page's run
+                labels are (settings-group-label.tsx): one jump point a screen-reader
+                user can reach under the screen's h1, and the level is explicit
+                because react-native-web renders a level-less header as an <h1>.
+              */}
+              <View testID="notification-run-per-tool" className="border-t border-border pb-1 pt-4">
+                <Text variant="eyebrow" accessibilityRole="header" aria-level={2}>
+                  {t("runs.perTool")}
+                </Text>
+              </View>
+              {toolTargets.map((target, index) => renderRow(target, index === 0))}
             </View>
           ) : null}
         </View>
