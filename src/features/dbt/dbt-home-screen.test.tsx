@@ -16,6 +16,8 @@ import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // `CrisisSupportCallout`'s button became a `LinkButton` on #2496.
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { canGoBack: jest.fn(() => false), push: jest.fn() },
   usePathname: () => "/modules/dbt",
   useFocusEffect: jest.fn(),
