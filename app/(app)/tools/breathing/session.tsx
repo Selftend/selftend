@@ -30,7 +30,7 @@ import { scheduleStateAt } from "@/src/features/breathing/schedule";
 import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/resolve-exercise";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
-import { VolumeSlider } from "@/src/components/app/volume-slider";
+import { VolumeRail } from "@/src/components/app/volume-rail";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 import { prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
@@ -737,58 +737,12 @@ export default function BreathingSessionScreen() {
 }
 
 /**
- * One volume lane as design `4c` draws it: icon, a fixed label column, the
- * track, and the current percentage - a restyle of the always-visible sliders
- * the session screen has carried since the sounds sheet gave up volume
- * (sounds-sheet.tsx keeps selection; these keep loudness).
- *
- * At the 360dp floor the fixed columns (18px icon + 78px label + 34px readout
- * + three 14px gaps) leave the track ~140px, comfortably above the 18px thumb.
- */
-function VolumeRail({
-  icon,
-  label,
-  value,
-  onChange,
-  onCommit,
-  accessibilityLabel,
-}: {
-  icon: MaterialIconName;
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  onCommit: (value: number) => void;
-  accessibilityLabel: string;
-}) {
-  return (
-    <View className="flex-row items-center gap-3.5">
-      <Icon name={icon} size={18} className="text-muted-foreground" />
-      <Text variant="muted" className="w-[78px] text-[13px]" numberOfLines={1}>
-        {label}
-      </Text>
-      <View className="flex-1">
-        <VolumeSlider
-          accessibilityLabel={accessibilityLabel}
-          onChange={onChange}
-          onCommit={onCommit}
-          value={value}
-        />
-      </View>
-      <Text variant="muted" className="w-[34px] text-right text-xs tabular-nums">
-        {Math.round(value * 100)}%
-      </Text>
-    </View>
-  );
-}
-
-/**
  * One pattern tab.
  *
  * Selected is the shared chip treatment - `border-primary bg-primary/10` behind
- * `text-primary-ink`, the same shape as selectable-chip.tsx and meditation's
- * ChoiceRow - not the pattern's own colour: #926 moved the setup controls onto
- * theme tokens, and the pattern's colour lives in its row's dot and the live
- * pacer. `text-primary-ink`, never `text-primary`: the latter on `bg-primary/10`
+ * `text-primary-ink`, the same shape as selectable-chip.tsx and choice-row.tsx -
+ * not the pattern's own colour: #926 moved the setup controls onto theme tokens,
+ * and the pattern's colour lives in its row's dot and the live pacer. `text-primary-ink`, never `text-primary`: the latter on `bg-primary/10`
  * is the shape #691 named a regression and #368 measured at 3.81:1.
  *
  * Every stop rides a utility class rather than a colour literal:
