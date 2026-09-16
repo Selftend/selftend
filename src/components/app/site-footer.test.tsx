@@ -2,6 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { View } from "react-native";
 
 import { SITE_FOOTER_LINKS, SiteFooter } from "./site-footer";
+import enAuth from "@/src/i18n/locales/en/auth.json";
 import enCommon from "@/src/i18n/locales/en/common.json";
 import enHabits from "@/src/i18n/locales/en/habits.json";
 import enMeditation from "@/src/i18n/locales/en/meditation.json";
@@ -145,7 +146,11 @@ describe("SiteFooter", () => {
     renderWithProviders(<SiteFooter />);
 
     expect(linkHref(enHabits.learn.indexTitle)).toBe("/habits");
-    expect(screen.queryByText("Habits")).toBeNull();
+    // ☠️ Read from the constant, never typed as a literal: the landing's tool
+    // pill owns this string, and a rename there would strand a literal here
+    // silently - the negative would keep passing while the thing it guards
+    // against became possible again.
+    expect(screen.queryByText(enAuth.landingPage.tools.habits)).toBeNull();
   });
 
   /**

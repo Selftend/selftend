@@ -141,9 +141,14 @@ describe("/habits - the public explainer page", () => {
     expect(publicTitles).toEqual(
       HABITS_LEARN_CARDS.map(({ slug }) => cards[slug as keyof typeof cards].title),
     );
-    // The gated rows carry the same ten names in the same order, plus the
-    // breadcrumb back button the header renders (#495).
-    expect(gatedRowNames).toEqual(expect.arrayContaining(publicTitles));
+    // ☠️ The gated rows carry the same ten names **in the same order**, which
+    // `expect.arrayContaining` would NOT check - it is order-insensitive, so it
+    // passes on a shuffled list. The card names are filtered out of the row
+    // names and compared as an ordered array instead.
+    expect(gatedRowNames.filter((name) => publicTitles.includes(name))).toEqual(publicTitles);
+    // The one extra button is `ScreenEscape`, which `ScreenHeader` renders
+    // unconditionally (#1250) - NOT the breadcrumb, which this file mocks to
+    // null above.
     expect(gatedRowNames).toHaveLength(publicTitles.length + 1);
   });
 

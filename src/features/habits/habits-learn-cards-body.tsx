@@ -45,8 +45,12 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
  */
 export function HabitsLearnCardsBody({ presentation }: { presentation: "links" | "articles" }) {
   if (presentation === "articles") {
+    // `gap-6` rather than the link list's `gap-2`: these are ten blocks of
+    // prose, not ten rows of a menu, and it is the spacing `/meditation`'s
+    // cards already get from the layout - the two public explainers read as one
+    // page shape.
     return (
-      <View className="gap-4">
+      <View className="gap-6">
         {HABITS_LEARN_CARDS.map((card) => (
           <HabitsLearnArticleCard key={card.slug} card={card} />
         ))}
@@ -64,6 +68,29 @@ export function HabitsLearnCardsBody({ presentation }: { presentation: "links" |
 }
 
 /**
+ * A card's tinted square, the one thing both presentations draw the same way.
+ *
+ * The tint is the card's own `tone` resolved through the habit chip palette, so
+ * a card that changes colour changes it in both places at once - the drift this
+ * file exists to prevent, in the one piece of it that is pure appearance. The
+ * icon is hidden from the accessibility tree by `Icon`'s own default, which is
+ * what it should be: the title beside it already names the card, and a second
+ * announcement would be noise.
+ */
+function HabitsLearnChip({ card }: { card: HabitsLearnCard }) {
+  const chip = useHabitChipPalette()[card.tone];
+
+  return (
+    <View
+      className="size-10 items-center justify-center rounded-xl"
+      style={{ backgroundColor: chip.fill }}
+    >
+      <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
+    </View>
+  );
+}
+
+/**
  * One row of a table of contents: the card's chip, its title, its short line,
  * and a push to the article behind the gate.
  *
@@ -75,8 +102,6 @@ export function HabitsLearnCardsBody({ presentation }: { presentation: "links" |
 export function HabitsLearnCardRow({ card }: { card: HabitsLearnCard }) {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
-  const palette = useHabitChipPalette();
-  const chip = palette[card.tone];
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
@@ -93,12 +118,7 @@ export function HabitsLearnCardRow({ card }: { card: HabitsLearnCard }) {
       className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
       role="button"
     >
-      <View
-        className="size-10 items-center justify-center rounded-xl"
-        style={{ backgroundColor: chip.fill }}
-      >
-        <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-      </View>
+      <HabitsLearnChip card={card} />
       <View className="flex-1 gap-0.5">
         <Text className="text-sm font-semibold">
           {t(`${cardKey}.title` as Parameters<typeof t>[0])}
@@ -119,20 +139,13 @@ export function HabitsLearnCardRow({ card }: { card: HabitsLearnCard }) {
  */
 function HabitsLearnArticleCard({ card }: { card: HabitsLearnCard }) {
   const { t } = useTranslation("habits");
-  const palette = useHabitChipPalette();
-  const chip = palette[card.tone];
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
     <Card>
       <CardContent className="gap-2 pt-6">
         <View className="flex-row items-center gap-3">
-          <View
-            className="size-10 items-center justify-center rounded-xl"
-            style={{ backgroundColor: chip.fill }}
-          >
-            <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-          </View>
+          <HabitsLearnChip card={card} />
           <CardTitle aria-level={2} className="flex-1">
             {t(`${cardKey}.title` as Parameters<typeof t>[0])}
           </CardTitle>

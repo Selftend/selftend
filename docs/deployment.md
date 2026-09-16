@@ -161,7 +161,7 @@ iOS and iPadOS web push requires the user to install the web app to the Home Scr
 The reusable `.github/workflows/web-deploy.yml` workflow (called by `release.yml` for prod and `staging.yml` for staging; also manually dispatchable):
 
 - checks out the release tag (prod) or the triggering `dev` SHA (staging)
-- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web` (the Expo export, then the index-list step that prunes `dist/` to the nine HTML files and writes `sitemap.xml` — "Web Build" below)
+- installs dependencies and builds with Node `22.23.1`, runs `npm run export:web` (the Expo export, then the index-list step that prunes `dist/` to the eleven HTML files and writes `sitemap.xml` — "Web Build" below)
 - on staging only, appends `X-Robots-Tag: noindex` to `dist/_headers`, deletes `dist/sitemap.xml` and strips the `Sitemap:` line from `dist/robots.txt`
 - switches to Node 22 and deploys `dist` (+ the `worker`-less static-assets config) via `cloudflare/wrangler-action@v3`, selecting `wrangler.toml` (prod) or `wrangler.staging.toml` (staging)
 
@@ -306,7 +306,7 @@ Everything else answers **404** with `404.html`, which still loads the app:
 - a deliberately unknown route, such as `/missing-test` — 404 status, and the simple not-found screen with a home link renders
 - a gated deep link, such as `/modules/cbt` — 404 status, and the real screen renders after hydration (for a signed-out visitor, whatever the app shows a signed-out visitor there)
 
-`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the nine, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
+`curl -sI https://selftend.org/faq` reads `HTTP/2 200`; `curl -sI https://selftend.org/missing-test` reads `HTTP/2 404`. `/sitemap.xml` is XML listing the ten, and `/robots.txt` is Cloudflare's managed block followed by the repo's own file.
 
 The Google Play privacy policy URL should use the production domain:
 
