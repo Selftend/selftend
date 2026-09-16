@@ -30,9 +30,9 @@ function input(overrides: Partial<DeriveActProgramInput> = {}): DeriveActProgram
 }
 
 describe("deriveActProgram", () => {
-  it("reports not_started when there is no start timestamp", () => {
+  it("reports not_in_progress when there is no start timestamp", () => {
     const result = deriveActProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
   });
 
   it("reports in_progress when started", () => {
@@ -183,9 +183,9 @@ describe("deriveActProgram", () => {
     expect(high.phaseIndex).toBe(3);
   });
 
-  it("phase is null when status is not_started", () => {
+  it("phase is null when status is not_in_progress", () => {
     const result = deriveActProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
     expect(result.phase).toBeNull();
     expect(result.phaseReady).toBe(false);
     expect(result.totalPhases).toBe(4);
