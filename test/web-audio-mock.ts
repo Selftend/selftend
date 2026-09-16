@@ -109,6 +109,13 @@ export function installFakeWebAudio({
   // fetch hands the decoder the URL itself rather than real bytes, which is all the
   // lane ever does with the ArrayBuffer.
   const g = globalThis as unknown as Globals;
+  // Remembered so uninstall RESTORES the environment's own fetch rather than deleting
+  // it: the next test file to import this mock would otherwise find no fetch at all.
+  saved = {
+    fetch: g.fetch,
+    AudioContext: g.AudioContext,
+    webkitAudioContext: g.webkitAudioContext,
+  };
   g.fetch = jest.fn(async (url: unknown) => {
     // ☠️ Stringified: on web `require("...m4a")` is a URL, but a test hands the lane a
     // bare asset number, and a Map keyed by 1 does not answer to "1".
@@ -173,13 +180,23 @@ export function installFakeWebAudio({
   return fake;
 }
 
-/** Forget the fakes so a later non-web test does not see a Web Audio browser. */
+/** Put back whatever was there, so a later non-web test sees its own environment. */
 export function uninstallFakeWebAudio() {
   const g = globalThis as unknown as Globals;
-  delete g.AudioContext;
-  delete g.webkitAudioContext;
-  delete g.fetch;
+  if (!saved) return;
+  restore(g, "fetch", saved.fetch);
+  restore(g, "AudioContext", saved.AudioContext);
+  restore(g, "webkitAudioContext", saved.webkitAudioContext);
+  saved = null;
   if (g.navigator) delete g.navigator.audioSession;
+  urls.length = 0;
+}
+
+let saved: Pick<Globals, "fetch" | "AudioContext" | "webkitAudioContext"> | null = null;
+
+function restore<K extends keyof Globals>(g: Globals, key: K, value: Globals[K]) {
+  if (value === undefined) delete g[key];
+  else g[key] = value;
 }
 
 // A one-byte "file" per URL, so the fake decoder can tell the beds apart without

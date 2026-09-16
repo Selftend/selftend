@@ -358,33 +358,27 @@ export function createLanePlayer(): LanePlayer {
   // targets the slider's value, not the one play() was called with.
   let requestedVolume = 0;
 
+  // The ONE place a bed's volume is written, whether a ramp is driving it or a slider.
+  const applyTo = (bed: LaneBed, volume: number) => {
+    bed.volume = volume;
+    try {
+      bed.handle.setVolume(volume);
+    } catch {
+      // A player released underneath us. A ramp keeps ticking into this catch until it
+      // finishes (at most LOOP_FADE_MS) - harmless, and simpler than cancelling from
+      // inside the apply callback.
+    }
+  };
+
   const createBed = (handle: LaneHandle, volume: number, looping: boolean): LaneBed => {
     const bed: LaneBed = {
       handle,
       volume,
       looping,
       released: false,
-      ramp: createVolumeRamp((v) => {
-        bed.volume = v;
-        try {
-          bed.handle.setVolume(v);
-        } catch {
-          // A player released underneath us. The ramp keeps ticking into this catch
-          // until it finishes (at most LOOP_FADE_MS) - harmless, and simpler than
-          // cancelling from inside the apply callback.
-        }
-      }),
+      ramp: createVolumeRamp((v) => applyTo(bed, v)),
     };
     return bed;
-  };
-
-  const applyTo = (bed: LaneBed, volume: number) => {
-    bed.volume = volume;
-    try {
-      bed.handle.setVolume(volume);
-    } catch {
-      // A player released underneath us; see the ramp's apply above.
-    }
   };
 
   // The ONE place a player is let go. Idempotent per bed: `released` is set before
@@ -440,10 +434,12 @@ export function createLanePlayer(): LanePlayer {
         // audio-mode setup and over a cold fetch + decode on web.
         if (loop) {
           const departing = current;
-          // At most one outgoing at a time (§4.2). A third tap cuts whatever is still
-          // on its way down, so the ceiling of two live players holds on every path.
-          const keep = departing ?? outgoing[outgoing.length - 1];
-          for (const bed of [...outgoing]) if (bed !== keep) release(bed);
+          // At most one outgoing at a time (§4.2), so the ceiling of two live players
+          // holds on every path. The one fader that survives this play is the bed being
+          // demoted here; with nothing to demote (a stop() is already in flight) it is
+          // the newest of the beds still falling. Every older one is cut.
+          const survivor = departing ?? outgoing[outgoing.length - 1];
+          for (const bed of [...outgoing]) if (bed !== survivor) release(bed);
           // A bed already falling keeps its OWN ramp and finishes its own fall (§4.5);
           // only one still at level is started on a new one.
           if (departing) fadeOut(departing);
