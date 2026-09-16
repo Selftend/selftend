@@ -199,11 +199,17 @@ the test; there is no review gate. The caveat prints beside each qualifying
 section from the shared `partition_caveat` block, because this document does not
 travel with the table.
 
-**2 · Repeated publication.** ⚠️ **Not written out yet** — it lands with
-[#2557](https://github.com/Selftend/selftend/issues/2557), which will also add
-its caveat to the reports. In outline: the digest publishes the same tables
-monthly, and what a cell that crosses the floor between publications discloses
-is **movement**, which is time-localised in a way a level is not.
+**2 · Repeated publication.** The digest publishes the same tables monthly, and
+**the series is the release**, not each comment (see _The monthly digest_). A
+section is exposed when its row **key recurs** across publications, its cell is
+**mutable** for that key, and the cell can **cross the floor** — suppressed in
+one publication, printed in a later one. ☠️ **Every suppressed cell in all three
+reports qualifies**, so there is nothing to exempt and no list to keep. The
+discriminator is worth stating on its own: **a republished cell is safe exactly
+when it cannot move, and nothing suppressed in these reports is immutable.** What
+this route discloses is **movement**, not level — and a movement is
+_time-localised_, which a level is not. The caveat prints once per report, beside
+no section, from the shared `series_caveat` block.
 
 **3 · The value of a printed rate.** ⚠️ **Not written out yet** — it lands with
 [#2558](https://github.com/Selftend/selftend/issues/2558), which will also add
@@ -239,8 +245,8 @@ a limit two of these routes break.
 
 ###### The worst case, composed
 
-☠️ Route 4 at `b = 1`, published into a digest that
-republishes the same tables monthly, is the strongest disclosure these reports
+☠️ Route 4 at `b = 1` composed with route 2 gives
+the strongest disclosure these reports
 admit: a cell flipping from `0` in one digest to `<5` in the next is an **exact,
 time-localised fact about one individual**, identified by cohort. It is written
 here rather than left for a reader to assemble from the routes, because a
@@ -713,6 +719,12 @@ already compute, orderings and trends included, and the distance to a threshold
 this document has **already committed to in writing**. It may not introduce a
 threshold, comparison, verdict or recommendation this document has not already
 made.
+
+☠️ **The series is the release, not each comment.** One standing issue rather
+than an issue per month, _it always arrives even empty_, and _its absence must
+never be mistaken for a quiet month_ are three statements about a continuous
+record. What follows for suppression is in _What the floor does not guarantee_,
+route 2.
 
 - **The 1st, deliberately not the 9th.** The 9th is
   [operations-runbook.md](operations-runbook.md)'s recurring-checks duty day, and

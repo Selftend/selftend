@@ -480,6 +480,42 @@ cross join lateral (
 ) p;
 -- <<< shared:population_provenance
 
+-- >>> shared:series_caveat
+-- Route 2 of docs/analytics.md, "What the floor does not guarantee". Printed
+-- ONCE PER REPORT and beside no section at all, because this census has nothing
+-- to exempt: every suppressed cell in all three reports can move between
+-- publications. Byte-identical in all three files;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ☠️ KEPT SEPARATE FROM shared:partition_caveat DELIBERATELY. Merging the two
+-- would print a partition warning on analytics-engagement.sql, which has no
+-- partitioned arm table - one more false sentence in a file family whose
+-- comments have already asserted the opposite twice.
+--
+-- ⚠️ The k=5 rule is written, reasoned and tested as a property of ONE RUN of
+-- one report. Since the monthly digest it is not: the same tables accumulate as
+-- a series on one standing issue, and each run computes its suppression from
+-- its own month alone. Nothing is guarded, and what ships is the statement -
+-- docs/analytics.md does not travel with the table, and the digest comment
+-- carries only the legend.
+--
+-- ☠️ The refusal below names the MARKER reason first and the statelessness
+-- second, and that order is the finding rather than a style choice: an
+-- architectural objection can be engineered around, and the marker one cannot.
+\echo
+\echo '    STANDING NOTE - THE SERIES IS THE RELEASE, NOT EACH COMMENT. This report is republished monthly'
+\echo '    onto one standing issue, and each run computes its suppression from its own month alone. So a'
+\echo '    cell can print `<5` in one publication and a real count in a later one, and what that pair'
+\echo '    discloses is the MOVEMENT between them - which is time-localised in a way a level is not, and'
+\echo '    which the four-value bound does not speak to at all. A republished cell is safe exactly when it'
+\echo '    CANNOT MOVE, and nothing suppressed in these reports is immutable.'
+\echo '    NOTHING IS GUARDED. Holding a cell suppressed after it passes four is REFUSED: that means'
+\echo '    suppressing a LARGE cell, which can print neither `<5` (false) nor a distinct marker (which'
+\echo '    cracks the suppression) - the same wall complementary suppression hits. That these reports are'
+\echo '    deliberately stateless is the SECOND reason and not the first. See docs/analytics.md, What the'
+\echo '    floor does not guarantee, route 2.'
+-- <<< shared:series_caveat
+
 \echo
 \echo '=== 0) Population split (every table below carries this axis) ==='
 select l.account,

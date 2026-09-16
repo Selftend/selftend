@@ -37,6 +37,13 @@ const EXPECTED_BLOCKS: Record<string, string[]> = {
   // a file family whose comments have already asserted the opposite twice
   // (#2556).
   partition_caveat: ["analytics-onboarding.sql", "analytics-segment.sql"],
+  // Route 2 of the same section: the digest republishes these tables monthly,
+  // and a cell suppressed in one publication and printed in a later one
+  // discloses the MOVEMENT between them. ☠️ All three files, and printed ONCE
+  // PER REPORT rather than beside a section - unlike partition_caveat, whose
+  // census names three sections, every suppressed cell in all three reports is
+  // series-exposed, so there is nothing to exempt and no list to keep (#2557).
+  series_caveat: ALL_REPORTS,
   // Who is in the population: the owner count, the heuristic upper bound, and
   // the standing line that the guest arm is not identifiable at all. Printed by
   // each report separately and deliberately - every report runs independently,
@@ -357,6 +364,33 @@ describe("every section that claims a partition prints the partition caveat", ()
         expect(fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8")).not.toContain(CAVEAT_ECHO);
       });
     }
+  }
+});
+
+describe("the series caveat prints once per report, beside no section", () => {
+  // ☠️ #2557. The two caveats differ in SHAPE, not just in wording, and the
+  // difference is the whole census: route 1 names three qualifying sections, so
+  // its caveat is echoed per section; route 2 has nothing to exempt, because
+  // every suppressed cell in all three reports can move between publications.
+  // A series caveat that drifted into a per-section echo would say, by
+  // repetition, that some sections are exposed and others are not.
+  const STANDING_NOTE = "STANDING NOTE - THE SERIES IS THE RELEASE";
+
+  for (const file of reportFiles()) {
+    it(`${file} prints it exactly once`, () => {
+      const printed = fs
+        .readFileSync(path.join(SCRIPTS_DIR, file), "utf8")
+        .split("\n")
+        .filter((line) => line.startsWith("\\echo") && line.includes(STANDING_NOTE));
+      expect(printed).toHaveLength(1);
+    });
+
+    it(`${file} prints it before its first numbered section`, () => {
+      // A standing note a reader meets after the tables it qualifies has
+      // already failed: the digest comment is read top to bottom.
+      const source = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
+      expect(source.indexOf(STANDING_NOTE)).toBeLessThan(source.indexOf("\\echo '=== 0)"));
+    });
   }
 });
 
