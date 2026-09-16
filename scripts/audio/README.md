@@ -603,6 +603,37 @@ every `elst` unchanged (`media_time` 1024 on all nine) — so the authored lengt
 the web loop window reads are still 30.000 / 29.600 / 29.520 and #2504's
 byte-reading test needs nothing.
 
+#### Reproducing the nine, and what "verified first" meant
+
+The precondition was not a claim, it was a run: each master below was pushed
+through the **unchanged** `postprocess()` and its SHA-256 compared with the file
+`dev` was shipping, all nine identical, before `latency=1` was typed. Anyone
+holding the masters can repeat it against the **current** set with the same
+command and the hashes in the last column:
+
+```bash
+AUDIO_MASTERS_DIR=/path/to/selftend-audio-masters node scripts/audio/postprocess.mjs run   "$AUDIO_MASTERS_DIR/round-B/beds/<master>" --clip <bed> [--fold] --out /tmp/<bed>.m4a
+sha256sum /tmp/<bed>.m4a assets/sounds/breathing/<bed>.m4a
+```
+
+| bed           | master                    | fold     | sha256 (first 16)  |
+| ------------- | ------------------------- | -------- | ------------------ |
+| `rain`        | `rain-c02-a01.pcm`        | —        | `22886ac02a6ab422` |
+| `forest`      | `forest-c01-a01.pcm`      | —        | `f7ed6c9bc3c23c37` |
+| `ocean`       | `ocean-c01-a01.wav`       | —        | `bd7bec8592612c17` |
+| `stream`      | `stream-c01-a01.wav`      | `--fold` | `5f741eef964b72e4` |
+| `fire`        | `fire-c01-a02.wav`        | `--fold` | `1522166c66fa9821` |
+| `night`       | `night-c03-a06.pcm`       | —        | `bfbb9595a2c9a20a` |
+| `brown-noise` | `brown-noise-c01-a01.pcm` | —        | `110ec61402cb3fd1` |
+| `pink-noise`  | `pink-noise-c01-a01.pcm`  | —        | `3b5f9429925ea289` |
+| `white-noise` | `white-noise-c01-a01.pcm` | —        | `dea5405a385508fc` |
+
+⚠️ **This table is the only place the bed → master mapping is written down for a
+reader.** `choices.jsonl` holds six of the nine (the three noise beds are computed
+from `synth-noise.mjs` at `SYNTH_SEED`, never chosen), it lives off-repo, and its
+`fire` row needed the correction below. Reproduction is exact only on **ffmpeg
+7.1.1**; a different build may encode different bytes from identical input.
+
 ⚠️ **Individual byte counts move in both directions and that is expected.** The
 limiter now sees 219 frames of real audio it previously replaced with zeros, and
 AAC spends bits on what is there; three beds got bigger. The total is what the

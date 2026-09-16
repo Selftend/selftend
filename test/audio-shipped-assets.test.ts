@@ -21,7 +21,7 @@ import {
  *
  * ✅ **#1210 deferred this deliberately, and the deferral has expired.** The
  * stated reason was that the guard "would fail every build until the pass has
- * run". The pass has run: 19 files, 3,578,571 bytes, 85% of the ceiling. An
+ * run". The pass has run: 19 files, 3,577,861 bytes, 85% of the ceiling. An
  * expired deferral that nobody retires is the failure mode the suppression-list
  * rule describes - the entry dies when the condition is met, not when somebody
  * happens to notice.

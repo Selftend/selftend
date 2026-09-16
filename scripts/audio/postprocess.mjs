@@ -67,9 +67,12 @@ const DBTP_EPSILON = 0.1;
  * aimed at a file by hand, so the command that produces what the app ships could
  * report PASS on a clip that starts late.
  *
- * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set and only
- * the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms —
- * while every bed, texture and bell measures 0.0. It matters because every trigger
+ * ⚠️ On the FINISHED file it is in practice a VOICE-clip rule. #1138 measured the
+ * shipped set and only the four `guide_*` files carry any lead there — 36.2 / 34.1
+ * / 15.0 / 3.2 ms — while every bed, texture and bell measures 0.0. ☠️ On the
+ * MASTER that was never true: all nine beds carried 4.97 ms (#2460), invisible
+ * here because the encoder fills digital silence with pre-echo. The master half of
+ * the rule is beds-only and lives beside the seam gate. It matters because every trigger
  * in the app is *already* up to 250 ms late (`TICK_MS` polling, #1134), so silence
  * in the file adds to a lateness the user can already hear.
  *
@@ -777,10 +780,6 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
       sampleRate: OUTPUT_SAMPLE_RATE,
     });
     const edges = edgeSilence(finished.samples, finished.channels, finished.sampleRate);
-    // The same file the seam gate reads, and for a related reason: it is the
-    // audio as it ships, at ship gain, with everything but the encode applied.
-    const masterWav = parseWav(await readFile(normalised));
-    const masterEdges = edgeSilence(masterWav.samples, masterWav.channels, masterWav.sampleRate);
     // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen guide_intro,
     // never from an estimate — and this is the only place that number exists.
     const durationSeconds = finished.samples.length / finished.channels / finished.sampleRate;
@@ -801,11 +800,31 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     // ⚠️ Reading `normalised` and not `working`: the gate must see the same gain
     // the file ships at, and a limiter (beds only) runs before it. Everything
     // after this point is the encode, which is what we are deliberately excluding.
+    //
+    // ☠️ THE MASTER'S OWN LEAD IS MEASURED HERE TOO, AND ONLY FOR BEDS (#2508).
+    // The defect it exists for is the LIMITER's — `alimiter`'s lookahead — and
+    // `spec.limit` is true for exactly one class, so scoping it here is the same
+    // fact stated twice rather than a narrowing. Two reasons it must not run on
+    // voice or bells:
+    //
+    //   1. #1359's invariant. A `guide_hold` whose TAKE starts 3.2 ms late fails
+    //      the finished-file gate above, and its master starts 3.2 ms late too —
+    //      so an unscoped check prints TWO failures for ONE defect, which is the
+    //      exact shape the hint/failure split next door exists to prevent.
+    //   2. It would assert a false cause. The master gate's message says "suspect
+    //      the chain rather than the take", and for a voice cue that is backwards:
+    //      the take really does start late, and re-drawing it is the remedy.
+    //
+    // One parse serves both checks — they read the same bytes for the same
+    // reason, that this is the audio as it ships with everything but the encode
+    // applied.
     let seam = null;
+    let masterEdges = null;
     if (spec.klass === "beds") {
       step("seam gate");
       const master = parseWav(await readFile(normalised));
       seam = seamMetrics(master.samples, master.channels, master.sampleRate);
+      masterEdges = edgeSilence(master.samples, master.channels, master.sampleRate);
     }
 
     return {
@@ -950,19 +969,28 @@ export function report(clipId, result) {
   // reads as starting on time while the audio begins 5 ms late. That is exactly
   // what `alimiter`'s default `latency=0` did to all nine shipped beds, and the
   // finished-file gate passed every one of them.
-  if (!masterEdges) {
-    failures.push(
-      "leading silence was not measured on the master, so a head hole the encoder " +
-        "would disguise is unverified for this file",
-    );
-  } else if (masterEdges.leadMs > LEAD_SILENCE_LIMIT_MS) {
-    failures.push(
-      `the master starts ${masterEdges.leadMs.toFixed(2)} ms late ` +
-        `(limit ${LEAD_SILENCE_LIMIT_MS} ms), which the finished file hides: the encoder ` +
-        "lifts digital silence to a level the -60 dBFS floor no longer sees. " +
-        "Suspect the chain rather than the take — a filter that reports latency " +
-        "prepends zeros unless it is told not to (#2460).",
-    );
+  //
+  // ⚠️ Gated on `spec.limit`, the same flag that decides whether the limiter ran
+  // at all — see `postprocess` for why this must not reach voice or bells (it
+  // would double-report one late take and blame the wrong thing). Written as the
+  // class's own condition rather than `if (masterEdges)`, so a bed that somehow
+  // arrives WITHOUT the measurement still fails the "not measured is not passed"
+  // rule instead of quietly skipping it.
+  if (spec.limit) {
+    if (!masterEdges) {
+      failures.push(
+        "leading silence was not measured on the master, so a head hole the encoder " +
+          "would disguise is unverified for this file",
+      );
+    } else if (masterEdges.leadMs > LEAD_SILENCE_LIMIT_MS) {
+      failures.push(
+        `the master starts ${masterEdges.leadMs.toFixed(2)} ms late ` +
+          `(limit ${LEAD_SILENCE_LIMIT_MS} ms), which the finished file hides: the encoder ` +
+          "lifts digital silence to a level the -60 dBFS floor no longer sees. " +
+          "Suspect the chain rather than the take — a filter that reports latency " +
+          "prepends zeros unless it is told not to (#2460).",
+      );
+    }
   }
   if (seam) {
     if (seam.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
@@ -1023,7 +1051,10 @@ export function report(clipId, result) {
   // Printed on its own line rather than folded into the one above: the two
   // numbers answer different questions, and #2460 is the case where they
   // disagree. Seeing 0.00 / 4.97 side by side is the whole diagnosis.
-  if (masterEdges) {
+  // Scoped like the gate above, and for the same reason: outside the limiter's
+  // class there is no second number to disagree with the first, so printing one
+  // would invite a reader to compare two measurements of the same thing.
+  if (spec.limit && masterEdges) {
     console.log(
       `   master    lead ${masterEdges.leadMs.toFixed(2)} ms · ` +
         `tail ${masterEdges.tailMs.toFixed(2)} ms   (pre-encode)`,
