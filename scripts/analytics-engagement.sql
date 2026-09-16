@@ -241,19 +241,33 @@ create temp view programme_progress as
          p.programme,
          p.started_at,
          p.phase_index,
+         p.phase_started_at,
          p.completed_at,
          p.graduation_dismissed_at
   from accounts a
   left join public.user_preferences up on up.user_id = a.user_id
   cross join lateral (values
     ('cbt', up.cbt_program_started_at, up.cbt_program_phase_index,
+            up.cbt_program_phase_started_at,
             up.cbt_program_completed_at, up.cbt_graduation_dismissed_at),
     ('act', up.act_program_started_at, up.act_program_phase_index,
+            up.act_program_phase_started_at,
             up.act_program_completed_at, up.act_graduation_dismissed_at),
     ('dbt', up.dbt_program_started_at, up.dbt_program_phase_index,
+            up.dbt_program_phase_started_at,
             up.dbt_program_completed_at, up.dbt_graduation_dismissed_at)
-  ) as p(programme, started_at, phase_index,
+  ) as p(programme, started_at, phase_index, phase_started_at,
          completed_at, graduation_dismissed_at);
+
+-- ☠️ `phase_started_at` is here for ONE reason, and it is not the phase window:
+-- it is half of the FOSSIL. A non-null `phase_started_at` beside a NULL
+-- `started_at` is the only record that somebody ran this programme and left,
+-- and `phase_index` says where they stopped (#2530, ADR-0012). Until #2552 the
+-- view did not select it, so the report could not see a left run at all - which
+-- is what made §7's drop-off optimistic and what #2386 was filed about.
+--
+-- ⚠️ It dates A phase, never THE FIRST time anybody reached one: every advance
+-- overwrites it. The first-occurrences exclusion below still stands unchanged.
 
 -- The funnel's steps, generated from each programme's own length rather than
 -- listed: started, then one row per later phase, then completed, then
@@ -345,7 +359,7 @@ create temp view core_tool_labels(feature) as values
 -- The watch list: every fixed-shape row the three reports print, each with the
 -- instant it first became true, or null if it never has.
 --
--- ☠️ ONE FACT THE SCHEMA CANNOT DATE, AND IT IS EXCLUDED RATHER THAN FAKED:
+-- ☠️ TWO FACTS THE SCHEMA CANNOT DATE, AND BOTH ARE EXCLUDED RATHER THAN FAKED:
 --
 --   * PER-PHASE PROGRAMME MILESTONES. The funnel's "reached phase N" steps come
 --     from `*_program_phase_index`, and `*_program_phase_started_at` holds only
@@ -354,6 +368,16 @@ create temp view core_tool_labels(feature) as values
 --     graduation-dismissed all have their own columns and ARE covered. Verified
 --     against the live schema: there is no event, audit or history table for
 --     programme phases anywhere.
+--
+--   * A PROGRAMME BEING LEFT. The fossil says THAT somebody left and AT WHICH
+--     PHASE - block A in section 7 prints it - but never WHEN. #2530 refused
+--     the date deliberately, on data minimisation, and it is not recoverable
+--     afterwards. ☠️ `*_program_prompt_dismissed_at` is NOT that date. Yes,
+--     `abandonProgram` happens to write it; but `dismissProgramPrompt` writes
+--     the same column, so any later dismissal overwrites it with no trace. A
+--     value an unrelated tap can silently replace is not a record. DO NOT DATE
+--     THIS FACT FROM IT - the column sits right there looking exactly like a
+--     leave timestamp, which is why this warning is worth its space.
 --
 -- ⚠️ AGE-GATE ATTESTATION WAS ALMOST EXCLUDED ON A FALSE PREMISE, and the near
 -- miss is worth recording. `age_floor_met` is a bare boolean, so a search for a
@@ -769,11 +793,13 @@ group by 1 order by 1;
 \echo '    Every step prints for every programme and both account types, zeros included: those zeros are the'
 \echo '    watch list, and the month somebody first completes a programme is the month this stops being zero.'
 \echo '    `pct_of_starters` is a share of the people whose start is STILL ON RECORD - never of the population.'
-\echo '    ☠️ READ THIS BEFORE READING THE NUMBERS. Abandoning a programme sets started_at back to null, so a'
-\echo '    person who started, got part way and left is counted at NO step here, and is absent from the'
-\echo '    denominator too. This table is a snapshot of runs in progress and runs completed - it is NOT a'
-\echo '    cohort of everyone who ever began, and the drop-off it shows is therefore OPTIMISTIC. Replaying'
-\echo '    no longer clears completed_at (#2530), so a graduate who starts again still counts as completed.'
+\echo '    ☠️ READ THIS BEFORE READING THE NUMBERS. The funnel is a snapshot of runs IN PROGRESS and runs'
+\echo '    COMPLETED. Leaving a programme sets started_at back to null, so somebody who started and left is'
+\echo '    counted at NO step here and is absent from the denominator too - the drop-off this table shows is'
+\echo '    OPTIMISTIC as a funnel. It is no longer the whole picture: the block below counts the people who'
+\echo '    left and the phase they left at, from the record a leave keeps (#2530). What nothing here can'
+\echo '    show is WHEN a run started that was later left, WHEN it was left, or that a previous run existed'
+\echo '    at all - all three refused on purpose, not missing by accident.'
 -- #2375. None of this was reported anywhere before, which is an odd gap for the
 -- part of the product AGENTS.md names as core MVP alongside the everyday tools.
 --
@@ -783,20 +809,22 @@ group by 1 order by 1;
 -- population as having reached phase 1.
 --
 -- ☠️ THE COLUMNS ARE CURRENT STATE, NOT EVENTS, and that bounds what this
--- section can honestly claim. `abandonProgram` in src/features/<module>/
--- use-<module>-program.ts writes `started_at = null` and leaves phase_index
--- where it was, so abandonment is not merely unreported - it is ERASED, and the
--- person disappears from both the numerator and the denominator. Someone who
--- quit at phase 3 is indistinguishable here from someone who never began.
--- ⚠️ `replayProgram` NO LONGER clears completed_at (#2530, ADR-0012) - that half
--- is fixed, and a graduate who starts again still counts as completed. The rest
--- of this note stands only until #2552 teaches the section to read the fossil.
+-- section can honestly claim - but the bound is narrower than it used to be.
+-- `abandonProgram` in src/features/<module>/use-<module>-program.ts writes
+-- `started_at = null` and leaves phase_index AND phase_started_at where they
+-- were, so a leave is not erased: that pair is the FOSSIL, and block A below
+-- reads it. What a leave does not carry is a DATE (#2530, ADR-0012).
 --
--- ⚠️ So do not describe this as a funnel over everyone who ever started, and do
--- not use it to argue that stalling is measured: it shows how far the people
--- still in a programme have got. Recording abandonment properly needs the app
--- to stop destroying the start date, which is a schema change and not a report
--- change; that is tracked separately.
+-- ⚠️ So do not describe THE FUNNEL as a cohort of everyone who ever started -
+-- it shows how far the people still in a programme have got, and block A stands
+-- beside it for the ones who left. ☠️ And do not fold block A into the funnel:
+-- an abandoned run is not FURTHER ALONG, the step table is generated from
+-- programme length keyed on min_phase_index, and forcing an exit into it would
+-- corrupt a shape that is load-bearing. What the fossil holds is a
+-- DISTRIBUTION OVER EXIT PHASE, and it prints as one.
+--
+-- ⚠️ Stalling is still not measured here. #2553 adds the quiet-duration
+-- buckets; this section says nothing about how long anybody has been anywhere.
 with reached as (
   select l.account,
          s.programme,
@@ -827,6 +855,54 @@ select account,
        pg_temp.k_pct(users, starters) as pct_of_starters
 from reached
 order by account, programme, step_order;
+
+\echo
+\echo '    -- 7a) Programmes people left, by the phase they left at --'
+\echo '    `<5` = k=5 suppressed count. Every phase prints for every programme and both account types,'
+\echo '    zeros included, exactly as the funnel above does: those zeros are the watch list.'
+\echo '    ☠️ This is BESIDE the funnel and is NOT a step in it. A left run is not further along.'
+\echo '    It says THAT somebody left and AT WHICH PHASE. It cannot say WHEN, and never will (#2530).'
+-- ☠️ BLOCK A (#2552). The first place anywhere in the product that a left
+-- programme is visible. Before this, somebody who reached phase 4 and stopped
+-- appeared in no number at all - which is the whole of #2386.
+--
+-- The fossil is `phase_started_at is not null AND started_at is null`:
+-- `abandonProgram` nulls the start and leaves the phase pair standing, and
+-- #2530 promoted that omission to a contract with a test behind it
+-- (test/programme-fossil-contract.test.ts). `phase_index` is the exit phase,
+-- 0-based, so it prints as `phase_index + 1`.
+--
+-- ⚠️ FIXED SHAPE, like everything else in this file: the phase list is
+-- generated from `programme_labels.total_phases` and cross-joined against both
+-- account labels, so a phase nobody has left still prints a zero. A block that
+-- printed only non-empty rows would silently stop mentioning a programme, and
+-- the absence would read as "nothing to see" rather than "nobody left".
+--
+-- ⚠️ There is no percentage here on purpose. A share needs a denominator, and
+-- the only honest one would be "everyone who ever started this programme" -
+-- which is exactly the number the schema does not keep. Counts only.
+with left_at as (
+  select l.account,
+         pl.programme,
+         ph.phase,
+         count(pp.user_id) filter (
+           where pp.started_at is null and pp.phase_started_at is not null
+             and pp.phase_index = ph.phase - 1
+         ) as users
+  from account_labels l
+  cross join programme_labels pl
+  cross join lateral generate_series(1, pl.total_phases) as ph(phase)
+  left join programme_progress pp
+         on pp.account = l.account
+        and pp.programme = pl.programme
+  group by l.account, pl.programme, ph.phase
+)
+select account,
+       programme,
+       'left at phase ' || phase as exit_phase,
+       pg_temp.k_count(users) as users
+from left_at
+order by account, programme, phase;
 
 \echo '=== 8) Reminder adoption (user_preferences.reminder_consent) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
