@@ -188,6 +188,11 @@ describe("NotificationsScreen", () => {
     ).toBeTruthy();
 
     const eyebrow = screen.getByText("For each tool");
+    // A level-2 header, as the settings page's run labels are: one jump point under the
+    // screen's h1. The level is explicit because react-native-web renders a level-less
+    // header as a literal <h1> (settings-group-label.tsx).
+    expect(screen.getByRole("header", { name: "For each tool" })).toBe(eyebrow);
+    expect(eyebrow.props["aria-level"]).toBe(2);
     // The `eyebrow` variant's own tokens (text.tsx): small, bold, upper-case, tracked, muted.
     expect(eyebrow.props.className).toContain("uppercase");
     expect(eyebrow.props.className).toContain("tracking-[0.14em]");
