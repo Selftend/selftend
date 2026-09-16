@@ -58,7 +58,7 @@ export function CbtProgramSection({
         onStart={onStart}
         onAdvance={onAdvance}
         onAbandon={program.status === "in_progress" ? onRequestAbandon : undefined}
-        onDismissStart={program.status === "not_started" ? onDismissStart : undefined}
+        onDismissStart={program.status === "not_in_progress" ? onDismissStart : undefined}
       />
     );
   }

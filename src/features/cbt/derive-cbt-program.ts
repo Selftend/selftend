@@ -80,7 +80,7 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
 
   if (!startedAt) {
     return {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       summaryStats: { thoughtRecords: 0, activitiesCompleted: 0, goalsSet: 0, beliefsExamined: 0 },
       phaseIndex: 0,
