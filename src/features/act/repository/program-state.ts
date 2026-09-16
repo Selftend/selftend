@@ -13,7 +13,6 @@ interface ACTProgramStateRow {
   myths_acknowledged: boolean;
   onboarding_completed_at: string | null;
   last_check_in_at: string | null;
-  preferred_check_in_time: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,7 +25,6 @@ function mapProgramState(row: ACTProgramStateRow): ACTProgramState {
     mythsAcknowledged: row.myths_acknowledged,
     onboardingCompletedAt: row.onboarding_completed_at,
     lastCheckInAt: row.last_check_in_at,
-    preferredCheckInTime: row.preferred_check_in_time,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -50,8 +48,6 @@ export async function upsertACTProgramState(userId: string, patch: ACTProgramSta
   if (patch.onboardingCompletedAt !== undefined)
     payload.onboarding_completed_at = patch.onboardingCompletedAt;
   if (patch.lastCheckInAt !== undefined) payload.last_check_in_at = patch.lastCheckInAt;
-  if (patch.preferredCheckInTime !== undefined)
-    payload.preferred_check_in_time = patch.preferredCheckInTime;
 
   // act_program_state is a transparent encrypted view; a view cannot be the target of
   // INSERT ... ON CONFLICT, so we insert plainly and the view's INSTEAD OF trigger resolves the

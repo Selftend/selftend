@@ -558,7 +558,6 @@ ACTProgramState {
   mythsAcknowledged: boolean
   onboardingCompletedAt: timestamp | null
   lastCheckInAt: timestamp | null
-  preferredCheckInTime: string | null
 }
 
 // Global
