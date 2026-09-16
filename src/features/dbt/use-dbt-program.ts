@@ -106,7 +106,9 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: new Date().toISOString(),
-        dbtProgramCompletedAt: null,
+        // ☠️ `dbtProgramCompletedAt` is deliberately NOT nulled here. It means
+        // the last time this person finished DBT, and the fresh `startedAt`
+        // above retires it by itself (ADR-0012, #2530).
         dbtProgramPromptDismissedAt: null,
         dbtProgramPhaseIndex: 0,
         dbtProgramPhaseStartedAt: new Date().toISOString(),
@@ -136,7 +138,8 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: null,
-        dbtProgramCompletedAt: null,
+        // ☠️ `dbtProgramCompletedAt` is deliberately NOT nulled: leaving a
+        // programme must not erase that you once finished it (ADR-0012).
         dbtProgramPromptDismissedAt: new Date().toISOString(),
       })
       .catch(() => undefined);
@@ -149,7 +152,8 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: new Date().toISOString(),
-        dbtProgramCompletedAt: null,
+        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
+        // is a new run, not a retraction of the one that finished (ADR-0012).
         dbtProgramPromptDismissedAt: null,
         dbtProgramPhaseIndex: 0,
         dbtProgramPhaseStartedAt: new Date().toISOString(),

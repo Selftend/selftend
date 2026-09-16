@@ -105,6 +105,21 @@ describe("deriveCbtProgram", () => {
     expect(result.status).toBe("graduated");
   });
 
+  /**
+   * ☠️ Since ADR-0012 `completedAt` is NOT nulled by `startProgram`,
+   * `abandonProgram` or `replayProgram` - it means the last time this person
+   * finished CBT. So a completion can outlive the run that earned it, and the
+   * test for "graduate of the run you are in" is `completedAt >= startedAt`.
+   * Without that, someone who finished last year and started again today would
+   * be congratulated on finishing a run they have barely begun.
+   */
+  it("is in progress again when an older completion predates the current run", () => {
+    const result = deriveCbtProgram(
+      input({ startedAt: START, completedAt: "2026-04-01T00:00:00.000Z" }),
+    );
+    expect(result.status).toBe("in_progress");
+  });
+
   // ── Phase-based view (Task 3) ──────────────────────────────────────────────
 
   it("phaseReady is true when all milestones are satisfied since phaseStartedAt", () => {

@@ -102,7 +102,9 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     void updatePreferences
       .mutateAsync({
         cbtProgramStartedAt: new Date().toISOString(),
-        cbtProgramCompletedAt: null,
+        // ☠️ `cbtProgramCompletedAt` is deliberately NOT nulled here. It means
+        // the last time this person finished CBT, and the fresh `startedAt`
+        // above retires it by itself (ADR-0012, #2530).
         cbtProgramPromptDismissedAt: null,
         cbtGraduationDismissedAt: null,
         cbtProgramPhaseIndex: 0,
@@ -134,7 +136,8 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     void updatePreferences
       .mutateAsync({
         cbtProgramStartedAt: null,
-        cbtProgramCompletedAt: null,
+        // ☠️ `cbtProgramCompletedAt` is deliberately NOT nulled: leaving a
+        // programme must not erase that you once finished it (ADR-0012).
         cbtProgramPromptDismissedAt: new Date().toISOString(),
       })
       .catch(() => undefined);
@@ -145,7 +148,8 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     void updatePreferences
       .mutateAsync({
         cbtProgramStartedAt: new Date().toISOString(),
-        cbtProgramCompletedAt: null,
+        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
+        // is a new run, not a retraction of the one that finished (ADR-0012).
         cbtProgramPromptDismissedAt: null,
         cbtGraduationDismissedAt: null,
         cbtProgramPhaseIndex: 0,

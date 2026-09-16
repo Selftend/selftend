@@ -44,6 +44,18 @@ describe("deriveActProgram", () => {
     expect(result.status).toBe("graduated");
   });
 
+  /**
+   * ☠️ Since ADR-0012 `completedAt` survives a start, an abandon and a replay,
+   * so it can outlive the run that earned it. "Graduate of the run you are in"
+   * is `completedAt >= startedAt`, not `completedAt != null`.
+   */
+  it("is in progress again when an older completion predates the current run", () => {
+    const result = deriveActProgram(
+      input({ startedAt: START, completedAt: "2026-04-01T00:00:00.000Z" }),
+    );
+    expect(result.status).toBe("in_progress");
+  });
+
   it("counts only data created at/after startedAt toward summaryStats", () => {
     const before = {
       id: "cp0",

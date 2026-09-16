@@ -263,13 +263,18 @@ describe("useCbtProgram - advancePhase", () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtProgramStartedAt: expect.any(String),
         cbtProgramPhaseIndex: 0,
         cbtProgramPhaseStartedAt: expect.any(String),
       }),
     );
+    // ☠️ CHANGED DELIBERATELY (#2530, ADR-0012). This used to assert
+    // `cbtProgramCompletedAt: null`. Starting again must not erase that you once
+    // finished - the fresh `startedAt` retires the old completion by itself. The
+    // key's ABSENCE is the contract, so assert that rather than dropping the
+    // assertion.
+    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
   });
 
   it("replayProgram resets cbtProgramPhaseIndex to 0 and sets cbtProgramPhaseStartedAt", () => {
@@ -294,12 +299,16 @@ describe("useCbtProgram - advancePhase", () => {
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramStartedAt: expect.any(String),
-        cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtProgramPhaseIndex: 0,
         cbtProgramPhaseStartedAt: expect.any(String),
       }),
     );
+    // ☠️ CHANGED DELIBERATELY (#2530, ADR-0012). This test previously pinned
+    // that replaying clears `completedAt` - the exact behaviour #2386 filed as a
+    // defect, since a graduate who replayed stopped counting as having finished.
+    // Replaying is a new run, not a retraction of the one that finished.
+    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
   });
 });
 
@@ -355,10 +364,19 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: expect.any(String),
         cbtProgramStartedAt: null,
       }),
     );
+    // ☠️ CHANGED DELIBERATELY (#2530, ADR-0012). The abandon payload used to
+    // null `completedAt`. Leaving a programme must not erase that you once
+    // finished it.
+    const payload = mutateAsync.mock.calls[0][0];
+    expect(payload).not.toHaveProperty("cbtProgramCompletedAt");
+    // ☠️ And the fossil: `cbtProgramPhaseStartedAt` is absent here too, which is
+    // the only record that this run ever existed. That omission is load-bearing
+    // and #2551 pins it with a test of its own - this line is a tripwire, not
+    // the contract.
+    expect(payload).not.toHaveProperty("cbtProgramPhaseStartedAt");
   });
 });

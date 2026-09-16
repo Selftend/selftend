@@ -128,6 +128,17 @@ describe("the programme's states", () => {
     expect(view.phase).toBeNull();
   });
 
+  /**
+   * ☠️ Since ADR-0012 `completedAt` survives a start, an abandon and a replay,
+   * so it can outlive the run that earned it. "Graduate of the run you are in"
+   * is `completedAt >= startedAt`, not `completedAt != null`.
+   */
+  it("is in progress again when an older completion predates the current run", () => {
+    const view = deriveDbtProgram(input({ startedAt: STARTED, completedAt: BEFORE }));
+    expect(view.status).toBe("in_progress");
+    expect(view.phase).not.toBeNull();
+  });
+
   it("clamps a phase index that has run past the end", () => {
     expect(deriveDbtProgram(input({ phaseIndex: 99 })).phaseIndex).toBe(3);
     expect(deriveDbtProgram(input({ phaseIndex: -4 })).phaseIndex).toBe(0);

@@ -385,9 +385,12 @@ report is read by people who did not write it:
   and leaves `phase_index`, so a person who quit part way is counted at no step
   and is absent from the denominator too. The table is a snapshot of runs in
   progress and runs completed, so the drop-off it shows is **optimistic**.
-  Replaying clears `completed_at`, so a graduate who begins again stops counting
-  as completed. Fixing this means changing what the app writes, not what the
-  report reads.
+  Replaying **no longer** clears `completed_at`
+  ([#2530](https://github.com/Selftend/selftend/issues/2530), ADR-0012), so a
+  graduate who begins again still counts as having completed. Fixing the
+  remaining blindness to abandonment means changing what the report reads, since
+  the app already writes the record — see
+  [#2552](https://github.com/Selftend/selftend/issues/2552).
 
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
@@ -751,9 +754,12 @@ attestation. The fact is covered. A later reader should not re-exclude it on the
 strength of `age_floor_met` having no `_at` twin.
 
 ⚠️ **And a caveat on every fact dated from `user_preferences`: those columns are
-state, not events.** `abandonProgram` nulls `*_program_started_at`, replay clears
-`*_program_completed_at`, `reminder_consent_updated_at` holds the time of the
-_last_ change, and `age_attested_at` is overwritten if somebody attests again. A
+state, not events.** `abandonProgram` nulls `*_program_started_at`;
+`*_program_completed_at` now survives every writer ([#2530](https://github.com/Selftend/selftend/issues/2530),
+ADR-0012) but still holds only the _most recent_ completion, so a person who
+finishes, replays and finishes again overwrites their first one;
+`reminder_consent_updated_at` holds the time of the _last_ change, and
+`age_attested_at` is overwritten if somebody attests again. A
 `min()` over current state can be later than the truth, so such a fact can fire a
 month late — or, where somebody consented and later revoked, **name a month that
 is not really the first**, which is a wrong statement rather than a late one.
@@ -939,7 +945,16 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 > unreported — it is **erased**, and the person leaves the numerator and the
 > denominator together. Someone who stopped at phase 3 is indistinguishable from
 > someone who never began, and the drop-off the funnel prints is therefore
-> optimistic. Replaying clears `completed_at` the same way.
+> optimistic.
+>
+> ⚠️ **Half of that is now fixed and the other half is superseded.** Replaying no
+> longer clears `completed_at` ([#2530](https://github.com/Selftend/selftend/issues/2530),
+> ADR-0012). And _"erased"_ overstated the rest: `abandonProgram` leaves
+> `phase_index` **and `phase_started_at`** standing, which identifies the ended
+> run exactly — what was lost is two dates, refused deliberately rather than
+> destroyed. This paragraph is replaced in full by
+> [#2554](https://github.com/Selftend/selftend/issues/2554) once the report reads
+> that record.
 >
 > That leaves in-wizard abandonment and seen-but-unused discovery as the genuine
 > candidates, and **neither is named as a trigger**. Before anyone reaches for an
