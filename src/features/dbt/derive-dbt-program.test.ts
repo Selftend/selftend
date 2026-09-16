@@ -119,7 +119,7 @@ describe("the DBT programme's shape", () => {
 
 describe("the programme's states", () => {
   it("is not started until it is started", () => {
-    expect(deriveDbtProgram(input({ startedAt: null })).status).toBe("not_started");
+    expect(deriveDbtProgram(input({ startedAt: null })).status).toBe("not_in_progress");
   });
 
   it("is graduated once it is completed, whatever the phase says", () => {
