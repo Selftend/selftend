@@ -575,9 +575,18 @@ export function MeditationSitScreen() {
           Always shown and always plain - no bed name, no dot, no marker,
           playing or not. A marker when a bed is on reads as a suggestion when it
           is off, which is #1742's guardrail. The visible word is `Sound`; the
-          accessible name is the lane it opens, so a screen reader is told which
-          sound. It works while PAUSED too: the pick is written and heard on
-          resume, since the lane is silent while paused by construction. */}
+          accessible name is the lane it opens, which also CONTAINS the visible
+          word in both locales, so WCAG 2.5.3 (Label in Name) holds. It works
+          while PAUSED too: the pick is written and heard on resume, since the
+          lane is silent while paused by construction.
+
+          ⚠️ §1.4 calls this "a 44 dp button" and it is the default `Button`,
+          40 dp tall - deliberately, on two counts. The TARGET is 44+: every
+          `Button` inherits `DEFAULT_INTERACTIVE_HIT_SLOP` (8 dp a side), which
+          is how `Pause` and `Finish early` clear the floor too. And §1.1's
+          two-row measurement was taken on the prototype's own 40 px button; a
+          `size="lg"` door would be taller AND wider than the pair it sits
+          under, for a target that is already met. */}
       <View className="flex-row items-center justify-center gap-2 pb-1 pt-2">
         <Button
           accessibilityLabel={t("timer:ambient.label")}

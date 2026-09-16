@@ -82,11 +82,16 @@ export function SoundPanel({
       testID="sound-panel"
       transparent
     >
-      {/* ⚠️ A plain View, NOT breathing's backdrop `Pressable` (§1.4). Tap-outside
-          dismissal is deliberately off here: a stray tap during a sit - or a
-          screen-reader user's exploratory touch - must not close the panel out
-          from under them. The sheet is not covering a screen they can act on. */}
-      <View className="flex-1 justify-end bg-black/40">
+      {/* ⚠️ A plain View, and it stays one: tap-outside dismissal is deliberately
+          OFF (§1.4). A stray tap during a sit - or a screen-reader user's
+          exploratory touch - must not close the panel out from under them.
+
+          ☠️ The spec says "breathing's backdrop `Pressable` deliberately not
+          copied", and that parenthetical is wrong about the code: breathing's
+          `sounds-sheet.tsx` backdrop is already a plain View (its way out is the
+          header X). The dismissible backdrop is `picker-sheet.tsx`'s, on native.
+          The RULE is right and unchanged - only the file it named was not. */}
+      <View className="flex-1 justify-end bg-black/40" testID="sound-panel-backdrop">
         {/* On a desktop window the panel lines up with the focus shell's own
             620px column (`focus-session-shell.tsx`) rather than stretching into
             a full-width bar. Below 620 it is the full width, as a sheet is. */}
@@ -118,10 +123,11 @@ export function SoundPanel({
                 <Text>{t("common:done")}</Text>
               </Button>
             </View>
-            {/* The home card's own row of chips, `None` first and unmarked
-                (#1742) - the same nine beds in the same order, so the sit's two
-                places to choose one cannot drift apart. Its eyebrow is hidden
-                because the heading above already is it. */}
+            {/* The home card's own row of chips, over the same `AMBIENT_SOUNDS`
+                catalogue in the same order - `None` first and unmarked (#1742),
+                then the nine beds - so the sit's two places to choose one cannot
+                offer different sets. Its eyebrow is hidden because the heading
+                above already is it. */}
             <ChoiceRow
               label={heading}
               labelHidden

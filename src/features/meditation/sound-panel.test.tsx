@@ -135,15 +135,23 @@ describe("The sound panel (docs/sound.md §1.2)", () => {
   });
 
   it("carries no tap-outside dismissal", () => {
-    // §1.4, and the one place this sheet deliberately differs from breathing's:
-    // a stray tap during a sit must not close the panel, so the backdrop is a
-    // plain View. Breathing's backdrop `Pressable` is NOT copied.
+    // §1.4: a stray tap during a sit must not close the panel, so the backdrop
+    // is a plain View.
+    //
+    // ☠️ Asserted against the RESPONDER, not against a missing `Close` label.
+    // The first version of this test looked for a button named `Close` and could
+    // never have failed: a backdrop `Pressable` carries no accessibility label,
+    // so the regression it claimed to catch would have walked straight past it.
+    // A `Pressable` always wires a press responder onto its View; a plain View
+    // has none, and that difference IS the behaviour.
     renderPanel({ bedId: "rain" });
 
-    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
-    expect(
-      screen.getAllByRole("button").map((node) => node.props.accessibilityLabel),
-    ).not.toContain("Close");
+    const backdrop = screen.getByTestId("sound-panel-backdrop");
+    expect(backdrop.props.onStartShouldSetResponder).toBeUndefined();
+    expect(backdrop.props.onResponderRelease).toBeUndefined();
+    expect(backdrop.props.onClick).toBeUndefined();
+    // And exactly one button in the whole panel: Done. No X, no second exit.
+    expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 
   it("is constrained to the shell's 620px content column", () => {

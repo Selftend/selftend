@@ -682,7 +682,8 @@ describe("Meditation bells' haptic counterpart (#1741)", () => {
 // what is pinned here is the sit around it: what the lane plays, what is
 // written, what the clock does, and which layer a back closes.
 describe("the sound door and the sound panel (docs/sound.md §1)", () => {
-  const asset = ambientSoundLookup.rain.asset;
+  // The one number every bed's `require` resolves to here - see below.
+  const stubAsset = ambientSoundLookup.rain.asset;
   // ☠️ EVERY bundled asset is the SAME NUMBER under jest: jest-expo stubs the
   // asset registry, so `require("...rain.m4a")` and `require("...fire.m4a")` both
   // resolve to 1. The argument that tells one bed from another in a `play()` call
@@ -746,7 +747,7 @@ describe("the sound door and the sound panel (docs/sound.md §1)", () => {
 
     // The lane is handed the new bed at the sit's own volume - one play(), no
     // stop() between, because crossfading the swap is the lane's job (#2484).
-    expect(mockLane.play).toHaveBeenLastCalledWith(asset, 0.3, true, fireSeconds);
+    expect(mockLane.play).toHaveBeenLastCalledWith(stubAsset, 0.3, true, fireSeconds);
     expect(mockLane.stop).not.toHaveBeenCalled();
     expect(mockUpdatePreferences).toHaveBeenCalledWith({ meditationAmbientSoundId: "fire" });
   });
@@ -817,7 +818,7 @@ describe("the sound door and the sound panel (docs/sound.md §1)", () => {
     fireEvent.press(screen.getByText("Done"));
     fireEvent.press(screen.getByText("Resume"));
 
-    expect(mockLane.play).toHaveBeenCalledWith(asset, 0.3, true, fireSeconds);
+    expect(mockLane.play).toHaveBeenCalledWith(stubAsset, 0.3, true, fireSeconds);
   });
 
   it("keeps playing the pick when the write is rolled back under it (§8)", async () => {
@@ -832,7 +833,7 @@ describe("the sound door and the sound panel (docs/sound.md §1)", () => {
     openPanel();
     fireEvent.press(screen.getByRole("radio", { name: "Fireplace" }));
     await act(async () => {});
-    expect(mockLane.play).toHaveBeenLastCalledWith(asset, 0.3, true, fireSeconds);
+    expect(mockLane.play).toHaveBeenLastCalledWith(stubAsset, 0.3, true, fireSeconds);
     // The two beds are told apart by their authored length; the assets are not
     // distinct under jest (see the note at the top of this describe).
     expect(fireSeconds).not.toBe(rainSeconds);
@@ -876,8 +877,8 @@ describe("the sound door and the sound panel (docs/sound.md §1)", () => {
     // The save is made to fail on purpose, because a successful one replaces the
     // whole surface and would hide the bug: the panel has to go when the finish
     // is REQUESTED. Here the sit is still on screen afterwards, and the panel is
-    // not - otherwise a failed finish leaves a bed picker hanging over a sit that
-    // was just asked to end, with the error toast behind it.
+    // not - otherwise a failed finish leaves the sound panel hanging over a sit
+    // that was just asked to end, with the error toast behind it.
     mockSaveMutateAsync.mockRejectedValueOnce(new Error("offline"));
     renderWithProviders(<MeditationSitScreen />);
     await advance(60_000);

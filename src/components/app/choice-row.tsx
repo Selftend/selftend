@@ -15,13 +15,12 @@ interface ChoiceRowProps {
   value: string;
   onChange: (value: string) => void;
   /**
-   * Draw the eyebrow or not. The label is the group's accessible name either
-   * way - this hides the WORDS, never the name.
+   * Draw the eyebrow or not. The label stays the group's accessible name either
+   * way - this hides the WORDS, never the name, so a screen reader still hears
+   * what the choice is about.
    *
-   * For a caller that already shows them: the sound panel's header row carries
-   * `Background sound` as its heading beside `Done`, so the row's own eyebrow
-   * would print the same words a second time, eight pixels below (`docs/sound.md`
-   * §1.2 - the panel holds three things and no fourth).
+   * For a surface that already shows those words in a heading of its own: the
+   * eyebrow would otherwise print them a second time, eight pixels below.
    */
   labelHidden?: boolean;
   /** Per-button minimum width, which is what decides where the row wraps. */
