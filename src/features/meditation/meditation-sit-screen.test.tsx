@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 
 import { ambientSoundLookup } from "@/src/constants/breathing-sounds";
 import { MeditationSitScreen } from "@/src/features/meditation/meditation-sit-screen";
@@ -106,16 +106,24 @@ const mockPreferences: {
       }
     | undefined;
 } = { data: undefined };
+// The sound panel's writes land here (`docs/sound.md` §2): the home card's write
+// verbatim, one best-effort attempt and no retry. Held at module scope so a test
+// can read what was written - and, just as load-bearing, what was NOT.
+const mockUpdatePreferences = jest.fn().mockResolvedValue(undefined);
 jest.mock("@/src/features/settings/queries", () => ({
   ...jest.requireActual("@/src/features/settings/queries"),
   useUserPreferences: () => mockPreferences,
+  useUpdateUserPreferences: () => ({ mutateAsync: mockUpdatePreferences, isPending: false }),
 }));
 
 jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }));
 
+// Module-scoped rather than built per call: several assertions below are about a
+// toast NOT being shown, and a spy created inside the selector could not carry one.
+const mockShowToast = jest.fn();
 jest.mock("@/src/stores/toast-store", () => ({
   useToastStore: (selector: (s: { showToast: () => void }) => unknown) =>
-    selector({ showToast: jest.fn() }),
+    selector({ showToast: mockShowToast }),
 }));
 
 const { router } = jest.requireMock<{ router: { replace: jest.Mock } }>("expo-router");
@@ -136,6 +144,8 @@ beforeEach(() => {
   mockLane.setVolume.mockClear();
   mockLane.stop.mockClear();
   mockPreferences.data = undefined;
+  mockUpdatePreferences.mockClear();
+  mockShowToast.mockClear();
   mockUpdateMutateAsync.mockClear();
   mockSaveMutateAsync.mockReset().mockImplementation(async (input: MeditationSessionInput) => ({
     id: "sit-1",
@@ -664,5 +674,220 @@ describe("Meditation bells' haptic counterpart (#1741)", () => {
 
     // The opening tap only - two boundaries passed, neither is replayed.
     expect(mockBellHaptic).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The sound door and the sound panel (#2507, `docs/sound.md` §1-§2). The panel's
+// own contract - what it holds, what it never reads - is sound-panel.test.tsx's;
+// what is pinned here is the sit around it: what the lane plays, what is
+// written, what the clock does, and which layer a back closes.
+describe("the sound door and the sound panel (docs/sound.md §1)", () => {
+  const asset = ambientSoundLookup.rain.asset;
+  // ☠️ EVERY bundled asset is the SAME NUMBER under jest: jest-expo stubs the
+  // asset registry, so `require("...rain.m4a")` and `require("...fire.m4a")` both
+  // resolve to 1. The argument that tells one bed from another in a `play()` call
+  // is therefore `nominalSeconds`, not the asset - which is why the bed picked
+  // below is `fire` (29.52s) rather than a second 30s bed, where the swap would
+  // have been indistinguishable from no swap at all and every assertion vacuous.
+  const rainSeconds = ambientSoundLookup.rain.nominalSeconds;
+  const fireSeconds = ambientSoundLookup.fire.nominalSeconds;
+  const withRain = () => {
+    mockPreferences.data = { meditationAmbientSoundId: "rain", meditationAmbientVolume: 0.3 };
+  };
+  const openPanel = () => {
+    fireEvent.press(screen.getByTestId("sit-sound-door"));
+  };
+  const panelOpen = () => screen.queryByTestId("sound-panel-sheet") !== null;
+
+  it("shows the door beneath the pair, always and always plain", () => {
+    // Playing or silent, the door says the same word and carries no marker: a
+    // marker when a bed is on reads as a suggestion when it is off (#1742).
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+
+    const door = screen.getByTestId("sit-sound-door");
+    expect(within(door).getByText("Sound")).toBeTruthy();
+    // Nothing icon-only: the visible word is `Sound`, the accessible name is the
+    // lane it opens, so a screen reader is told WHICH sound.
+    expect(door.props.accessibilityLabel).toBe("Background sound");
+    // The playing bed is not named anywhere on the closed surface.
+    expect(screen.queryByText("Rain")).toBeNull();
+    // The pair is untouched.
+    expect(screen.getByText("Pause")).toBeTruthy();
+    expect(screen.getByText("Finish early")).toBeTruthy();
+  });
+
+  it("opens the panel without pausing the clock", async () => {
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+
+    openPanel();
+    await advance(30_000);
+
+    // Auditioning under the running clock is the point of "from within a
+    // sitting"; Pause stays a separate, explicit action.
+    expect(panelOpen()).toBe(true);
+    expect(screen.getByText("10:30")).toBeTruthy();
+    expect(screen.queryByText("Paused")).toBeNull();
+  });
+
+  it("swaps the bed live and persists the pick", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+
+    // The lane stops once on mount, before focus lands and the sit begins; the
+    // assertion below is about the SWAP, so that one is cleared out of the way.
+    mockLane.stop.mockClear();
+
+    openPanel();
+    fireEvent.press(screen.getByRole("radio", { name: "Fireplace" }));
+    await act(async () => {});
+
+    // The lane is handed the new bed at the sit's own volume - one play(), no
+    // stop() between, because crossfading the swap is the lane's job (#2484).
+    expect(mockLane.play).toHaveBeenLastCalledWith(asset, 0.3, true, fireSeconds);
+    expect(mockLane.stop).not.toHaveBeenCalled();
+    expect(mockUpdatePreferences).toHaveBeenCalledWith({ meditationAmbientSoundId: "fire" });
+  });
+
+  it("stops the bed when None is picked mid-sit, and nothing else happens", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+
+    openPanel();
+    fireEvent.press(screen.getByRole("radio", { name: "None" }));
+    await act(async () => {});
+
+    expect(mockLane.stop).toHaveBeenCalled();
+    expect(mockUpdatePreferences).toHaveBeenCalledWith({ meditationAmbientSoundId: "none" });
+    // Still sitting, still open, clock still running: None is a stop, not an exit.
+    expect(panelOpen()).toBe(true);
+    expect(screen.getByText("11:00")).toBeTruthy();
+  });
+
+  it("persists a volume move on commit and never restarts playback for it", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+
+    openPanel();
+    fireEvent(screen.getByLabelText("Background sound volume"), "responderRelease");
+    await act(async () => {});
+
+    expect(mockUpdatePreferences).toHaveBeenCalledWith({ meditationAmbientVolume: 0.3 });
+    expect(mockLane.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("changes nothing on close: Done is a way out, not a commit", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    openPanel();
+    fireEvent.press(screen.getByRole("radio", { name: "Fireplace" }));
+    await act(async () => {});
+    mockLane.play.mockClear();
+    mockLane.stop.mockClear();
+    mockUpdatePreferences.mockClear();
+
+    fireEvent.press(screen.getByText("Done"));
+    await advance(1_000);
+
+    expect(panelOpen()).toBe(false);
+    expect(mockLane.play).not.toHaveBeenCalled();
+    expect(mockLane.stop).not.toHaveBeenCalled();
+    expect(mockUpdatePreferences).not.toHaveBeenCalled();
+  });
+
+  it("works while paused: the pick is written now and heard on resume", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(30_000);
+    fireEvent.press(screen.getByText("Pause"));
+    mockLane.play.mockClear();
+
+    openPanel();
+    fireEvent.press(screen.getByRole("radio", { name: "Fireplace" }));
+    await act(async () => {});
+
+    // The lane is silent while paused by construction, so nothing plays yet.
+    expect(mockLane.play).not.toHaveBeenCalled();
+    expect(mockUpdatePreferences).toHaveBeenCalledWith({ meditationAmbientSoundId: "fire" });
+
+    fireEvent.press(screen.getByText("Done"));
+    fireEvent.press(screen.getByText("Resume"));
+
+    expect(mockLane.play).toHaveBeenCalledWith(asset, 0.3, true, fireSeconds);
+  });
+
+  it("keeps playing the pick when the write is rolled back under it (§8)", async () => {
+    // ☠️ The rule §2 exists for. `useUpdateUserPreferences` writes the patch into
+    // the cache optimistically and ROLLS IT BACK on error, and mutations are
+    // `networkMode: "always"`, so offline they fail fast. A lane fed from the
+    // query would hear the rollback and swap the bed back under the person
+    // mid-sit. Here the query is put back to `rain` and the sit stays on `fire`.
+    withRain();
+    const view = renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+    openPanel();
+    fireEvent.press(screen.getByRole("radio", { name: "Fireplace" }));
+    await act(async () => {});
+    expect(mockLane.play).toHaveBeenLastCalledWith(asset, 0.3, true, fireSeconds);
+    // The two beds are told apart by their authored length; the assets are not
+    // distinct under jest (see the note at the top of this describe).
+    expect(fireSeconds).not.toBe(rainSeconds);
+    mockLane.play.mockClear();
+    // The lane stops once on mount, before focus lands; clear it so the
+    // assertion below is about the ROLLBACK and nothing else.
+    mockLane.stop.mockClear();
+
+    mockPreferences.data = { meditationAmbientSoundId: "rain", meditationAmbientVolume: 0.3 };
+    view.rerender(<MeditationSitScreen />);
+    await advance(1_000);
+
+    expect(mockLane.play).not.toHaveBeenCalled();
+    expect(mockLane.stop).not.toHaveBeenCalled();
+    // And nothing is said about it: no toast, no error copy on the focus
+    // surface. The chip still reads Fireplace, which is what is audible.
+    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(screen.getByRole("radio", { name: "Fireplace", checked: true })).toBeTruthy();
+  });
+
+  it("closes the panel and nothing else on a back", async () => {
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+    openPanel();
+
+    const event = fireBack();
+
+    // Only one layer is ever open over the ring: the panel goes, the clock keeps
+    // running, and #777's pause-and-confirm is the NEXT back's job.
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(panelOpen()).toBe(false);
+    expect(screen.queryByText("Finish this sit?")).toBeNull();
+    await advance(30_000);
+    expect(screen.getByText("10:30")).toBeTruthy();
+
+    fireBack();
+    expect(screen.getByText("Finish this sit?")).toBeTruthy();
+  });
+
+  it("closes the panel the moment a finish is asked for, not when the reflection arrives", async () => {
+    // The save is made to fail on purpose, because a successful one replaces the
+    // whole surface and would hide the bug: the panel has to go when the finish
+    // is REQUESTED. Here the sit is still on screen afterwards, and the panel is
+    // not - otherwise a failed finish leaves a bed picker hanging over a sit that
+    // was just asked to end, with the error toast behind it.
+    mockSaveMutateAsync.mockRejectedValueOnce(new Error("offline"));
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+    openPanel();
+
+    fireEvent.press(screen.getByText("Finish early"));
+    await advance(0);
+
+    expect(panelOpen()).toBe(false);
+    expect(screen.getByText("Finish early")).toBeTruthy();
+    expect(mockShowToast).toHaveBeenCalled();
   });
 });

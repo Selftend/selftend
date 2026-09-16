@@ -14,6 +14,16 @@ interface ChoiceRowProps {
   options: ChoiceOption[];
   value: string;
   onChange: (value: string) => void;
+  /**
+   * Draw the eyebrow or not. The label is the group's accessible name either
+   * way - this hides the WORDS, never the name.
+   *
+   * For a caller that already shows them: the sound panel's header row carries
+   * `Background sound` as its heading beside `Done`, so the row's own eyebrow
+   * would print the same words a second time, eight pixels below (`docs/sound.md`
+   * §1.2 - the panel holds three things and no fourth).
+   */
+  labelHidden?: boolean;
   /** Per-button minimum width, which is what decides where the row wraps. */
   itemClassName?: string;
   /** On the group, so a test can scope to it - the two rows share labels like `5 min`. */
@@ -41,14 +51,17 @@ export function ChoiceRow({
   options,
   value,
   onChange,
+  labelHidden = false,
   itemClassName,
   testID,
 }: ChoiceRowProps) {
   return (
     <View className="gap-2">
-      <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {label}
-      </Text>
+      {labelHidden ? null : (
+        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {label}
+        </Text>
+      )}
       <View
         // `accessibilityLabel`, not `aria-label`: the group needs a name on
         // native too, and RNW maps this one to `aria-label` on the way out. The

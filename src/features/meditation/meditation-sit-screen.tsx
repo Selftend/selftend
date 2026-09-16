@@ -14,6 +14,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { formatClock } from "@/src/features/breathing/cycle-math";
+import { SoundPanel } from "@/src/features/meditation/sound-panel";
 import {
   useMeditationProgramState,
   useSaveMeditationSession,
@@ -32,7 +33,7 @@ import { bellHaptic } from "@/src/lib/native-haptics";
 import { useAmbientLane } from "@/src/lib/use-ambient-lane";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { useUserPreferences } from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { bellChoiceFromKey, bellSecondsFor } from "@/src/features/meditation/interval";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
 import { useSession } from "@/src/providers/session-provider";
@@ -163,6 +164,7 @@ export function MeditationSitScreen() {
   const [paused, setPaused] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const [soundPanelOpen, setSoundPanelOpen] = useState(false);
   // A finish that has been asked for - by the clock running out, the Finish
   // early button, or the exit dialog - but may not have run yet: saving waits
   // for the stage query to settle, and the effect below fires when both hold.
@@ -243,19 +245,57 @@ export function MeditationSitScreen() {
     prepared.play(volume);
     bells[slot] = slot === "interval" ? prepareOneShot(asset) : null;
   };
+  // The sit owns what is playing for the length of the sit (`docs/sound.md` §2).
+  // A null-until-picked local pair - the meditation home card's exact shape - so
+  // the preferences query SEEDS the bed and its volume and nothing more: once
+  // the sound panel has been used, the pick is authoritative until the sit ends,
+  // whether or not the write below ever reached the server.
+  const [pickedBed, setPickedBed] = useState<string | null>(null);
+  const bedId =
+    pickedBed ??
+    preferences?.meditationAmbientSoundId ??
+    defaultUserPreferences.meditationAmbientSoundId;
+  const [pickedBedVolume, setPickedBedVolume] = useState<number | null>(null);
+  const bedVolume =
+    pickedBedVolume ??
+    preferences?.meditationAmbientVolume ??
+    defaultUserPreferences.meditationAmbientVolume;
+  const updatePreferences = useUpdateUserPreferences(userId);
+
+  // The home card's write, verbatim: one best-effort attempt, the bed on change
+  // (a discrete choice is its own commit) and the volume on commit (a drag emits
+  // per pan move, which would be a write per pixel of travel). No retry, no
+  // toast, no error copy - the focus surface says nothing about a failed write,
+  // and the local pair above is why it does not have to.
+  function pickBed(id: string) {
+    setPickedBed(id);
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ meditationAmbientSoundId: id }).catch(() => undefined);
+  }
+
+  function commitBedVolume(volume: number) {
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ meditationAmbientVolume: volume }).catch(() => undefined);
+  }
+
   // The sit's ambient bed (#1742): the same lane the breathing session runs,
   // fed from the sit's OWN pair of preferences (never the breathing pair). It
   // runs exactly while the clock does - not before focus, not while paused, not
   // once a finish has been asked for - and fades on every one of those edges
-  // (#1743). Volume is read straight off the query, not a ref like the bell's:
-  // the hook applies it live, so a preference that lands after first paint, or
-  // changes mid-sit, is heard without a restart. The defaults are `none` and
-  // silence: an account that never chose a bed sits exactly as before.
+  // (#1743). Volume is applied live, not held in a ref like the bell's, so a
+  // preference that lands after first paint - or a pick made in the sound panel
+  // mid-sit - is heard without a restart. The defaults are `none` and silence:
+  // an account that never chose a bed sits exactly as before.
+  //
+  // ☠️ The lane reads the SIT's pair below, never the query directly
+  // (`docs/sound.md` §2). `useUpdateUserPreferences` writes optimistically and
+  // ROLLS THE PATCH BACK on error, and mutations are `networkMode: "always"`, so
+  // offline they fail fast - a lane fed from the query would swap the bed back
+  // under the person mid-sit on any failed write.
   useAmbientLane({
     active: focused && phase === "sitting" && !paused && finishRequested === null,
-    soundId:
-      preferences?.meditationAmbientSoundId ?? defaultUserPreferences.meditationAmbientSoundId,
-    volume: preferences?.meditationAmbientVolume ?? defaultUserPreferences.meditationAmbientVolume,
+    soundId: bedId,
+    volume: bedVolume,
   });
   // The end bell and the finish request fire once per sit: a pause/resume while
   // the finish waits on the stage query resubscribes the tick, and an unguarded
@@ -263,6 +303,19 @@ export function MeditationSitScreen() {
   const completionRef = useRef(false);
 
   const elapsedNow = () => ((pausedAtMsRef.current || Date.now()) - startMsRef.current) / 1000;
+
+  /**
+   * Ask for the sit to end, from wherever - the button, the clock running out,
+   * the exit dialog.
+   *
+   * Closing the sound panel first is `docs/sound.md` §1.3's "only one layer is
+   * ever open over the ring": what a finish puts on screen (the reflection, or
+   * the confirm behind the exit dialog) must not arrive underneath a sheet.
+   */
+  const requestFinish = (exit: SitExit) => {
+    setSoundPanelOpen(false);
+    setFinishRequested(exit);
+  };
 
   /**
    * Record the sit. `completed` is derived from the clock, not from who called:
@@ -352,7 +405,7 @@ export function MeditationSitScreen() {
         if (!completionRef.current) {
           completionRef.current = true;
           ring("end");
-          setFinishRequested("after");
+          requestFinish("after");
         }
         return;
       }
@@ -394,10 +447,17 @@ export function MeditationSitScreen() {
     return navigation.addListener("beforeRemove", (event) => {
       if (phase !== "sitting" || finishingRef.current || !startMsRef.current) return;
       event.preventDefault();
+      // Only one layer is ever open over the ring (`docs/sound.md` §1.3): a back
+      // with the sound panel open closes the panel and does nothing else - no
+      // pause, no confirm. #777's pause-and-confirm is the NEXT back's job.
+      if (soundPanelOpen) {
+        setSoundPanelOpen(false);
+        return;
+      }
       pauseSession();
       setExitDialogOpen(true);
     });
-  }, [navigation, phase, pauseSession]);
+  }, [navigation, phase, pauseSession, soundPanelOpen]);
 
   // The clock starts when the screen gains focus and dies when it loses it.
   // Navigating away mid-sit through the confirmation above SAVES; exits that
@@ -425,6 +485,12 @@ export function MeditationSitScreen() {
         setPhase("sitting");
         setPaused(false);
         setExitDialogOpen(false);
+        setSoundPanelOpen(false);
+        // The pick belongs to the sit, so it dies with it: the next sit seeds
+        // its bed from the query again, which by then holds whatever the write
+        // settled on (`docs/sound.md` §2).
+        setPickedBed(null);
+        setPickedBedVolume(null);
         setFinishRequested(null);
         setSavedSession(null);
         setPulls([]);
@@ -486,19 +552,56 @@ export function MeditationSitScreen() {
         />
       </View>
 
-      <View className="flex-row items-center justify-center gap-2 pb-1 pt-6">
+      <View className="flex-row items-center justify-center gap-2 pt-6">
         <Button onPress={paused ? resumeSession : pauseSession} variant="outline">
           <Icon className="size-[18px] text-foreground" name={paused ? "play-arrow" : "pause"} />
           <Text>{paused ? t("sit.resume") : t("sit.pause")}</Text>
         </Button>
         <Button
           disabled={saveMutation.isPending}
-          onPress={() => setFinishRequested("after")}
+          onPress={() => requestFinish("after")}
           variant="ghost"
         >
           <Text>{t("sit.finishEarly")}</Text>
         </Button>
       </View>
+
+      {/* The sound door on its OWN row beneath the pair, and that is a
+          measurement rather than a preference (`docs/sound.md` §1.1): the row of
+          three #2436 first ruled for measured 324px in `en` and 359px in `bg`
+          against the 312px content column at 360dp. Two rows is the only
+          arrangement that holds in both locales.
+
+          Always shown and always plain - no bed name, no dot, no marker,
+          playing or not. A marker when a bed is on reads as a suggestion when it
+          is off, which is #1742's guardrail. The visible word is `Sound`; the
+          accessible name is the lane it opens, so a screen reader is told which
+          sound. It works while PAUSED too: the pick is written and heard on
+          resume, since the lane is silent while paused by construction. */}
+      <View className="flex-row items-center justify-center gap-2 pb-1 pt-2">
+        <Button
+          accessibilityLabel={t("timer:ambient.label")}
+          onPress={() => setSoundPanelOpen(true)}
+          testID="sit-sound-door"
+          variant="ghost"
+        >
+          <Icon className="size-[18px] text-foreground" name="music-note" />
+          <Text>{t("timer:ambient.door")}</Text>
+        </Button>
+      </View>
+
+      {/* Opening it does NOT pause the clock: auditioning a bed under the
+          running clock is the point of "from within a sitting", and Pause stays
+          a separate, explicit action. */}
+      <SoundPanel
+        bedId={bedId}
+        bedVolume={bedVolume}
+        onChangeVolume={setPickedBedVolume}
+        onClose={() => setSoundPanelOpen(false)}
+        onCommitVolume={commitBedVolume}
+        onPickBed={pickBed}
+        visible={soundPanelOpen}
+      />
 
       <ConfirmDialog
         cancelLabel={t("sit.exit.cancel")}
@@ -512,7 +615,7 @@ export function MeditationSitScreen() {
         }}
         onConfirm={() => {
           setExitDialogOpen(false);
-          setFinishRequested("leave");
+          requestFinish("leave");
         }}
         title={t("sit.exit.title")}
         visible={exitDialogOpen}

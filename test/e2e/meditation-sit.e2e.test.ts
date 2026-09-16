@@ -68,4 +68,71 @@ test.describe("meditation sit", () => {
     expect(result.data?.[0].obstacle_tags).toEqual(["resistance"]);
     expect(result.data?.[0].reflection).toBe("Noisy street, sat anyway.");
   });
+
+  // The one half of `docs/sound.md` §1.4 that jest cannot reach: jest runs as
+  // iOS, and the dialog role, the Tab trap, Escape and focus returning to the
+  // door are all react-native-web's `Modal`. Inherited behaviour is still
+  // behaviour this panel promises, so it is measured here rather than asserted
+  // in a comment.
+  test("the sound panel is a dialog that traps focus and hands it back to the door (#2507)", async ({
+    page,
+  }) => {
+    await page.goto("/tools/meditation/session?duration=5&bell=0");
+
+    const door = page.getByTestId("sit-sound-door");
+    await expect(door).toBeVisible();
+    // Nothing icon-only: the word is rendered beside the glyph. `toContainText`
+    // rather than `toHaveText` because the MaterialIcons glyph IS a character in
+    // this node's text content, so an exact match would compare against it too.
+    await expect(door).toContainText("Sound");
+    await expect(door).toHaveAttribute("aria-label", "Background sound");
+
+    // Opened from the keyboard, not a mouse click, so the focus story below is
+    // the one a keyboard user actually gets.
+    await door.focus();
+    await expect(door).toBeFocused();
+    await door.press("Enter");
+
+    const panel = page.getByTestId("sound-panel-sheet");
+    await expect(panel).toBeVisible();
+    const dialog = page.getByRole("dialog").filter({ has: panel });
+    await expect(dialog).toHaveCount(1);
+
+    // Focus went into the panel and stays there: five Tabs from inside a panel
+    // holding ten radios, Done and the rail must not reach the page behind it.
+    await expect(door).not.toBeFocused();
+    for (let i = 0; i < 5; i += 1) {
+      await page.keyboard.press("Tab");
+      const trapped = await page.evaluate(() => {
+        const node = document.querySelector('[role="dialog"]');
+        return (
+          node !== null && document.activeElement !== null && node.contains(document.activeElement)
+        );
+      });
+      expect(trapped).toBe(true);
+    }
+
+    // Tap-outside dismissal is OFF (§1.4): a stray tap during a sit must not
+    // close the panel, so the backdrop is a plain View and this click lands on
+    // nothing. The sheet is bottom-anchored, so the top of the window is
+    // backdrop.
+    const viewport = page.viewportSize();
+    await page.mouse.click(Math.round((viewport?.width ?? 800) / 2), 24);
+    await expect(panel).toBeVisible();
+
+    // Escape closes it, and focus comes back to the door it was opened from.
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(door).toBeFocused();
+
+    // The clock never paused behind any of it - the sit is still running, and
+    // `Pause` still reads `Pause`.
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+
+    // And Done is the other way out.
+    await door.press("Enter");
+    await expect(panel).toBeVisible();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    await expect(panel).toBeHidden();
+  });
 });
