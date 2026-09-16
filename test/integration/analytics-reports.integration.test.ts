@@ -703,6 +703,37 @@ describe("aggregate analytics reports (integration)", () => {
     });
   });
 
+  describe("the partition caveat reaches the reader it is written for", () => {
+    // ☠️ #2556. The caveat is the one psql VARIABLE in this report family: a
+    // `\set` with continuation lines, echoed once per qualifying section. Its
+    // whole point is that a reader of the OUTPUT - who does not have
+    // docs/analytics.md in front of them - is told what `<5` does not hide, so
+    // a stray quote that collapsed it to one line, dropped its indentation, or
+    // left `:partition_caveat` unset would defeat it silently.
+    //
+    // ⚠️ test/analytics-shared-sql.test.ts cannot catch that: it compares the
+    // two copies to each other, and both would be wrong together. Only psql
+    // can say what psql prints.
+    const rendered = () =>
+      runSql(`${sharedBlock("segment", "partition_caveat")}\n\\echo :partition_caveat\n`);
+
+    it("prints as an indented block of legend lines, not one long line", () => {
+      // runSql trims, so the first line loses the indentation it is sent with;
+      // every line after it still carries the legend's four spaces.
+      const lines = rendered().split("\n");
+      expect(lines.length).toBeGreaterThan(1);
+      expect(lines.slice(1).filter((line) => !line.startsWith("    "))).toEqual([]);
+    });
+
+    it("states the interval the floor actually publishes", () => {
+      // The correction this block exists to carry: 1..4, four as a ceiling.
+      const output = rendered();
+      expect(output).toContain("1..4");
+      expect(output).toContain("FOUR VALUES WIDE");
+      expect(output).not.toContain(":partition_caveat");
+    });
+  });
+
   describe("segment report: k=5 cell suppression", () => {
     it("suppresses counts of 1..4, prints 0 and 5+", () => {
       const [row] = queryWithin(

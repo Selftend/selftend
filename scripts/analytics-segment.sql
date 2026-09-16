@@ -103,6 +103,18 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
 -- information, and it discloses nothing.
 --
+-- ⚠️ THAT ORDERING DESCRIBES THE SUPPRESSED-COUNT ROUTES, not every route
+-- out of these tables. Where a rate prints `0.0%` or `100.0%` the
+-- false-precision leg is not engaged at all — those two figures are exactly
+-- true, and are the least falsely-precise numbers these reports can print —
+-- and privacy is the only leg in play.
+--
+-- ☠️ THE RULE REASONS ABOUT CELL SIZE, NEVER ABOUT CELL VALUE, and never
+-- about what a reader derives from the cells printed BESIDE it. What it
+-- therefore does NOT guarantee is written out in docs/analytics.md, "What the
+-- floor does not guarantee": the routes that bound or recover a suppressed
+-- cell, and the guards that were priced against them and refused.
+--
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
@@ -146,6 +158,36 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
     end
   $$;
 -- <<< shared:k_suppression
+
+-- >>> shared:partition_caveat
+-- Route 1 of docs/analytics.md, "What the floor does not guarantee": the caveat
+-- printed beside every section whose arms partition a population.
+-- Byte-identical in analytics-onboarding.sql and analytics-segment.sql;
+-- test/analytics-shared-sql.test.ts fails if they drift. analytics-engagement.sql
+-- deliberately does NOT carry it - no section there partitions a population, and
+-- a partition warning printed beside a table that has no partitioned arms would
+-- be one more false sentence in a file family whose comments have already
+-- asserted the opposite of this one twice.
+--
+-- ☠️ A RAW TOTAL BESIDE A SUPPRESSED CELL IS NOT THE DEFECT - AN EXHAUSTIVELY
+-- PRINTED PARTITION IS. Three conditions, and they hold together or not at all:
+-- the arms partition a population EXHAUSTIVELY; EVERY arm prints; and that
+-- population's total prints RAW somewhere in the same report. Every other
+-- suppressed cell in these reports has a complement that is never printed, so
+-- there is nothing to subtract it from.
+--
+-- ⚠️ The test is STRUCTURAL, so a future section classifies ITSELF against it:
+-- there is no list of qualifying sections kept here, and no review gate to
+-- remember. One variable, echoed once per qualifying section, so the sentence
+-- cannot drift between the sections that print it.
+\set partition_caveat '    WHAT `<5` DOES NOT HIDE HERE. These arms partition a population exhaustively, every arm prints,'
+\set partition_caveat :partition_caveat '\n    and that population\'s total prints raw elsewhere in this report - so the arms that DID print, taken'
+\set partition_caveat :partition_caveat '\n    from that total, bound the ones that did not. `<5` publishes the interval 1..4, so a hidden cell is at'
+\set partition_caveat :partition_caveat '\n    most FOUR VALUES WIDE - however many cells are hidden - and EXACTLY ONE whenever the remainder left'
+\set partition_caveat :partition_caveat '\n    over sits at either end of its range. Four is a maximum, not a guarantee: a small raw base printed'
+\set partition_caveat :partition_caveat '\n    beside a suppressed cell caps it lower still. The guards against this were priced and refused - see'
+\set partition_caveat :partition_caveat '\n    docs/analytics.md, What the floor does not guarantee.'
+-- <<< shared:partition_caveat
 
 -- The block below is byte-identical in analytics-engagement.sql;
 -- test/analytics-shared-sql.test.ts fails if they drift. A new content table
@@ -504,14 +546,21 @@ from axis_coverage order by axis;
 \echo
 -- ☠️ WHAT THE k=5 FLOOR DOES AND DOES NOT GUARANTEE IN SECTIONS 3 AND 4, so
 -- that a later reader neither mistakes it for a guarantee nor tears it out as
--- theatre. Both are wrong; the truth is in between and it is worth ten lines.
+-- theatre. Both are wrong; the truth is in between, and the part a reader of
+-- the OUTPUT needs is printed beside both sections by the shared
+-- partition_caveat block above.
 --
 -- These arms PARTITION the population, and section 1 prints `users`,
 -- `w4_mature_users` and `w4_retained_users` RAW per account type (its carve-out,
--- with its own reasons recorded beside it). An exhaustive partition of a raw
--- total leaks any SINGLE hidden cell by subtraction: the total minus the arms
--- that printed recovers the one that did not. Where two or more arms are
--- suppressed only their SUM is recoverable, which is the floor working.
+-- with its own reasons recorded beside it). So the arms that printed, taken
+-- from that total, bound the arms that did not. The bound is the one the caveat
+-- prints, said again here because this is where it was once said wrongly: `<5`
+-- publishes the interval 1..4, so a hidden cell is AT MOST FOUR VALUES WIDE
+-- however many arms are hidden, and EXACTLY ONE whenever the remainder sits at
+-- either end of its range. ☠️ TWO FALSE SENTENCES STOOD HERE - that a
+-- multi-arm suppression leaves only a SUM recoverable, and that the floor holds
+-- wherever more than one arm is small. Do not restore either: what bounds the
+-- cell is the interval, never the number of arms that happened to be hidden.
 --
 -- ⚠️ THE LOCALE AXIS IS THE BAD CASE, and it is the ordinary case rather than a
 -- corner. `other locale` is unreachable while the CHECK constraint allows only
@@ -520,17 +569,17 @@ from axis_coverage order by axis;
 -- two visible zeros, and a suppressed `bg` is recoverable exactly. That is the
 -- same arithmetic the section 1 carve-out calls theatre.
 --
--- It is recorded rather than fixed, and the reason is that every available fix
--- is worse: section 1 cannot be suppressed without blinding the gate, an empty
--- arm may not print `<5` without forking the shared rule, and dropping the count
--- columns would leave an ordering with no weight beside it. ⚠️ THIS IS NOT
--- SPECIFIC TO THIS FILE - section 4 of analytics-onboarding.sql partitions the
--- population the same way, so the property is general to these reports and the
--- decision about it is not this section's to make alone. Tracked as issue 2388.
---
--- What survives is real: the floor still stops a small cell being read casually,
--- and it still holds wherever more than one arm is small. Do not read it as a
--- privacy guarantee on a two-arm axis.
+-- It is recorded rather than fixed, and that is now a DECISION rather than a
+-- tracking note: every guard anyone proposed was priced and refused, and the
+-- prices are written out in docs/analytics.md, "What the floor does not
+-- guarantee". The three that bear on this section: section 1 cannot be
+-- suppressed without blinding the gate; an empty arm may not print `<5` without
+-- forking the shared rule; and dropping the count columns would leave an
+-- ordering with no weight beside it AND make an empty arm indistinguishable
+-- from a suppressed one, since `k_pct(0, 0)` prints the same `-` a withheld
+-- percentage does. ⚠️ NONE OF THIS IS SPECIFIC TO THIS FILE - section 4 of
+-- analytics-onboarding.sql partitions the population the same way, which is why
+-- the caveat above is a shared block rather than a sentence written here.
 \echo '=== 3) W4 retention by locale (arms partition the population; every account appears exactly once) ==='
 \echo '    Ordered by retention rate: READ THE ORDERING, not the percentages.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
@@ -540,6 +589,7 @@ from axis_coverage order by axis;
 \echo '    user_preferences.language is NOT NULL DEFAULT en, so the en arm holds both people using'
 \echo '    Selftend in English and people who never touched the setting. bg is the arm carrying an'
 \echo '    unambiguous affirmative signal - read the axis as bg-versus-the-rest.'
+\echo :partition_caveat
 with section_rows as (
   select l.account,
          ll.arm,
@@ -581,6 +631,7 @@ order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
 \echo '    younger than 28 days carries a provisional arm and is excluded from the rate by maturity.'
 \echo '    other module only should always be empty: it means content_events grew a module the arm'
 \echo '    list above does not name.'
+\echo :partition_caveat
 with section_rows as (
   select l.account,
          ml.arm,

@@ -28,6 +28,15 @@ const EXPECTED_BLOCKS: Record<string, string[]> = {
   // k=5 cell suppression governs all three reports, not just the segment one
   // where it was first implemented (#2373, docs/analytics.md).
   k_suppression: ALL_REPORTS,
+  // Route 1 of docs/analytics.md, "What the floor does not guarantee": the
+  // caveat that a suppressed cell in an exhaustively printed partition is
+  // bounded by subtraction from a raw total printed elsewhere in the same
+  // report. Two files, not three - analytics-engagement.sql has no section
+  // whose arms partition a population, and printing a partition warning beside
+  // a table that has no partitioned arms would add one more false statement to
+  // a file family whose comments have already asserted the opposite twice
+  // (#2556).
+  partition_caveat: ["analytics-onboarding.sql", "analytics-segment.sql"],
   // Who is in the population: the owner count, the heuristic upper bound, and
   // the standing line that the guest arm is not identifiable at all. Printed by
   // each report separately and deliberately - every report runs independently,
@@ -286,6 +295,68 @@ describe("k=5 cell suppression is defined once, for all three reports", () => {
       // helpers present, the cells still raw.
       expect(sqlLinesMatching(file, /pg_temp\.k_(count|pct)\(/).length).toBeGreaterThan(0);
     });
+  }
+});
+
+describe("every section that claims a partition prints the partition caveat", () => {
+  // ☠️ #2556. No `shared:` marker covers the CALL SITES, and that is the
+  // plumbing that drifts silently: a file can carry the block, pass every check
+  // above, and never print a word of it. The census is deliberately NOT kept
+  // here - route 1 is a structural test a section classifies itself against
+  // (docs/analytics.md, "What the floor does not guarantee") - so this reads the
+  // section's own printed claim instead. A section that tells a reader its arms
+  // partition a population has to tell them what that costs.
+  //
+  // ⚠️ It is a tripwire on the section's printed CLAIM, not a proof: a
+  // qualifying section that never tells its reader the arms partition anything
+  // is not caught here, and nothing static can catch it - that is what makes
+  // route 1 a structural test a human applies. What this does catch is the
+  // likely drift, a partition section added or reworded beside the caveat.
+  const CAVEAT_ECHO = "\\echo :partition_caveat";
+
+  /** The phrasings the three qualifying sections use today, in their own words. */
+  const A_PARTITION_CLAIM = /partition|appears exactly once|is in exactly one/;
+
+  /** The printed sections of one report: each `=== n)` heading with its body. */
+  function printedSections(file: string): string[] {
+    const lines = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8").split("\n");
+    const sections: string[][] = [];
+    for (const line of lines) {
+      if (/^\\echo '=== /.test(line)) sections.push([]);
+      if (sections.length > 0) sections[sections.length - 1].push(line);
+    }
+    return sections.map((body) => body.join("\n"));
+  }
+
+  /** Printed lines only: a `--` comment saying "partition" claims nothing to a reader. */
+  const claimsAPartition = (body: string) =>
+    body
+      .split("\n")
+      .filter((line) => line.startsWith("\\echo") && line !== CAVEAT_ECHO)
+      .some((line) => A_PARTITION_CLAIM.test(line));
+
+  for (const file of reportFiles()) {
+    it(`${file}: every section claiming a partition echoes the caveat`, () => {
+      const offenders = printedSections(file)
+        .filter(claimsAPartition)
+        .filter((body) => !body.includes(CAVEAT_ECHO))
+        .map((body) => body.split("\n")[0]);
+      expect(offenders).toEqual([]);
+    });
+
+    if (EXPECTED_BLOCKS.partition_caveat.includes(file)) {
+      it(`${file} prints the caveat it carries`, () => {
+        // The other half: a block defined and never echoed is a caveat nobody
+        // reads, and every check above is satisfied by it.
+        const printed = printedSections(file).filter((body) => body.includes(CAVEAT_ECHO));
+        expect(printed.length).toBeGreaterThan(0);
+      });
+    } else {
+      it(`${file} never echoes a caveat it does not define`, () => {
+        // Without the block the variable is unset, and psql prints its name.
+        expect(fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8")).not.toContain(CAVEAT_ECHO);
+      });
+    }
   }
 });
 
