@@ -19,7 +19,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [modules/cbt.md](modules/cbt.md) - CBT thought-record flow and data contract
 - [modules/tools.md](modules/tools.md) - the module contract
 - [modules/gratitude-log.md](modules/gratitude-log.md) - gratitude log scope and data contract
-- [modules/dbt-mckay-skills-workbook.md](modules/dbt-mckay-skills-workbook.md) - the DBT module spec (decided, not built); its design brief is [design/1980-handoff/](design/1980-handoff/README.md)
+- [modules/dbt-mckay-skills-workbook.md](modules/dbt-mckay-skills-workbook.md) - the DBT module spec; the first-release slice shipped in v0.18.0, and the second slice and post-MVP sections stay specified and unscheduled. Its design brief was [design/1980-handoff/](design/1980-handoff/README.md)
 
 ## Launch And Operations
 
