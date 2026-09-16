@@ -69,6 +69,13 @@ export function AppShell() {
             <Stack.Screen name="account-deletion" dangerouslySingular />
             <Stack.Screen name="security" dangerouslySingular />
             <Stack.Screen name="faq" dangerouslySingular />
+            {/* The first public explainer (#2469). It is not a `router.push`
+                target - the site footer reaches it through `LinkButton`, which
+                sets the flag itself - but every other flat public route is
+                declared here, and the footer now links all of them to each
+                other, so leaving one out is how the next lateral push mounts a
+                second copy. */}
+            <Stack.Screen name="meditation" dangerouslySingular />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>

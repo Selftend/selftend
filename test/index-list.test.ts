@@ -57,13 +57,15 @@ describe("the index list ↔ the route tree", () => {
     expect([...INDEX_LIST].sort()).toEqual(publicRouteFiles.map(pathnameOf).sort());
   });
 
-  // In the site footer's order (#2467): the crisis row, then the nav list. The
-  // footer pin in `src/components/app/site-footer.test.tsx` compares ordered
-  // arrays against this list, so the two sequences cannot drift.
-  it("holds the eight routes the spec's § 3 table names", () => {
+  // In the site footer's order (#2467): the crisis row, then the nav list -
+  // the explainers, then the policies (#2469). The footer pin in
+  // `src/components/app/site-footer.test.tsx` compares ordered arrays against
+  // this list, so the two sequences cannot drift.
+  it("holds the nine routes the spec's § 3 table names, explainers before policies", () => {
     expect(INDEX_LIST).toEqual([
       "/",
       "/crisis",
+      "/meditation",
       "/faq",
       "/privacy",
       "/terms",
@@ -91,7 +93,7 @@ describe("the sitemap ↔ the canonical tags", () => {
     }
   });
 
-  it("lists the eight canonical URLs and no other loc", () => {
+  it("lists the nine canonical URLs and no other loc", () => {
     const locs = [...buildSitemap().matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]);
     expect(locs).toEqual(INDEX_LIST.map(canonicalUrl));
   });

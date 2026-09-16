@@ -121,7 +121,16 @@ function LandingHero() {
             )}
           >
             <Icon name={icon} size={17} className={CHROME_MARK} />
-            <Text className={cn("text-[13.5px] font-semibold", CHROME_TEXT)}>
+            {/* The testID is the pill's only STRUCTURAL handle (#2469). Since the
+                landing renders the site footer, "Meditation" appears twice on
+                this screen - once here, once as the footer's link to the
+                explainer page - so the pill test cannot find its subject by text
+                alone, and this row's type scale is not unique to it either
+                (`how-it-works-section.tsx` shares it). */}
+            <Text
+              testID="hero-tool-pill"
+              className={cn("text-[13.5px] font-semibold", CHROME_TEXT)}
+            >
               {t(`landingPage.tools.${key}`)}
             </Text>
           </View>
