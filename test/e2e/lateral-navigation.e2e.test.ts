@@ -40,9 +40,12 @@ import { dismissPostSignInModals } from "./helpers";
 const learnRoots = (page: Page) =>
   page.locator('h1:text-is("Habit building - core ideas")').count();
 
-/** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
+/**
+ * One per mounted `/privacy` screen — the ANCHOR to `/security`, since security's <h1>
+ * shares its words. It was `[role="button"]` until #2476 made the cross-link a real link.
+ */
 const privacyRoots = (page: Page) =>
-  page.locator('[role="button"]:has-text("How we protect your data")').count();
+  page.locator('a[href="/security"]:has-text("How we protect your data")').count();
 
 /**
  * ☠️ The counts below are CSS/text locators, never `getByRole`. A backgrounded screen is
@@ -52,8 +55,8 @@ const privacyRoots = (page: Page) =>
  * text engines match the real DOM, hidden or not, which is the only way to see this bug.
  *
  * They are also scoped tightly enough to exclude look-alikes: the security page's <h1>
- * carries the same words as privacy's button, so the privacy count names the role
- * attribute rather than the text alone.
+ * carries the same words as privacy's link, so the privacy count names the anchor and
+ * its href rather than the text alone.
  */
 
 test("a breadcrumb returns to its ancestor instead of stacking a second copy", async ({ page }) => {
@@ -104,8 +107,11 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
 
 test("policy pages that cross-link do not stack copies of each other", async ({ page }) => {
   // Public pages, so this exercises the ROOT stack rather than the authenticated one.
+  // Privacy → security is a real link since #2476 (`LinkButton`, singular like every
+  // footer link); security → privacy is still the imperative push, so this pair now
+  // covers one of each.
   await page.goto("/privacy");
-  const toSecurity = page.getByRole("button", { name: "How we protect your data" });
+  const toSecurity = page.getByRole("link", { name: "How we protect your data" });
   await expect(toSecurity).toBeVisible({ timeout: 15_000 });
   expect(await privacyRoots(page)).toBe(1);
 
@@ -115,7 +121,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   // Security pushes privacy straight back - the purest ping-pong in the app.
   await page.getByRole("button", { name: "Read the full Privacy Policy" }).click();
   await expect(page).toHaveURL(/\/privacy/, { timeout: 15_000 });
-  await expect(page.getByRole("button", { name: "How we protect your data" })).toBeVisible({
+  await expect(page.getByRole("link", { name: "How we protect your data" })).toBeVisible({
     timeout: 15_000,
   });
 
@@ -128,7 +134,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   // alternative (`dismissTo`) replaces on EVERY navigation and costs Back entirely. What
   // must never happen is Back resurrecting the duplicate.
   await page.goBack();
-  await expect(page.getByRole("button", { name: "How we protect your data" })).toBeVisible({
+  await expect(page.getByRole("link", { name: "How we protect your data" })).toBeVisible({
     timeout: 15_000,
   });
   expect(await privacyRoots(page)).toBe(1);
