@@ -131,6 +131,20 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
       .catch(() => undefined);
   };
 
+  /**
+   * ☠️ **What this payload leaves out is the point.** `cbtProgramPhaseIndex` and
+   * `cbtProgramPhaseStartedAt` stay exactly where they were, and that pair
+   * surviving beside a null `cbtProgramStartedAt` is the ONLY record that this
+   * run ever existed and how far it got - the **fossil** (ADR-0012, #2530).
+   *
+   * ⚠️ So do not "finish the job" by nulling them. It reads like a tidy-up and
+   * it is the whole of #2386: someone who reached phase 4 and stopped would
+   * become indistinguishable from someone who never opened the module, with no
+   * way to recover the difference afterwards. #2530 refused to keep the dates a
+   * run would otherwise carry, and that refusal only holds because this survives.
+   *
+   * `test/programme-fossil-contract.test.ts` fails if anything nulls it.
+   */
   const abandonProgram = () => {
     if (!preferences) return;
     void updatePreferences
