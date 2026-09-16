@@ -517,18 +517,41 @@ the masters live in the separate `app-audio-masters` repo and `audio-masters/` i
 gitignored. Every voice unit therefore counts as _unknown_ rather than as zero, and
 `budget` says so in as many words.
 
-### ☠️ Leading silence is gated on the FINISHED file
+### ☠️ Leading silence is gated on BOTH the finished file and the master
 
 #1134 calls zero leading silence a **hard rule** and it is #1210's first acceptance
 check — and until #1210 nothing in this pipeline measured it. `edgeSilence` existed
 (#1347) but only behind `postprocess edges <file>`, a separate command aimed at a
 file by hand, so `run` could report PASS on a clip that starts late.
 
-⚠️ It is in practice a **voice-clip rule**. #1138 measured the shipped set and only
-the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms — while
+⚠️ ~~It is in practice a **voice-clip rule**~~ — that held only while the gate
+measured one file. #1138 measured the shipped set and only the four `guide_*` files
+carry any lead **in the finished `.m4a`** — 36.2 / 34.1 / 15.0 / 3.2 ms — while
 every bed, texture and bell measures 0.0. It matters because every trigger in the
 app is _already_ up to 250 ms late (`TICK_MS` polling, #1134), so silence in the
 file adds to a lateness the user can already hear.
+
+☠️☠️ **And every bed measured 0.0 while carrying a 4.97 ms hole
+([#2460](https://github.com/Selftend/selftend/issues/2460)).** The finished-file
+check cannot see digital silence at a head, because the encoder does not leave it
+silent: AAC fills it with pre-echo at −10 to −31 dBFS, an order of magnitude above
+the −60 dBFS floor `edgeSilence` works to. So the gate read "starts on time" on
+nine files that start 5 ms late, for three weeks. Since
+[#2508](https://github.com/Selftend/selftend/issues/2508) `run` measures the
+**normalised master** as well — the same pre-encode WAV the seam gate reads — where
+those frames are exact zeros and the lead reads 4.97 ms. Both numbers print, and
+seeing `lead 0.00` next to `master lead 4.97` is the entire diagnosis:
+
+```
+edges     lead 0.00 ms · tail 0.00 ms   (30.000s)
+master    lead 4.97 ms · tail 0.00 ms   (pre-encode)
+```
+
+⚠️ The lesson generalises past the encoder. The old rationale was "encoding is
+where a delay would be introduced, so measuring the input would answer a question
+nobody asked" — but the **chain** introduced this one, three steps before the
+encoder, and the encoder then disguised it. Any filter that reports latency
+prepends zeros unless told not to.
 
 The limit is **1.0 ms**, bracketed by two measurements rather than chosen by feel.
 Above: #1138 round-tripped AAC at **+8 samples, 0.18 ms**, so anything tighter fails
@@ -555,6 +578,43 @@ that does not exist.
 The run also carries the finished file's **measured duration**, because #1136 sets
 `introMs` from the chosen `guide_intro`'s own header and never from an estimate, and
 this is the only place that number is produced.
+
+### The 2026-09-16 re-run (#2508)
+
+The nine beds were re-encoded from the same masters with `latency=1` on the
+limiter. No re-render, no new take, no credits: the inputs are byte-for-byte the
+ones that produced the shipped set, which was **verified first** — all nine
+reproduced byte-identically through the unchanged pipeline before a token moved.
+
+| bed         | master lead | seam wrap   | Δ bytes |
+| ----------- | ----------- | ----------- | ------- |
+| rain        | 4.97 → 0.00 | 0.52 → 0.74 | −13     |
+| forest      | 4.97 → 0.00 | — → 1.35    | +24     |
+| ocean       | 4.97 → 0.00 | — → 0.90    | +42     |
+| stream      | 4.97 → 0.00 | — → 0.93    | −290    |
+| fire        | 4.97 → 0.00 | — → 0.81    | −889    |
+| night       | 4.97 → 0.00 | — → 1.05    | +543    |
+| brown-noise | 4.97 → 0.00 | — → 1.04    | −29     |
+| pink-noise  | 4.97 → 0.00 | — → 1.04    | −32     |
+| white-noise | 4.97 → 0.00 | — → 1.12    | −66     |
+
+**−710 bytes** in total, every run PASS, every seam inside the limit of 3, and
+every `elst` unchanged (`media_time` 1024 on all nine) — so the authored lengths
+the web loop window reads are still 30.000 / 29.600 / 29.520 and #2504's
+byte-reading test needs nothing.
+
+⚠️ **Individual byte counts move in both directions and that is expected.** The
+limiter now sees 219 frames of real audio it previously replaced with zeros, and
+AAC spends bits on what is there; three beds got bigger. The total is what the
+ticket predicted.
+
+☠️ **`fire` ships from `fire-c01-a02.wav`, not the `a01` that the round's
+`choices.jsonl` named.** `a01` is 29.605 s with a 4.69 ms head lead and fails the
+lead gate; `a02` is the same library sound with that head trimmed, and is the only
+input the shipped file reproduces from. The record was wrong, not the file, and it
+is corrected by an **appended** row rather than an edit — `choices.jsonl` is
+append-only and `currentChoices()` takes the last row per clip, so rewriting the
+original would have destroyed the provenance the log exists for.
 
 ### What measurement changed
 
@@ -585,6 +645,23 @@ to remove. Measured against untouched material in the same clip:
 | rain        | -3.29 dB | -0.20 dB    |
 | forest      | -3.57 dB | -0.53 dB    |
 | brown-noise | -7.92 dB | -4.87 dB    |
+
+☠️☠️ **The bed limiter runs `latency=1`, and that token is load-bearing
+([#2460](https://github.com/Selftend/selftend/issues/2460)).** At ffmpeg's default
+`latency=0`, `alimiter` cannot see a peak coming, so it **prepends 219 frames
+(4.97 ms) of digital zeros** as its lookahead and drops the source's last 219
+frames to compensate. Every bed shipped with that hole at its head, and the AAC
+encoder filled it with pre-echo 10-30 dB down — which is audible as a fade-in at
+the loop point and is not a fade at all. The diagnosis cost a bisect precisely
+because neither half reproduces it alone: #2439 tested the limiter by itself
+(silence in, silence out) and the encoder by itself (flat), and missed the
+composition. `latency=1` makes the limiter delay-compensate its own lookahead, so
+the first sample out is the take's first sample.
+
+⚠️ Fixing it is **one token and no re-render** — the nine masters re-run through
+the same chain. It is hygiene rather than a fix for what the owner heard: 5 ms is
+inaudible on a gapless looper, and the seam they reported was the web element's
+seek (`docs/sound.md` §3). Rotating the loop point would only have MOVED the hole.
 
 ☠️ **Loudness is one computed gain, not ffmpeg's `loudnorm`.** `linear=true` is
 a request, not a guarantee: when the source LRA exceeds the target LRA,
