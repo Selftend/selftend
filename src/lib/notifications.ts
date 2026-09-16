@@ -104,6 +104,11 @@ function getNativeNotifications() {
  * `test/check-in-route-compat.test.tsx` fails if either side is "tidied".
  */
 const ALLOWED_REMINDER_ROUTES = new Set<string>([
+  // Home: the general reminder's door (#2413 § 3.4). The one reminder that names no
+  // tool lands on the screen every tool's door sits on. The target ships held out
+  // (`reminder-rollout.ts`) until the native build carrying this entry is live on
+  // both stores, so no shipped phone is ever handed a url it cannot route.
+  "/",
   "/modules/cbt",
   "/tools/meditation",
   "/modules/act",

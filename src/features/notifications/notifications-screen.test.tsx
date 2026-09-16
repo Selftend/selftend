@@ -141,6 +141,27 @@ describe("NotificationsScreen", () => {
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
+  /**
+   * The one suggestion the product makes, made by placement alone (#2412,
+   * ADR-0010): the general row is the FIRST row, always, statically - before every
+   * tool row on every arrival - labelled with the app's own name, at 18:00, off.
+   * It ships held out (#2413 § 3.4), so the switch is disabled under the note the
+   * row test pins; the eyebrow that divides it from the eleven is #2492's.
+   */
+  it("renders the general row first, as Selftend at 18:00, off and held out (#2491)", () => {
+    renderWithProviders(<NotificationsScreen />);
+
+    const rows = screen.getAllByTestId(/^notification-row-[a-z]+$/);
+    expect(rows[0].props.testID).toBe("notification-row-general");
+    expect(rows).toHaveLength(NOTIFICATION_TARGETS.length);
+
+    const general = screen.getByLabelText("Selftend");
+    expect(general.props.accessibilityState.checked).toBe(false);
+    expect(general.props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
+    expect(screen.getByText("6:00 PM")).toBeTruthy();
+  });
+
   it("renders a row per registry target, in the registry's order, each switch named", () => {
     renderWithProviders(<NotificationsScreen />);
 

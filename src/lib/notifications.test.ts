@@ -446,9 +446,14 @@ describe("Reminder notifications", () => {
 describe("isAllowedReminderRoute (deep-link allowlist)", () => {
   it("accepts every server-minted fixed tool/module route", () => {
     for (const route of [
+      // Home - the general reminder's door (#2491): the one reminder that names no tool
+      // lands on the screen every tool's door sits on. Held out of the cron until the
+      // native build carrying this entry is live on both stores (#2494).
+      "/",
       "/modules/cbt",
       "/tools/meditation",
       "/modules/act",
+      "/modules/dbt",
       "/tools/mood-tracker",
       "/tools/journal",
       "/tools/gratitude-log",

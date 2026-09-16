@@ -2,6 +2,7 @@ import type { MaterialIconName } from "@/src/components/react-native-reusables/i
 import type { UserPreferences } from "@/src/features/modules/types";
 
 export type NotificationTargetKey =
+  | "general"
   | "cbt"
   | "act"
   | "dbt"
@@ -15,6 +16,7 @@ export type NotificationTargetKey =
   | "habits";
 
 type EnabledField =
+  | "generalRemindersEnabled"
   | "cbtRemindersEnabled"
   | "meditationRemindersEnabled"
   | "actRemindersEnabled"
@@ -27,6 +29,7 @@ type EnabledField =
   | "sleepRemindersEnabled"
   | "habitsRemindersEnabled";
 type HourField =
+  | "generalReminderHour"
   | "cbtReminderHour"
   | "meditationReminderHour"
   | "actReminderHour"
@@ -39,6 +42,7 @@ type HourField =
   | "sleepReminderHour"
   | "habitsReminderHour";
 type MinuteField =
+  | "generalReminderMinute"
   | "cbtReminderMinute"
   | "meditationReminderMinute"
   | "actReminderMinute"
@@ -51,6 +55,7 @@ type MinuteField =
   | "sleepReminderMinute"
   | "habitsReminderMinute";
 type TimezoneField =
+  | "generalReminderTimezone"
   | "cbtReminderTimezone"
   | "meditationReminderTimezone"
   | "actReminderTimezone"
@@ -64,8 +69,9 @@ type TimezoneField =
   | "habitsReminderTimezone";
 
 /**
- * One reminder target: a tool or module the server can nudge about, and the four
- * `user_preferences` columns the edge function reads at send time.
+ * One reminder target: a tool or module the server can nudge about - or, for the one
+ * general reminder (#2413, ADR-0010), the app itself - and the four `user_preferences`
+ * columns the edge function reads at send time.
  *
  * There is no `status` field, no `descriptionKey` and no `kind` any more (#981). `kind` split
  * the list into "Modules" and "Tools" sections; the screen renders one run in catalogue order
@@ -86,13 +92,33 @@ export interface NotificationTarget {
 }
 
 /**
- * Ordered by the widget catalogue (#981), which `registry.test.ts` derives from
- * `WIDGET_META` rather than restating, so the two cannot drift apart silently. That
- * catalogue is the Android launcher's since #1952; Home's Favourites (#1956) follow
+ * Order rule: **the general target first, then the widget-catalogue order, then the
+ * targets the catalogue does not name.** `registry.test.ts` derives the middle run from
+ * `WIDGET_META` rather than restating it, so the two cannot drift apart silently (#981).
+ * That catalogue is the Android launcher's since #1952; Home's Favourites (#1956) follow
  * `CATALOGUE` in src/features/favorites/items.ts, a different tool order, and
  * re-sequencing this screen onto it is an open product call, not something a test decides.
+ *
+ * The general target leads by ruling (#2412, ADR-0010): it is the one reminder the
+ * product suggests, and it suggests it by placement alone - first row, always,
+ * statically, no card, no flag, no trigger. It is not part of the catalogue-less tail
+ * even though the catalogue cannot name it either: the tail is the catalogue's
+ * leftovers, and this is the row the catalogue order is measured from.
  */
 export const NOTIFICATION_TARGETS: NotificationTarget[] = [
+  // The general reminder (#2413): leads to the app rather than to a tool - the tap
+  // lands on Home, hence the icon - at one daily time the person sets, off unless
+  // they set it, identical whether or not the app was opened that day. Ships held
+  // out (reminder-rollout.ts) until the native build that routes `/` is live.
+  {
+    key: "general",
+    labelKey: "targets.general.label",
+    icon: "home",
+    enabledField: "generalRemindersEnabled",
+    hourField: "generalReminderHour",
+    minuteField: "generalReminderMinute",
+    timezoneField: "generalReminderTimezone",
+  },
   {
     key: "mood",
     labelKey: "targets.mood.label",

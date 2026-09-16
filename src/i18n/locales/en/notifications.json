@@ -1,6 +1,6 @@
 {
   "title": "Reminders",
-  "description": "Every reminder here is off until you turn it on. Pick the ones you want and the time they arrive.",
+  "description": "Every reminder here is off until you turn it on. One from Selftend, or one for each tool you use - pick the time it arrives.",
   "globalMaster": {
     "label": "Notifications enabled",
     "hint": "One switch for every reminder, routines included. Your times are kept while it is off."
@@ -19,6 +19,10 @@
     "needsPermissionAction": "Allow notifications"
   },
   "copy": {
+    "general": {
+      "title": "One small thing",
+      "body": "A few minutes with whichever tool helps. Whenever you're ready."
+    },
     "cbt": {
       "title": "CBT check-in",
       "body": "Notice a thought and meet it with more balance."
@@ -69,6 +73,9 @@
     }
   },
   "targets": {
+    "general": {
+      "label": "Selftend"
+    },
     "cbt": {
       "label": "CBT"
     },

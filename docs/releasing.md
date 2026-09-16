@@ -47,7 +47,7 @@ The lift is one edit plus its tests, in one change:
 2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition);
 3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
 
-Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store.
+Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store; and **the general reminder** (`general`, [#2491](https://github.com/Selftend/selftend/issues/2491)), held out until the build carrying `/` in `ALLOWED_REMINDER_ROUTES` is live on both — its lift is [#2494](https://github.com/Selftend/selftend/issues/2494).
 
 ## Post-release, one-time: retire the `www` app-links carve-out
 

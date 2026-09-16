@@ -384,6 +384,25 @@ describe("NotificationTargetRow - a held-out target (#2260)", () => {
     expect(mockEnsure).not.toHaveBeenCalled();
   });
 
+  it("shows the general reminder's row the same way: Selftend, off, disabled, under the note (#2491)", async () => {
+    // The general reminder ships held out (#2413 § 3.4): its deep link is Home, `/`,
+    // which no shipped native build allowlists yet. Same shape as DBT's row today.
+    renderRow({ targetKey: "general" });
+
+    expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    expect(screen.getByLabelText("Selftend").props.accessibilityState.checked).toBe(false);
+    expect(screen.getByLabelText("Selftend").props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText("Selftend reminder time").props.accessibilityState?.disabled).toBe(
+      true,
+    );
+
+    fireEvent(screen.getByLabelText("Selftend"), "checkedChange", true);
+    await act(async () => {});
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockEnsure).not.toHaveBeenCalled();
+  });
+
   it("leaves a target that is not held out alone: no note, switch live", () => {
     renderRow({ targetKey: "sleep" });
 
