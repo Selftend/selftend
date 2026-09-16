@@ -274,12 +274,12 @@ describe("CbtProgramCard", () => {
     });
   });
 
-  describe("not_started", () => {
+  describe("not_in_progress", () => {
     it("shows the start CTA and calls onStart when pressed", () => {
       const onStart = jest.fn();
       renderWithProviders(
         <CbtProgramCard
-          program={makeProgram({ status: "not_started", phase: null, phaseReady: false })}
+          program={makeProgram({ status: "not_in_progress", phase: null, phaseReady: false })}
           onStart={onStart}
           onAdvance={jest.fn()}
         />,
@@ -296,7 +296,7 @@ describe("CbtProgramCard", () => {
       const onDismissStart = jest.fn();
       renderWithProviders(
         <CbtProgramCard
-          program={makeProgram({ status: "not_started", phase: null, phaseReady: false })}
+          program={makeProgram({ status: "not_in_progress", phase: null, phaseReady: false })}
           onStart={jest.fn()}
           onAdvance={jest.fn()}
           onDismissStart={onDismissStart}

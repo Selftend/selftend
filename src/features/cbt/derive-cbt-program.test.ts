@@ -27,9 +27,9 @@ function input(overrides: Partial<DeriveProgramInput> = {}): DeriveProgramInput 
 }
 
 describe("deriveCbtProgram", () => {
-  it("reports not_started when there is no start timestamp", () => {
+  it("reports not_in_progress when there is no start timestamp", () => {
     const result = deriveCbtProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
   });
 
   it("reports in_progress when started", () => {
@@ -232,9 +232,9 @@ describe("deriveCbtProgram", () => {
     expect(thinking.phase!.leadsWithDailyPractice).toBe(false);
   });
 
-  it("phase is null when status is not_started", () => {
+  it("phase is null when status is not_in_progress", () => {
     const result = deriveCbtProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
     expect(result.phase).toBeNull();
     expect(result.phaseReady).toBe(false);
     expect(result.totalPhases).toBe(5);

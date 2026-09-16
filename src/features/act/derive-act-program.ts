@@ -92,7 +92,7 @@ export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
 
   if (!input.startedAt) {
     return {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       phaseIndex: 0,
       totalPhases,

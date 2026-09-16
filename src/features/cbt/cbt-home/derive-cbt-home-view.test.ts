@@ -102,7 +102,7 @@ function inputs(overrides: Partial<DeriveCbtHomeViewInputs> = {}): DeriveCbtHome
     thoughtRecords: [],
     recoveryPlan: null,
     insights: baseInsights(),
-    program: { status: "not_started" },
+    program: { status: "not_in_progress" },
     promptDismissedAt: null,
     lifetimeRecordCount: 0,
     monthRecordCount: 0,
@@ -223,18 +223,19 @@ describe("deriveCbtHomeView", () => {
   });
 
   describe("showProgramCard", () => {
-    it("is false only when not_started and the prompt was dismissed", () => {
+    it("is false only when not_in_progress and the prompt was dismissed", () => {
       expect(
         deriveCbtHomeView(
-          inputs({ program: { status: "not_started" }, promptDismissedAt: "2026-05-22" }),
+          inputs({ program: { status: "not_in_progress" }, promptDismissedAt: "2026-05-22" }),
         ).showProgramCard,
       ).toBe(false);
     });
 
-    it("is true when not_started and the prompt was never dismissed", () => {
+    it("is true when not_in_progress and the prompt was never dismissed", () => {
       expect(
-        deriveCbtHomeView(inputs({ program: { status: "not_started" }, promptDismissedAt: null }))
-          .showProgramCard,
+        deriveCbtHomeView(
+          inputs({ program: { status: "not_in_progress" }, promptDismissedAt: null }),
+        ).showProgramCard,
       ).toBe(true);
     });
 

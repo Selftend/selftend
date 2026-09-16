@@ -193,7 +193,7 @@ export function deriveCbtHomeView({
   // the card list alone would hide the bars whenever the other seven kinds are
   // silent - the common case at five to ten records (#1387).
   const hasInsights = distortionBars.length > 0 || insightCards.length > 0;
-  const showProgramCard = program.status !== "not_started" || !promptDismissedAt;
+  const showProgramCard = program.status !== "not_in_progress" || !promptDismissedAt;
 
   // Render order of every ruled block: active goals, recent records, insights,
   // the framework, review. The first three hide themselves; the last two always

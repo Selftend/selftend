@@ -110,7 +110,7 @@ export function deriveDbtProgram(input: DeriveDbtProgramInput): DbtProgramView {
 
   if (!input.startedAt) {
     return {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       phaseIndex: 0,
       totalPhases,
