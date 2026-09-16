@@ -297,7 +297,7 @@ describe("NotificationTargetRow - state it renders", () => {
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(true);
   });
 
-  it("names its own control, so ten rows are ten distinguishable switches", () => {
+  it("names its own control, so twelve rows are twelve distinguishable switches", () => {
     renderRow();
 
     expect(screen.getByLabelText("Sleep")).toBeTruthy();
@@ -539,7 +539,7 @@ describe("NotificationRowSkeleton - the row's real height", () => {
     expect(skeletonLabel.props.className).toContain("text-[15px] font-semibold");
   });
 
-  it("stays hidden from assistive tech - ten empty rows are worth nothing to announce", () => {
+  it("stays hidden from assistive tech - twelve empty rows are worth nothing to announce", () => {
     atWidth(360, () => {
       renderWithProviders(<NotificationRowSkeleton target={getNotificationTarget("sleep")} />);
 
@@ -553,7 +553,7 @@ describe("NotificationRowSkeleton - the row's real height", () => {
       expect(skeleton.props.importantForAccessibility).toBe("no-hide-descendants");
       // ☠️ The two props above are the NATIVE half. react-native-web implements neither -
       // `node_modules/react-native-web/dist` has no reference to either name - so on web the
-      // only thing standing between ten real names and a screen reader is `aria-hidden`.
+      // only thing standing between twelve real names and a screen reader is `aria-hidden`.
       // jest runs as ios, so nothing else in this file can fail when it goes missing.
       expect(skeleton.props["aria-hidden"]).toBe(true);
       expect(screen.getByText("Sleep", { includeHiddenElements: true }).props.className).toContain(

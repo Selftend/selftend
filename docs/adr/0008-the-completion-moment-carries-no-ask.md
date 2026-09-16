@@ -139,3 +139,15 @@ load-bearing.
 - **Edit ADR-0004 line 47 in place.** Rejected on the house convention ADR-0003
   set: a reversed clause gets a new ADR with a `Supersedes:` header. The
   history of a granted-then-withdrawn exception is the part worth keeping.
+
+---
+
+**Amendment, 2026-09-16 (#2493).** The bell count above is wrong and stays as
+written, because an ADR records what was decided and on what. The reminder bell
+is on **eleven** tool home screens, not twelve. Since the general reminder
+landed, the Reminders screen lists **twelve** targets — those eleven tools plus
+the general reminder, which carries no bell because it names no tool. The
+ruling itself is untouched: the completion moment carries no ask, and the
+general reminder is suggested by placement alone, never by an offer. Counts
+live in `docs/reminders.md`; the rule lives in
+[ADR-0010](0010-one-reminder-is-suggested-by-placement-alone.md).

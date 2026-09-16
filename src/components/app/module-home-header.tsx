@@ -56,8 +56,8 @@ interface ModuleHomeHeaderProps {
 }
 
 /**
- * The module-home shell, shared by all ten homes - the eight tools plus ACT and
- * CBT (#733, decided on #690).
+ * The module-home shell, shared by all eleven homes - the eight tools plus ACT,
+ * CBT and DBT (#733, decided on #690).
  *
  * One shape, no variant. The full-bleed hue field this replaced had no second
  * population to serve: all 17 call sites passed `variant="field"` and all eight
@@ -85,7 +85,7 @@ export function ModuleHomeHeader({
   function handleActionPress(action: HeaderAction) {
     if (action.type === "notifications") {
       // The bell is a door to the central Reminders screen, not a surface of its
-      // own (#967): one ruling for all ten bells, and the glyph stays stateless.
+      // own (#967): one ruling for all eleven bells, and the glyph stays stateless.
       // `target` lets the screen bring this module's row into view on arrival.
       //
       // Through the Origin-recording helper rather than a bare `router.push`,
