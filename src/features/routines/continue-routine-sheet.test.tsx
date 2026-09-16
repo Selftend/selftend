@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { ContinueRoutineSheet } from "@/src/features/routines/continue-routine-sheet";
@@ -7,7 +7,6 @@ import {
   type RoutineToolRecords,
   type SteppableToolId,
 } from "@/src/features/routines/derive";
-import { useUpdateRoutine } from "@/src/features/routines/queries";
 import type { RoutineCadence, RoutineWithSteps } from "@/src/features/routines/types";
 import type { RoutineTodayView } from "@/src/features/routines/use-routines-today";
 import { currentDateKey } from "@/src/utils/date";
@@ -18,14 +17,6 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/routines",
 }));
 
-jest.mock("@/src/features/routines/queries", () => ({
-  useUpdateRoutine: jest.fn(),
-}));
-
-jest.mock("@/src/lib/notifications", () => ({
-  getReminderTimeZone: () => "Europe/Sofia",
-}));
-
 // The async AccessibilityInfo probe resolves after the test ends, tripping the
 // act() guard - pin it like the other sheet tests do.
 jest.mock("@/src/lib/accessibility", () => ({
@@ -34,7 +25,6 @@ jest.mock("@/src/lib/accessibility", () => ({
 }));
 
 const mockRouter = jest.mocked(router);
-const mockUseUpdateRoutine = useUpdateRoutine as jest.MockedFunction<typeof useUpdateRoutine>;
 
 function makeRoutine(
   id: string,
@@ -76,22 +66,13 @@ function view(
 }
 
 function renderSheet(views: RoutineTodayView[], onClose = jest.fn()) {
-  renderWithProviders(
-    <ContinueRoutineSheet userId="user-1" views={views} visible onClose={onClose} />,
-  );
+  renderWithProviders(<ContinueRoutineSheet views={views} visible onClose={onClose} />);
   return onClose;
 }
 
 describe("ContinueRoutineSheet", () => {
-  const mutateAsync = jest.fn();
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mutateAsync.mockResolvedValue(undefined);
-    mockUseUpdateRoutine.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    } as unknown as ReturnType<typeof useUpdateRoutine>);
   });
 
   it("lists the whole ordered step list with the next open step highlighted", () => {
@@ -197,77 +178,51 @@ describe("ContinueRoutineSheet", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new");
   });
 
-  it("offers the routine's reminder on completion and writes only on accept", async () => {
-    const records: RoutineToolRecords = {
-      moodLogs: [{ dayKey: currentDateKey() }],
-    };
-    const onClose = renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"]), records)]);
-
-    expect(screen.getByText("That was the last step")).toBeTruthy();
-    expect(screen.queryByText("Do next step")).toBeNull();
-
-    fireEvent.press(screen.getByText("Set a daily reminder"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith({
-        id: "r-1",
-        patch: expect.objectContaining({
-          reminderEnabled: true,
-          reminderHour: expect.any(Number),
-          reminderMinute: expect.any(Number),
-          reminderTimezone: "Europe/Sofia",
-        }),
-      });
-    });
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-  });
-
-  it("never writes reminder fields on decline", () => {
-    const records: RoutineToolRecords = {
-      moodLogs: [{ dayKey: currentDateKey() }],
-    };
-    const onClose = renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"]), records)]);
-
-    fireEvent.press(screen.getByText("Not now"));
-
-    expect(mutateAsync).not.toHaveBeenCalled();
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  // The sheet's DEFENSIVE contract, not an app path (#1542): the FAB is the
-  // sheet's only mount point and it passes `scheduledViews`, so an on-demand
-  // routine never actually arrives here - routine-fab.test.tsx pins that. This
-  // test hands one in directly to prove the guard holds if that ever widens, so
-  // the #102 rule (on-demand routines never nudge) cannot be lost by accident.
+  // The completion moment states the record and stops (ADR-0008, ADR-0010,
+  // #2488). One branch serves every completed routine - reminder off, reminder
+  // on, on-demand - and it holds the body and a Close, nothing to answer. The
+  // routine's reminder is manual only, set from the routine's own editor.
   //
-  // ☠️ `scheduledToday` MUST stay false: an on-demand view with
-  // `scheduledToday: true` is a state `useRoutinesToday` can never build
-  // (`isScheduledOn` returns false for on-demand before anything else), and
-  // pinning the guard against an impossible input proves nothing.
-  it("skips the offer for an on-demand routine handed in directly (#102)", () => {
-    const records: RoutineToolRecords = {
-      moodLogs: [{ dayKey: currentDateKey() }],
-    };
-    renderSheet([
-      view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records, false),
-    ]);
+  // ☠️ The pin is the CONTROL COUNT, not the absence of the old strings: the
+  // five `sheet.reminder*` keys are gone from both locales, so a
+  // `queryByText("Set a daily reminder")` would be null however the sheet
+  // behaved. An accept, a decline or a time field can only come back as
+  // another pressable, and the count is what notices.
+  //
+  // ☠️ `scheduledToday` MUST stay false for the on-demand row: an on-demand
+  // view with `scheduledToday: true` is a state `useRoutinesToday` can never
+  // build (`isScheduledOn` returns false for on-demand before anything else),
+  // and pinning against an impossible input proves nothing. #102 - on-demand
+  // routines never nudge - is enforced upstream by the FAB's scheduled-today
+  // filter, and routine-fab.test.tsx pins it there by name.
+  it.each([
+    ["a reminder-off routine", false, "daily", true],
+    ["a reminder-on routine", true, "daily", true],
+    ["an on-demand routine", false, "on-demand", false],
+  ] as const)(
+    "shows the record and a Close, and asks nothing, for %s",
+    (_label, reminderEnabled, cadence, scheduledToday) => {
+      const records: RoutineToolRecords = {
+        moodLogs: [{ dayKey: currentDateKey() }],
+      };
+      renderSheet([
+        view(
+          makeRoutine("r-1", "Morning reset", ["mood"], reminderEnabled, cadence),
+          records,
+          scheduledToday,
+        ),
+      ]);
 
-    // Completion state shows, but an on-demand routine never nudges - so no
-    // reminder offer, just the Close button (same branch as reminderEnabled).
-    expect(screen.getByText("That was the last step")).toBeTruthy();
-    expect(screen.queryByText("Set a daily reminder")).toBeNull();
-    expect(screen.queryByText("Not now")).toBeNull();
-    expect(screen.getByText("Close")).toBeTruthy();
-  });
+      expect(screen.getByText("That was the last step")).toBeTruthy();
+      expect(
+        screen.getByText(`"Morning reset" came together today. There's nothing more to do here.`),
+      ).toBeTruthy();
+      expect(screen.queryByText("Do next step")).toBeNull();
 
-  it("skips the offer when the routine already has its reminder set", () => {
-    const records: RoutineToolRecords = {
-      moodLogs: [{ dayKey: currentDateKey() }],
-    };
-    renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], true), records)]);
-
-    expect(screen.getByText("That was the last step")).toBeTruthy();
-    expect(screen.queryByText("Set a daily reminder")).toBeNull();
-    expect(screen.getByText("Close")).toBeTruthy();
-  });
+      // Everything pressable on the completed sheet: the backdrop, the header's
+      // X, and the one Close button - the only one carrying a label of its own.
+      expect(screen.getAllByRole("button")).toHaveLength(3);
+      expect(screen.getAllByText("Close")).toHaveLength(1);
+    },
+  );
 });

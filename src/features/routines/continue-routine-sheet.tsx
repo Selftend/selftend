@@ -4,23 +4,18 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
-import { TimeField } from "@/src/components/app/time-field";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useUpdateRoutine } from "@/src/features/routines/queries";
 import { routeForTool } from "@/src/features/routines/tool-routes";
 import {
   firstOpenRoutineView,
   type RoutineTodayView,
 } from "@/src/features/routines/use-routines-today";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { getReminderTimeZone } from "@/src/lib/notifications";
-import { clampTime, roundToNearestHalfHour } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
 
 interface ContinueRoutineSheetProps {
-  userId: string;
   /** Scheduled-today routines only (#104) - the FAB passes `scheduledViews`. */
   views: RoutineTodayView[];
   visible: boolean;
@@ -38,11 +33,10 @@ interface ContinueRoutineSheetProps {
 // "Do next step" CTA (order stays advisory). When several routines have open
 // steps, it starts on the first by routine order and a chip row switches
 // between them. Once the shown routine derives complete while the sheet is
-// open, it becomes a gentle completion sheet OFFERING the routine's own daily
-// reminder - a dismissible opt-in that writes reminder fields only on accept,
-// never forced (nothing changes on decline/close).
+// open, it becomes a completion sheet that states the record and stops: the
+// body, and a Close. It asks for nothing - the routine's reminder is manual
+// only, set from the routine's own editor (ADR-0008, ADR-0010, #2488).
 export function ContinueRoutineSheet({
-  userId,
   views,
   visible,
   initialRoutineId = null,
@@ -50,11 +44,8 @@ export function ContinueRoutineSheet({
 }: ContinueRoutineSheetProps) {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
-  const updateRoutine = useUpdateRoutine(userId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [reminderTime, setReminderTime] = useState(() => roundToNearestHalfHour(new Date()));
-  const [reminderError, setReminderError] = useState<string | undefined>();
 
   // Pin the shown routine when the sheet opens (firstOpenRoutineView - the
   // same selection the FAB counts, #91) so it stays put if it completes
@@ -64,10 +55,7 @@ export function ContinueRoutineSheet({
   const [prevVisible, setPrevVisible] = useState(visible);
   if (visible !== prevVisible) {
     setPrevVisible(visible);
-    if (!visible) {
-      setSelectedId(null);
-      setReminderError(undefined);
-    }
+    if (!visible) setSelectedId(null);
   }
   if (visible && selectedId === null) {
     setSelectedId(
@@ -99,25 +87,6 @@ export function ContinueRoutineSheet({
     if (!day.nextStep) return;
     onClose();
     pushWithOrigin(routeForTool(day.nextStep.toolId));
-  }
-
-  async function acceptReminder() {
-    setReminderError(undefined);
-    const { hour, minute } = clampTime(reminderTime);
-    try {
-      await updateRoutine.mutateAsync({
-        id: routine.id,
-        patch: {
-          reminderEnabled: true,
-          reminderHour: hour,
-          reminderMinute: minute,
-          reminderTimezone: getReminderTimeZone(),
-        },
-      });
-      onClose();
-    } catch {
-      setReminderError(t("sheet.reminderSaveError"));
-    }
   }
 
   return (
@@ -200,55 +169,21 @@ export function ContinueRoutineSheet({
                   </Text>
                 </View>
 
-                {/* The reminder offer, or the plain close when there is nothing
-                    to offer. The `on-demand` disjunct is DEFENCE IN DEPTH, not
-                    a live path (#1542): an on-demand routine cannot reach here,
-                    because the FAB - the sheet's only mount point - passes
-                    `scheduledViews`, and `isScheduledOn` keeps on-demand off
-                    every schedule (#104). It stays because the rule it guards is
-                    a product guardrail - on-demand routines never nudge (#102) -
-                    so widening the sheet's input beyond scheduled-today cannot
-                    silently start nudging them. The upstream filter is where the
-                    rule is really enforced; routine-fab.test.tsx pins it, in
-                    "scheduled-today filtering (#104)" and in "the reminder offer
-                    never reaches an on-demand routine (#102)". */}
-                {routine.reminderEnabled || routine.cadence === "on-demand" ? (
-                  <Button variant="outline" onPress={onClose}>
-                    <Text>{t("sheet.close")}</Text>
-                  </Button>
-                ) : (
-                  <View className="gap-3 rounded-2xl border border-border bg-muted/40 p-4">
-                    <Text variant="muted" className="text-xs">
-                      {t("sheet.reminderOffer")}
-                    </Text>
-                    <TimeField
-                      value={reminderTime}
-                      onChange={setReminderTime}
-                      disabled={updateRoutine.isPending}
-                      accessibilityLabel={t("sheet.reminderTimeLabel")}
-                    />
-                    {reminderError ? (
-                      <Text className="text-xs text-destructive">{reminderError}</Text>
-                    ) : null}
-                    <View className="flex-row gap-3">
-                      <Button
-                        className="flex-1"
-                        disabled={updateRoutine.isPending}
-                        onPress={() => void acceptReminder()}
-                      >
-                        <Text>{t("sheet.reminderAccept")}</Text>
-                      </Button>
-                      <Button
-                        className="flex-1"
-                        variant="outline"
-                        disabled={updateRoutine.isPending}
-                        onPress={onClose}
-                      >
-                        <Text>{t("sheet.reminderDecline")}</Text>
-                      </Button>
-                    </View>
-                  </View>
-                )}
+                {/* One branch for every completed routine, whatever its
+                    cadence and whether its reminder is on or off: the record,
+                    and a way out. The offer that used to sit here - "this
+                    routine can nudge you once a day", with a time field, an
+                    accept and a "Not now" that wrote nothing and so came back
+                    every time - is gone (#2488). The completion moment carries
+                    no ask (ADR-0008); every reminder but the general one is
+                    manual only (ADR-0010), and this routine's manual door is
+                    the Daily reminder section of its own editor. On-demand
+                    routines never nudge (#102): with no ask here, that rule
+                    rests where it was always really enforced, on the FAB's
+                    scheduled-today filter - pinned in routine-fab.test.tsx. */}
+                <Button variant="outline" onPress={onClose}>
+                  <Text>{t("sheet.close")}</Text>
+                </Button>
               </View>
             ) : (
               <>
