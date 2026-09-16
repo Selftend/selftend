@@ -523,6 +523,10 @@ describe("Meditation reflection (7b, after)", () => {
 
 describe("the ambient bed (#1742)", () => {
   const rain = ambientSoundLookup.rain.asset;
+  // The web loop window is cut from the bed's authored length (`docs/sound.md`
+  // §3.1.6), so the lane is handed it alongside the asset - read off the catalogue
+  // rather than written out, because a re-encode moves the number and not this test.
+  const rainSeconds = ambientSoundLookup.rain.nominalSeconds;
   const withRain = () => {
     mockPreferences.data = { meditationAmbientSoundId: "rain", meditationAmbientVolume: 0.3 };
   };
@@ -545,7 +549,7 @@ describe("the ambient bed (#1742)", () => {
     renderWithProviders(<MeditationSitScreen />);
 
     expect(mockLane.play).toHaveBeenCalledTimes(1);
-    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true);
+    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true, rainSeconds);
   });
 
   it("stops the bed when the sit is finished early", async () => {
@@ -598,7 +602,7 @@ describe("the ambient bed (#1742)", () => {
     expect(mockLane.play).not.toHaveBeenCalled();
 
     fireEvent.press(screen.getByText("Resume"));
-    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true);
+    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true, rainSeconds);
   });
 });
 
