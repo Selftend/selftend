@@ -314,6 +314,6 @@ describe("useDbtProgram - the derived status", () => {
     withPreferences({ dbtProgramCompletedAt: COMPLETED_AT });
 
     const { result } = renderHook(() => useDbtProgram("user-1"));
-    expect(result.current.program.status).toBe("not_started");
+    expect(result.current.program.status).toBe("not_in_progress");
   });
 });
