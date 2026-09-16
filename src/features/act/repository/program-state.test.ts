@@ -17,7 +17,6 @@ const ROW = {
   myths_acknowledged: true,
   onboarding_completed_at: "2026-05-01T00:00:00.000Z",
   last_check_in_at: "2026-05-09T00:00:00.000Z",
-  preferred_check_in_time: "08:00",
   created_at: "2026-05-01T00:00:00.000Z",
   updated_at: "2026-05-09T00:00:00.000Z",
 };
@@ -67,7 +66,6 @@ describe("program-state repository", () => {
     expect(payload).not.toHaveProperty("primary_concerns");
     expect(payload).not.toHaveProperty("onboarding_completed_at");
     expect(payload).not.toHaveProperty("last_check_in_at");
-    expect(payload).not.toHaveProperty("preferred_check_in_time");
     expect(result).toMatchObject({ userId: "u1", mythsAcknowledged: true });
   });
 
@@ -83,7 +81,6 @@ describe("program-state repository", () => {
       mythsAcknowledged: true,
       onboardingCompletedAt: "2026-05-01T00:00:00.000Z",
       lastCheckInAt: "2026-05-09T00:00:00.000Z",
-      preferredCheckInTime: "08:00",
     });
 
     const payload = (insert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
@@ -94,7 +91,6 @@ describe("program-state repository", () => {
       myths_acknowledged: true,
       onboarding_completed_at: "2026-05-01T00:00:00.000Z",
       last_check_in_at: "2026-05-09T00:00:00.000Z",
-      preferred_check_in_time: "08:00",
     });
   });
 

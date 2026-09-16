@@ -6,7 +6,7 @@ import { SEED_USERS, createServiceClient, deleteAllActLogsForUser, signInAs } fr
 // - primary_concerns (text[]) round-trips plaintext through the same `act_program_state` name,
 //   while `act_program_state_data` holds only ciphertext (primary_concerns_enc).
 // - pass-through columns survive a round-trip: active_principles (text[], PLAINTEXT),
-//   myths_acknowledged, preferred_check_in_time (PLAINTEXT structured HH:mm), last_check_in_at.
+//   myths_acknowledged, last_check_in_at.
 // - UPSERT: act_program_state is a per-user singleton (PK user_id). A second INSERT with the same
 //   user merges (the INSTEAD OF INSERT trigger's ON CONFLICT (user_id) DO UPDATE) rather than
 //   erroring - the upsertACTProgramState semantics formerly carried by PostgREST upsert.
@@ -20,7 +20,6 @@ function cipherToText(value: unknown): string {
 
 const CONCERNS = ["secret-marker-CON-a", "secret-marker-CON-b"];
 const PRINCIPLES = ["defusion", "acceptance"];
-const CHECK_IN = "08:30";
 
 describe("act_program_state encrypted view (integration)", () => {
   let alice: SupabaseClient;
@@ -44,7 +43,6 @@ describe("act_program_state encrypted view (integration)", () => {
       active_principles: PRINCIPLES,
       primary_concerns: CONCERNS,
       myths_acknowledged: true,
-      preferred_check_in_time: CHECK_IN,
     };
   }
 
@@ -56,14 +54,11 @@ describe("act_program_state encrypted view (integration)", () => {
       active_principles: PRINCIPLES,
       primary_concerns: CONCERNS,
       myths_acknowledged: true,
-      preferred_check_in_time: CHECK_IN,
     });
 
     const atRest = await admin
       .from("act_program_state_data")
-      .select(
-        "primary_concerns_enc, active_principles, preferred_check_in_time, myths_acknowledged",
-      )
+      .select("primary_concerns_enc, active_principles, myths_acknowledged")
       .eq("user_id", SEED_USERS.alice.id)
       .single();
     expect(atRest.error).toBeNull();
@@ -71,7 +66,6 @@ describe("act_program_state encrypted view (integration)", () => {
     expect(cipherToText(atRest.data?.primary_concerns_enc)).not.toContain("secret-marker-CON");
     // Pass-through columns stay plaintext on the base table.
     expect(atRest.data?.active_principles).toEqual(PRINCIPLES);
-    expect(atRest.data?.preferred_check_in_time).toBe(CHECK_IN);
     expect(atRest.data?.myths_acknowledged).toBe(true);
   });
 
