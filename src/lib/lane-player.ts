@@ -145,6 +145,13 @@ function ensureWebAudioSession() {
 // BACK costs no decode. A third bed evicts the oldest. ~10.6 MB decoded per bed at
 // 44.1 kHz, so ≤ ~23 MB resident. The promise is cached rather than the buffer, so two
 // plays racing the same cold bed decode it once.
+//
+// ⚠️ Page-global, while W5 is written per lane. They agree because exactly ONE looping
+// lane exists: the breath-texture lane was retired in 2026-08 and every remaining
+// `BREATH_SOUNDS` clip is a one-shot, which never enters the graph. A second LOOPING
+// lane would make three buffers resident and this cache would need a per-lane key.
+// Eviction is safe either way - a live `AudioBufferSourceNode` holds its own buffer, so
+// dropping the entry costs a later re-decode and never interrupts playback.
 const DECODE_CACHE_SIZE = 2;
 const decodeCache = new Map<string, Promise<AudioBuffer>>();
 

@@ -383,7 +383,7 @@ function webHarness() {
   const elements: FakeAudioElement[] = [];
   let audio: FakeWebAudio;
 
-  const install = (options?: { withoutConstructor?: boolean }) => {
+  const install = (options?: Parameters<typeof installFakeWebAudio>[0]) => {
     jest.resetModules();
     setPlatformOS("web");
     audio = installFakeWebAudio(options);
@@ -587,6 +587,34 @@ describe("a looping bed on web", () => {
     expect(web.elements[0].pause).toHaveBeenCalledTimes(1);
   });
 
+  it("claims the playback audio session before the first looping bed, and only for it", async () => {
+    // §3.1.8. Without it an iOS Safari graph would obey the mute switch and be
+    // interrupted on backgrounding - parity the element has had all along, and what
+    // the native app asks for with `playsInSilentMode`.
+    const lane = web.createLane();
+    expect(web.audio.audioSessionType).toBe("auto");
+
+    void lane.play(1, 0.7, false);
+    await web.flush();
+    // A one-shot never reaches the graph, so it never claims the session either.
+    expect(web.audio.audioSessionType).toBe("auto");
+
+    void lane.play(2, 0.5, true);
+    await web.flush();
+    expect(web.audio.audioSessionType).toBe("playback");
+  });
+
+  it("plays on in a browser that has no audioSession at all", async () => {
+    web.elements.length = 0;
+    web.install({ withAudioSession: false });
+    const lane = web.createLane();
+    void lane.play(1, 0.5, true);
+    await web.flush();
+    expect(web.audio.audioSessionType).toBeUndefined();
+    expect(web.audio.sources).toHaveLength(1);
+    expect(web.audio.sources[0].loop).toBe(true);
+  });
+
   it("keeps two decoded beds resident and re-decodes the third only once evicted", async () => {
     // W5: the playing bed and the previous one. A swap BACK is free; a third bed
     // evicts the oldest, and coming back to it costs one decode.
@@ -698,6 +726,30 @@ describe("a bed swap on web", () => {
     expect(web.audio.liveSources()).toEqual([web.audio.sources[2]]);
     for (const source of web.audio.sources.slice(0, 2))
       expect(source.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("aims setVolume() at the rising gain only, leaving the falling one alone", async () => {
+    const lane = web.createLane();
+    void lane.play(1, 0.5, true);
+    await web.flush();
+    jest.advanceTimersByTime(LOOP_FADE_MS);
+    void lane.play(2, 0.4, true);
+    await web.flush();
+    jest.advanceTimersByTime(LOOP_FADE_MS / 4);
+    const [falling, rising] = web.audio.gains;
+    const quarter = falling.gain.value;
+
+    void lane.setVolume(0.1);
+    // The falling gain keeps its own schedule and lands on 0 exactly one ramp after
+    // the swap began - not later, and not sooner.
+    jest.advanceTimersByTime(LOOP_FADE_MS / 4);
+    const half = falling.gain.value;
+    expect(half).toBeLessThan(quarter);
+    expect(half).toBeGreaterThan(0);
+    jest.advanceTimersByTime(LOOP_FADE_MS / 2);
+    expect(falling.gain.value).toBe(0);
+    expect(web.audio.sources[0].stop).toHaveBeenCalledTimes(1);
+    expect(rising.gain.value).toBeCloseTo(0.1, 6);
   });
 
   it("fades both halves to 0 on stop() and suspends the context only once both are gone", async () => {

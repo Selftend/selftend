@@ -65,6 +65,8 @@ export interface FakeWebAudio {
   decodeError: Error | null;
   /** When true, `resume()` leaves the context `suspended`. */
   resumeFails: boolean;
+  /** The iOS Safari mute-switch shim (§3.1.8), or `undefined` in a browser without it. */
+  readonly audioSessionType: string | undefined;
 }
 
 /**
@@ -90,7 +92,8 @@ type Globals = {
  */
 export function installFakeWebAudio({
   withoutConstructor = false,
-}: { withoutConstructor?: boolean } = {}): FakeWebAudio {
+  withAudioSession = true,
+}: { withoutConstructor?: boolean; withAudioSession?: boolean } = {}): FakeWebAudio {
   const fake: FakeWebAudio = {
     contexts: [],
     get context() {
@@ -103,6 +106,9 @@ export function installFakeWebAudio({
     durations: new Map(),
     decodeError: null,
     resumeFails: false,
+    get audioSessionType() {
+      return (globalThis as unknown as Globals).navigator?.audioSession?.type;
+    },
   };
 
   // Every decode is keyed back to its URL so `durations` can differ per bed; the
@@ -168,6 +174,14 @@ export function installFakeWebAudio({
     };
     fake.contexts.push(ctx);
     return ctx;
+  }
+
+  // Safari's, and only Safari's. `auto` is the platform default the lane overrides.
+  if (withAudioSession) {
+    if (!g.navigator) g.navigator = {};
+    g.navigator.audioSession = { type: "auto" };
+  } else if (g.navigator) {
+    delete g.navigator.audioSession;
   }
 
   if (withoutConstructor) {
