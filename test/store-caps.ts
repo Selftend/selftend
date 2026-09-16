@@ -18,6 +18,21 @@
  * than an omission - see store/README.md. The file is a verified subset;
  * anything never read stays absent rather than guessed at.
  *
+ * ☠️ **`promoText` LEFT this object on #2540, and the sibling suite's first
+ * assertion is the whole argument** - it is named "commits only fields whose
+ * live value was actually read", and it couples this object to
+ * `store/apple-info.json`'s keys exactly. Promotional Text is **empty** in App
+ * Store Connect (read 2026-09-16, 170 of 170 free), so the value committed
+ * here since #1611 had never matched anything: it was the decided copy, not a
+ * read one, which is the one thing store/README.md forbids. The weekly guard
+ * had been reporting it as drift every Monday and there was nothing to drift
+ * from.
+ *
+ * ⚠️ **The 170 cap and the decided copy are not lost** - both stay in
+ * `docs/positioning.md` § *The short form*, which is where decisions live. This
+ * object mirrors what App Store Connect actually holds. If the copy is ever
+ * entered there, the field comes back here in the same change.
+ *
  * ☠️ **`description` used to sit in that sentence too, and the reason was
  * wrong** (#2524). It said only the first line and second paragraph had ever
  * been captured, so committing a truncated description would turn the weekly
@@ -46,5 +61,4 @@
 export const APP_STORE_CAPS: Record<string, number> = {
   subtitle: 30,
   description: 4000,
-  promoText: 170,
 };
