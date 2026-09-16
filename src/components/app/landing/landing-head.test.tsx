@@ -142,8 +142,10 @@ describe("the structured-data block (#2296)", () => {
   // `inLanguage` is read back from the rendered `<html lang>` the site head
   // owns, never from a literal, so the block cannot disagree with the page
   // it sits in. `isAccessibleForFree` restates the landing's visible "Free ·
-  // Open source · Private" and "No ads, no subscriptions" - a boolean, so it
-  // is the one value here no string pin can tie to rendered copy.
+  // Open source · Private" and "No ads, no subscriptions" - a boolean, so no
+  // assertion here can tie the value itself to rendered copy. What can be
+  // tied is its justification, and `landing-screen.test.tsx` ties it, where
+  // that copy renders: blank the hero eyebrow and that case fails.
   it("pins the WebSite's inLanguage to the rendered <html lang>, and says the site is free", () => {
     render(
       <>
