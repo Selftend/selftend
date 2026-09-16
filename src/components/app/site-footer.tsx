@@ -40,20 +40,25 @@ interface SiteFooterLink {
  * (§ 7.2): a second entry beside it would be a call to action wearing a footer.
  *
  * The rows: the crisis row first (it IS the site's link to `/crisis`; the nav
- * list omits it), then the explainers (`/meditation` since #2469; `/habits`
- * arrives on #2470, and the three module explainers land with their modules'
- * return), then the policies. No headings over the rows: the order carries the
- * grouping, and a heading would be copy the list does not need.
+ * list omits it), then the explainers (`/meditation` since #2469 and `/habits`
+ * since #2470 - the two the module gate does not reach; the three module
+ * explainers land with their modules' return), then the policies. No headings
+ * over the rows: the order carries the grouping, and a heading would be copy the
+ * list does not need.
  *
  * ☠️ `/meditation` is labelled `meditation:module.home.title` ("Meditation"),
  * NOT the learn screen's `module.learn.title` ("Learn the framework"). The
  * anchor-text rule takes the destination's H1, and that page's H1 is the
  * module's name precisely because an instruction would name no topic here, on
  * every public page (docs/brand-result.md § 3.2's one named exception).
+ * `/habits` needs no such exception: its learn screen is already titled with a
+ * name, "Habit building - core ideas" (`habits:learn.indexTitle`), which is why
+ * the rule applies to it unchanged.
  */
 export const SITE_FOOTER_LINKS: readonly SiteFooterLink[] = [
   { href: "/crisis", label: "common:safety.openCrisis", row: "crisis" },
   { href: "/meditation", label: "meditation:module.home.title", row: "explainers" },
+  { href: "/habits", label: "habits:learn.indexTitle", row: "explainers" },
   { href: "/faq", label: "policies:faq.pageTitle", row: "policies" },
   { href: "/privacy", label: "policies:privacy.pageTitle", row: "policies" },
   { href: "/terms", label: "policies:terms.pageTitle", row: "policies" },
@@ -70,9 +75,17 @@ interface SiteFooterProps {
 function FooterLink({ link }: { link: SiteFooterLink }) {
   // Every namespace the map above labels a row from, declared rather than
   // relied on: the footer's labels are keys belonging to other features, so an
-  // explainer page arriving with its own namespace (#2470 and the module pages
-  // after it) adds one entry here beside its row.
-  const { t } = useTranslation(["common", "meditation", "policies", "security"]);
+  // explainer page arriving with its own namespace (the module pages still to
+  // come) adds one entry here beside its row.
+  //
+  // ⚠️ Tidy, but NOT load-bearing, and no test here can pin it: every one of
+  // the twenty namespaces is registered in `ns` AND bundled in `resources` by
+  // `src/i18n/index.ts`, so a namespace-PREFIXED key resolves whatever this
+  // array says - this argument only sets the default namespace for unprefixed
+  // keys, of which this footer has none. Verified by breaking it: dropping
+  // "meditation" here still rendered "Meditation". A guard written against the
+  // omission would be green with the omission present.
+  const { t } = useTranslation(["common", "habits", "meditation", "policies", "security"]);
 
   return (
     <LinkButton href={link.href} variant="link" size="sm">

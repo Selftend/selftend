@@ -129,6 +129,7 @@ This module follows the contract in `tools.md`:
 | `/tools/habits/history`      | Private history - chronological log of ticks across all habits.                                                                         |
 | `/tools/habits/learn`        | Learn index - the ten core-idea cards. Linked from the overview's Core ideas row.                                                       |
 | `/tools/habits/learn/[slug]` | Single learn card (1% compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits).                                |
+| `/habits`                    | **Public** - the same ten core ideas, readable with no account, all ten bodies on one page ([indexability.md](../indexability.md) § 3). |
 
 Onboarding has no route of its own. `HabitsOnboarding` is a modal, opened from the
 header's `info` action; the standalone `/tools/habits/onboarding` route was removed
