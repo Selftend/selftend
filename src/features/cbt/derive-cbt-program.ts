@@ -11,6 +11,7 @@ import type { ThoughtRecord } from "@/src/features/cbt/types";
 import type { ExposureHierarchy } from "@/src/features/exposure/types";
 import type { Goal } from "@/src/features/goals/types";
 import type { MeditationSession } from "@/src/features/meditation/types";
+import { isGraduated } from "@/src/features/modules/program-graduation";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 import type { MoodLog } from "@/src/features/mood/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
@@ -135,7 +136,7 @@ export function deriveCbtProgram(inputData: DeriveProgramInput): CbtProgramView 
       };
 
   return {
-    status: completedAt ? "graduated" : "in_progress",
+    status: isGraduated(startedAt, completedAt) ? "graduated" : "in_progress",
     startedAt,
     summaryStats,
     phaseIndex,

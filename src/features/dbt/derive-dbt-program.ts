@@ -14,6 +14,7 @@ import type {
   Script,
   WiseMindCheckin,
 } from "@/src/features/dbt/types";
+import { isGraduated } from "@/src/features/modules/program-graduation";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 
 /**
@@ -119,7 +120,7 @@ export function deriveDbtProgram(input: DeriveDbtProgramInput): DbtProgramView {
       summaryStats,
     };
   }
-  if (input.completedAt) {
+  if (isGraduated(input.startedAt, input.completedAt)) {
     return {
       status: "graduated",
       startedAt: input.startedAt,

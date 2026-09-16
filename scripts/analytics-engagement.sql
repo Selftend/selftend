@@ -352,8 +352,10 @@ create temp view core_tool_labels(feature) as values
 --
 -- ☠️ AND A CAVEAT THAT APPLIES TO EVERY FACT DATED FROM `user_preferences`:
 -- those columns are STATE, NOT EVENTS. `abandonProgram` NULLS
--- `*_program_started_at`, replay clears `*_program_completed_at`, and
--- `reminder_consent_updated_at` holds the time of the LAST change, so a
+-- `*_program_started_at`; `*_program_completed_at` now SURVIVES every writer
+-- (#2530, ADR-0012) but still holds only the MOST RECENT completion, so a
+-- person who finishes, replays and finishes again overwrites their first one;
+-- and `reminder_consent_updated_at` holds the time of the LAST change, so a
 -- consent later revoked is not visible at all. A `min()` over current state can
 -- therefore be LATER than the truth, and a fact can fire a month late - or, if
 -- everyone who held it has since reverted, not yet at all. Facts dated from
@@ -759,7 +761,7 @@ group by 1 order by 1;
 \echo '    person who started, got part way and left is counted at NO step here, and is absent from the'
 \echo '    denominator too. This table is a snapshot of runs in progress and runs completed - it is NOT a'
 \echo '    cohort of everyone who ever began, and the drop-off it shows is therefore OPTIMISTIC. Replaying'
-\echo '    likewise clears completed_at, so a graduate who starts again stops counting as completed.'
+\echo '    no longer clears completed_at (#2530), so a graduate who starts again still counts as completed.'
 -- #2375. None of this was reported anywhere before, which is an odd gap for the
 -- part of the product AGENTS.md names as core MVP alongside the everyday tools.
 --
@@ -774,7 +776,9 @@ group by 1 order by 1;
 -- where it was, so abandonment is not merely unreported - it is ERASED, and the
 -- person disappears from both the numerator and the denominator. Someone who
 -- quit at phase 3 is indistinguishable here from someone who never began.
--- `replayProgram` clears completed_at for the same reason.
+-- ⚠️ `replayProgram` NO LONGER clears completed_at (#2530, ADR-0012) - that half
+-- is fixed, and a graduate who starts again still counts as completed. The rest
+-- of this note stands only until #2552 teaches the section to read the fossil.
 --
 -- ⚠️ So do not describe this as a funnel over everyone who ever started, and do
 -- not use it to argue that stalling is measured: it shows how far the people
