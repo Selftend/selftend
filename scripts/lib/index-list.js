@@ -43,10 +43,23 @@ const SITE_ORIGIN = "https://selftend.org";
  * § 7.6). Adding a public route means adding it here; nothing else makes a
  * page findable, and nothing off the list is (§ 3) - and the footer's pin then
  * fails until the footer knows the route, which is the point.
+ *
+ * `/meditation` sits between `/crisis` and `/faq` because the explainers are
+ * the nav list's first row and the policies its second (#2469). Each entry's
+ * reason for existing is recorded in docs/indexability.md § 3, not here: the
+ * list is machinery, and motive is invisible in the finished artifact unless it
+ * is written down somewhere a person reads (docs/brand-result.md § 0).
+ *
+ * ☠️ **One row here drags THREE test pins, not one**: `test/index-list.test.ts`'s
+ * literal list, and `index-list.test.js`'s export fixture AND its expected
+ * sitemap - plus the footer's map and its two pins. A focused jest run missed
+ * the second file in this directory on the #2404 prototype, and the pre-commit
+ * hook caught it with seven tests red.
  */
 const INDEX_LIST = Object.freeze([
   "/",
   "/crisis",
+  "/meditation",
   "/faq",
   "/privacy",
   "/terms",
