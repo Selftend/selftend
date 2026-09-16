@@ -24,11 +24,13 @@ import { STRUCTURED_DATA_TYPE, landingStructuredData } from "@/src/lib/structure
  * the root layout - so `index.html` is the one exported file that carries it.
  * Its address and description are the same `url` and `description` reads the
  * tags above render, so the block cannot drift from them, and it follows the
- * language the same way. A JSON-LD script is a data block: the CSP's
- * inline-script hashes never apply to it.
+ * language the same way - its `inLanguage` is the `i18n.language` the root
+ * layout's `SiteHead` renders as `<html lang>` (§ 4.4; brand-result.md § 6,
+ * #2468). A JSON-LD script is a data block: the CSP's inline-script hashes
+ * never apply to it.
  */
 export function LandingHead() {
-  const { t } = useTranslation("auth");
+  const { t, i18n } = useTranslation("auth");
 
   if (Platform.OS !== "web") {
     return null;
@@ -47,7 +49,7 @@ export function LandingHead() {
       <meta property="og:url" content={url} />
       <link rel="canonical" href={url} />
       <script type={STRUCTURED_DATA_TYPE}>
-        {JSON.stringify(landingStructuredData({ url, description }))}
+        {JSON.stringify(landingStructuredData({ url, description, language: i18n.language }))}
       </script>
     </Head>
   );
