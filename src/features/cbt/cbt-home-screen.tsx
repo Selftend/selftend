@@ -128,7 +128,7 @@ export default function CbtHomeScreen() {
               stats={headerStats}
               actions={[
                 { type: "notifications", targetKey: "cbt" },
-                ...(program.status === "not_started"
+                ...(program.status === "not_in_progress"
                   ? [
                       {
                         type: "program" as const,

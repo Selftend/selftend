@@ -139,8 +139,11 @@ export function ProgramCard({
   // Graduated: the home screen shows ProgramGraduation separately
   if (program.status === "graduated") return null;
 
-  // Not started: show the start card
-  if (program.status === "not_started") {
+  // Not in progress: show the start card. ☠️ This branch covers someone who
+  // never began AND someone who began and left - the union carries no
+  // distinction between them on purpose (ADR-0012), and the card is identical
+  // either way.
+  if (program.status === "not_in_progress") {
     return (
       <View className={ACCENT_CLASSES.startContainer}>
         <View className="flex-row items-start gap-3">

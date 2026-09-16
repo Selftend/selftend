@@ -103,7 +103,9 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     void updatePreferences
       .mutateAsync({
         actProgramStartedAt: new Date().toISOString(),
-        actProgramCompletedAt: null,
+        // ☠️ `actProgramCompletedAt` is deliberately NOT nulled here. It means
+        // the last time this person finished ACT, and the fresh `startedAt`
+        // above retires it by itself (ADR-0012, #2530).
         actProgramPromptDismissedAt: null,
         actProgramPhaseIndex: 0,
         actProgramPhaseStartedAt: new Date().toISOString(),
@@ -133,7 +135,8 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     void updatePreferences
       .mutateAsync({
         actProgramStartedAt: null,
-        actProgramCompletedAt: null,
+        // ☠️ `actProgramCompletedAt` is deliberately NOT nulled: leaving a
+        // programme must not erase that you once finished it (ADR-0012).
         actProgramPromptDismissedAt: new Date().toISOString(),
       })
       .catch(() => undefined);
@@ -144,7 +147,8 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     void updatePreferences
       .mutateAsync({
         actProgramStartedAt: new Date().toISOString(),
-        actProgramCompletedAt: null,
+        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
+        // is a new run, not a retraction of the one that finished (ADR-0012).
         actProgramPromptDismissedAt: null,
         actProgramPhaseIndex: 0,
         actProgramPhaseStartedAt: new Date().toISOString(),

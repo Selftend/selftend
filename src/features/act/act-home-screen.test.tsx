@@ -83,7 +83,7 @@ function setCounts({
 }
 
 const defaultActProgram = {
-  status: "not_started" as const,
+  status: "not_in_progress" as const,
   startedAt: null,
   summaryStats: {
     choicePoints: 0,

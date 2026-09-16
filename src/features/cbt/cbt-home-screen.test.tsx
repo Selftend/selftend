@@ -114,7 +114,7 @@ function setupDefaultMocks() {
   });
   mockUseCbtProgram.mockReturnValue({
     program: {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       summaryStats: {
         thoughtRecords: 0,
@@ -180,7 +180,7 @@ describe("CbtHomeScreen onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({
       program: {
-        status: "not_started",
+        status: "not_in_progress",
         startedAt: null,
         summaryStats: {
           thoughtRecords: 0,

@@ -58,7 +58,7 @@ function setCounts(records: (number | undefined)[], sessions: number | undefined
 const prefetch = jest.fn();
 
 const NOT_STARTED = {
-  status: "not_started" as const,
+  status: "not_in_progress" as const,
   startedAt: null,
   phaseIndex: 0,
   totalPhases: 4,

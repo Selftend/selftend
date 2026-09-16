@@ -27,6 +27,7 @@ import { writeSnapshot } from "@/src/features/widgets/snapshot-store";
 import { changedWidgetIds } from "@/src/features/widgets/diff-snapshots";
 import { WIDGET_CATALOG } from "@/src/features/widgets/widget-catalog";
 import type { Snapshot, WidgetData } from "@/src/features/widgets/snapshot-types";
+import { isGraduated } from "@/src/features/modules/program-graduation";
 import type { UserPreferences } from "@/src/features/modules/types";
 import { useProgramWidgetTaskStatus } from "@/src/features/widgets/program-widget-status";
 
@@ -68,18 +69,27 @@ export function useWidgetSnapshotSync(
   // server counts the in-app widget and the journal hero use rather than the capped list (#323).
   const journalEntryCount = useJournalEntryCount(widgetUserId).data;
   const journalWordTotal = useJournalWordTotal(widgetUserId).data;
+  // ☠️ These gates read the RAW preference fields rather than the derivation, so
+  // they do NOT inherit `isGraduated` from `derive-*-program.ts` and have to
+  // apply it themselves. Since ADR-0012 a completion outlives the run that
+  // earned it, so the old `!completedAt` test would switch the RPC off for
+  // everyone who ever graduated - including the fresh run they just started.
   const cbtTaskStatuses = useProgramWidgetTaskStatus({
     userId: widgetUserId ?? "",
     module: "cbt",
     enabled: Boolean(
-      widgetUserId && preferences?.cbtProgramStartedAt && !preferences.cbtProgramCompletedAt,
+      widgetUserId &&
+      preferences?.cbtProgramStartedAt &&
+      !isGraduated(preferences.cbtProgramStartedAt, preferences.cbtProgramCompletedAt),
     ),
   }).data;
   const actTaskStatuses = useProgramWidgetTaskStatus({
     userId: widgetUserId ?? "",
     module: "act",
     enabled: Boolean(
-      widgetUserId && preferences?.actProgramStartedAt && !preferences.actProgramCompletedAt,
+      widgetUserId &&
+      preferences?.actProgramStartedAt &&
+      !isGraduated(preferences.actProgramStartedAt, preferences.actProgramCompletedAt),
     ),
   }).data;
 

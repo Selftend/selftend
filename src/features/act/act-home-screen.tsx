@@ -216,7 +216,7 @@ export default function ActHomeScreen() {
               stats={stats}
               actions={[
                 { type: "notifications", targetKey: "act" },
-                ...(program.status === "not_started"
+                ...(program.status === "not_in_progress"
                   ? [
                       {
                         type: "program" as const,
@@ -249,13 +249,15 @@ export default function ActHomeScreen() {
                 onDismiss={dismissGraduation}
                 onReplay={replayProgram}
               />
-            ) : program.status === "not_started" && promptDismissedAt ? null : (
+            ) : program.status === "not_in_progress" && promptDismissedAt ? null : (
               <ActProgramCard
                 program={program}
                 isPending={isUpdating}
                 onStart={startProgram}
                 onAdvance={advancePhase}
-                onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
+                onDismissStart={
+                  program.status === "not_in_progress" ? dismissProgramPrompt : undefined
+                }
                 onAbandon={
                   program.status === "in_progress"
                     ? () => setAbandonConfirmVisible(true)

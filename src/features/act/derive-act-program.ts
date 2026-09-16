@@ -15,6 +15,7 @@ import type {
   UrgeSurfLog,
   ValueEntry,
 } from "@/src/features/act/types";
+import { isGraduated } from "@/src/features/modules/program-graduation";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 
 export interface DeriveActProgramInput {
@@ -91,7 +92,7 @@ export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
 
   if (!input.startedAt) {
     return {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       phaseIndex: 0,
       totalPhases,
@@ -101,7 +102,7 @@ export function deriveActProgram(input: DeriveActProgramInput): ActProgramView {
       summaryStats,
     };
   }
-  if (input.completedAt) {
+  if (isGraduated(input.startedAt, input.completedAt)) {
     return {
       status: "graduated",
       startedAt: input.startedAt,

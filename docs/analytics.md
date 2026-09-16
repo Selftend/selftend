@@ -129,6 +129,11 @@ reports, not just the segment one where it was first implemented. It is a
 **false-precision control first** and a privacy control second: a printed "67%"
 that means two users out of three is the number that gets believed.
 
+⚠️ **That ordering describes the suppressed-count routes, not every route below.**
+Where a rate prints `0.0%` or `100.0%` the false-precision leg is not engaged at
+all — those two figures are exactly true, and are the least falsely-precise
+numbers these reports can print — and privacy is the only leg in play.
+
 It applies to slices only, **never to whole-population counts** — without that
 carve-out a blanket rule would print `<5` over the very trend the digest exists
 to show.
@@ -163,6 +168,137 @@ and the split has exactly two arms printed beside their own total, so
 suppressing one arm would leave it recoverable by subtraction. Half-suppressing
 a two-arm split is not a control. Where retention is cut by _arm_, in the same
 report, the rule applies normally.
+
+###### What the floor does not guarantee
+
+**The floor is a cell-size rule.** It reasons about how many people a cell
+counts — never about the cell's _value_, and never about what a reader derives
+from the cells printed _beside_ it. Four routes bound or recover a suppressed
+cell. They are written out because the rule's own comments asserted the opposite
+twice, and both sentences had to be deleted.
+
+⚠️ **This is the same rule stated once, not a second voice.** The two exempt
+blocks and the one carved-out section above are places the floor deliberately
+does **not apply**; the routes below are about the cells where it **does** apply
+and still does not deliver what its name suggests. Nothing here narrows either
+exemption or the carve-out. ☠️ **The gate-status carve-out is route 1 accepted
+with its eyes open**: the raw total it prints is exactly what route 1's
+subtraction runs against, and its own stated reason — half-suppressing a two-arm
+split is not a control — _is_ route 1's arithmetic, written down as a carve-out
+on one section before it was understood as a limit on the rule.
+
+**1 · Subtraction across an exhaustively printed partition.** ☠️ _A raw total
+beside a suppressed cell is not the defect — an exhaustively printed partition
+is._ A section is exposed when all three hold: its arms partition a population
+**exhaustively**; **every** arm prints; and that population's total prints
+**raw** somewhere in the same report. Three sections qualify today:
+`analytics-segment.sql` §3 and §4, and `analytics-onboarding.sql` §4. Every other
+suppressed cell in the three reports has a complement that is **never printed**,
+so there is nothing to subtract from. A future section self-classifies against
+the test; there is no review gate. The caveat prints beside each qualifying
+section from the shared `partition_caveat` block, because this document does not
+travel with the table.
+
+**2 · Repeated publication.** ⚠️ **Not written out yet** — it lands with
+[#2557](https://github.com/Selftend/selftend/issues/2557), which will also add
+its caveat to the reports. In outline: the digest publishes the same tables
+monthly, and what a cell that crosses the floor between publications discloses
+is **movement**, which is time-localised in a way a level is not.
+
+**3 · The value of a printed rate.** ⚠️ **Not written out yet** — it lands with
+[#2558](https://github.com/Selftend/selftend/issues/2558), which will also add
+its caveat to the one section it bites. In outline: `k_pct` withholds a rate
+whose numerator or denominator is too small, and never guards the rate's
+**value**.
+
+**4 · A small printed base.** Where a raw base caps a suppressed cell —
+`activated` cannot exceed `signups`, a numerator cannot exceed its denominator —
+the cell lies in `[1, min(4, b)]`. ⚠️ **Unlike the three above, this is a _row_
+property, decided by data at print time**, so no section can be listed as exposed
+or exempt: the same section is exposed on a week holding one account and not on
+one holding two hundred. It is **inert at b ≥ 4**, narrows at 2 or 3, and ☠️ **at
+b = 1 the cell is binary — `0` or `<5` — so the glyph pair is a one-bit readout
+of that single account.** At the bottom of the range the suppression is not
+narrowed by the base but **defeated** by it. The base prints raw under the
+whole-population carve-out above, so this route is the **price of a decision
+already taken and defended**, not a defect in the floor: the alternative is
+suppressing the very trend the digest exists to show.
+
+###### The bound, stated as a number
+
+`<5` publishes the two-sided interval **1..4**, because zero prints as `0`. So a
+hidden cell is **at most four values wide — always, and however many cells are
+hidden** — and collapses to **exactly one** whenever a recoverable remainder sits
+at either end of its range. ☠️ **The multi-cell case is therefore a _weaker_ form
+of the single-cell case, not a different kind of thing.**
+
+☠️ **Four is a maximum, not a guarantee.** The true bound is the **minimum over
+every applicable route**: route 4 bounds below four whenever a printed base is
+small, and route 3 is not bounded at all. Stating four unqualified would publish
+a limit two of these routes break.
+
+###### The worst case, composed
+
+☠️ Route 4 at `b = 1`, published into a digest that
+republishes the same tables monthly, is the strongest disclosure these reports
+admit: a cell flipping from `0` in one digest to `<5` in the next is an **exact,
+time-localised fact about one individual**, identified by cohort. It is written
+here rather than left for a reader to assemble from the routes, because a
+document that knows something it does not say is the same overclaiming in
+different clothes.
+
+###### What is not done about it, and why
+
+**The floor keeps printing counts, and no guard is added.** The options were
+priced on **preserving false precision**, not on maximising privacy, and on that
+criterion none of them pays:
+
+- **Dropping the count columns** closes a privacy hole by opening a
+  false-precision one: an empty arm's rate is `k_pct(0, 0)` → `-`, **the same
+  glyph a withheld percentage prints**, so a reader could no longer tell an empty
+  arm from a suppressed one.
+- **Complementary suppression** — the field's standard first answer — requires a
+  complement to print either `<5` (false, since a complement is by definition not
+  small) or a distinct marker (which cracks the suppression). It buys privacy
+  with the readable glyph, the wrong currency, and fails outright where one arm
+  is populated and the rest are zero.
+- **Collapsing arms** is free on every technical constraint and pays in the
+  axis's meaning: the arms exist to answer a question, and merging them answers
+  it with _we no longer ask_.
+- **Cross-release suppression consistency** — the field's standing remedy for
+  route 2 — would mean holding a cell suppressed after it passes four — **suppressing a large cell**, which runs into the same
+  marker wall as complementary suppression. ⚠️ Its collision with the reports'
+  statelessness is the _second_ reason, not the first: an architectural objection
+  can be engineered around, and this one cannot.
+- **Banding extreme rates** (`<10%` / `>90%`) is technically clean and fails on
+  purpose: an arm at 0% or 100% is the strongest segment signal the instrument
+  can produce — **it is the finding**.
+- **Bucketing or dropping small-base rows** is the field's _first_ recommendation
+  and the one place it fails for a product reason: on weekly trend data,
+  collapsing weeks destroys the trend and dropping rows is worse than suppressing
+  them.
+
+⚠️ **The floor is self-imposed and no user-facing copy promises k-anonymity** —
+`policies.json` denies advertising and analytics SDKs, profiling and third-party
+sharing, and product principle 7 says _avoid surveillance-style analytics_.
+Nothing here can break a user-facing commitment, and the floor has to be
+justified on that ground rather than on a promise.
+
+☠️ **The privacy leg is asymmetric by route out of the database.** On the digest
+and ad-hoc routes it is a self-imposed **discipline** — it withholds from a
+reader who can already `select` the rows. It is a **genuine control** only on
+onward quotation into public. The floor stays **uniform across routes**
+regardless: a public-safe render would be a mode nobody invokes when it is
+needed, and _the report is the instrument, not the judgement_.
+
+###### The marker pair is a choice, with a price
+
+An empty cell prints `0` and a withheld cell prints `<5`. ⚠️ Disclosure-control
+practice objects to distinct markers for zero and for a withheld cell, and the
+objection is recorded rather than dismissed: **visible zeros are exactly what
+make a hidden arm _exactly_ recoverable rather than merely bounded.** The pair is
+kept because an empty arm is information and a reader who cannot tell "none" from
+"withheld" has lost a real reading. This is a trade, not an oversight.
 
 `npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
 2026-07-14). It covers: activation (first row in any user-content table, ever
@@ -249,9 +385,12 @@ report is read by people who did not write it:
   and leaves `phase_index`, so a person who quit part way is counted at no step
   and is absent from the denominator too. The table is a snapshot of runs in
   progress and runs completed, so the drop-off it shows is **optimistic**.
-  Replaying clears `completed_at`, so a graduate who begins again stops counting
-  as completed. Fixing this means changing what the app writes, not what the
-  report reads.
+  Replaying **no longer** clears `completed_at`
+  ([#2530](https://github.com/Selftend/selftend/issues/2530), ADR-0012), so a
+  graduate who begins again still counts as having completed. Fixing the
+  remaining blindness to abandonment means changing what the report reads, since
+  the app already writes the record — see
+  [#2552](https://github.com/Selftend/selftend/issues/2552).
 
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
@@ -615,9 +754,12 @@ attestation. The fact is covered. A later reader should not re-exclude it on the
 strength of `age_floor_met` having no `_at` twin.
 
 ⚠️ **And a caveat on every fact dated from `user_preferences`: those columns are
-state, not events.** `abandonProgram` nulls `*_program_started_at`, replay clears
-`*_program_completed_at`, `reminder_consent_updated_at` holds the time of the
-_last_ change, and `age_attested_at` is overwritten if somebody attests again. A
+state, not events.** `abandonProgram` nulls `*_program_started_at`;
+`*_program_completed_at` now survives every writer ([#2530](https://github.com/Selftend/selftend/issues/2530),
+ADR-0012) but still holds only the _most recent_ completion, so a person who
+finishes, replays and finishes again overwrites their first one;
+`reminder_consent_updated_at` holds the time of the _last_ change, and
+`age_attested_at` is overwritten if somebody attests again. A
 `min()` over current state can be later than the truth, so such a fact can fire a
 month late — or, where somebody consented and later revoked, **name a month that
 is not really the first**, which is a wrong statement rather than a late one.
@@ -688,6 +830,11 @@ route — an agent session querying through the Supabase MCP — already exists 
 is the looser of the two; a rule written for the scheduled job alone would leave
 the wider hole uncontrolled while implying that automation is where the risk
 lives.
+
+⚠️ **The k=5 floor and this rule are different controls and stay separate.** This
+one binds every route equally; the floor's privacy leg does not — it is a
+discipline on the digest and ad-hoc routes and a genuine control only on onward
+quotation into public (see _What the floor does not guarantee_).
 
 The digest runs as a **dedicated read-only Postgres role**, not the credential
 the nightly backup uses. The asymmetry that decides it: the backup runs a fixed
@@ -798,7 +945,16 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 > unreported — it is **erased**, and the person leaves the numerator and the
 > denominator together. Someone who stopped at phase 3 is indistinguishable from
 > someone who never began, and the drop-off the funnel prints is therefore
-> optimistic. Replaying clears `completed_at` the same way.
+> optimistic.
+>
+> ⚠️ **Half of that is now fixed and the other half is superseded.** Replaying no
+> longer clears `completed_at` ([#2530](https://github.com/Selftend/selftend/issues/2530),
+> ADR-0012). And _"erased"_ overstated the rest: `abandonProgram` leaves
+> `phase_index` **and `phase_started_at`** standing, which identifies the ended
+> run exactly — what was lost is two dates, refused deliberately rather than
+> destroyed. This paragraph is replaced in full by
+> [#2554](https://github.com/Selftend/selftend/issues/2554) once the report reads
+> that record.
 >
 > That leaves in-wizard abandonment and seen-but-unused discovery as the genuine
 > candidates, and **neither is named as a trigger**. Before anyone reaches for an
