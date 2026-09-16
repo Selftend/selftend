@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 
-export interface ChoiceOption {
+interface ChoiceOption {
   value: string;
   label: string;
 }
 
-export interface ChoiceRowProps {
+interface ChoiceRowProps {
   label: string;
   options: ChoiceOption[];
   value: string;
@@ -26,9 +26,9 @@ export interface ChoiceRowProps {
  *
  * The label is the design's 11px eyebrow, but on its own line rather than inline
  * with the buttons. Inline is what the design draws and it is the tightest row on
- * the screen: `Interval bell` plus four buttons measures past 328dp usable in
- * `en` before `bg`'s `Междинен звън` makes it worse, and the row neither wraps
- * nor scrolls in the drawing - it would simply clip.
+ * the meditation home screen: `Interval bell` plus four buttons measures past
+ * 328dp usable in `en` before `bg`'s `Междинен звън` makes it worse, and the row
+ * neither wraps nor scrolls in the drawing - it would simply clip.
  *
  * A radiogroup, not a row of buttons: exactly one is chosen, and that is what a
  * screen reader should hear. Selection shifts border, fill AND weight together,

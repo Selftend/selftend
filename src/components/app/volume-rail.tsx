@@ -7,8 +7,8 @@ import { VolumeSlider } from "@/src/components/app/volume-slider";
 /**
  * One volume lane as design `4c` draws it: icon, a fixed label column, the
  * track, and the current percentage - a restyle of the always-visible sliders
- * the session screen has carried since the sounds sheet gave up volume
- * (sounds-sheet.tsx keeps selection; these keep loudness).
+ * the breathing session screen has carried since the sounds sheet gave up
+ * volume (breathing's sounds-sheet.tsx keeps selection; these keep loudness).
  *
  * At the 360dp floor the fixed columns (18px icon + 78px label + 34px readout
  * + three 14px gaps) leave the track ~140px, comfortably above the 18px thumb.

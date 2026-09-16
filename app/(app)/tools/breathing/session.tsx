@@ -740,10 +740,9 @@ export default function BreathingSessionScreen() {
  * One pattern tab.
  *
  * Selected is the shared chip treatment - `border-primary bg-primary/10` behind
- * `text-primary-ink`, the same shape as selectable-chip.tsx and choice-row.tsx
- * - not the pattern's own colour: #926 moved the setup controls onto
- * theme tokens, and the pattern's colour lives in its row's dot and the live
- * pacer. `text-primary-ink`, never `text-primary`: the latter on `bg-primary/10`
+ * `text-primary-ink`, the same shape as selectable-chip.tsx and choice-row.tsx -
+ * not the pattern's own colour: #926 moved the setup controls onto theme tokens,
+ * and the pattern's colour lives in its row's dot and the live pacer. `text-primary-ink`, never `text-primary`: the latter on `bg-primary/10`
  * is the shape #691 named a regression and #368 measured at 3.81:1.
  *
  * Every stop rides a utility class rather than a colour literal:
