@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { LinkButton } from "@/src/components/app/link-button";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -12,7 +13,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useRecordOrigin } from "@/src/lib/escape-origin";
 import { useCookieConsentStore } from "@/src/stores/cookie-consent-store";
 import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 
@@ -29,7 +30,7 @@ export function CookieConsentBanner() {
   // The banner is app-wide, so its policy link is a jump out of wherever the
   // user happens to be (#1265, O3). `/cookies` is rooted at the top, so without
   // the Origin the way out of it strands them on Home.
-  const pushWithOrigin = usePushWithOrigin();
+  const recordOriginFor = useRecordOrigin();
 
   useEffect(() => {
     hydrate();
@@ -67,9 +68,22 @@ export function CookieConsentBanner() {
           <Button onPress={() => setShowManage(true)} size="sm" variant="ghost">
             <Text>{t("cookieConsent.managePreferences")}</Text>
           </Button>
-          <Button onPress={() => pushWithOrigin("/cookies")} size="sm" variant="ghost">
+          {/*
+            ☠️ An ANCHOR since #2496, not a press handler. This banner is
+            root-level chrome on every web page, and `docs/brand-result.md`
+            § 7.4 reaches shared chrome rather than only a page's own body - so
+            "copy link" and a screen reader's link role work here the way they
+            already do in the footer. `useRecordOrigin` keeps the Origin the
+            push used to record, so Escape still returns where it did.
+          */}
+          <LinkButton
+            href="/cookies"
+            size="sm"
+            variant="ghost"
+            onPress={() => recordOriginFor("/cookies")}
+          >
             <Text>{t("cookieConsent.cookiePolicy")}</Text>
-          </Button>
+          </LinkButton>
         </View>
       </View>
     </View>
