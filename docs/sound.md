@@ -459,6 +459,17 @@ eviction. The crossfade twins land on top of that growth, not beside it.
 and asserting it matches the declared `nominalSeconds`. Pure byte reading - no
 `ffprobe` in CI.
 
+☠️ **The `mdhd` duration is not the nominal length, and build item 1 measured
+the gap.** `rain.m4a` reads 1324024 / 44100 = **30.023220 s** for a bed authored
+to exactly 30 s: `mdhd` counts the 1024 samples of AAC encoder priming at the
+head of the file. The edit list says how many to drop - every bed carries
+`elst` with `media_time = 1024` - so the authored length is
+`(mdhd.duration − elst.media_time) / mdhd.timescale`, which lands on 30.000,
+29.520 and 29.600 with no remainder. A reader that stops at `mdhd` is off by
+exactly the 23 ms hole §3.1.6's loop window exists to skip, so it would pin
+every bed to the wrong number. `test/audio-bed-nominal-length.test.ts` reads
+both boxes.
+
 **`meditation-sit-screen.test.tsx`** gains the panel's cases, including the one
 §2 requires: pick `ocean` mid-sit, simulate the rollback (`mockPreferences.data`
 back to `rain`, rerender), and assert **no further `play` and no `stop`** - the

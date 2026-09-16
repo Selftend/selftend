@@ -70,11 +70,40 @@ export interface BreathSound {
   introMs?: number;
 }
 
-interface AmbientSound {
+/**
+ * A bed: a file, and the length it was authored to.
+ *
+ * ☠️ `nominalSeconds` is NOT the length a decoder reports. AAC carries 1024
+ * samples of encoder priming at the head of the file, so a bed authored to 30 s
+ * decodes to ~30.023 s on a decoder that does not trim it. That is the point:
+ * the web loop window is `[buffer.duration − nominalSeconds, buffer.duration]`
+ * (`docs/sound.md` §3.1.6), which lands on 0 when the decoder trimmed the
+ * priming and skips exactly the priming when it did not — instead of leaving a
+ * ~23 ms hole at every wrap. Measured from each file's own `mdhd` and edit list
+ * and pinned by `test/audio-bed-nominal-length.test.ts`; a re-encode that
+ * changes a length fails that test rather than drifting silently.
+ */
+interface AmbientBed {
   id: string;
   labelKey: string;
-  asset: number | null;
+  asset: number;
+  nominalSeconds: number;
 }
+
+/**
+ * The silent row. No file, so no length — and `nominalSeconds?: never` is what
+ * makes the pair a discriminated union rather than two optional fields: a row
+ * cannot declare an asset without its length, and cannot declare a length it
+ * has no file to measure.
+ */
+interface AmbientSilence {
+  id: string;
+  labelKey: string;
+  asset: null;
+  nominalSeconds?: never;
+}
+
+type AmbientSound = AmbientBed | AmbientSilence;
 
 /**
  * Breath ids that no longer exist, and what an account holding one now gets.
@@ -139,18 +168,43 @@ export const BREATH_SOUNDS: BreathSound[] = [
  * ⚠️ `fire` is deliberately ~8 dB quieter than the rest. It measures a 35.6 dB crest, so
  * reaching the others' -28 LUFS target would take limiting heavy enough to flatten the
  * crackle into noise; it ships at its own honest -36 instead (#1130).
+ *
+ * ☠️ **"Every bed is 30 s" is false.** `fire` is 29.520 and `stream` is 29.600 — both are
+ * folded beds, i.e. the seam gate's fold fallback ran on them and took the fold's length
+ * off the end. The map behind `docs/sound.md` carried the 30-second premise until #2437
+ * measured it. Every `nominalSeconds` below is read off the shipped file, never assumed.
  */
 export const AMBIENT_SOUNDS: AmbientSound[] = [
   { id: "none", labelKey: "breathing.sounds.none", asset: null },
-  { id: "rain", labelKey: "breathing.sounds.ambient.rain", asset: rain },
-  { id: "ocean", labelKey: "breathing.sounds.ambient.ocean", asset: ocean },
-  { id: "stream", labelKey: "breathing.sounds.ambient.stream", asset: stream },
-  { id: "forest", labelKey: "breathing.sounds.ambient.forest", asset: forest },
-  { id: "night", labelKey: "breathing.sounds.ambient.night", asset: night },
-  { id: "fire", labelKey: "breathing.sounds.ambient.fire", asset: fire },
-  { id: "brown-noise", labelKey: "breathing.sounds.ambient.brown", asset: brownNoise },
-  { id: "pink-noise", labelKey: "breathing.sounds.ambient.pink", asset: pinkNoise },
-  { id: "white-noise", labelKey: "breathing.sounds.ambient.white", asset: whiteNoise },
+  { id: "rain", labelKey: "breathing.sounds.ambient.rain", asset: rain, nominalSeconds: 30 },
+  { id: "ocean", labelKey: "breathing.sounds.ambient.ocean", asset: ocean, nominalSeconds: 30 },
+  {
+    id: "stream",
+    labelKey: "breathing.sounds.ambient.stream",
+    asset: stream,
+    nominalSeconds: 29.6,
+  },
+  { id: "forest", labelKey: "breathing.sounds.ambient.forest", asset: forest, nominalSeconds: 30 },
+  { id: "night", labelKey: "breathing.sounds.ambient.night", asset: night, nominalSeconds: 30 },
+  { id: "fire", labelKey: "breathing.sounds.ambient.fire", asset: fire, nominalSeconds: 29.52 },
+  {
+    id: "brown-noise",
+    labelKey: "breathing.sounds.ambient.brown",
+    asset: brownNoise,
+    nominalSeconds: 30,
+  },
+  {
+    id: "pink-noise",
+    labelKey: "breathing.sounds.ambient.pink",
+    asset: pinkNoise,
+    nominalSeconds: 30,
+  },
+  {
+    id: "white-noise",
+    labelKey: "breathing.sounds.ambient.white",
+    asset: whiteNoise,
+    nominalSeconds: 30,
+  },
 ];
 
 export const breathSoundLookup: Record<string, BreathSound> = Object.fromEntries(
