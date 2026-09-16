@@ -34,6 +34,27 @@ jest.mock("@/src/lib/supabase", () => ({
   },
 }));
 
+/**
+ * The hero pills bearing `name`.
+ *
+ * ☠️ A bare `getByText` is no longer unambiguous on this screen. Since #2469 the
+ * site footer the landing renders (#2467) lists `/meditation`, labelled - by the
+ * anchor-text rule - with that page's H1, "Meditation": the same word the
+ * meditation pill carries, so `getByText("Meditation")` throws "Found multiple
+ * elements". Taking the first match instead would be a coin toss on tree order
+ * and would keep passing if the pill itself disappeared.
+ *
+ * So the pill is identified by the thing that makes it a pill - its own type
+ * scale, which the footer's `text-xs` links do not share - and the count is
+ * asserted rather than the presence. A pill that stops being rendered fails
+ * here even while the footer still says the word, which is exactly the case
+ * that made the old assertion ambiguous.
+ */
+const heroPills = (name: string) =>
+  screen
+    .getAllByText(name)
+    .filter((node) => String(node.props.className ?? "").includes("text-[13.5px]"));
+
 describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {
     renderWithProviders(<LandingScreen />);
@@ -124,7 +145,7 @@ describe("LandingScreen", () => {
       "Sleep",
       "Habits",
     ]) {
-      expect(screen.getByText(name)).toBeTruthy();
+      expect(heroPills(name)).toHaveLength(1);
     }
   });
 });

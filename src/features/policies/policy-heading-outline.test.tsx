@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react-native";
 
+import MeditationScreen from "../../../app/meditation";
 import PrivacyScreen from "../../../app/privacy";
 import SecurityScreen from "../../../app/security";
 import { setLanguage } from "@/test/i18n-language";
@@ -120,6 +121,29 @@ describe("a policy page's heading outline never skips a level (#2133)", () => {
     const levels = levelsOf();
 
     expect(levels.length).toBeGreaterThanOrEqual(2);
+    expect(levels[0]).toBe(1);
+    expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
+  });
+
+  /**
+   * The first page that is not a policy page, and the reason this file is the
+   * outline's home rather than the policy feature's (#2469). `/meditation`
+   * renders the meditation framework's three cards through the same
+   * `PolicyPageLayout`, and its body is a MOVE out of the gated learn screen -
+   * so it arrives carrying whatever heading level that screen used. That screen
+   * passed `aria-level={2}` already, which is the only reason this page did not
+   * ship at h1 → h3 the way `/security` once did; the assertion is what keeps it
+   * true once a card in `meditation-framework-body.tsx` is edited by someone who
+   * never reads this file.
+   */
+  it("gives /meditation the same outline, through the moved framework body", () => {
+    mockPathname = "/meditation";
+    renderWithProviders(<MeditationScreen />);
+
+    const levels = levelsOf();
+
+    // Anti-vacuity: the page title plus the three framework cards.
+    expect(levels.length).toBeGreaterThanOrEqual(4);
     expect(levels[0]).toBe(1);
     expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
   });

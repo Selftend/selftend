@@ -40,13 +40,20 @@ interface SiteFooterLink {
  * (§ 7.2): a second entry beside it would be a call to action wearing a footer.
  *
  * The rows: the crisis row first (it IS the site's link to `/crisis`; the nav
- * list omits it), then the explainers (none yet - `/meditation` and `/habits`
- * arrive on #2469 and #2470), then the policies. No headings over the rows:
- * the order carries the grouping, and a heading would be copy the list does
- * not need.
+ * list omits it), then the explainers (`/meditation` since #2469; `/habits`
+ * arrives on #2470, and the three module explainers land with their modules'
+ * return), then the policies. No headings over the rows: the order carries the
+ * grouping, and a heading would be copy the list does not need.
+ *
+ * ☠️ `/meditation` is labelled `meditation:module.home.title` ("Meditation"),
+ * NOT the learn screen's `module.learn.title` ("Learn the framework"). The
+ * anchor-text rule takes the destination's H1, and that page's H1 is the
+ * module's name precisely because an instruction would name no topic here, on
+ * every public page (docs/brand-result.md § 3.2's one named exception).
  */
 export const SITE_FOOTER_LINKS: readonly SiteFooterLink[] = [
   { href: "/crisis", label: "common:safety.openCrisis", row: "crisis" },
+  { href: "/meditation", label: "meditation:module.home.title", row: "explainers" },
   { href: "/faq", label: "policies:faq.pageTitle", row: "policies" },
   { href: "/privacy", label: "policies:privacy.pageTitle", row: "policies" },
   { href: "/terms", label: "policies:terms.pageTitle", row: "policies" },
@@ -61,7 +68,12 @@ interface SiteFooterProps {
 
 /** One footer entry: a real anchor, labelled with its destination's H1 key. */
 function FooterLink({ link }: { link: SiteFooterLink }) {
-  const { t } = useTranslation(["common", "policies", "security"]);
+  // Every namespace the map above labels a row from. The `ns:key` prefix would
+  // resolve without this list - `src/i18n/index.ts` bundles every namespace at
+  // init - but naming them keeps the component honest about what it reads, and
+  // an explainer page arriving with its own namespace (#2470 and the module
+  // pages after it) adds one entry here.
+  const { t } = useTranslation(["common", "meditation", "policies", "security"]);
 
   return (
     <LinkButton href={link.href} variant="link" size="sm">
