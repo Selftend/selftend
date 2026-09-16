@@ -106,6 +106,19 @@ describe("Android release builds run R8 (#1707)", () => {
     expect(appConfigSource).toContain('key: "org.gradle.jvmargs"');
   });
 
+  it("asks for optimised resource shrinking under the name Gradle actually reads (#2335)", () => {
+    // ☠️ The whole point of this assertion is the property NAME. Gradle drops
+    // an unknown property without a word, so the plausible-looking
+    // `android.enableOptimizedResourceShrinking` - the spelling the Play card
+    // write-up used - would build green, pass the #2211 asset audit below and
+    // shrink nothing. Only `android.r8.optimizedResourceShrinking` is read
+    // (AGP 8.12, the version React Native 0.86 pins). A rename here is a
+    // silent no-op, which is exactly the failure a test has to catch.
+    const appConfigSource = readFileSync(resolve(ROOT, "app.config.ts"), "utf8");
+    expect(appConfigSource).toContain("android.r8.optimizedResourceShrinking");
+    expect(appConfigSource).not.toContain("android.enableOptimizedResourceShrinking");
+  });
+
   it("keeps the release workflow's Sentry token and its no-token fail-safe", () => {
     const releaseWorkflow = readFileSync(
       resolve(ROOT, ".github/workflows/android-release.yml"),
