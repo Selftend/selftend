@@ -82,11 +82,11 @@ type OpenLane = (
 // and the fetch want. The `number` in the signature is the native asset-module id.
 const assetUrl = (asset: number) => asset as unknown as string;
 
-function openWebElement(asset: number, volume: number, loop: boolean): LaneHandle {
+async function openWebElement(asset: number, volume: number, loop: boolean): Promise<LaneHandle> {
   const el = new window.Audio(assetUrl(asset));
   el.loop = loop;
   el.volume = volume;
-  void el.play().catch(() => {});
+  await el.play().catch(() => {});
   return {
     setVolume: (v) => {
       el.volume = v;
@@ -221,14 +221,16 @@ async function openWebGraph(
     release: () => {
       if (released) return;
       released = true;
+      // Counted down BEFORE the teardown, so a node that throws on the way out
+      // cannot leave the context pinned open for the rest of the page's life.
+      liveGraphBeds -= 1;
       try {
         source.stop();
+        source.disconnect();
+        gain.disconnect();
       } catch {
-        // A source that never started, or already stopped.
+        // A source that never started, or was already stopped.
       }
-      source.disconnect();
-      gain.disconnect();
-      liveGraphBeds -= 1;
       if (liveGraphBeds <= 0) void ctx.suspend().catch(() => {});
     },
   };
@@ -376,6 +378,15 @@ export function createLanePlayer(): LanePlayer {
     return bed;
   };
 
+  const applyTo = (bed: LaneBed, volume: number) => {
+    bed.volume = volume;
+    try {
+      bed.handle.setVolume(volume);
+    } catch {
+      // A player released underneath us; see the ramp's apply above.
+    }
+  };
+
   // The ONE place a player is let go. Idempotent per bed: `released` is set before
   // anything else can observe it, so a ramp's completion and a later stop() cannot
   // both release the same player.
@@ -440,10 +451,7 @@ export function createLanePlayer(): LanePlayer {
         const bed = createBed(opened, loop ? 0 : volume, loop);
         current = bed;
         if (loop) bed.ramp.start(0, requestedVolume);
-        else if (requestedVolume !== volume) {
-          bed.volume = requestedVolume;
-          bed.handle.setVolume(requestedVolume);
-        }
+        else if (requestedVolume !== volume) applyTo(bed, requestedVolume);
       } catch {
         // Audio is best-effort; never crash a session. §4.3: a failed open now leaves
         // the PREVIOUS bed playing rather than leaving silence, deliberately.
@@ -459,12 +467,7 @@ export function createLanePlayer(): LanePlayer {
         current.ramp.retarget(volume);
         return;
       }
-      current.volume = volume;
-      try {
-        current.handle.setVolume(volume);
-      } catch {
-        // ignore
-      }
+      applyTo(current, volume);
     },
     async stop() {
       playGen++;
