@@ -191,7 +191,7 @@ on one section before it was understood as a limit on the rule.
 beside a suppressed cell is not the defect — an exhaustively printed partition
 is._ A section is exposed when all three hold: its arms partition a population
 **exhaustively**; **every** arm prints; and that population's total prints
-**raw** somewhere in the same report. Three sections qualify:
+**raw** somewhere in the same report. Three sections qualify today:
 `analytics-segment.sql` §3 and §4, and `analytics-onboarding.sql` §4. Every other
 suppressed cell in the three reports has a complement that is **never printed**,
 so there is nothing to subtract from. A future section self-classifies against
@@ -199,16 +199,17 @@ the test; there is no review gate. The caveat prints beside each qualifying
 section from the shared `partition_caveat` block, because this document does not
 travel with the table.
 
-**2 · Repeated publication.** Written out with
-[#2557](https://github.com/Selftend/selftend/issues/2557), which adds its caveat
-to the reports: the digest publishes the same tables monthly, and what a cell
-that crosses the floor between publications discloses is **movement**, which is
-time-localised in a way a level is not.
+**2 · Repeated publication.** ⚠️ **Not written out yet** — it lands with
+[#2557](https://github.com/Selftend/selftend/issues/2557), which will also add
+its caveat to the reports. In outline: the digest publishes the same tables
+monthly, and what a cell that crosses the floor between publications discloses
+is **movement**, which is time-localised in a way a level is not.
 
-**3 · The value of a printed rate.** Written out with
-[#2558](https://github.com/Selftend/selftend/issues/2558), which adds its caveat
-to the one section it bites: `k_pct` withholds a rate whose numerator or
-denominator is too small, and never guards the rate's **value**.
+**3 · The value of a printed rate.** ⚠️ **Not written out yet** — it lands with
+[#2558](https://github.com/Selftend/selftend/issues/2558), which will also add
+its caveat to the one section it bites. In outline: `k_pct` withholds a rate
+whose numerator or denominator is too small, and never guards the rate's
+**value**.
 
 **4 · A small printed base.** Where a raw base caps a suppressed cell —
 `activated` cannot exceed `signups`, a numerator cannot exceed its denominator —
@@ -236,7 +237,9 @@ every applicable route**: route 4 bounds below four whenever a printed base is
 small, and route 3 is not bounded at all. Stating four unqualified would publish
 a limit two of these routes break.
 
-☠️ **The worst case, composed.** Route 4 at `b = 1`, published into a digest that
+###### The worst case, composed
+
+☠️ Route 4 at `b = 1`, published into a digest that
 republishes the same tables monthly, is the strongest disclosure these reports
 admit: a cell flipping from `0` in one digest to `<5` in the next is an **exact,
 time-localised fact about one individual**, identified by cohort. It is written
@@ -262,8 +265,8 @@ criterion none of them pays:
 - **Collapsing arms** is free on every technical constraint and pays in the
   axis's meaning: the arms exist to answer a question, and merging them answers
   it with _we no longer ask_.
-- **Cross-release suppression consistency** would mean holding a cell suppressed
-  after it passes four — **suppressing a large cell**, which runs into the same
+- **Cross-release suppression consistency** — the field's standing remedy for
+  route 2 — would mean holding a cell suppressed after it passes four — **suppressing a large cell**, which runs into the same
   marker wall as complementary suppression. ⚠️ Its collision with the reports'
   statelessness is the _second_ reason, not the first: an architectural objection
   can be engineered around, and this one cannot.

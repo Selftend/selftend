@@ -137,7 +137,8 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
 -- test/analytics-shared-sql.test.ts fails if they drift. analytics-engagement.sql
 -- deliberately does NOT carry it - no section there partitions a population, and
 -- a partition warning printed beside a table that has no partitioned arms would
--- be one more false sentence in a file family that has already produced four.
+-- be one more false sentence in a file family whose comments have already
+-- asserted the opposite of this one twice.
 --
 -- ☠️ A RAW TOTAL BESIDE A SUPPRESSED CELL IS NOT THE DEFECT - AN EXHAUSTIVELY
 -- PRINTED PARTITION IS. Three conditions, and they hold together or not at all:

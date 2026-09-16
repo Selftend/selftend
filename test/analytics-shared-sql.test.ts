@@ -33,8 +33,9 @@ const EXPECTED_BLOCKS: Record<string, string[]> = {
   // bounded by subtraction from a raw total printed elsewhere in the same
   // report. Two files, not three - analytics-engagement.sql has no section
   // whose arms partition a population, and printing a partition warning beside
-  // a table that has no partitioned arms would add a fifth false statement to
-  // a file family that has already produced four (#2556).
+  // a table that has no partitioned arms would add one more false statement to
+  // a file family whose comments have already asserted the opposite twice
+  // (#2556).
   partition_caveat: ["analytics-onboarding.sql", "analytics-segment.sql"],
   // Who is in the population: the owner count, the heuristic upper bound, and
   // the standing line that the guest arm is not identifiable at all. Printed by
@@ -305,7 +306,16 @@ describe("every section that claims a partition prints the partition caveat", ()
   // (docs/analytics.md, "What the floor does not guarantee") - so this reads the
   // section's own printed claim instead. A section that tells a reader its arms
   // partition a population has to tell them what that costs.
+  //
+  // ⚠️ It is a tripwire on the section's printed CLAIM, not a proof: a
+  // qualifying section that never tells its reader the arms partition anything
+  // is not caught here, and nothing static can catch it - that is what makes
+  // route 1 a structural test a human applies. What this does catch is the
+  // likely drift, a partition section added or reworded beside the caveat.
   const CAVEAT_ECHO = "\\echo :partition_caveat";
+
+  /** The phrasings the three qualifying sections use today, in their own words. */
+  const A_PARTITION_CLAIM = /partition|appears exactly once|is in exactly one/;
 
   /** The printed sections of one report: each `=== n)` heading with its body. */
   function printedSections(file: string): string[] {
@@ -323,7 +333,7 @@ describe("every section that claims a partition prints the partition caveat", ()
     body
       .split("\n")
       .filter((line) => line.startsWith("\\echo") && line !== CAVEAT_ECHO)
-      .some((line) => line.includes("partition"));
+      .some((line) => A_PARTITION_CLAIM.test(line));
 
   for (const file of reportFiles()) {
     it(`${file}: every section claiming a partition echoes the caveat`, () => {

@@ -166,7 +166,8 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
 -- test/analytics-shared-sql.test.ts fails if they drift. analytics-engagement.sql
 -- deliberately does NOT carry it - no section there partitions a population, and
 -- a partition warning printed beside a table that has no partitioned arms would
--- be one more false sentence in a file family that has already produced four.
+-- be one more false sentence in a file family whose comments have already
+-- asserted the opposite of this one twice.
 --
 -- ☠️ A RAW TOTAL BESIDE A SUPPRESSED CELL IS NOT THE DEFECT - AN EXHAUSTIVELY
 -- PRINTED PARTITION IS. Three conditions, and they hold together or not at all:
@@ -552,10 +553,14 @@ from axis_coverage order by axis;
 -- These arms PARTITION the population, and section 1 prints `users`,
 -- `w4_mature_users` and `w4_retained_users` RAW per account type (its carve-out,
 -- with its own reasons recorded beside it). So the arms that printed, taken
--- from that total, bound the arms that did not. `<5` publishes the interval
--- 1..4, which makes a hidden cell AT MOST FOUR VALUES WIDE however many arms
--- are hidden, and EXACTLY ONE whenever the remainder sits at either end of its
--- range.
+-- from that total, bound the arms that did not. The bound is the one the caveat
+-- prints, said again here because this is where it was once said wrongly: `<5`
+-- publishes the interval 1..4, so a hidden cell is AT MOST FOUR VALUES WIDE
+-- however many arms are hidden, and EXACTLY ONE whenever the remainder sits at
+-- either end of its range. ☠️ TWO FALSE SENTENCES STOOD HERE - that a
+-- multi-arm suppression leaves only a SUM recoverable, and that the floor holds
+-- wherever more than one arm is small. Do not restore either: what bounds the
+-- cell is the interval, never the number of arms that happened to be hidden.
 --
 -- ⚠️ THE LOCALE AXIS IS THE BAD CASE, and it is the ordinary case rather than a
 -- corner. `other locale` is unreachable while the CHECK constraint allows only
