@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 
 import LandingScreen from "./landing-screen";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -111,8 +111,24 @@ describe("LandingScreen", () => {
     expect(screen.getByRole("link", { name: "Sign in" }).props.href).toBe("/(auth)/sign-in");
   });
 
+  /**
+   * ☠️ Scoped to the pill row, and the scope is the assertion's point rather
+   * than a tidiness move. Since #2469 the landing's `SiteFooter` carries a
+   * `/meditation` anchor labelled "Meditation" - the anchor-text rule gives a
+   * footer link its destination's H1 - so the word is on this page twice, and an
+   * unscoped `getByText` throws on the ambiguity.
+   *
+   * ⚠️ The two loosenings available here are both wrong, so they are named:
+   * `getAllByText(name)[0]` passes on a page that lost the pill and kept only
+   * the footer link, and dropping "Meditation" from the list stops asserting the
+   * one pill that actually collided. `within` keeps the claim exactly as strong
+   * as it was - each of the eight words is in the PILL ROW - while letting the
+   * footer say the same word somewhere else.
+   */
   it("shows all eight tool pills", () => {
     renderWithProviders(<LandingScreen />);
+
+    const pills = within(screen.getByTestId("landing-tool-pills"));
 
     for (const name of [
       "Daily check-in",
@@ -124,7 +140,21 @@ describe("LandingScreen", () => {
       "Sleep",
       "Habits",
     ]) {
-      expect(screen.getByText(name)).toBeTruthy();
+      expect(pills.getByText(name)).toBeTruthy();
     }
+  });
+
+  /**
+   * The collision itself, asserted directly so it is a recorded fact rather than
+   * something a future reader has to infer from a scoped query: "Meditation" is
+   * the illustrative pill AND the footer's link to the public explainer, and
+   * only the second one is an anchor (the hero is not a nav).
+   */
+  it("says Meditation twice - the illustrative pill, and the footer's link to the explainer", () => {
+    renderWithProviders(<LandingScreen />);
+
+    expect(screen.getAllByText("Meditation")).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "Meditation" }).props.href).toBe("/meditation");
+    expect(within(screen.getByTestId("landing-tool-pills")).queryAllByRole("link")).toEqual([]);
   });
 });

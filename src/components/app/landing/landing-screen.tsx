@@ -111,7 +111,17 @@ function LandingHero() {
       <Text variant="muted" className="mt-3 max-w-md text-center text-xs">
         {t("landingPage.guestDurability")}
       </Text>
-      <View className="mt-11 max-w-2xl flex-row flex-wrap justify-center gap-2.5">
+      {/* ☠️ The `testID` is the pill row's IDENTITY, not decoration. Since
+          #2469 the landing's footer carries a `/meditation` link labelled
+          "Meditation" - the anchor-text rule gives it the destination page's H1
+          - so "Meditation" is on this page TWICE, once as a pill and once as a
+          footer anchor. A bare `getByText("Meditation")` throws on the
+          ambiguity, and the honest fix is to say which one is meant rather than
+          to relax the query. */}
+      <View
+        testID="landing-tool-pills"
+        className="mt-11 max-w-2xl flex-row flex-wrap justify-center gap-2.5"
+      >
         {HERO_TOOLS.map(({ key, icon }) => (
           <View
             key={key}

@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { SITE_FOOTER_LINKS, SiteFooter } from "./site-footer";
 import enCommon from "@/src/i18n/locales/en/common.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
+import enMeditation from "@/src/i18n/locales/en/meditation.json";
 import enSecurity from "@/src/i18n/locales/en/security.json";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
@@ -113,6 +114,28 @@ describe("SiteFooter", () => {
     expect(linkHref(enSecurity.page.pageTitle)).toBe("/security");
     expect(linkHref(enPolicies.accountDeletion.pageTitle)).toBe("/account-deletion");
     expect(screen.queryByText("FAQ")).toBeNull();
+  });
+
+  /**
+   * The explainer row, which #2469 filled with its first entry. Two things are
+   * asserted at once because they are one decision: the row's link points at
+   * `/meditation`, and its label is the MODULE's name.
+   *
+   * ☠️ The negative is the half worth having. `/meditation` could have taken the
+   * learn screen's own "Learn the framework" - it is the string the general
+   * anchor-text rule points at, since that is the screen the body comes from -
+   * and it would render here, on every public page, as a table-of-contents entry
+   * naming no subject at all. That is the defect the spec's § 3.2 exception
+   * exists to prevent, and this row is where it would show.
+   */
+  it("labels the explainer with the module's name, not the learn screen's instruction", () => {
+    renderWithProviders(<SiteFooter />);
+
+    expect(linkHref(enMeditation.module.home.title)).toBe("/meditation");
+    expect(screen.queryByText(enMeditation.module.learn.title)).toBeNull();
+    // Anti-vacuity for the negative: the two strings must actually differ, or a
+    // reworded title would make it pass on the very page it exists to catch.
+    expect(enMeditation.module.home.title).not.toBe(enMeditation.module.learn.title);
   });
 
   /**

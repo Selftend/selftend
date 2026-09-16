@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react-native";
 
+import MeditationScreen from "../../../app/meditation";
 import PrivacyScreen from "../../../app/privacy";
 import SecurityScreen from "../../../app/security";
 import { setLanguage } from "@/test/i18n-language";
@@ -120,6 +121,34 @@ describe("a policy page's heading outline never skips a level (#2133)", () => {
     const levels = levelsOf();
 
     expect(levels.length).toBeGreaterThanOrEqual(2);
+    expect(levels[0]).toBe(1);
+    expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
+  });
+
+  /**
+   * The first public EXPLAINER joins the same outline (#2469,
+   * docs/brand-result.md § 4). It is not a policy page and its body is not
+   * `PolicySectionCards` - it is the meditation framework, shared verbatim with
+   * the gated learn screen - which is exactly why it belongs here: a body moved
+   * out of an app screen brings that screen's heading levels with it, and
+   * `CardTitle` defaults to 3. An explainer whose cards lost their
+   * `aria-level={2}` would ship `/security`'s #2133 shape again, on a page with
+   * no policy test watching it.
+   *
+   * ⚠️ Safe for the helper above for the same reason `/security` is: every
+   * heading on the page is `Text`-based - `ScreenHeader` for the h1 and
+   * `CardTitle` for the three framework cards. No `Disclosure`, so no
+   * `View role="heading"` the role query would silently drop.
+   */
+  it("gives the public /meditation explainer one h1 and an h2 per framework card", () => {
+    mockPathname = "/meditation";
+    renderWithProviders(<MeditationScreen />);
+
+    const levels = levelsOf();
+
+    // Anti-vacuity: the title plus the three framework cards is four headings,
+    // and `every` over an empty array would make the run below meaningless.
+    expect(levels.length).toBeGreaterThanOrEqual(4);
     expect(levels[0]).toBe(1);
     expect(levels.slice(1)).toEqual(levels.slice(1).map(() => 2));
   });

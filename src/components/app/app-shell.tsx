@@ -69,6 +69,13 @@ export function AppShell() {
             <Stack.Screen name="account-deletion" dangerouslySingular />
             <Stack.Screen name="security" dangerouslySingular />
             <Stack.Screen name="faq" dangerouslySingular />
+            {/* The first public explainer (#2469). It is declared for the same
+                reason the policy pages are: every public page's footer links to
+                it and it links back to every one of them, so lateral pushes
+                between them are ordinary, and an undeclared route is registered
+                with default options - never single-instance.
+                `test/nav-singular.test.ts` fails until it is here. */}
+            <Stack.Screen name="meditation" dangerouslySingular />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>

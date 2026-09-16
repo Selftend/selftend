@@ -40,13 +40,20 @@ interface SiteFooterLink {
  * (§ 7.2): a second entry beside it would be a call to action wearing a footer.
  *
  * The rows: the crisis row first (it IS the site's link to `/crisis`; the nav
- * list omits it), then the explainers (none yet - `/meditation` and `/habits`
- * arrive on #2469 and #2470), then the policies. No headings over the rows:
- * the order carries the grouping, and a heading would be copy the list does
- * not need.
+ * list omits it), then the explainers (`/meditation` since #2469; `/habits`
+ * arrives on #2470), then the policies. No headings over the rows: the order
+ * carries the grouping, and a heading would be copy the list does not need.
+ *
+ * ☠️ `/meditation`'s label is `meditation:module.home.title`, "Meditation", NOT
+ * the learn screen's own `module.learn.title`, "Learn the framework". The
+ * anchor-text rule says the label is the destination's H1, and the page takes
+ * the module's name for exactly this reason: the learn title is an instruction
+ * that names no subject, and it would sit here, on every public page, as the one
+ * entry a stranger could not read (docs/brand-result.md § 3.2, Appendix A.18).
  */
 export const SITE_FOOTER_LINKS: readonly SiteFooterLink[] = [
   { href: "/crisis", label: "common:safety.openCrisis", row: "crisis" },
+  { href: "/meditation", label: "meditation:module.home.title", row: "explainers" },
   { href: "/faq", label: "policies:faq.pageTitle", row: "policies" },
   { href: "/privacy", label: "policies:privacy.pageTitle", row: "policies" },
   { href: "/terms", label: "policies:terms.pageTitle", row: "policies" },
@@ -61,7 +68,7 @@ interface SiteFooterProps {
 
 /** One footer entry: a real anchor, labelled with its destination's H1 key. */
 function FooterLink({ link }: { link: SiteFooterLink }) {
-  const { t } = useTranslation(["common", "policies", "security"]);
+  const { t } = useTranslation(["common", "policies", "security", "meditation"]);
 
   return (
     <LinkButton href={link.href} variant="link" size="sm">

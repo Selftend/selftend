@@ -253,7 +253,13 @@ describe("the route population (pinned, G5)", () => {
     // routes each.
     // 150 → 156: #1980's opposite-action plan and its script, three routes
     // each - the module's last two tools.
-    expect(ROUTES).toHaveLength(156);
+    // 156 → 157: #2469 added `app/meditation.tsx`, the first PUBLIC explainer
+    // page - the first route this population has gained outside `(app)` and
+    // `(auth)` since the policy pages. It is a real screen, so it lands in
+    // `covered` below rather than among the stubs, and it reaches the Escape
+    // the same way every policy page does: through `PolicyPageLayout` →
+    // `ScreenHeader`.
+    expect(ROUTES).toHaveLength(157);
   });
 
   it("derives exactly the eleven <Redirect>-only stubs", () => {
@@ -305,7 +311,9 @@ describe("the route population (pinned, G5)", () => {
     // gate watching its subject change shape, not a screen losing its Escape.
     // Then 144 → 143 with #2431: `app/(app)/progress.tsx` made the same move, for
     // the same reason - Looking back left and the file is now a redirect to Home.
-    expect(covered).toHaveLength(143);
+    // Then 143 → 144 with #2469: `app/meditation.tsx`, a real screen arriving in
+    // the population rather than moving between classes.
+    expect(covered).toHaveLength(144);
   });
 });
 

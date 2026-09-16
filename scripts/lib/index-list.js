@@ -43,10 +43,16 @@ const SITE_ORIGIN = "https://selftend.org";
  * § 7.6). Adding a public route means adding it here; nothing else makes a
  * page findable, and nothing off the list is (§ 3) - and the footer's pin then
  * fails until the footer knows the route, which is the point.
+ *
+ * ☠️ **The order is explainers, then policies**, which is why `/meditation`
+ * (#2469, the first explainer) sits BETWEEN `/crisis` and `/faq` rather than at
+ * the end. Appending it would have been the one-line change that passes this
+ * file's own tests and fails the footer's ordered pin.
  */
 const INDEX_LIST = Object.freeze([
   "/",
   "/crisis",
+  "/meditation",
   "/faq",
   "/privacy",
   "/terms",
