@@ -261,7 +261,7 @@ A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-s
 
 ### 2026-09-16 — the general reminder's one push string ([#2493](https://github.com/Selftend/selftend/issues/2493))
 
-**Scope.** The six `notifications` and `settings` strings the general reminder brought with it ([#2491](https://github.com/Selftend/selftend/issues/2491)), in both locales: the target label _Selftend_, the push title and body, the screen description, the _For each tool_ eyebrow, and the settings card's reminders line. **One of the six is a push string**, and it gets its own row here on the template the DBT reminder set above: it is the only copy in this change that can reach a person who did not open the app.
+**Scope.** The six `notifications` and `settings` strings the general reminder brought with it ([#2491](https://github.com/Selftend/selftend/issues/2491)), in both locales: the target label _Selftend_, the push title and body, the screen description, the _For each tool_ eyebrow, and the settings card's reminders line. **Two of the six are the push** - its title and its body, which arrive as one notification - and that one string gets its own row here, on the template the DBT reminder set above: it is the only copy in this change that can reach a person who did not open the app.
 
 **The push string.** One static string, off by default, time-of-day only: _"One small thing — A few minutes with whichever tool helps. Whenever you're ready."_ / _"Едно малко нещо — Няколко минути с инструмента, който помага. Когато ти е удобно."_ Read against all five rows and against `docs/product-principles.md` §12, and it says none of the things it may not: no _crisis_ and no _emergency_; no self-harm or suicide word; no clinical or treatment vocabulary and no claim about an outcome; **no missed-day, come-back or loss line**; nothing about the person's state; no count; and nothing that varies by date, phase or visit. It names no tool and no record, because there is none to name — it leads to Home and stops.
 
@@ -269,7 +269,7 @@ A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-s
 
 **Reading level.** `en` is three words of title and two sentences of seven and three words; the longest word is _whichever_, at nine letters. `bg` is three words of title and two sentences of six and four words, longest _инструмента_ at eleven. No sentence reaches 30 words and no word reaches twelve letters, so row 1 shortlists nothing in either locale.
 
-**The other five strings** never leave the app and name what the screen does: the target's label is the product's own name, the description says every reminder is off until the person turns it on, and the eyebrow labels the run of per-tool rows beneath it. Nothing there interprets the person or asks anything of them.
+**The other four strings** never leave the app and name what the screen does: the target's label is the product's own name, the description says every reminder is off until the person turns it on, and the eyebrow labels the run of per-tool rows beneath it. Nothing there interprets the person or asks anything of them.
 
 **Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The results table's `notifications` row stands at **Pass** across all five, unchanged by this pass.
 

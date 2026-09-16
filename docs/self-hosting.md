@@ -175,7 +175,7 @@ Self-hosted operators should follow Supabase's official docs, then apply this re
 
 ## Web Push Reminders
 
-Reminders are server-driven on every platform: the client only arms a channel — a Web Push subscription in the browser, an Expo push token on Android and iOS — and the cron'd `send-web-reminders` Edge Function mints every push. Nothing is scheduled on the device. The settings below are what browser push needs, and browser push is optional for self-hosters:
+Reminders are server-driven on every platform: the client arms a channel, the cron'd `send-web-reminders` Edge Function mints every push, and nothing is scheduled on the device (`docs/reminders.md` is the canonical description). The settings below are what browser push needs, and browser push is optional for self-hosters:
 
 - `EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`
 - private VAPID secrets for `send-web-reminders`

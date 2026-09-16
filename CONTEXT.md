@@ -110,7 +110,7 @@ An optional, single, user-chosen daily time at which the app nudges the user tow
 _Avoid_: notification, alarm, schedule
 
 **General reminder**:
-The one reminder that leads to the app rather than to a tool or a routine. A single daily time the person sets, off unless they set it, identical whether or not the app was opened that day, and the only reminder the product names in its own voice. Distinct from a per-tool reminder (set from that tool's bell or from Settings › Reminders) and from a routine's reminder (set from the routine's editor). It is the only reminder the product suggests, and it suggests it by placement alone — [ADR-0010](docs/adr/0010-one-reminder-is-suggested-by-placement-alone.md), `docs/reminders.md`.
+The one reminder that leads to the app rather than to a tool or a routine. A single daily time the person sets, off unless they set it, identical whether or not the app was opened that day, and the only reminder the product names in its own voice. Distinct from a per-tool reminder (set from that tool's bell or from Settings › Reminders) and from a routine's reminder (set from the routine's editor).
 _Avoid_: app reminder, check-in reminder (Check-in is a tool), engagement nudge
 
 **Anchor**:

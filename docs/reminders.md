@@ -237,7 +237,7 @@ The rest generalises: `ReminderTarget` union (`:17-28`), row types (`:30-101`), 
 
 **Stale mechanism line**
 
-- `docs/modules/cbt.md:89` said native reminders "remain local device schedules through Expo Notifications". Delivery is server-driven on every platform: the client arms a channel (Web Push or an Expo token) and the cron'd edge function reads the columns at send time. Rewritten in #2493, together with the same claim in `docs/self-hosting.md` and the two manual-test checklists (`docs/android-closed-testing.md`, `docs/internal-testing.md`), which the sweep turned up.
+- `docs/modules/cbt.md:89` says native reminders "remain local device schedules through Expo Notifications". Delivery is server-driven on every platform: the client arms a channel (Web Push or an Expo token) and the cron'd edge function reads the columns at send time. Rewritten - together with the same claim in `docs/self-hosting.md` and in the two manual-test checklists (`docs/android-closed-testing.md`, `docs/internal-testing.md`), which #2493's sweep turned up.
 
 **Release and index**
 
