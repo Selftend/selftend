@@ -106,8 +106,12 @@ The suggested sequence in which steps are presented and revealed. It is advisory
 _Avoid_: sequence-gate, prerequisite
 
 **Reminder** (of a routine):
-An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders.
+An optional, single, user-chosen daily time at which the app nudges the user toward the routine, set from the routine's editor. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders, and from the general reminder below.
 _Avoid_: notification, alarm, schedule
+
+**General reminder**:
+The one reminder that leads to the app rather than to a tool or a routine. A single daily time the person sets, off unless they set it, identical whether or not the app was opened that day, and the only reminder the product names in its own voice. Distinct from a per-tool reminder (set from that tool's bell or from Settings › Reminders) and from a routine's reminder (set from the routine's editor).
+_Avoid_: app reminder, check-in reminder (Check-in is a tool), engagement nudge
 
 **Anchor**:
 The everyday behaviour a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
@@ -133,7 +137,7 @@ _Avoid_: session, cycle
 ### Reminder channel
 
 **Reminder channel**:
-The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a tenth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
+The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a twelfth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
 _Avoid_: subscription (only half the channel), per-reminder permission
 
 **Re-arm**:
@@ -141,7 +145,7 @@ Restoring a lost reminder channel for a user who has already said yes, without a
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
 
 **Reminder consent**:
-Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
+Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-reminder enabled flag, and a channel — and consent is the **permission** where the per-reminder flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
 
 The question is never put on its own: consent is recorded as a side effect of turning some reminder on, so the account either **has consented** or has **never been asked**. There is no declined state. The product used to carry one in theory — a post-completion prompt it would then withhold — but nothing ever wrote it, and that prompt was removed outright (ADR-0008). Consent itself stays load-bearing: delivery reads it on every send. What the prompt's removal orphaned is only the **date** the answer was recorded, which nothing reads any more; it is kept as a consent trail.
 

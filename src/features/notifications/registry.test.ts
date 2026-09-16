@@ -272,8 +272,8 @@ describe("NOTIFICATION_TARGETS", () => {
 
   it("carries no placeholder status and no description key", () => {
     for (const target of NOTIFICATION_TARGETS) {
-      // Both were dead: `status: "placeholder"` was never used, and all ten descriptions
-      // restated their own labels (#981). Asserted as absence so a revert is loud.
+      // Both were dead: `status: "placeholder"` was never used, and every description
+      // restated its own label (#981). Asserted as absence so a revert is loud.
       expect(target).not.toHaveProperty("status");
       expect(target).not.toHaveProperty("descriptionKey");
     }

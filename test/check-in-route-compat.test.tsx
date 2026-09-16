@@ -93,7 +93,7 @@ describe("the reminder edge function never flips to the new path (#732)", () => 
   });
 });
 
-// The pairing above was pinned for `mood` alone - one of eleven targets - and a
+// The pairing above was pinned for `mood` alone - one of twelve targets - and a
 // target added later inherited nothing from it (#2213). So the same rule, for
 // every url the function can mint: the allowlist in THIS tree must accept it.
 //

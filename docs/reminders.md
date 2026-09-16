@@ -1,6 +1,6 @@
 # Reminders spec - one general reminder suggested, every other reminder manual-only
 
-**Status:** Decided spec, assembled 2026-09-15 from wayfinder map [#2409](https://github.com/Selftend/selftend/issues/2409) on its last ticket, [#2418](https://github.com/Selftend/selftend/issues/2418). **Not built.** Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling; the rule itself is recorded in [ADR-0010](adr/0010-one-reminder-is-suggested-by-placement-alone.md) so it outlives the build. Verified against `origin/dev@0b07e2d2`; every `file:line` below is at that commit.
+**Status:** Decided spec, assembled 2026-09-15 from wayfinder map [#2409](https://github.com/Selftend/selftend/issues/2409) on its last ticket, [#2418](https://github.com/Selftend/selftend/issues/2418). **Mostly built, 2026-09-16.** § 11's items 2-7 are on `dev`: the columns ([#2489](https://github.com/Selftend/selftend/issues/2489)), the registry, client, edge function and copy with `general` held out ([#2491](https://github.com/Selftend/selftend/issues/2491)), the screen's two runs ([#2492](https://github.com/Selftend/selftend/issues/2492)), and this docs-and-counts sweep ([#2493](https://github.com/Selftend/selftend/issues/2493)). Still open: item 1, the routine sheet's completion-state offer ([#2488](https://github.com/Selftend/selftend/issues/2488)); item 10, the `act_program_state.preferred_check_in_time` cleanup ([#2490](https://github.com/Selftend/selftend/issues/2490)); item 8, the release; and item 9, the owner-gated lift of the hold-out once a build carrying `/` is live on both stores ([#2494](https://github.com/Selftend/selftend/issues/2494)). Every section links the ticket whose resolution comment holds the full reasoning and the owner's ruling; the rule itself is recorded in [ADR-0010](adr/0010-one-reminder-is-suggested-by-placement-alone.md) so it outlives the build. The spec was verified against `origin/dev@0b07e2d2` when it was assembled, and every `file:line` below is at that commit — the build has moved some of them since.
 
 ---
 
@@ -237,7 +237,7 @@ The rest generalises: `ReminderTarget` union (`:17-28`), row types (`:30-101`), 
 
 **Stale mechanism line**
 
-- `docs/modules/cbt.md:89` says native reminders "remain local device schedules through Expo Notifications". Delivery is server-driven on every platform: the client arms a channel (Web Push or an Expo token) and the cron'd edge function reads the columns at send time. Rewritten.
+- `docs/modules/cbt.md:89` says native reminders "remain local device schedules through Expo Notifications". Delivery is server-driven on every platform: the client arms a channel (Web Push or an Expo token) and the cron'd edge function reads the columns at send time. Rewritten - together with the same claim in `docs/self-hosting.md` and in the two manual-test checklists (`docs/android-closed-testing.md`, `docs/internal-testing.md`), which #2493's sweep turned up.
 
 **Release and index**
 

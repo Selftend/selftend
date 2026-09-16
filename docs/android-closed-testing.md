@@ -218,7 +218,7 @@ Use a real Android device, not only an emulator.
 - optional profile-picture upload works without camera or microphone/audio permission prompts
 - reminders are off by default
 - enabling reminders asks for permission
-- disabling reminders cancels scheduled local notifications
+- disabling a reminder turns it off and it stays off after a restart (delivery is server-side; there is no device-side schedule to cancel)
 - support page shows a real support email
 - privacy policy opens
 - terms and boundaries open

@@ -27,7 +27,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * Desktop lays the time beside the name; phone stacks it under. Same 640 breakpoint and same
- * `useWindowDimensions` source as home's tool rows, which list these same ten names.
+ * `useWindowDimensions` source as home's tool rows, which list the same eleven tool names
+ * (the twelfth row, the general reminder, names no tool).
  */
 const WIDE_ROW_WIDTH = 640;
 
@@ -216,7 +217,7 @@ export function NotificationTargetRow({
           <Text
             numberOfLines={nameLineCount(wide)}
             // A MINIMUM, not a width: the longest Bulgarian name overruns a fixed column.
-            // Same shape as home's tool row, which lists these same ten names.
+            // Same shape as home's tool row, which lists the same eleven tool names.
             className={cn(NAME_TYPE, wide && "min-w-[150px] shrink-0")}
           >
             {label}
@@ -243,7 +244,7 @@ export function NotificationTargetRow({
           />
         ) : (
           <Switch
-            // Named for its target: ten switches sharing one name are ten controls a
+            // Named for its target: twelve switches sharing one name are twelve controls a
             // screen-reader user cannot tell apart.
             accessibilityLabel={label}
             checked={checked}
@@ -278,7 +279,7 @@ export function NotificationTargetRow({
  *
  * It lives beside the row and shares its breakpoint deliberately: a skeleton that is the
  * wrong height is a layout jump dressed up as a loading state (#981). The registry is
- * static, so ten of these are known before any query resolves - and a loading surface never
+ * static, so twelve of these are known before any query resolves - and a loading surface never
  * claims emptiness.
  *
  * That height used to be two constants, 64px wide against the phone's 88px. It cannot be,
@@ -302,9 +303,9 @@ export function NotificationRowSkeleton({ target }: { target: NotificationTarget
       testID={`notification-row-skeleton-${target.key}`}
       // All three, the way `Icon` does it: the two React Native props cover iOS and Android,
       // and `aria-hidden` covers web, where react-native-web implements NEITHER of them.
-      // That was harmless while this was ten empty boxes; it stopped being harmless the
+      // That was harmless while this was twelve empty boxes; it stopped being harmless the
       // moment the box started holding a real name, because a name in the DOM is a name a
-      // screen reader reads - ten of them, over a surface that is still loading.
+      // screen reader reads - twelve of them, over a surface that is still loading.
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       aria-hidden
