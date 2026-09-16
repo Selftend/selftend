@@ -5771,13 +5771,18 @@ const SEEDED_ROUTINES = [
     ["alice", "00000000-0000-0000-0000-000000000001"],
     ["bob", "00000000-0000-0000-0000-000000000002"],
   ];
-  // Every per-tool reminder switch on `user_preferences`. Listed rather than
-  // globbed: a new tool's column has to be added here on purpose, and a guard
-  // that silently stopped covering one would be worse than no guard.
+  // Every reminder switch on `user_preferences` - the eleven per-tool ones and
+  // the general one. Listed rather than globbed: a new target's column has to
+  // be added here on purpose, and a guard that silently stopped covering one
+  // would be worse than no guard. ☠️ It did exactly that once: `dbt` shipped
+  // its columns without joining this list, and nothing failed (#2415). Twelve
+  // since #2489.
   const TARGET_COLUMNS = [
     "act_reminders_enabled",
     "breathing_reminders_enabled",
     "cbt_reminders_enabled",
+    "dbt_reminders_enabled",
+    "general_reminders_enabled",
     "gratitude_reminders_enabled",
     "grounding_reminders_enabled",
     "habits_reminders_enabled",
