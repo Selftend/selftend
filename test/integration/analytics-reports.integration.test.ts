@@ -1139,6 +1139,203 @@ describe("aggregate analytics reports (integration)", () => {
     });
   });
 
+  describe("segment report: a degenerate account half announces itself", () => {
+    // ☠️ #2559, and it is the false green one scope down. `axis_coverage` asks
+    // whether an axis carries values across the WHOLE population, and sections
+    // 3 and 4 then print `account × arm`, both halves. So a half whose arms hold
+    // ZERO OR ONE mature user still prints beneath a population-wide
+    // `readable = t`, looking like an ordering when it is not one - and both
+    // sections instruct the reader to READ THE ORDERING, which is exactly what
+    // a degenerate half destroys.
+    //
+    // ⚠️ What ships is a LABEL, not a second gate. `readable` keeps one meaning
+    // and stays the only thing deciding whether an ordering PRINTS; the
+    // per-account test decides only whether a row naming the reason appears
+    // beside a half that prints either way. These tests pin both halves of that:
+    // the marker appears where the ordering is fake, and stays away where it is
+    // real. A label that fired everywhere would satisfy the first alone.
+    const MARKER = "(not an ordering)";
+
+    /** The account halves carrying the marker row in one section. */
+    const markedHalves = (sectionNumber: number) =>
+      queryWithinCohort("segment", section("segment", sectionNumber))
+        .filter((row) => (row[1] ?? "").startsWith(MARKER))
+        .map((row) => row[0])
+        .sort();
+
+    /** Every arm row still printed for one half, marker rows excluded. */
+    const armsPrintedFor = (sectionNumber: number, account: string) =>
+      queryWithinCohort("segment", section("segment", sectionNumber)).filter(
+        (row) => row[0] === account && !(row[1] ?? "").startsWith(MARKER),
+      );
+
+    describe("one half degenerate, one half healthy", () => {
+      // Registered holds two locale arms and two module arms; the single guest
+      // holds one of each. Population-wide that is three arms per axis, so both
+      // axes are readable and both sections print in full.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(160), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(161), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(162), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(160), languageSql: `'en'` },
+          { id: userId(161), languageSql: `'bg'` },
+        ]);
+        // Inside the first 28 days, so these decide the module arm rather than
+        // the W4 outcome: `gratitude only` and `core tools only` against the
+        // guest's `no content`.
+        insertModuleContent([
+          { id: userId(160), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(161), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("finds both axes readable population-wide, so nothing is withheld", () => {
+        expect(queryWithinCohort("segment", section("segment", 2))).toEqual([
+          ["locale", "4", "3", "t"],
+          ["module usage", "9", "3", "t"],
+        ]);
+      });
+
+      it("marks the guest half in both orderings, and only the guest half", () => {
+        expect(markedHalves(3)).toEqual(["guest"]);
+        expect(markedHalves(4)).toEqual(["guest"]);
+      });
+
+      it("☠️ removes no count from the half it marks", () => {
+        // The property the census depends on: the marker annotates, it never
+        // withholds. Every arm of the fixed-shape axis still prints for the
+        // marked half, so no cell becomes newly exposed or exempt.
+        expect(armsPrintedFor(3, "guest")).toHaveLength(4);
+        expect(armsPrintedFor(4, "guest")).toHaveLength(9);
+      });
+
+      it("names the reason in the row rather than leaving it to be inferred", () => {
+        const [row] = queryWithinCohort("segment", section("segment", 3)).filter(
+          (r) => r[0] === "guest" && (r[1] ?? "").startsWith(MARKER),
+        );
+        expect(row[1]).toContain("fewer than two arms");
+        expect(row[1]).toContain("account type");
+      });
+    });
+
+    describe("⚠️ both halves degenerate at once", () => {
+      // The case the scope ruling makes reachable and a per-half gate would
+      // have hidden: `readable` is true because one arm holds a mature
+      // REGISTERED user and a DIFFERENT arm holds a mature GUEST. Two arms
+      // population-wide, one in each half, and neither half is an ordering.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(170), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(171), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(170), languageSql: `'en'` },
+          { id: userId(171), languageSql: `'bg'` },
+        ]);
+        insertModuleContent([
+          { id: userId(170), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(171), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("still reports the axes as readable, because the scope is the population", () => {
+        expect(queryWithinCohort("segment", section("segment", 2))).toEqual([
+          ["locale", "4", "2", "t"],
+          ["module usage", "9", "2", "t"],
+        ]);
+      });
+
+      it("marks both halves rather than neither", () => {
+        expect(markedHalves(3)).toEqual(["guest", "registered"]);
+        expect(markedHalves(4)).toEqual(["guest", "registered"]);
+      });
+    });
+
+    describe("☠️ a half holding no mature users at all", () => {
+      // The case the rewritten section 2 legend is ABOUT. The sentence it
+      // replaced claimed such a half "still prints a guest ordering whose arms
+      // are all one arm" — false, because a half may hold ZERO arms with mature
+      // users, not one. Registered carries both axes on its own; the single
+      // guest is four days old, so it is in every table and mature in none.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(190), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(191), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(192), createdAtSql: "now() - interval '4 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(190), languageSql: `'en'` },
+          { id: userId(191), languageSql: `'bg'` },
+        ]);
+        insertModuleContent([
+          { id: userId(190), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(191), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("counts zero arms with mature users for that half", () => {
+        // Pinned directly, because zero and one are the two shapes the deleted
+        // sentence conflated.
+        const [row] = queryWithinCohort(
+          "segment",
+          `select count(distinct ul.arm)
+             from user_locale ul
+             join locale_labels ll on ll.arm = ul.arm
+             join user_w4 w on w.user_id = ul.user_id
+            where w.w4_mature and ul.account = 'guest';`,
+        );
+        expect(row).toEqual(["0"]);
+      });
+
+      it("marks it, exactly as it marks a half holding one", () => {
+        expect(markedHalves(3)).toEqual(["guest"]);
+        expect(markedHalves(4)).toEqual(["guest"]);
+      });
+
+      it("still prints every arm for it, zeros included", () => {
+        expect(armsPrintedFor(3, "guest")).toHaveLength(4);
+        expect(armsPrintedFor(4, "guest")).toHaveLength(9);
+      });
+    });
+
+    describe("a withheld ordering says so once, and does not also take the marker", () => {
+      // Where `readable` is false the section is replaced by the single
+      // `(ordering withheld)` row, and the per-half label must stay silent -
+      // two markers for one situation is the second vocabulary this ticket
+      // exists to avoid.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(180), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(181), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("prints one withheld row and no marker row", () => {
+        for (const number of [3, 4]) {
+          const rows = queryWithinCohort("segment", section("segment", number));
+          expect(rows).toHaveLength(1);
+          expect(rows[0][0]).toBe("(ordering withheld)");
+          expect(markedHalves(number)).toEqual([]);
+        }
+      });
+    });
+  });
+
   describe("segment report: the retired concern axis stays retired", () => {
     it("☠️ carries the schema comment production supports, not the one it disproved", () => {
       // #2377. The old comment said the column is "written once by
