@@ -33,6 +33,7 @@ Every real module must use the shared app foundation:
 - free-text fields are sanitized exactly once, on WRITE: `userText(max, ...)` (`src/lib/zod-fields.ts`) when the flow is zod-validated, otherwise `sanitizeUserText` (`src/utils/sanitize-text.ts`) in the repository's create/update; never sanitize on read - see "Free-text sanitization" in [architecture.md](../architecture.md)
 - multi-step wizards persist drafts through `createWizardDraftStore("<flow-key>")` + `useWizardDraft` (24h TTL, versioned envelope, sign-out wipes disk) - see "Wizard draft persistence contract" in [architecture.md](../architecture.md)
 - schema/repository tests plus one component state test for user-facing flows
+- a module with a **programme** uses the shared three-state lifecycle - _not in progress_, _in progress_, _graduated_ (`ProgramStatus`) - and the leave record behind it: `*_program_phase_started_at` outliving a null `*_program_started_at` is how a programme somebody left is identified, and nothing may null it. It does not invent a fourth state, a status column of its own, or a run object. ☠️ This applies to **CBT, ACT and DBT**, the three modules with `*_program_*` columns. Meditation's ten-stage program is **stages, not phases**: it carries none of those columns and is not governed by this line. Ruled on [map #2529](https://github.com/Selftend/selftend/issues/2529), recorded in [ADR-0012](../adr/0012-a-programme-records-where-you-stopped-never-when.md)
 
 Planned boundaries:
 
