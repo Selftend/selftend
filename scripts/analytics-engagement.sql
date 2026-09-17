@@ -506,6 +506,52 @@ create temp view first_occurrences(fact_order, fact, first_at) as
             join accounts a on a.user_id = f.user_id
            where f.first_identity_at > a.created_at + interval '1 second');
 
+-- >>> shared:series_caveat
+-- Route 2 of docs/analytics.md, "What the floor does not guarantee". Printed
+-- ONCE PER REPORT, ahead of the first table and under no heading of its own,
+-- because this census has nothing to exempt: every suppressed cell in all three
+-- reports can move between publications. Byte-identical in all three files;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ⚠️ It prints ABOVE the population block deliberately. A note that qualifies
+-- every table has to arrive before them, and trailing the population block
+-- would attach it to the one block EXEMPT from the k=5 rule - the section it
+-- has the least to say about.
+--
+-- ⚠️ Plain `\echo` lines here, where shared:partition_caveat uses a psql
+-- variable. That block is echoed at three call sites and would drift between
+-- them; this one prints once per file, so a variable would buy nothing.
+--
+-- ☠️ KEPT SEPARATE FROM shared:partition_caveat DELIBERATELY. Merging the two
+-- would print a partition warning on analytics-engagement.sql, which has no
+-- partitioned arm table - one more false sentence in a file family whose
+-- comments have already asserted the opposite twice.
+--
+-- ⚠️ The k=5 rule is written, reasoned and tested as a property of ONE RUN of
+-- one report. Since the monthly digest it is not: the same tables accumulate as
+-- a series on one standing issue, and each run computes its suppression from
+-- its own month alone. Nothing is guarded, and what ships is the statement -
+-- docs/analytics.md does not travel with the table, and the digest comment
+-- carries only the legend.
+--
+-- ☠️ The refusal below names the MARKER reason first and the statelessness
+-- second, and that order is the finding rather than a style choice: an
+-- architectural objection can be engineered around, and the marker one cannot.
+\echo
+\echo '    REPORT-WIDE NOTE, TRUE OF EVERY TABLE BELOW - THE SERIES IS THE RELEASE, NOT EACH COMMENT. This'
+\echo '    report is republished monthly onto one standing issue, and each run computes its suppression from'
+\echo '    its own month alone. So a cell can print `<5` in one publication and a real count in a later one,'
+\echo '    and what that pair discloses is the MOVEMENT between them - which is time-localised in a way a'
+\echo '    level is not, and which the four-value bound does not speak to at all. A republished cell is safe'
+\echo '    exactly when it CANNOT MOVE, and nothing suppressed in these reports is immutable.'
+\echo '    NOTHING IS GUARDED. CROSS-RELEASE SUPPRESSION CONSISTENCY - holding a cell suppressed once it has'
+\echo '    passed four, so that it never crosses the floor in public - is REFUSED, because it means'
+\echo '    suppressing a LARGE cell, which can print neither `<5` (false) nor a distinct marker (which cracks'
+\echo '    the suppression) - the same wall complementary suppression hits. That these reports are'
+\echo '    deliberately stateless is the SECOND reason and not the first. See docs/analytics.md, What the'
+\echo '    floor does not guarantee, route 2.'
+-- <<< shared:series_caveat
+
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
 -- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
@@ -573,7 +619,6 @@ cross join lateral (
               or lower(a.email) like '%test%'))            as demo_or_test_string
 ) p;
 -- <<< shared:population_provenance
-
 
 \echo
 \echo '=== First occurrences (facts true for the FIRST TIME EVER during the covered period) ==='
@@ -667,6 +712,16 @@ order by t.empty_marker, t.week desc, t.account;
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
 \echo '    `-` = percentage withheld because a contributing cell rests on fewer than five users.'
 \echo '    `cohort_size` is how many people arrived that week - a whole-population count - and prints raw.'
+\echo '    ☠️ THE ONE SECTION WHERE A PRINTED RATE CAN DISCLOSE WHAT A COUNT MAY NOT. It prints percentages'
+\echo '    with NO NUMERATOR COLUMN, and each rate is taken over its own separately maturity-filtered'
+\echo '    denominator, so `cohort_size` is the denominator of none of them: neither side of a printed rate'
+\echo '    appears anywhere on the row. k_pct withholds a rate resting on too few people; it does NOT guard'
+\echo '    the rate VALUE. So a printed 0.0% says NOBODY and 100.0% says EVERYBODY - both exactly true, and'
+\echo '    an exact fact about EVERY MEMBER of the group that rate is taken over, which is the maturity-'
+\echo '    filtered subset and never the cohort beside it. Deliberate, not an omission: an arm at nought or'
+\echo '    at a hundred per cent is the strongest reading this instrument can produce, and banding it away'
+\echo '    would blunt the finding to guard against a reader who already holds a database credential. See'
+\echo '    docs/analytics.md, What the floor does not guarantee, route 3.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
 with flags as (

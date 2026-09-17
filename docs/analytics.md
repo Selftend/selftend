@@ -205,17 +205,39 @@ the test; there is no review gate. The caveat prints beside each qualifying
 section from the shared `partition_caveat` block, because this document does not
 travel with the table.
 
-**2 · Repeated publication.** ⚠️ **Not written out yet** — it lands with
-[#2557](https://github.com/Selftend/selftend/issues/2557), which will also add
-its caveat to the reports. In outline: the digest publishes the same tables
-monthly, and what a cell that crosses the floor between publications discloses
-is **movement**, which is time-localised in a way a level is not.
+**2 · Repeated publication.** The digest publishes the same tables monthly, and
+**the series is the release**, not each comment (see _The monthly digest_). A
+section is exposed when its row **key recurs** across publications, its cell is
+**mutable** for that key, and the cell can **cross the floor** — suppressed in
+one publication, printed in a later one. ☠️ **Every suppressed cell in all three
+reports qualifies**, so there is nothing to exempt and no list to keep. The
+discriminator is worth stating on its own: **a republished cell is safe exactly
+when it cannot move, and nothing suppressed in these reports is immutable.** What
+this route discloses is **movement**, not level — and a movement is
+_time-localised_, which a level is not. The caveat prints once per report, beside
+no section, from the shared `series_caveat` block.
 
-**3 · The value of a printed rate.** ⚠️ **Not written out yet** — it lands with
-[#2558](https://github.com/Selftend/selftend/issues/2558), which will also add
-its caveat to the one section it bites. In outline: `k_pct` withholds a rate
-whose numerator or denominator is too small, and never guards the rate's
-**value**.
+**3 · The value of a printed rate.** `k_pct` withholds a rate whose denominator
+is below the floor or whose numerator would have printed `<5`. It does not guard
+the rate's **value**. So `0.0%` says nobody and `100.0%` says everybody — an
+exact fact about **every member** of the group. This is **class disclosure**; it
+is the privacy leg and not the false-precision one. ☠️ **It is the one route with
+no ceiling**, because a rate is a statement about a group of unbounded size. One
+section is exposed — `analytics-engagement.sql` §3, the only section printing
+rates with **no numerator column**, and whose denominators are separately
+maturity-filtered so `cohort_size` is not one of them. Everywhere else the
+`k_count` numerator sits in the adjacent column, so an extreme rate is redundant
+with counts already printed. ☠️ **Routes 1 and 3 are near-disjoint, and the same
+property causes both:** route 1 needs printed counts, route 3 needs their
+absence. Closing one opens the other — §3 is exempt from route 1 precisely
+_because_ it prints percentages only, which is what exposes it here.
+
+Two guards were considered for it and both were refused. **Banding the extremes**
+is in the list below: an arm at 0% or 100% is the finding, and blunting it
+protects against a reader who already holds a database credential. **Raising the
+denominator floor** fails differently and worse — it would render a genuine zero
+rate as `-`, collapsing _no rate_ into _a zero rate_ and reopening a marker
+decision this document has already settled.
 
 **4 · A small printed base.** Where a raw base caps a suppressed cell —
 `activated` cannot exceed `signups`, a numerator cannot exceed its denominator —
@@ -245,11 +267,10 @@ a limit two of these routes break.
 
 ###### The worst case, composed
 
-☠️ Route 4 at `b = 1`, published into a digest that
-republishes the same tables monthly, is the strongest disclosure these reports
-admit: a cell flipping from `0` in one digest to `<5` in the next is an **exact,
-time-localised fact about one individual**, identified by cohort. It is written
-here rather than left for a reader to assemble from the routes, because a
+☠️ Route 4 at `b = 1` composed with route 2 gives the strongest disclosure these
+reports admit: a cell flipping from `0` in one digest to `<5` in the next is an
+**exact, time-localised fact about one individual**, identified by cohort. It is
+written here rather than left for a reader to assemble from the routes, because a
 document that knows something it does not say is the same overclaiming in
 different clothes.
 
@@ -760,6 +781,12 @@ already compute, orderings and trends included, and the distance to a threshold
 this document has **already committed to in writing**. It may not introduce a
 threshold, comparison, verdict or recommendation this document has not already
 made.
+
+☠️ **The series is the release, not each comment.** One standing issue rather
+than an issue per month, _it always arrives even empty_, and _its absence must
+never be mistaken for a quiet month_ are three statements about a continuous
+record. What follows for suppression is in _What the floor does not guarantee_,
+route 2.
 
 - **The 1st, deliberately not the 9th.** The 9th is
   [operations-runbook.md](operations-runbook.md)'s recurring-checks duty day, and
