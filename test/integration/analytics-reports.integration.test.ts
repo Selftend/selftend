@@ -1636,11 +1636,19 @@ describe("aggregate analytics reports (integration)", () => {
     // `abandonProgram` leaves behind. Five at phase 3 so the cell clears k=5 and
     // prints a real number rather than `<5`.
     const LEFT_AT_PHASE_3 = [111, 112, 113, 114, 115];
+    // ☠️ Block B's fixture (#2553), on the `guest/dbt` arm because nothing else
+    // asserts it - so a duration fixture cannot perturb a single funnel count.
+    // Started long ago, moved phase RECENTLY: the bucket must follow the phase
+    // move, not the programme start, or "how long since this last moved" is
+    // silently "how long since this began".
+    const MOVED_RECENTLY = [116, 117, 118, 119, 140];
 
     /** Section 7's FIRST statement - the funnel proper. Block A is the second. */
     const funnelStatement = () => sectionStatements("engagement", 7)[0]!;
     /** Section 7's SECOND statement - block A, the people who left (#2552). */
     const leftStatement = () => sectionStatements("engagement", 7)[1]!;
+    /** Section 7's THIRD statement - block B, quiet-duration buckets (#2553). */
+    const quietStatement = () => sectionStatements("engagement", 7)[2]!;
 
     /** The funnel as shipped, over this suite's fixtures, keyed `account/programme/step`. */
     function funnel(): Map<string, { users: string; pct: string }> {
@@ -1650,6 +1658,16 @@ describe("aggregate analytics reports (integration)", () => {
             `${account}/${programme}/${step}`,
             { users, pct },
           ],
+        ),
+      );
+    }
+
+    /** Block B, keyed `account/programme/bucket`. */
+    function quietBuckets(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("engagement", quietStatement()).map(
+          ([account, programme, bucket, users]) =>
+            [`${account}/${programme}/${bucket}`, users!] as const,
         ),
       );
     }
@@ -1671,7 +1689,7 @@ describe("aggregate analytics reports (integration)", () => {
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
         })),
-        ...GUESTS_ON_ACT.map((n) => ({
+        ...[...GUESTS_ON_ACT, ...MOVED_RECENTLY].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
           isAnonymous: true,
@@ -1725,6 +1743,14 @@ describe("aggregate analytics reports (integration)", () => {
           programme: "cbt" as const,
           phaseIndex: 2,
           phaseStartedAtSql: "now() - interval '15 days'",
+        })),
+        // Open for 60 days, but the phase moved 3 days ago.
+        ...MOVED_RECENTLY.map((n) => ({
+          id: userId(n),
+          programme: "dbt" as const,
+          startedAtSql: "now() - interval '60 days'",
+          phaseIndex: 1,
+          phaseStartedAtSql: "now() - interval '3 days'",
         })),
       ]);
     });
@@ -1863,6 +1889,46 @@ describe("aggregate analytics reports (integration)", () => {
       // each programme's own length, not from CBT's.
       expect(phases).not.toContain("registered/act/left at phase 5");
       expect(phases).not.toContain("registered/dbt/left at phase 5");
+    });
+
+    /** ☠️ Block B (#2553). Durations, in fixed bands, with no verdict attached. */
+    it("☠️ buckets an open run by its LAST PHASE MOVE, not by when it began", () => {
+      // The fixture started 60 days ago and moved phase 3 days ago. A block
+      // that measured from `started_at` would file it under "31-90 days" and
+      // report a person as long-quiet who was active this week.
+      const rows = quietBuckets();
+      expect(rows.get("guest/dbt/0-7 days")).toBe("5");
+      expect(rows.get("guest/dbt/31-90 days")).toBe("0");
+    });
+
+    it("falls back to the programme start for a run that has never advanced", () => {
+      // STARTED_ONLY has no `phase_started_at` at all - the shape of a run that
+      // started and never moved - so `coalesce` reads the 20-day-old start.
+      const rows = quietBuckets();
+      expect(rows.get("registered/cbt/8-30 days")).toBe("6");
+    });
+
+    it("counts only runs that are still open", () => {
+      // ☠️ Three shapes must be absent, and each would be a different bug:
+      // a graduate (over), someone who left (over, and counted by block A),
+      // and an account that never started (never in it).
+      const rows = quietBuckets();
+      // COMPLETED finished 2 days ago; if graduates leaked in they would land
+      // in 0-7 days beside nothing else on this arm.
+      expect(rows.get("registered/cbt/0-7 days")).toBe("0");
+      // LEFT_AT_PHASE_3 has a 15-day-old phase start and no programme start.
+      expect(rows.get("registered/cbt/31-90 days")).toBe("0");
+      expect(rows.get("registered/act/8-30 days")).toBe("0");
+    });
+
+    it("prints every bucket for every programme and both account types", () => {
+      const buckets = [...quietBuckets().keys()];
+      expect(buckets).toHaveLength(2 * 3 * 4);
+      for (const account of ["guest", "registered"]) {
+        for (const programme of ["cbt", "act", "dbt"]) {
+          expect(buckets).toContain(`${account}/${programme}/90+ days`);
+        }
+      }
     });
 
     it("prints every step for every programme and both account types", () => {
