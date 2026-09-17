@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CHROME_MARK, CHROME_MUTED_TEXT, CHROME_RULE } from "@/src/lib/theme/chrome";
+import { modulesAreVisible } from "@/src/lib/module-visibility";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,6 +21,23 @@ import { cn } from "@/lib/utils";
  */
 export function ModulesSection() {
   const { t } = useTranslation("auth");
+
+  /**
+   * ☠️ The landing page is **marketing**, and a marketing page promising a module the
+   * build behind it does not ship is not a styling problem — it is a false claim to
+   * someone deciding whether to sign up. So the gate reaches here too (2026-09-17, owner
+   * instruction): on a production web build the signed-out page stops advertising CBT and
+   * ACT, because a visitor who signs up cannot reach either.
+   *
+   * ⚠️ This closes only the surface the repo controls. The **App Store description, the
+   * Play listing and the landing hero copy** still commit the frame sentence's second beat
+   * — "a CBT programme … to work through when you want one" — and this gate cannot edit
+   * those. That gap is recorded in `docs/positioning.md` § 1 and needs a human before the
+   * next store submission.
+   */
+  if (!modulesAreVisible()) {
+    return null;
+  }
 
   return (
     <View className="flex-col items-stretch gap-5 sm:flex-row">

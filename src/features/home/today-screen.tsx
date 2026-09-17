@@ -14,6 +14,7 @@ import { favoriteItems, MODULES, TOOLS } from "@/src/features/favorites/items";
 import { ItemCardRow } from "@/src/features/favorites/item-card";
 import { useFavorites } from "@/src/features/favorites/queries";
 import { HOME_COLUMN } from "@/src/lib/layout";
+import { modulesAreVisible } from "@/src/lib/module-visibility";
 
 const PADDING = 24;
 
@@ -64,13 +65,22 @@ function Section({
  * no dashed empty box, no `Guided programmes` tier, no unsupported-build state: the
  * eleven items are a constant, so there is nothing for Home to be empty OF.
  *
- * ☠️ The Modules section renders UNCONDITIONALLY — with zero favourites, zero programme
- * state, and for a guest. This is `docs/positioning.md` § The hard rule, clause 1 (no
- * surface presents the tools without the method somewhere on it), and it was failing in
- * production because the old method tier rendered only for users holding programme
- * widgets. Never hide it when empty, collapse it, or defer it below a "show more";
- * applying the empty-Favourites "one quiet line" pattern here returns Home to the bare
- * inventory it used to ship.
+ * ☠️ The Modules section renders UNCONDITIONALLY **for every build that shows modules at
+ * all** — with zero favourites, zero programme state, and for a guest. This is
+ * `docs/positioning.md` § The hard rule, clause 1 (no surface presents the tools without
+ * the method somewhere on it), and it was failing in production because the old method
+ * tier rendered only for users holding programme widgets. Never hide it when empty,
+ * collapse it, or defer it below a "show more"; applying the empty-Favourites "one quiet
+ * line" pattern here returns Home to the bare inventory it used to ship.
+ *
+ * ☠️☠️ **The one exception, and it is a breach of that clause rather than a case it
+ * allows.** `modulesAreVisible()` is false on production and preview builds (2026-09-17,
+ * owner instruction), so those builds render Home with the eight tools and no method —
+ * precisely the bare inventory the paragraph above forbids. It is deliberate and it is
+ * recorded as a breach beside clause 1 itself in `docs/positioning.md` § 1, because the
+ * clause was overridden, not satisfied. **This is not a precedent for any other condition
+ * on this section.** The empty, guest and zero-state rules above are untouched: inside a
+ * build that shows modules, it still renders unconditionally.
  *
  * ☠️ `home-layout` must keep exactly that testID: settings-account.e2e scopes to it,
  * panel-navigation.e2e counts roots by it, and .maestro/app-store-screenshots.yaml waits
@@ -101,7 +111,11 @@ export default function HomeScreen() {
     : t("today.greetingPlain", { greeting });
 
   const { data: favorites, refetch, isRefetching } = useFavorites(userId);
-  const favourites = favorites === undefined ? undefined : favoriteItems(favorites);
+  // Read once and threaded into both places, so the Favourites section and the Modules
+  // section can never disagree: a build that hides the Modules section must not leave a
+  // starred CBT card sitting above it.
+  const showModules = modulesAreVisible();
+  const favourites = favorites === undefined ? undefined : favoriteItems(favorites, showModules);
 
   /**
    * Eyebrow and `h1`, and it stops there (#960).
@@ -155,9 +169,11 @@ export default function HomeScreen() {
                 <ItemCardRow items={TOOLS} userId={userId} favorites={favorites} />
               </Section>
 
-              <Section testID="home-modules" title={t("today.sections.modules")}>
-                <ItemCardRow items={MODULES} userId={userId} favorites={favorites} />
-              </Section>
+              {showModules ? (
+                <Section testID="home-modules" title={t("today.sections.modules")}>
+                  <ItemCardRow items={MODULES} userId={userId} favorites={favorites} />
+                </Section>
+              ) : null}
             </View>
           </View>
         </AnimatedScrollView>

@@ -122,6 +122,16 @@ The old rule protected the tools' **subordination** — _"Supporting. Never lead
 
 ☠️ **Clause 1 is not a deletion rule, and reading it as one is how this gets reverted** — the same warning the old rule carried, for the same reason. The tools appearing as a chip row, a nav group or a home section is **inventory**, which the frame does not bind ([#1610](https://github.com/Selftend/selftend/issues/1610)). What clause 1 forbids is a surface where the method is _absent_, never one where the tools are _prominent_.
 
+☠️☠️ **Clause 1 is in breach on production builds as of 2026-09-17, by owner instruction, and this note exists so the breach is quotable rather than discovered.** The three modules — CBT, ACT and DBT — are behind a build gate (`modulesAreVisible`, `src/lib/module-visibility.ts`) and render only in development builds. The method **is** those modules, so a production Home now shows the eight tools and nothing behind them: the bare inventory the clause names, arrived at deliberately.
+
+Three consequences, none of them resolved by this note:
+
+1. **Every in-app surface fails the first reading test on a production build.** Not one surface — the gate removes the method from all of them at once.
+2. ⚠️ **Published store and landing copy now overstates what a production build contains.** The frame sentence's second beat — _a CBT programme — cognitive behavioural therapy — to work through when you want one_ — is committed in the App Store description, the Play listing and the landing hero (§ 3 records where each is pinned). A person reading any of those and installing the shipped app cannot reach a programme. That is a truthfulness problem in live copy, not a positioning preference, and it wants either the gate lifted or those surfaces rewritten before the next store submission.
+3. **The refusals table's _Wellness / toolkit_ row loses its standing argument.** _Mental health tools_ passes there because "the specific thing now lives in beat two of the frame sentence, put on every surface by clause 1". On a production build it is put on no surface, so the noun is the flat inventory that row refuses.
+
+The **inventory** row in § The hierarchy is what permits the change at all: what the product contains is unbound by the frame. What the frame does bind is copy, and copy is where the cost landed. Nothing here rewrites clause 1 — reversing an owner instruction is not this document's to do, and a clause quietly softened to fit a build is worth less than a clause recorded as breached.
+
 ✅ **_"Don't list everything flat"_ survives verbatim inside clause 1.** Promoting the tools does not repeal it: **eight items is still a flat list.** The landing hero is the worked example. Before [#1616](https://github.com/Selftend/selftend/issues/1616), `src/i18n/locales/en/auth.json` read:
 
 > _"Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions."_

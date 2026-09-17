@@ -10,6 +10,18 @@ The app shell introduction is tracked in `user_preferences`; module introduction
 
 Meditation and ACT are no longer placeholders - both shipped with reviewed module specs (`meditation-tmi.md`, `act-harris-happiness-trap.md`) and both persist their own data (`meditation_sessions` / `meditation_program_state`; the ACT exercise tables). The conditions the placeholder rule set have been met, so the standing product guardrails apply to them as they do to every shipped module: reminders stay opt-in and quiet by default, no streak pressure, no implied therapeutic outcomes.
 
+## Module visibility (2026-09-17)
+
+☠️ **The three modules — CBT, ACT and DBT — ship hidden on production builds.** `modulesAreVisible()` (`src/lib/module-visibility.ts`) is true only for a Metro/debug bundle or an EAS `development` environment; `preview` and `production` see no module at all. This was an owner instruction reversing a standing decision, not a defect being fixed, so the reasons the old decision gave still stand unanswered — `CONTEXT.md`'s favourites entry and `docs/positioning.md` § 1 both record what it cost.
+
+What the gate does **not** touch, and must not:
+
+- **Data.** Every `*_program_*` column and every `act_*` / `dbt_*` table stays. Export and account deletion still cover them — a hidden surface must never strand rows a person can no longer reach or erase.
+- **The catalogue constant.** `CATALOGUE` in `src/features/favorites/items.ts` is still the eleven, so "catalogue order" keeps a single referent; the gate filters at the render sites.
+- **The module contract below.** A hidden module is still a shipped module: its reminders stay opt-in, its copy stays non-medical, and the programme lifecycle rules still bind it.
+
+⚠️ Note for whoever lifts this: `preview` is gated too, so the modules cannot be tested on an internal-distribution device build. That was the literal instruction and is the clause most likely to want revisiting.
+
 ## Expansion Rule
 
 Before a placeholder becomes real, add a module spec covering:

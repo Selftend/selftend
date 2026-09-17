@@ -9,6 +9,7 @@ import {
   isWritableStepToolId,
 } from "@/src/features/routines/step-tool-rollout";
 import {
+  buildOfferableStepToolGroups,
   OFFERABLE_STEP_TOOL_GROUPS,
   STEP_TOOL_GROUPS,
 } from "@/src/features/routines/routine-editor-screen";
@@ -175,5 +176,38 @@ describe("routine_steps tool_id allowlist", () => {
     // carries a DBT-tooled step cannot wedge the deploy over data that becomes
     // legal again the moment the allowlist widens.
     expect(declaration!.sql).toMatch(/not valid\s*;/);
+  });
+});
+
+/**
+ * The module build gate (2026-09-17), a SECOND filter over the rollout one above, kept
+ * separate from it on purpose: `isWritableStepToolId` mirrors the DB CHECK constraint
+ * asserted in this very file, so routing a per-build client flag through it would let the
+ * client disagree with Postgres. This one only changes what the picker OFFERS.
+ */
+describe("the module build gate over the step-tool picker", () => {
+  it("drops the cbt, act and dbt groups when modules are hidden", () => {
+    const visible = buildOfferableStepToolGroups(true).map((group) => group.key);
+    const hidden = buildOfferableStepToolGroups(false).map((group) => group.key);
+
+    expect(visible).toContain("cbt");
+    expect(visible).toContain("act");
+    expect(hidden).not.toContain("cbt");
+    expect(hidden).not.toContain("act");
+    expect(hidden).not.toContain("dbt");
+  });
+
+  it("keeps every non-module group, and none of them emptied", () => {
+    expect(buildOfferableStepToolGroups(false).map((group) => group.key)).toEqual([
+      "checkins",
+      "mindfulness",
+      "habits",
+    ]);
+    expect(buildOfferableStepToolGroups(false).every((group) => group.tools.length > 0)).toBe(true);
+  });
+
+  it("leaves the rollout filter's own result alone", () => {
+    // The gate is a view over it, never a mutation of it.
+    expect(buildOfferableStepToolGroups(true)).toBe(OFFERABLE_STEP_TOOL_GROUPS);
   });
 });

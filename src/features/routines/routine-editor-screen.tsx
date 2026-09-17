@@ -31,6 +31,7 @@ import {
 } from "@/src/features/routines/queries";
 import { ROUTINE_NAME_MAX, routineInputSchema } from "@/src/features/routines/schemas";
 import { isWritableStepToolId } from "@/src/features/routines/step-tool-rollout";
+import { modulesAreVisible } from "@/src/lib/module-visibility";
 import type {
   RoutineCadence,
   RoutineInput,
@@ -138,6 +139,34 @@ export const OFFERABLE_STEP_TOOL_GROUPS = STEP_TOOL_GROUPS.map((group) => ({
   ...group,
   tools: group.tools.filter((toolId) => isWritableStepToolId(toolId)),
 })).filter((group) => group.tools.length > 0);
+
+/** The three step-tool groups that are a module's. */
+const MODULE_STEP_GROUP_KEYS = new Set<string>(["cbt", "act", "dbt"]);
+
+/**
+ * {@link OFFERABLE_STEP_TOOL_GROUPS} with the module groups dropped on a build that hides
+ * modules (2026-09-17, owner instruction).
+ *
+ * ☠️ A **second** filter rather than a widening of the one above, and the two must not be
+ * merged. `isWritableStepToolId` is *rollout*: it mirrors a DB CHECK constraint
+ * (`20260912000000_routine_step_tool_allowlist.sql`) and `step-tool-rollout.test.ts` fails
+ * if the two disagree — so routing the build gate through it would make a client-side,
+ * per-build flag disagree with a server-side constraint, and the failure would be a
+ * write rejected by Postgres. This filter touches only what the picker OFFERS.
+ *
+ * It also deliberately does not reach `TOOL_STEP_ROUTES`: a routine somebody already saved
+ * with a CBT step must still resolve to a path, or `continue-routine-sheet` hands
+ * `undefined` to `pushWithOrigin` and throws. Such a step still routes, and the
+ * `/modules` layout redirects it to Home.
+ *
+ * A function, not a derived constant: a module-level derivation would freeze the flag at
+ * import, and the whole suite imports this module with `__DEV__` true.
+ */
+export function buildOfferableStepToolGroups(showModules = modulesAreVisible()) {
+  return showModules
+    ? OFFERABLE_STEP_TOOL_GROUPS
+    : OFFERABLE_STEP_TOOL_GROUPS.filter((group) => !MODULE_STEP_GROUP_KEYS.has(group.key));
+}
 
 export function RoutineEditorScreen({
   fallbackHref,
@@ -538,7 +567,7 @@ export function RoutineEditorScreen({
 
       <View className="gap-3">
         <Label>{t("form.addStepLabel")}</Label>
-        {OFFERABLE_STEP_TOOL_GROUPS.map((group) => (
+        {buildOfferableStepToolGroups().map((group) => (
           <View key={group.key} className="gap-2">
             <Text variant="muted" className="text-xs font-semibold uppercase tracking-wide">
               {t(`form.groups.${group.key}` as const)}
