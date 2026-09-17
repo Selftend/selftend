@@ -395,6 +395,48 @@ report is read by people who did not write it:
   Those were refused on data minimisation, not deferred —
   [ADR-0012](adr/0012-a-programme-records-where-you-stopped-never-when.md).
 
+##### What the app records about a programme's life, and what it refuses
+
+Ruled across [map #2529](https://github.com/Selftend/selftend/issues/2529) and
+recorded in [ADR-0012](adr/0012-a-programme-records-where-you-stopped-never-when.md).
+Stated here because this document is where the next person reaches for it, and
+because a refusal nobody wrote down is rediscovered as a gap — which is exactly
+how [#2386](https://github.com/Selftend/selftend/issues/2386) came to be filed.
+
+**A stall is a reading, not a record.** A run that has gone quiet —
+`*_program_phase_started_at` ageing while `*_program_started_at` stays set — is
+derivable from the columns as they are, and the app deliberately stores no
+`stalled` status. Nothing in the product is awake to write one: there is no
+cron, no server job and no `pg_cron`, so a stored status would be wrong from the
+moment it became true until somebody next opened the app. Section 7b computes
+the staleness itself, in fixed buckets with no threshold — and because the
+module gate ([#2446](https://github.com/Selftend/selftend/issues/2446)) removes
+the door rather than the person's interest, it carries a gate-date annotation
+saying which part of a wait the product caused.
+
+**The dates of a run that ended are refused, and the fossil is the record.**
+`*_program_started_at` means _when the current run started_, null when there is
+none — state by definition, not an event that was destroyed. What survives an
+abandonment is `*_program_phase_started_at` non-null beside a null
+`*_program_started_at`, which says a run existed, and `*_program_phase_index`,
+which says how far it got. That pair is a contract and is pinned by
+`test/programme-fossil-contract.test.ts`. _When_ the run started and _when_ it
+was left are not kept: neither earns a column under `AGENTS.md`'s feature-level
+bar, and no product feature reads either.
+
+⚠️ **Do not read `*_program_prompt_dismissed_at` as a leave time.**
+`abandonProgram` happens to write it, but `dismissProgramPrompt` writes the same
+column, so any later dismissal silently overwrites it. It is evidence, never a
+record, and no report may date an exit from it. The engagement report's watch
+list names this exclusion in its own comments so the next reader meets it before
+the column.
+
+**Only the most recent run is visible, by decision.** A start or a replay
+overwrites the fossil, so the app keeps no history of how many times a person
+began and stopped a programme, and will not. A `programme_runs` table was
+priced and refused: what it would eventually hold is a log of repeated attempts
+at a mental-health programme.
+
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
 `notifications_enabled_global`**, which defaults to true and is true for nearly
@@ -941,33 +983,30 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 > population — and it is now a reported section. Only abandonment **inside a
 > single wizard form** needs client-side events.
 >
-> ⚠️ **Correction, made while building the funnel (#2375): it does not show
-> abandonment, and the sentence that said so was wrong.** The programme columns
-> are **current state, not events**. `abandonProgram` writes `started_at = null`
-> and leaves `phase_index` where it was, so quitting does not merely go
-> unreported — it is **erased**, and the person leaves the numerator and the
-> denominator together. Someone who stopped at phase 3 is indistinguishable from
-> someone who never began, and the drop-off the funnel prints is therefore
-> optimistic.
+> ⚠️ **Corrected twice, and settled on [map #2529](https://github.com/Selftend/selftend/issues/2529).**
+> The first correction (#2375, while building the funnel) said the funnel did
+> not show abandonment and that quitting was **erased**. The first half was
+> right and the second **overstated it**: `abandonProgram` writes
+> `started_at = null` but leaves `phase_index` **and `phase_started_at`**
+> standing, which identifies the ended run exactly. Nothing was destroyed. What
+> was never kept is two dates, and [#2530](https://github.com/Selftend/selftend/issues/2530)
+> refused them deliberately rather than leaving the gap open.
 >
-> ⚠️ **Half of that is now fixed and the other half is superseded.** Replaying no
-> longer clears `completed_at` ([#2530](https://github.com/Selftend/selftend/issues/2530),
-> ADR-0012). And _"erased"_ overstated the rest: `abandonProgram` leaves
-> `phase_index` **and `phase_started_at`** standing, which identifies the ended
-> run exactly — what was lost is two dates, refused deliberately rather than
-> destroyed. This paragraph is replaced in full by
-> [#2554](https://github.com/Selftend/selftend/issues/2554) once the report reads
-> that record.
+> The funnel now prints what the record supports: who is still in a programme,
+> who completed, and — beside it, never as a step in it — **who left and at
+> which phase**. It still cannot date a leave, and that is a **refusal rather
+> than a gap**. So the question this passage once stood on is answered, and it
+> is no longer one of the things standing behind Phase 3.
 >
 > That leaves in-wizard abandonment and seen-but-unused discovery as the genuine
 > candidates, and **neither is named as a trigger**. Before anyone reaches for an
-> event library to learn where people stall, **read the programme funnel** — it
-> shows how far the people still in a programme have got, which is less than the
-> question but is not nothing, and it costs no new collection. ☠️ **Recording
-> abandonment properly is a change to what the app writes, not to what the
-> report reads**, so it is not an argument for client-side events either. A named
-> trigger is a loaded gun for the next reader, and nothing here warrants leaving
-> one out.
+> event library to learn where people stall, **read section 7** — the funnel, the
+> people who left by exit phase, and how long each still-open run has been quiet,
+> all of it from columns the app already writes. ☠️ **Recording a leave properly
+> was a change to what the app writes, not to what the report reads** — that
+> change has now been made and it needed no new field, so it is not an argument
+> for client-side events either. A named trigger is a loaded gun for the next
+> reader, and nothing here warrants leaving one out.
 
 #### Tool options (self-hostable, privacy-respecting)
 
