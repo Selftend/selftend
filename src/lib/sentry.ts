@@ -190,8 +190,69 @@ export function captureError(error: unknown, context?: Record<string, unknown>):
   Sentry.captureException(normalized, extra ? { extra } : undefined);
 }
 
+/**
+ * How a lost connection words itself, per platform.
+ *
+ * ☠️ **This list is per-platform, and it only ever held the two wordings a developer
+ * sees on their own machine.** "Network request failed" is React Native's fetch and
+ * "Failed to fetch" is Chromium's - between them they cover an Android device and a
+ * desktop Chrome tab, which is exactly the pair you hit while building. Neither iOS
+ * nor WebKit says either of those things, so an offline failure on those two platforms
+ * walked straight through the filter and paged someone. The web build reported
+ * SELFTEND-E on that hole and an iPhone reported SELFTEND-J; the docblock on
+ * `PreferencesReadTimeoutError` had meanwhile written the gap down as a guarantee -
+ * "Every genuinely-offline read still rejects with a network message" - which is part
+ * of why it went unnoticed.
+ *
+ * Every entry is a wording an OS or engine produces for connectivity it lost on its
+ * own, never a string this app writes. Adding one asserts the request never reached
+ * the server, so a phrase a real server failure could also carry - a bare "Load
+ * failed", say - does not belong here: it would silence the defect it names.
+ */
+const OFFLINE_ERROR_MESSAGES = [
+  // React Native's fetch, both platforms.
+  "Network request failed",
+  // Chromium's fetch.
+  "Failed to fetch",
+  // WebKit's XHR and its `NetworkError` DOMException - SELFTEND-E, which reached
+  // Sentry from the web build as an unhandled rejection with no frame of ours in it.
+  "A network error occurred",
+  // iOS URLSession's NSURLErrorNetworkConnectionLost (-1005), which arrives in JS
+  // wrapped by whichever Expo module was mid-flight - SELFTEND-J.
+  "The network connection was lost",
+  // Its sibling NSURLErrorNotConnectedToInternet (-1009): the same class of failure,
+  // named here rather than waiting for its own Sentry issue to prove it.
+  "The Internet connection appears to be offline",
+];
+
+/**
+ * Auth-callback outcomes that are the person's own path through the flow.
+ *
+ * `AuthCallbackError` names the step, not a fault: `cross_device` is an emailed link
+ * opened in a browser that never held the PKCE verifier, and `expired_or_used` is a
+ * link that sat in an inbox too long or that a mail scanner already clicked. Both land
+ * on a calm translated card offering a new link, so nothing is broken and nobody needs
+ * paging - SELFTEND-C was one of these, arriving from the OAuth path.
+ *
+ * ☠️ The existing auth rule below cannot cover them however it is widened: it gates on
+ * a numeric `status`, and `AuthCallbackError` carries none - the whole point of the
+ * class is that GoTrue's status and message are dropped before the throw. So the name
+ * passes `startsWith("Auth")`, the status check fails, and it reports.
+ *
+ * Matched on the message rather than `instanceof`, deliberately: this module must not
+ * import from `features/`, and `auth-callback:<code>` is already documented in
+ * `callback-errors.ts` as a stable, non-sensitive identifier for exactly this use. The
+ * other codes stay reportable - `generic`, `missing_params` and `identity_exists` can
+ * each mean the app got something wrong.
+ */
+const EXPECTED_AUTH_CALLBACK_MESSAGES = new Set([
+  "auth-callback:cross_device",
+  "auth-callback:expired_or_used",
+]);
+
 // Expected-in-normal-operation failures that must not page anyone: user is
-// offline, request aborted on unmount, or an auth token simply expired.
+// offline, request aborted on unmount, an auth token simply expired, or an
+// emailed link was opened somewhere it could not complete.
 //
 // The rules run against the normalised error, so a non-`Error` throw - a bare string, or
 // the `{ message }` object a fetch/PostgREST layer can reject with - is judged on the same
@@ -203,9 +264,13 @@ export function isReportableError(error: unknown): boolean {
     return false;
   }
 
+  if (OFFLINE_ERROR_MESSAGES.some((wording) => normalized.message.includes(wording))) {
+    return false;
+  }
+
   if (
-    normalized.message.includes("Network request failed") ||
-    normalized.message.includes("Failed to fetch")
+    normalized.name === "AuthCallbackError" &&
+    EXPECTED_AUTH_CALLBACK_MESSAGES.has(normalized.message)
   ) {
     return false;
   }
