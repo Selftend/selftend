@@ -55,6 +55,25 @@
 \set age_gate_cutoff_source 'AGE_GATE_INTRODUCED_AT'
 \set age_gate_cutoff '2026-09-05T00:00:00Z'
 
+-- ☠️ THE MODULE GATE DATE, AND IT IS DELIBERATELY EMPTY (#2553, ruled on #2535).
+-- When the module gate (#2446) removes a programme's door, every run still open
+-- stops advancing FOR A REASON THE PRODUCT CAUSED. Section 7b's buckets would
+-- then show a population going quiet and mean nothing about the people in it.
+--
+-- ⚠️ It ANNOTATES, it does not suppress. A rule that hid rows past this date
+-- would be the report deciding what the reader may see; a sentence saying what
+-- the window contains lets them read the rows and know what they are. That is
+-- the same choice 7b makes about thresholds, one layer out.
+--
+-- Set it to the release instant when the gate ships. While it is empty the
+-- annotation does not print at all - not a half-sentence, not an empty date.
+--
+-- ⚠️ The on/off flag is derived in section 7b, immediately before it is read,
+-- NOT here. Deriving it beside this `\set` would freeze it at definition time
+-- and make the variable un-overridable, which is the one thing the comment on
+-- `age_gate_cutoff` above says these variables are for.
+\set programme_gate_date ''
+
 -- The block below is byte-identical in analytics-onboarding.sql and
 -- analytics-segment.sql; test/analytics-shared-sql.test.ts fails if they drift.
 -- >>> shared:accounts
@@ -293,6 +312,23 @@ create temp view programme_steps(programme, step_order, step, kind, min_phase_in
   union all
   select pl.programme, pl.total_phases + 2, 'graduation dismissed', 'graduation_dismissed', null
     from programme_labels pl;
+
+-- Section 7b's buckets, listed here rather than derived, because a duration
+-- band is a reporting choice and not a fact about the data. A FIXED-shape list
+-- for the same reason every other table in this file is fixed: every bucket
+-- prints for every programme and both account types, zeros included.
+--
+-- ☠️ These bounds are NOT a threshold and must never acquire one. #2530 refused
+-- to store a `stalled` status because a threshold freezes an analyst's
+-- judgement into a person's row; naming one of these bands "too long" in a
+-- label, a heading or a comment re-commits that error where the reader will
+-- read it as the report's own verdict. The bands exist to make a distribution
+-- legible, and the reader draws every conclusion.
+create temp view quiet_buckets(bucket_order, bucket, from_days, to_days) as values
+  (1, '0-7 days', 0, 7),
+  (2, '8-30 days', 8, 30),
+  (3, '31-90 days', 31, 90),
+  (4, '90+ days', 91, null);
 
 -- ============================================================================
 -- FIRST OCCURRENCES (#2379). Facts that became true for the FIRST TIME EVER
@@ -903,6 +939,74 @@ select account,
        pg_temp.k_count(users) as users
 from left_at
 order by account, programme, phase;
+
+\echo
+\echo '    -- 7b) How long since a run still open last moved --'
+\echo '    `<5` = k=5 suppressed count. Every bucket prints for every programme and both account types,'
+\echo '    zeros included. Counts runs that are STILL OPEN - not the ones above, which are over.'
+\echo '    ☠️ These are durations, not a verdict. The report states how long; it does not say how long is'
+\echo '    too long, and no number here is a judgement about any person. Read the buckets yourself.'
+select case when :'programme_gate_date' = '' then 'off' else 'on' end
+  as programme_gate_annotated \gset
+\if :programme_gate_annotated
+\echo '    ⚠️ Buckets reaching past the module gate date include a window in which no run COULD advance,'
+\echo '    because the door was gone. That part of the wait is the product, not the person.'
+\endif
+-- ☠️ BLOCK B (#2553, ruled on #2535). The ONE thing this block must never do is
+-- classify. #2530 refused to STORE a `stalled` status because a threshold
+-- freezes one analyst's judgement into a person's row, as an inference about a
+-- mental-health behaviour. A block that printed `stalled: 10` would commit that
+-- same error one layer out, in a column heading instead of a column.
+--
+-- ☠️ SO: no threshold, and the word "stalled" appears NOWHERE in what this
+-- prints. Buckets state the record and the reader does the reading - which is
+-- `show the record, don't read it` (#711) applied to the instrument itself.
+-- test/analytics-quiet-buckets.test.ts fails if that word reaches the output.
+--
+-- ⚠️ "Last moved" is `coalesce(phase_started_at, started_at)`: the current
+-- phase's start, falling back to the programme's for a run that has never
+-- advanced. That coalesce is the same read the app itself does, and #2533's
+-- guardrail - the product may show WHERE you are, never HOW LONG - binds
+-- RENDERING, not reading. This is a maintainer's report, not a surface.
+--
+-- ⚠️ A run is open when it has a start and is not graduated, and graduated is
+-- `completed_at >= started_at` (ADR-0012), never `completed_at is not null` -
+-- a completion now outlives the run that earned it. A left run has no
+-- `started_at` and is therefore absent here, where it belongs: it is over, and
+-- block A above is where it is counted.
+with open_runs as (
+  select pp.account,
+         pp.programme,
+         floor(
+           extract(epoch from (now() - coalesce(pp.phase_started_at, pp.started_at))) / 86400
+         )::bigint as quiet_days
+  from programme_progress pp
+  where pp.started_at is not null
+    and (pp.completed_at is null or pp.completed_at < pp.started_at)
+),
+bucketed as (
+  select l.account,
+         pl.programme,
+         b.bucket_order,
+         b.bucket,
+         count(r.account) filter (
+           where r.quiet_days >= b.from_days
+             and (b.to_days is null or r.quiet_days <= b.to_days)
+         ) as users
+  from account_labels l
+  cross join programme_labels pl
+  cross join quiet_buckets b
+  left join open_runs r
+         on r.account = l.account
+        and r.programme = pl.programme
+  group by l.account, pl.programme, b.bucket_order, b.bucket
+)
+select account,
+       programme,
+       bucket as since_last_phase_move,
+       pg_temp.k_count(users) as users
+from bucketed
+order by account, programme, bucket_order;
 
 \echo '=== 8) Reminder adoption (user_preferences.reminder_consent) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
