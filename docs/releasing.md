@@ -281,6 +281,16 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 
 For a production emergency where `dev` carries unrelated unreleased work, use the [hotfix path](#hotfixes) instead of a revert-through-promotion.
 
+## ☠️ Modules are hidden on iOS, and beta elsewhere (2026-09-17) — what it changes at release time
+
+CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shipped **labelled beta** on Android and web (`modulesAreVisible` / `modulesAreBeta`, `src/lib/module-visibility.ts`). Owner instruction. Because the gate is iOS-only, **Android and web releases are unaffected** apart from the beta mark; everything below is iOS.
+
+1. **The App Store screenshot job cannot capture its CBT image.** [`.maestro/app-store-screenshots.yaml`](../.maestro/app-store-screenshots.yaml) runs against `appId: org.vasilyoshev.selftend` — the **production** bundle id, not the `.dev` variant — and line 161 deep-links `${APP_LINK}modules/cbt` to capture the `02-cbt` listing image. That link now redirects to Home, so the job either captures Home twice or fails its wait. Decide before the next listing refresh: point the job at a dev build (it then photographs "Selftend Dev" branding, which must not be published), or drop the CBT image from the App Store set. **The Play screenshot set is unaffected** — Android still shows the modules.
+2. **Two App Store fields now overstate what iOS delivers.** The `description` and `subtitle` commit the frame sentence's second beat — _a CBT programme … to work through when you want one_ — and an iOS user cannot reach one. This is a truthfulness problem in live copy, not a preference; [`positioning.md`](positioning.md) § 1 records it beside the clause it breaches. **Resolve before the next App Store submission**, either by lifting the iOS gate or rewriting those two fields. The Play listing and the landing page are fine as written.
+3. **iOS `preview` is gated too**, so modules cannot be exercised on an internal-distribution iOS build. Android preview is unaffected.
+
+The in-app surfaces the gate covers are listed in [`modules/tools.md`](modules/tools.md); the data layer, export and deletion are deliberately untouched.
+
 ## Store metadata drift
 
 Selftend's Apple **age-rating declaration** is mirrored in the repository at [`store/apple-advisory.json`](../store/apple-advisory.json), and `store-metadata-drift.yml` pulls the live values from App Store Connect every Monday and fails if they no longer match.

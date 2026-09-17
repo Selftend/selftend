@@ -25,12 +25,22 @@ import { reminderChannelErrorKey } from "@/src/features/notifications/channel-er
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { cancelAllReminders, reminderChannelUnsupportedReason } from "@/src/lib/notifications";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { modulesAreVisible } from "@/src/lib/module-visibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 /** Which control owns the open permission prompt, if any. */
 type PendingControl = "master" | "channel" | NotificationTargetKey | null;
+
+/**
+ * The reminder targets that belong to a module, so a build hiding modules hides their
+ * rows too (see the filter in the component). Spelled out rather than derived from
+ * `ModuleKey`: the notification registry and the module catalogue are separate lists that
+ * merely happen to share three names today, and a target that later belongs to a module
+ * without sharing its key would be silently missed by a derivation.
+ */
+const MODULE_TARGET_KEYS = new Set<string>(["cbt", "act", "dbt"]);
 
 /**
  * The three nested offsets that add up to the arrived-at row's position in the scroll
@@ -68,6 +78,7 @@ export default function NotificationsScreen() {
   const { t } = useTranslation("notifications");
   const { user } = useSession();
   const userId = user?.id ?? null;
+  const showModules = modulesAreVisible();
 
   const { data: preferences, isLoading } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
@@ -259,7 +270,23 @@ export default function NotificationsScreen() {
    * is the registry's.
    */
   const generalTarget = getNotificationTarget("general");
-  const toolTargets = NOTIFICATION_TARGETS.filter((target) => target !== generalTarget);
+  /**
+   * ☠️ The module gate is applied HERE, in the screen, and deliberately not in
+   * `reminder-rollout.ts` beside `HELD_OUT_REMINDER_TARGETS` — which is where it looks
+   * like it belongs. That file is loaded by the Deno edge function as well as by the app
+   * and must stay import-free; pulling `module-visibility` into it would drag `appEnv`
+   * and `react-native` into the edge runtime.
+   *
+   * The two mechanisms also mean different things and must not be merged. Held-out is a
+   * *rollout* state, shared by client and server, about a deep link older installs cannot
+   * open. This is a *build* state, client-only: the server may still deliver a CBT
+   * reminder somebody enabled on a build that showed CBT, and it should — the tap lands on
+   * Home via the `/modules` route gate rather than nowhere. What this filter stops is a
+   * person newly arming a reminder for a module this build does not show.
+   */
+  const toolTargets = NOTIFICATION_TARGETS.filter(
+    (target) => target !== generalTarget && (showModules || !MODULE_TARGET_KEYS.has(target.key)),
+  );
 
   /**
    * One row of the rows card in whichever branch is live: the real row once

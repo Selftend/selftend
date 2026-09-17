@@ -84,11 +84,19 @@ describe("ItemCard structure (#1887)", () => {
   });
 
   /**
-   * A module card carries NO stat — an absent child, not a blank slot. Stated as a
-   * count of the region's text nodes (mark, name, what-it-is) so a fourth node under
-   * any wording fails here.
+   * A module card carries NO stat — an absent child, not a blank slot. Stated as an
+   * exhaustive list of the region's text nodes so a new node under any wording fails
+   * here and has to be justified.
+   *
+   * ☠️ **The beta mark is the fourth node, and it is not the thing this test guards
+   * against.** Ruling #2040 refuses a module card "a figure of its own": a use count is
+   * the product reading the person's record back at them, which ADR-0004 forbids. Beta is
+   * a fact about the software — true for every reader, derived from nothing the person
+   * did — and it sits on the name row rather than in the stat slot, because that slot
+   * means "what this holds for you". The `card-stat-` assertion below is the one carrying
+   * #2040 and is deliberately untouched.
    */
-  it("gives a module card exactly three text nodes and no stat node", () => {
+  it("gives a module card its mark, name, what-it-is and beta mark — and no stat node", () => {
     mockStat = "would be drawn on a tool";
     renderWithProviders(<ItemCard item={CBT} userId="user-1" favorites={[]} />);
 
@@ -96,8 +104,17 @@ describe("ItemCard structure (#1887)", () => {
       .queryAllByText(/.+/)
       .map((node) => node.props.children)
       .filter((child): child is string => typeof child === "string");
-    expect(texts).toEqual(["CBT", "Cognitive behavioural therapy", "Think · Act · Be"]);
+    expect(texts).toEqual(["CBT", "Cognitive behavioural therapy", "Beta", "Think · Act · Be"]);
     expect(screen.queryByTestId(/^card-stat-/)).toBeNull();
+  });
+
+  it("puts the beta mark on the module card and never on a tool card", () => {
+    renderWithProviders(<ItemCard item={CBT} userId="user-1" favorites={[]} />);
+    expect(screen.getByTestId("card-beta-cbt")).toHaveTextContent("Beta");
+
+    screen.unmount();
+    renderWithProviders(<ItemCard item={MOOD} userId="user-1" favorites={[]} />);
+    expect(screen.queryByTestId(/^card-beta-/)).toBeNull();
   });
 
   it("inks a tool's glyph as a mark and a module's abbreviation as text, with no hue", () => {
