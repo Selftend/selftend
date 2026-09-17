@@ -1260,6 +1260,56 @@ describe("aggregate analytics reports (integration)", () => {
       });
     });
 
+    describe("☠️ a half holding no mature users at all", () => {
+      // The case the rewritten section 2 legend is ABOUT. The sentence it
+      // replaced claimed such a half "still prints a guest ordering whose arms
+      // are all one arm" — false, because a half may hold ZERO arms with mature
+      // users, not one. Registered carries both axes on its own; the single
+      // guest is four days old, so it is in every table and mature in none.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(190), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(191), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(192), createdAtSql: "now() - interval '4 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(190), languageSql: `'en'` },
+          { id: userId(191), languageSql: `'bg'` },
+        ]);
+        insertModuleContent([
+          { id: userId(190), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(191), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("counts zero arms with mature users for that half", () => {
+        // Pinned directly, because zero and one are the two shapes the deleted
+        // sentence conflated.
+        const [row] = queryWithinCohort(
+          "segment",
+          `select count(distinct ul.arm)
+             from user_locale ul
+             join locale_labels ll on ll.arm = ul.arm
+             join user_w4 w on w.user_id = ul.user_id
+            where w.w4_mature and ul.account = 'guest';`,
+        );
+        expect(row).toEqual(["0"]);
+      });
+
+      it("marks it, exactly as it marks a half holding one", () => {
+        expect(markedHalves(3)).toEqual(["guest"]);
+        expect(markedHalves(4)).toEqual(["guest"]);
+      });
+
+      it("still prints every arm for it, zeros included", () => {
+        expect(armsPrintedFor(3, "guest")).toHaveLength(4);
+        expect(armsPrintedFor(4, "guest")).toHaveLength(9);
+      });
+    });
+
     describe("a withheld ordering says so once, and does not also take the marker", () => {
       // Where `readable` is false the section is replaced by the single
       // `(ordering withheld)` row, and the per-half label must stay silent -
