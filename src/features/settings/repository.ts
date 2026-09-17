@@ -314,12 +314,18 @@ export class PreferencesReadAbortedError extends Error {
  *
  * ⚠️ This does NOT re-open the noise #1548 narrowed away. That narrowing is by
  * `name`/`message`/`status`, and this error matches none of its rules: it is
- * not an abort the app asked for, it does not carry "Network request failed" or
- * "Failed to fetch", and it has no auth status. Every genuinely-offline read
- * still rejects with a network message or the abort name above and stays
- * filtered. Nothing in the filter changed for this - the type is distinct
- * enough that the existing rules simply do not match it, which is pinned by
+ * not an abort the app asked for, it carries none of the per-platform offline
+ * wordings in `OFFLINE_ERROR_MESSAGES` (src/lib/sentry.ts), and it has no auth
+ * status. Nothing in the filter changed for this - the type is distinct enough
+ * that the existing rules simply do not match it, which is pinned by
  * `repository.test.ts`.
+ *
+ * ☠️ An earlier draft of this paragraph went further and claimed "every
+ * genuinely-offline read still rejects with a network message", naming the two
+ * wordings the filter then held. That was false on iOS and on WebKit, which
+ * word it differently and so reported for real (SELFTEND-E, SELFTEND-J). The
+ * list is the source of truth; do not restate its contents here, or the next
+ * platform added to it will leave a second stale guarantee behind.
  */
 export class PreferencesReadTimeoutError extends Error {
   constructor(cause: unknown) {

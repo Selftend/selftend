@@ -5,6 +5,11 @@ import {
   scrubEvent,
   shouldEnableSentry,
 } from "@/src/lib/sentry";
+// The real class, not a hand-copied `auth-callback:<code>` string. `sentry.ts` matches on
+// that message and must not import from `features/`, so the coupling is unenforced in the
+// source; importing the constructor here is what makes a rename fail this test rather
+// than silently un-suppress SELFTEND-C in production.
+import { AuthCallbackError } from "@/src/features/auth/callback-errors";
 
 jest.mock("@sentry/react-native", () => ({
   init: jest.fn(),
@@ -121,6 +126,62 @@ describe("isReportableError", () => {
   it("skips offline network failures", () => {
     expect(isReportableError(new TypeError("Network request failed"))).toBe(false);
     expect(isReportableError(new TypeError("Failed to fetch"))).toBe(false);
+  });
+
+  /**
+   * The two wordings above are React Native's and Chromium's - an Android device and a
+   * desktop Chrome tab, which is the pair a developer hits on their own machine. iOS and
+   * WebKit word it differently, so offline failures there reported for real: SELFTEND-E
+   * from the web build, SELFTEND-J from an iPhone.
+   */
+  it("skips the iOS and WebKit offline wordings too", () => {
+    // SELFTEND-E, verbatim: an unhandled rejection on the web build, no frame of ours.
+    expect(isReportableError(new Error("NetworkError: A network error occurred."))).toBe(false);
+    // SELFTEND-J, verbatim: NSURLErrorNetworkConnectionLost surfacing through an Expo
+    // module, and as a PostgREST-shaped object rather than an Error.
+    expect(
+      isReportableError({
+        message:
+          "Error: fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)",
+        code: "",
+        details: "",
+        hint: "",
+      }),
+    ).toBe(false);
+    expect(isReportableError(new Error("The Internet connection appears to be offline."))).toBe(
+      false,
+    );
+  });
+
+  it("still reports a server failure that merely mentions the network", () => {
+    // The guard on the list: it holds wordings an OS or engine mints for connectivity it
+    // lost itself, so a real backend fault naming a network stays reportable.
+    expect(isReportableError(new Error("Upstream network policy rejected the request"))).toBe(true);
+  });
+
+  /**
+   * SELFTEND-C. `AuthCallbackError` names the step the person's link failed at, and
+   * these two are their own path through the flow: a link opened in a browser that never
+   * held the PKCE verifier, or one already spent. Both end on a calm card offering a new
+   * link, so neither is a fault.
+   *
+   * The pre-existing auth rule cannot reach them: it gates on a numeric `status`, and the
+   * class deliberately carries none.
+   */
+  it("skips the auth-callback outcomes that are the person's own flow", () => {
+    expect(isReportableError(new AuthCallbackError("cross_device"))).toBe(false);
+    expect(isReportableError(new AuthCallbackError("expired_or_used"))).toBe(false);
+  });
+
+  it("still reports the auth-callback codes that can mean a bug", () => {
+    expect(isReportableError(new AuthCallbackError("generic"))).toBe(true);
+    expect(isReportableError(new AuthCallbackError("missing_params"))).toBe(true);
+    expect(isReportableError(new AuthCallbackError("identity_exists"))).toBe(true);
+  });
+
+  it("does not silence some other error that happens to be named AuthCallbackError", () => {
+    const impostor = Object.assign(new Error("cross_device"), { name: "AuthCallbackError" });
+    expect(isReportableError(impostor)).toBe(true);
   });
 
   it("skips expected 4xx auth errors but reports auth 5xx", () => {
