@@ -51,6 +51,20 @@ const buildEnv = {
   // Pin the app's public URL to the port we serve on so password-reset redirects
   // and any absolute-URL building target the server under test.
   EXPO_PUBLIC_PUBLIC_APP_URL: `http://localhost:${PORT}`,
+  // ☠️ The suite serves an `expo export`, which is a RELEASE bundle: `__DEV__` is
+  // false, so the app here is a production build in every respect that a runtime
+  // flag can see. Since modules went behind a build gate (#modules-dev-only,
+  // `src/lib/module-visibility.ts`) an unset app env reads as "production" and
+  // hides CBT, ACT and DBT - which silently deleted roughly thirty module e2e
+  // specs' subject matter. They did not fail loudly on a missing flag; they timed
+  // out waiting for screens that no longer rendered.
+  //
+  // Pinned to "development" rather than gated per-spec on purpose: the e2e suite
+  // exists to exercise the whole app, and a harness that can only reach the half
+  // of it a production build ships is not testing the product. Anything genuinely
+  // production-shaped (the gate's own behaviour) is a unit test, where the flag is
+  // passed explicitly.
+  EXPO_PUBLIC_APP_ENV: "development",
 };
 
 const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
@@ -65,12 +79,13 @@ const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
 // test was baked with the expected key.
 const BAKED_ENV_MANIFEST = "e2e-baked-env.json";
 const manifestPath = path.join(process.cwd(), OUTPUT_DIR, BAKED_ENV_MANIFEST);
-// The manifest records every baked EXPO_PUBLIC_* for debuggability. Two of
+// The manifest records every baked EXPO_PUBLIC_* for debuggability. Three of
 // them also gate E2E_SKIP_BUILD: the VAPID key, whose absence makes the
-// reminder re-arm suite silently test nothing, and the support address, whose
-// absence removes the support page's form (#1728) - an export from before
-// either was pinned is rebuilt rather than served. Only the VAPID key is
-// verified inside the bundle itself.
+// reminder re-arm suite silently test nothing; the support address, whose
+// absence removes the support page's form (#1728); and the app env, whose
+// absence hides every module and empties ~30 specs in the same silent way - an
+// export from before any of them was pinned is rebuilt rather than served. Only
+// the VAPID key is verified inside the bundle itself.
 const BAKED_ENV_KEYS = [
   "EXPO_PUBLIC_SUPABASE_URL",
   "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -78,10 +93,12 @@ const BAKED_ENV_KEYS = [
   "EXPO_PUBLIC_PLAY_STORE_URL",
   "EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY",
   "EXPO_PUBLIC_SUPPORT_EMAIL",
+  "EXPO_PUBLIC_APP_ENV",
 ];
 const SKIP_BUILD_REQUIRED_KEYS = [
   "EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY",
   "EXPO_PUBLIC_SUPPORT_EMAIL",
+  "EXPO_PUBLIC_APP_ENV",
 ];
 
 function readBakedEnvManifest() {
