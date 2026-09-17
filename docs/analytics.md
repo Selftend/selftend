@@ -52,11 +52,17 @@ Two things to know when reading it:
 - **Fixed-shape tables print both populations always**, zeros included — the two
   account types, the five modules, the four locale arms and the nine
   module-usage arms. Open-shape tables (weeks, feature names) print only what
-  exists. Section 0 of each report carries the axis unconditionally. ⚠️ The one
-  deliberate exception is an ordering the segment report has **withheld** for
-  failing its axis-coverage precondition: that prints a single
-  `(ordering withheld)` row naming the reason, and the section above it says
-  which axis failed.
+  exists. Section 0 of each report carries the axis unconditionally. ⚠️ There are
+  **two** deliberate exceptions, and they differ in scope and in what they do to
+  the table:
+  - the **withheld ordering** — population-wide, `readable` false, the section
+    replaced by a single `(ordering withheld)` row naming the reason, and the
+    section above it says which axis failed;
+  - the **annotated non-ordering** — per account type, the half still printed
+    **in full**, with one row naming the reason. It fires where a half holds
+    fewer than two arms with mature users while the axis is readable across the
+    population, so the ordering printed for that half ranks nothing. It removes
+    no count, and both halves can carry it at once.
 - **The split reads current account state, not state at signup.** Signing up
   from a guest session converts the same `auth.users` row in place, so a
   converted guest reads as `registered` across their whole history. The `guest`
@@ -641,6 +647,47 @@ How to read it, in the order the report prints:
   there is enough retention to read; this says there is an axis to read it along.
   An open gate does not imply a readable cross-tab — that implication is exactly
   the false green — and neither does a covered axis imply an open gate.
+
+  ☠️ **`readable` is population-wide by decision.** The segment question is about
+  the population — [positioning.md](positioning.md)'s segment slot is a claim
+  about who loves Selftend, not about account type — and forking `readable` per
+  account type would give it a different scope from the gate, which is how two
+  conditions drift apart.
+
+  ⚠️ **It leaves a mismatch, and the mismatch is closed by a label rather than by
+  a second gate.** The precondition asks a population-wide question, but the
+  artifact it protects — the **ordering** — is printed per account row. So an
+  account half may hold **zero or one** arm with mature users while the axis is
+  population-readable. That half prints in full, with one row naming the reason,
+  computed from the per-account form of section 2's own test. ☠️ **One definition
+  of _not an ordering_, applied at two scopes, with gating authority at only one
+  of them.**
+
+  ⚠️ **The precondition's threshold is coherent and is not mismatched against the
+  floor.** The ordering is sorted on the **raw** rate, not on `k_pct`'s output,
+  so an ordering is real at one mature user per arm even when every displayed
+  percentage is withheld at `den < 5`. _At least two arms hold a mature user_ is
+  what the **ordering** needs.
+
+  ☠️ **Which sections need a precondition is a property, not a report.** One is
+  needed where a section **orders its arms by a measured quantity** _and_ its arm
+  list is **fixed-shape**, so a degenerate axis still prints a full table. That
+  pair selects `analytics-segment.sql` §3 and §4 and nothing else: every other
+  ranking section in the family is **open-shape**, where a degenerate axis prints
+  one row and **the row count is the evidence**.
+
+  ⚠️ **`analytics-onboarding.sql` has no precondition by decision, not by
+  omission.** Two independent reasons: it has **no gate**, and a false green
+  needs a green — an unreachable gate is at least honestly silent; and every
+  onboarding section that ranks (§3, §5) is open-shape. Its §4 is ordered by a
+  **declared label order** and ranks nothing. ☠️ **Partition-exposure and
+  precondition-need are independent properties** — the first is about recovering
+  a cell by subtraction, the second about whether an ordering may be read — and
+  conflating them is what raised the question. **If a future section ever
+  qualifies on the test above, `axis_coverage` becomes a shared block at that
+  point**, named to the files that need it; until then there is one copy and it
+  cannot drift.
+
 - **Cells below k=5 print `<5`.** See _Small cells print as `<5`_ above, which
   now governs all three reports rather than this one.
 - ☠️ **A flat reading is a finding, and it now terminates rather than

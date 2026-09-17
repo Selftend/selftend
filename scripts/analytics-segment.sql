@@ -535,11 +535,14 @@ from user_w4;
 \echo '    so it can open while every one of those users sits in a single arm.'
 \echo '    Counts ARMS, never people, so there is no cell here for the k=5 rule to suppress.'
 \echo '    Coverage is computed over the WHOLE population, not per account type, while sections 3'
-\echo '    and 4 print both. So an axis covered by registered accounts alone still prints a guest'
-\echo '    ordering whose arms are all one arm. That is deliberate - the segment question is about'
-\echo '    the population, and forking the precondition per account type would make readable mean'
-\echo '    two different things - but read a guest ordering beside a small guest population with that'
-\echo '    in mind. Tracked as issue 2389, not as a defect in the precondition.'
+\echo '    and 4 print both. So an account half may hold ZERO OR ONE arm with mature users while the'
+\echo '    axis is population-readable, and what prints for that half is not an ordering.'
+\echo '    That scope is deliberate and decided: the segment question is about the population, and'
+\echo '    forking this precondition per account type would give readable a second meaning, which is'
+\echo '    how two conditions drift apart. The mismatch it leaves is closed by a LABEL, not by a'
+\echo '    second gate - such a half still prints IN FULL, with one row naming the reason, computed'
+\echo '    from the per-account form of the test above. See docs/analytics.md, Everything is split'
+\echo '    by account type.'
 select axis, arms_total, arms_with_mature_users, readable
 from axis_coverage order by axis;
 
@@ -586,6 +589,9 @@ from axis_coverage order by axis;
 \echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
 \echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
 \echo '    bug, never a reading.'
+\echo '    A (not an ordering) row inside ONE account half means that half holds fewer than two arms'
+\echo '    with mature users, so the ordering above it ranks nothing. The half still prints in full -'
+\echo '    the row annotates it, it does not withhold it - and BOTH halves can carry the row at once.'
 \echo '    user_preferences.language is NOT NULL DEFAULT en, so the en arm holds both people using'
 \echo '    Selftend in English and people who never touched the setting. bg is the arm carrying an'
 \echo '    unambiguous affirmative signal - read the axis as bg-versus-the-rest.'
@@ -607,17 +613,46 @@ with section_rows as (
   left join user_w4 w on w.user_id = ul.user_id
   where (select ac.readable from axis_coverage ac where ac.axis = 'locale')
   group by l.account, ll.arm, ll.arm_order
+),
+-- ☠️ SECTION 2'S OWN TEST, APPLIED PER ACCOUNT TYPE - one definition of NOT AN
+-- ORDERING at a second scope, with gating authority at only one of them.
+-- `readable` stays population-wide and remains the only thing deciding whether
+-- an ordering PRINTS; this decides only whether a row naming the reason appears
+-- beside a half that prints either way. The subquery below is the axis_coverage
+-- subquery with `and ul.account = l.account` added and nothing else
+-- changed, so the two cannot drift into two definitions of the same word.
+half_coverage as (
+  select l.account,
+         (select count(distinct ul.arm)
+            from user_locale ul
+            join locale_labels lb on lb.arm = ul.arm
+            join user_w4 w on w.user_id = ul.user_id
+           where w.w4_mature and ul.account = l.account) as arms_with_mature_users
+  from account_labels l
 )
 select account, arm, users, w4_mature, w4_retained, w4_pct
 from (
-  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm,
+         0 as empty_marker, 1 as row_kind
     from section_rows
   union all
+  -- ⚠️ The half still prints IN FULL: this removes no count and no arm, so the
+  -- exposed-section census is unchanged. BOTH halves can take it at once -
+  -- `readable` is true when one arm holds a mature registered user and a
+  -- DIFFERENT arm holds a mature guest, which is two arms population-wide and
+  -- one in each half.
+  select hc.account,
+         '(not an ordering) fewer than two arms in this account type hold a mature user',
+         null, null, null, null, null, null, 0, 0
+    from half_coverage hc
+   where hc.arms_with_mature_users < 2
+     and exists (select 1 from section_rows)
+  union all
   select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
-         null, null, null, null, null, null, 1
+         null, null, null, null, null, null, 1, 1
    where not exists (select 1 from section_rows)
 ) t
-order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
+order by t.empty_marker, t.account, t.row_kind, t.sort_rate desc nulls last, t.sort_arm;
 
 \echo
 \echo '=== 4) W4 retention by module usage (arms partition the population; every account appears exactly once) ==='
@@ -626,6 +661,9 @@ order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
 \echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
 \echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
 \echo '    bug, never a reading.'
+\echo '    A (not an ordering) row inside ONE account half means that half holds fewer than two arms'
+\echo '    with mature users, so the ordering above it ranks nothing. The half still prints in full -'
+\echo '    the row annotates it, it does not withhold it - and BOTH halves can carry the row at once.'
 \echo '    The arm is measured over THE FIRST 28 DAYS AFTER SIGNUP, the window ending where the W4'
 \echo '    window begins, so the axis is prior to the outcome instead of partly being it. An account'
 \echo '    younger than 28 days carries a provisional arm and is excluded from the rate by maturity.'
@@ -649,14 +687,43 @@ with section_rows as (
   left join user_w4 w on w.user_id = um.user_id
   where (select ac.readable from axis_coverage ac where ac.axis = 'module usage')
   group by l.account, ml.arm, ml.arm_order
+),
+-- ☠️ SECTION 2'S OWN TEST, APPLIED PER ACCOUNT TYPE - one definition of NOT AN
+-- ORDERING at a second scope, with gating authority at only one of them.
+-- `readable` stays population-wide and remains the only thing deciding whether
+-- an ordering PRINTS; this decides only whether a row naming the reason appears
+-- beside a half that prints either way. The subquery below is the axis_coverage
+-- subquery with `and um.account = l.account` added and nothing else
+-- changed, so the two cannot drift into two definitions of the same word.
+half_coverage as (
+  select l.account,
+         (select count(distinct um.arm)
+            from user_modules um
+            join module_labels lb on lb.arm = um.arm
+            join user_w4 w on w.user_id = um.user_id
+           where w.w4_mature and um.account = l.account) as arms_with_mature_users
+  from account_labels l
 )
 select account, arm, users, w4_mature, w4_retained, w4_pct
 from (
-  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm,
+         0 as empty_marker, 1 as row_kind
     from section_rows
   union all
+  -- ⚠️ The half still prints IN FULL: this removes no count and no arm, so the
+  -- exposed-section census is unchanged. BOTH halves can take it at once -
+  -- `readable` is true when one arm holds a mature registered user and a
+  -- DIFFERENT arm holds a mature guest, which is two arms population-wide and
+  -- one in each half.
+  select hc.account,
+         '(not an ordering) fewer than two arms in this account type hold a mature user',
+         null, null, null, null, null, null, 0, 0
+    from half_coverage hc
+   where hc.arms_with_mature_users < 2
+     and exists (select 1 from section_rows)
+  union all
   select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
-         null, null, null, null, null, null, 1
+         null, null, null, null, null, null, 1, 1
    where not exists (select 1 from section_rows)
 ) t
-order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
+order by t.empty_marker, t.account, t.row_kind, t.sort_rate desc nulls last, t.sort_arm;
