@@ -73,14 +73,17 @@ function Section({
  * collapse it, or defer it below a "show more"; applying the empty-Favourites "one quiet
  * line" pattern here returns Home to the bare inventory it used to ship.
  *
- * ☠️☠️ **The one exception, and it is a breach of that clause rather than a case it
- * allows.** `modulesAreVisible()` is false on production and preview builds (2026-09-17,
- * owner instruction), so those builds render Home with the eight tools and no method —
- * precisely the bare inventory the paragraph above forbids. It is deliberate and it is
+ * ☠️☠️ **The one exception is iOS, and it is a breach of that clause rather than a case it
+ * allows.** `modulesAreVisible()` is false on iOS production and preview builds
+ * (2026-09-17, owner instruction), so those render Home with the eight tools and no
+ * method — precisely the bare inventory the paragraph above forbids. It is deliberate and
  * recorded as a breach beside clause 1 itself in `docs/positioning.md` § 1, because the
- * clause was overridden, not satisfied. **This is not a precedent for any other condition
- * on this section.** The empty, guest and zero-state rules above are untouched: inside a
- * build that shows modules, it still renders unconditionally.
+ * clause was overridden, not satisfied. **Android and web are untouched**: they show all
+ * three, labelled beta, so the clause still holds there.
+ *
+ * **This is not a precedent for any other condition on this section.** The empty, guest
+ * and zero-state rules above are untouched: inside a build that shows modules, it still
+ * renders unconditionally.
  *
  * ☠️ `home-layout` must keep exactly that testID: settings-account.e2e scopes to it,
  * panel-navigation.e2e counts roots by it, and .maestro/app-store-screenshots.yaml waits

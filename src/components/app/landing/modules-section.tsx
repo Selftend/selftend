@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CHROME_MARK, CHROME_MUTED_TEXT, CHROME_RULE } from "@/src/lib/theme/chrome";
-import { modulesAreVisible } from "@/src/lib/module-visibility";
+import { modulesAreBeta } from "@/src/lib/module-visibility";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,22 +23,15 @@ export function ModulesSection() {
   const { t } = useTranslation("auth");
 
   /**
-   * ☠️ The landing page is **marketing**, and a marketing page promising a module the
-   * build behind it does not ship is not a styling problem — it is a false claim to
-   * someone deciding whether to sign up. So the gate reaches here too (2026-09-17, owner
-   * instruction): on a production web build the signed-out page stops advertising CBT and
-   * ACT, because a visitor who signs up cannot reach either.
+   * ☠️ **This section is NOT gated, and an earlier revision of this change wrongly gated
+   * it.** The landing page is web, and the module gate is iOS-only — so a visitor reading
+   * this page can reach both modules after signing up, and hiding the cards would have
+   * understated the product to the one audience that still gets it in full.
    *
-   * ⚠️ This closes only the surface the repo controls. The **App Store description, the
-   * Play listing and the landing hero copy** still commit the frame sentence's second beat
-   * — "a CBT programme … to work through when you want one" — and this gate cannot edit
-   * those. That gap is recorded in `docs/positioning.md` § 1 and needs a human before the
-   * next store submission.
+   * What it does carry is the beta mark, for the same reason the Home cards do: the page
+   * is marketing, and marketing a module without saying it is beta is the claim running
+   * ahead of the software.
    */
-  if (!modulesAreVisible()) {
-    return null;
-  }
-
   return (
     <View className="flex-col items-stretch gap-5 sm:flex-row">
       <ModuleCard
@@ -46,12 +39,14 @@ export function ModulesSection() {
         kicker={t("landingPage.cbtKicker")}
         title={t("landingPage.cbtTitle")}
         body={t("landingPage.cbtBody")}
+        beta={t("landingPage.moduleBeta")}
       />
       <ModuleCard
         icon="explore"
         kicker={t("landingPage.actKicker")}
         title={t("landingPage.actTitle")}
         body={t("landingPage.actBody")}
+        beta={t("landingPage.moduleBeta")}
       />
     </View>
   );
@@ -62,11 +57,13 @@ function ModuleCard({
   kicker,
   title,
   body,
+  beta,
 }: {
   icon: MaterialIconName;
   kicker: string;
   title: string;
   body: string;
+  beta: string;
 }) {
   return (
     <View className={cn("flex-1 gap-3 rounded-2xl border bg-card p-7", CHROME_RULE)}>
@@ -79,6 +76,18 @@ function ModuleCard({
         <Text className={cn("text-xs font-bold uppercase tracking-[0.14em]", CHROME_MUTED_TEXT)}>
           {kicker}
         </Text>
+        {modulesAreBeta() ? (
+          <Text
+            testID="landing-module-beta"
+            className={cn(
+              "rounded-full border px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide",
+              CHROME_RULE,
+              CHROME_MUTED_TEXT,
+            )}
+          >
+            {beta}
+          </Text>
+        ) : null}
       </View>
       <Text variant="h2" className="text-xl tracking-tight sm:text-xl">
         {title}

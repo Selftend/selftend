@@ -12,7 +12,16 @@ Meditation and ACT are no longer placeholders - both shipped with reviewed modul
 
 ## Module visibility (2026-09-17)
 
-☠️ **The three modules — CBT, ACT and DBT — ship hidden on production builds.** `modulesAreVisible()` (`src/lib/module-visibility.ts`) is true only for a Metro/debug bundle or an EAS `development` environment; `preview` and `production` see no module at all. This was an owner instruction reversing a standing decision, not a defect being fixed, so the reasons the old decision gave still stand unanswered — `CONTEXT.md`'s favourites entry and `docs/positioning.md` § 1 both record what it cost.
+☠️ **The three modules — CBT, ACT and DBT — are hidden on iOS production builds, and shipped as beta everywhere else.**
+
+| Platform      | Production / preview       | Development build |
+| ------------- | -------------------------- | ----------------- |
+| iOS           | **hidden**                 | visible, beta     |
+| Android / web | visible, **labelled beta** | visible, beta     |
+
+`modulesAreVisible()` (`src/lib/module-visibility.ts`) returns true for every non-iOS platform unconditionally; on iOS it needs a Metro/debug bundle or an EAS `development` environment. `modulesAreBeta()` is a separate answer to a separate question — beta is a property of the modules, not of a platform — so lifting beta and opening the iOS gate are independent acts.
+
+This was an owner instruction reversing a standing decision, not a defect being fixed, so the reasons the old decision gave still stand unanswered **on iOS** — `CONTEXT.md`'s favourites entry and `docs/positioning.md` § 1 record what it cost. On Android and web the old reason still holds and nothing about Home changed except the beta mark.
 
 What the gate does **not** touch, and must not:
 
@@ -20,7 +29,7 @@ What the gate does **not** touch, and must not:
 - **The catalogue constant.** `CATALOGUE` in `src/features/favorites/items.ts` is still the eleven, so "catalogue order" keeps a single referent; the gate filters at the render sites.
 - **The module contract below.** A hidden module is still a shipped module: its reminders stay opt-in, its copy stays non-medical, and the programme lifecycle rules still bind it.
 
-⚠️ Note for whoever lifts this: `preview` is gated too, so the modules cannot be tested on an internal-distribution device build. That was the literal instruction and is the clause most likely to want revisiting.
+⚠️ Note for whoever lifts this: iOS `preview` is gated too, so the modules cannot be exercised on an internal-distribution **iOS** device build. Android preview is unaffected. That is the clause most likely to want revisiting.
 
 ## Expansion Rule
 

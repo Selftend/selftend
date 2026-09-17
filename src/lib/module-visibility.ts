@@ -1,7 +1,13 @@
+import { Platform } from "react-native";
+
 import { appEnv } from "@/src/lib/env";
 
 /**
- * Whether this build shows the three modules (CBT, ACT, DBT) at all.
+ * Whether this build shows the three modules (CBT, ACT, DBT), and whether it calls them
+ * beta.
+ *
+ * **The shape, in one line: Android and web always show them, labelled beta; iOS shows
+ * them only in a dev build.**
  *
  * ☠️ **This gate reverses a decision the repo had written down in three places, and it
  * was added on an explicit instruction rather than discovered as a bug.** Until now the
@@ -10,7 +16,13 @@ import { appEnv } from "@/src/lib/env";
  * forbids". DBT shipped in v0.18.0, ACT stopped being a placeholder before it, and CBT
  * is the module `sanitizeEnabledModules` force-inserts into every account. None of that
  * was an accident, so none of it is safe to quietly re-derive later: if this gate is
- * ever removed, the three docs it changed have to come back with it.
+ * ever removed, the docs it changed have to come back with it.
+ *
+ * ✅ **Narrowing it to iOS repaired most of what the first draft cost.** A gate that hid
+ * modules on every production build put `positioning.md` clause 1 in breach everywhere
+ * and left the Play listing and the landing page promising a programme the app did not
+ * ship. Android and web now keep the method on Home, so the breach is confined to iOS —
+ * and only the App Store surfaces still overstate what their platform delivers.
  *
  * What it does NOT do, deliberately:
  *
@@ -31,29 +43,52 @@ import { appEnv } from "@/src/lib/env";
  */
 
 /**
- * The environments that show modules. `development` only, per the instruction that
- * reversed this - **`preview` is deliberately excluded and that is worth re-reading**:
- * preview is the internal-distribution profile, so a preview build on a real device can
- * no longer reach a module at all, and the modules cannot be device-tested outside a
- * dev build. That is the literal ask; widen this array if it proves wrong in practice.
+ * The environments an **iOS** build must be in to show modules. `development` only —
+ * `preview` is excluded, so an internal-distribution iOS build cannot reach a module on a
+ * real device.
  */
 export const MODULE_VISIBLE_APP_ENVS = ["development"];
 
 /**
- * The pure form, so the decision can be tested without re-requiring the module to move
- * `__DEV__` and `process.env` around. Mirrors `shouldEnableSentry(dsn, isDev)`.
+ * ☠️ **The gate is iOS-only, and every other platform is unconditional.** Android and web
+ * show the three modules in every build, labelled beta ({@link modulesAreBeta}); iOS
+ * shows them only in a dev build. That asymmetry is the instruction, and it is worth
+ * stating why it matters beyond iOS: it is what keeps `docs/positioning.md` clause 1 —
+ * "no surface presents the tools without the method" — **satisfied on Android and web**,
+ * because the method is still on Home there. Only iOS production breaches it.
  *
- * `isDev` is the Metro/debug bundle - a contributor running `npm start`, whatever
- * profile installed the shell around it. `appEnvName` is the EAS environment baked into
- * the bundle at build time, which is what an installed `development`-profile build has
- * when it is running its own release bundle with `__DEV__` false.
+ * `isDev` is the Metro/debug bundle. `appEnvName` is the EAS environment baked into the
+ * bundle at build time, which is what an installed `development`-profile build has while
+ * running its own release bundle with `__DEV__` false. Either is enough on iOS.
  *
- * Either one is enough. An unset `appEnvName` must read as production, which is why the
- * caller below defaults it rather than passing `undefined` through: the fail-safe
- * direction for a visibility gate is hidden, so a build that was told nothing hides.
+ * An unset `appEnvName` reads as production, so an iOS build told nothing hides — the
+ * fail-safe direction for a visibility gate.
  */
-export function shouldShowModules(appEnvName: string, isDev: boolean): boolean {
+export function shouldShowModules(appEnvName: string, isDev: boolean, platform: string): boolean {
+  if (platform !== "ios") {
+    return true;
+  }
+
   return isDev || MODULE_VISIBLE_APP_ENVS.includes(appEnvName);
+}
+
+/**
+ * Whether a visible module is labelled **beta**.
+ *
+ * ☠️ Beta is a property of the **modules**, not of the platform, so this is deliberately
+ * not a second platform branch. The instruction said "beta for Android and web", and
+ * that is exactly what this produces in the field: those are the platforms where a *user*
+ * can reach a module at all, since iOS shows them only in a dev build. Making it
+ * `platform !== "ios"` would say something different and worse — that the same three
+ * modules are beta or not depending on where you stand, and that an iOS dev build should
+ * present them as finished while Android calls them beta.
+ *
+ * A separate function from {@link shouldShowModules} even though it currently returns a
+ * constant: the two answer different questions, and the day beta is lifted is not the day
+ * the iOS gate opens.
+ */
+export function modulesAreBeta(): boolean {
+  return true;
 }
 
 /**
@@ -65,5 +100,5 @@ export function shouldShowModules(appEnvName: string, isDev: boolean): boolean {
  * lookup once, in the one place this repo already keeps it.
  */
 export function modulesAreVisible(): boolean {
-  return shouldShowModules(appEnv.appEnvName, __DEV__);
+  return shouldShowModules(appEnv.appEnvName, __DEV__, Platform.OS);
 }

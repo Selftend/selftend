@@ -1,39 +1,64 @@
 import { appEnv } from "@/src/lib/env";
 import {
   MODULE_VISIBLE_APP_ENVS,
+  modulesAreBeta,
   modulesAreVisible,
   shouldShowModules,
 } from "@/src/lib/module-visibility";
 
 describe("shouldShowModules", () => {
-  it("shows them in the Metro/debug bundle, whatever environment built the shell", () => {
-    expect(shouldShowModules("production", true)).toBe(true);
-    expect(shouldShowModules("preview", true)).toBe(true);
-    expect(shouldShowModules("", true)).toBe(true);
+  /**
+   * ☠️ The gate is iOS-only. Android and web show the three modules in every build, and
+   * that is what keeps `docs/positioning.md` clause 1 — no surface presents the tools
+   * without the method — satisfied on those two platforms. Only iOS production breaches
+   * it.
+   */
+  it("always shows them on android and web, in every environment", () => {
+    for (const platform of ["android", "web"]) {
+      expect(shouldShowModules("production", false, platform)).toBe(true);
+      expect(shouldShowModules("preview", false, platform)).toBe(true);
+      expect(shouldShowModules("", false, platform)).toBe(true);
+    }
   });
 
-  it("shows them in an installed development build running its own release bundle", () => {
-    expect(shouldShowModules("development", false)).toBe(true);
+  it("shows them on iOS in the Metro/debug bundle, whatever environment built the shell", () => {
+    expect(shouldShowModules("production", true, "ios")).toBe(true);
+    expect(shouldShowModules("preview", true, "ios")).toBe(true);
+    expect(shouldShowModules("", true, "ios")).toBe(true);
   });
 
-  it("hides them in production", () => {
-    expect(shouldShowModules("production", false)).toBe(false);
+  it("shows them on an installed iOS development build running its own release bundle", () => {
+    expect(shouldShowModules("development", false, "ios")).toBe(true);
+  });
+
+  it("hides them on iOS production", () => {
+    expect(shouldShowModules("production", false, "ios")).toBe(false);
   });
 
   /**
-   * ☠️ The literal reading of "only dev builds can see it". Preview is the
-   * internal-distribution profile, so this means the modules cannot be tested on a real
-   * device outside a dev build. Recorded as a test rather than left to be inferred from
-   * an array, because it is the clause most likely to be wrong in practice.
+   * Preview is the internal-distribution profile, so an iOS preview build cannot reach a
+   * module on a real device. Recorded as a test rather than left to be inferred from an
+   * array, because it is the clause most likely to want revisiting.
    */
-  it("hides them in preview too", () => {
-    expect(shouldShowModules("preview", false)).toBe(false);
+  it("hides them on iOS preview too", () => {
+    expect(shouldShowModules("preview", false, "ios")).toBe(false);
     expect(MODULE_VISIBLE_APP_ENVS).toEqual(["development"]);
   });
 
-  it("hides them for an unrecognised environment name", () => {
-    expect(shouldShowModules("staging", false)).toBe(false);
-    expect(shouldShowModules("", false)).toBe(false);
+  it("hides them on iOS for an unrecognised environment name", () => {
+    expect(shouldShowModules("staging", false, "ios")).toBe(false);
+    expect(shouldShowModules("", false, "ios")).toBe(false);
+  });
+});
+
+describe("modulesAreBeta", () => {
+  /**
+   * Beta is a property of the modules, not of the platform — so this is deliberately not
+   * a platform branch. In the field it produces exactly "beta on Android and web",
+   * because those are the only platforms where a user can reach a module at all.
+   */
+  it("labels the modules beta", () => {
+    expect(modulesAreBeta()).toBe(true);
   });
 });
 
