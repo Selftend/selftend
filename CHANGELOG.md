@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.21.0](https://github.com/Selftend/selftend/compare/v0.20.0...v0.21.0) (2026-09-17)
+
+
+### Features
+
+* **analytics:** a degenerate account half announces itself in the segment orderings ([#2559](https://github.com/Selftend/selftend/issues/2559)) ([#2571](https://github.com/Selftend/selftend/issues/2571)) ([3c12997](https://github.com/Selftend/selftend/commit/3c12997be399853444c4c9c8a4bc6cbae4f839f2))
+* **analytics:** quiet-duration buckets, with no threshold and no such word ([#2553](https://github.com/Selftend/selftend/issues/2553)) ([#2566](https://github.com/Selftend/selftend/issues/2566)) ([ff538e4](https://github.com/Selftend/selftend/commit/ff538e489e55d140e7add089926b37546ad9944b))
+* **analytics:** the report sees the fossil - who left, and at which phase ([#2552](https://github.com/Selftend/selftend/issues/2552)) ([#2565](https://github.com/Selftend/selftend/issues/2565)) ([42544eb](https://github.com/Selftend/selftend/commit/42544ebfe844826b2f38212253ebcd448f61ddd8))
+* **android:** optimised resource shrinking, measured rather than assumed ([#2335](https://github.com/Selftend/selftend/issues/2335)) ([#2522](https://github.com/Selftend/selftend/issues/2522)) ([73b0e11](https://github.com/Selftend/selftend/commit/73b0e1125d3cbf3c1829b61a296ef96bd76fc183))
+* **modules:** the programme fossil becomes a contract, not an accident ([#2551](https://github.com/Selftend/selftend/issues/2551)) ([#2564](https://github.com/Selftend/selftend/issues/2564)) ([ee7641a](https://github.com/Selftend/selftend/commit/ee7641a32544acbb3648dc3b02a73837eb38c5c5))
+* **nav:** Looking back leaves the product ([#2431](https://github.com/Selftend/selftend/issues/2431), [#2455](https://github.com/Selftend/selftend/issues/2455)) ([#2462](https://github.com/Selftend/selftend/issues/2462)) ([4fc038e](https://github.com/Selftend/selftend/commit/4fc038e1addf27e3a1e7c75c010d9316e112320d))
+* **reminders:** the general reminder target, held out - registry, client, edge and copy ([#2491](https://github.com/Selftend/selftend/issues/2491)) ([#2498](https://github.com/Selftend/selftend/issues/2498)) ([b4f7d5c](https://github.com/Selftend/selftend/commit/b4f7d5cc8b329548a790af27605c40e17819e27a))
+* **reminders:** the general reminder's columns, dedup keys and export ([#2489](https://github.com/Selftend/selftend/issues/2489)) ([#2497](https://github.com/Selftend/selftend/issues/2497)) ([2618b9a](https://github.com/Selftend/selftend/commit/2618b9a4d10be88db913cd62dca9e330eccc2677))
+* **reminders:** the Reminders screen's two runs - the "For each tool" eyebrow under the general row ([#2492](https://github.com/Selftend/selftend/issues/2492)) ([#2499](https://github.com/Selftend/selftend/issues/2499)) ([34685a1](https://github.com/Selftend/selftend/commit/34685a1bc4cdd2a6bedf4ffbc0a2a13f901383d9))
+* **routines:** the completion sheet states the record and stops ([#2488](https://github.com/Selftend/selftend/issues/2488)) ([#2514](https://github.com/Selftend/selftend/issues/2514)) ([87e3706](https://github.com/Selftend/selftend/commit/87e3706a6831cd340be41cfbcb59293a61775013))
+* **seo:** /habits, the second public explainer page ([#2470](https://github.com/Selftend/selftend/issues/2470)) ([#2518](https://github.com/Selftend/selftend/issues/2518)) ([6836509](https://github.com/Selftend/selftend/commit/68365099b879b3315bfcac9cd27e4bc2f3e67302))
+* **seo:** /meditation, the first public explainer page ([#2469](https://github.com/Selftend/selftend/issues/2469)) ([#2512](https://github.com/Selftend/selftend/issues/2512)) ([a74ced8](https://github.com/Selftend/selftend/commit/a74ced896fdc34b8040d2e116a804393aa6f4fac))
+* **seo:** one SiteFooter on every public page, labelled by each page's H1, with its pin ([#2467](https://github.com/Selftend/selftend/issues/2467)) ([#2487](https://github.com/Selftend/selftend/issues/2487)) ([09d9c88](https://github.com/Selftend/selftend/commit/09d9c884a44179d8a6e572ac1d91a6c45370cc5f))
+* **seo:** the privacy page links /security and /account-deletion as real anchors ([#2476](https://github.com/Selftend/selftend/issues/2476)) ([#2486](https://github.com/Selftend/selftend/issues/2486)) ([55dbc23](https://github.com/Selftend/selftend/commit/55dbc23a99d2a4f9d2538fa455eae19a885b8560))
+* **seo:** two truthful properties on the WebSite node, and nothing else ([#2468](https://github.com/Selftend/selftend/issues/2468)) ([#2502](https://github.com/Selftend/selftend/issues/2502)) ([cede03a](https://github.com/Selftend/selftend/commit/cede03a4ac9757dbf04dc4a44c3a9dcef23583bb))
+* **sound:** each ambient bed declares its nominal length, pinned by an mdhd byte test ([#2504](https://github.com/Selftend/selftend/issues/2504)) ([#2511](https://github.com/Selftend/selftend/issues/2511)) ([a656195](https://github.com/Selftend/selftend/commit/a65619574546f8546e2d145e8b108992f29b1306))
+* **sound:** the lane holds two players and crossfades a swap, and the web bed loops on a buffer ([#2506](https://github.com/Selftend/selftend/issues/2506)) ([#2517](https://github.com/Selftend/selftend/issues/2517)) ([f75ea91](https://github.com/Selftend/selftend/commit/f75ea91443c6c344ec11e435532a23d0d7a18541))
+* **sound:** the sound door and the sound panel, changing the bed from inside a sit ([#2507](https://github.com/Selftend/selftend/issues/2507)) ([#2519](https://github.com/Selftend/selftend/issues/2519)) ([f39c65a](https://github.com/Selftend/selftend/commit/f39c65a85e618090380da5b775b5a1769e2bd3ec))
+* **store:** the App Store description joins the repository, and every copy gate now reads it ([#2524](https://github.com/Selftend/selftend/issues/2524)) ([#2543](https://github.com/Selftend/selftend/issues/2543)) ([97416c2](https://github.com/Selftend/selftend/commit/97416c2227f8e72b2ac328df8ec81a16970c11a4))
+
+
+### Bug Fixes
+
+* **a11y:** the crisis callout and the cookie banner become real anchors ([#2496](https://github.com/Selftend/selftend/issues/2496)) ([#2561](https://github.com/Selftend/selftend/issues/2561)) ([e1a6e04](https://github.com/Selftend/selftend/commit/e1a6e0498c15855e393691d476ce27de6bf63788))
+* **audio:** the limiter's head hole leaves the beds - :latency=1 and the nine masters re-run ([#2508](https://github.com/Selftend/selftend/issues/2508)) ([#2521](https://github.com/Selftend/selftend/issues/2521)) ([4a8421f](https://github.com/Selftend/selftend/commit/4a8421f526a95bbbb6d6349923474ff8eb346737))
+* **favorites:** the card's web hover washes the card, not a box inside it ([#2407](https://github.com/Selftend/selftend/issues/2407)) ([#2427](https://github.com/Selftend/selftend/issues/2427)) ([1c97653](https://github.com/Selftend/selftend/commit/1c97653dc5d5540b3cb1baa2325ad61907fcbb40))
+* **modules:** completion stops being erased - `completed_at` means the last time you finished ([#2550](https://github.com/Selftend/selftend/issues/2550)) ([#2563](https://github.com/Selftend/selftend/issues/2563)) ([3c5530f](https://github.com/Selftend/selftend/commit/3c5530f943327a56a68add10256b435c0eb3a9c5))
+* **seo:** sameAs must name canonical URLs, and the deploy now checks ([#2410](https://github.com/Selftend/selftend/issues/2410)) ([#2444](https://github.com/Selftend/selftend/issues/2444)) ([9ca8448](https://github.com/Selftend/selftend/commit/9ca84482d3fd667125499f2b2837348a6faea488))
+* **store:** a field the pull does not carry is not drift, and the run now says which ([#2540](https://github.com/Selftend/selftend/issues/2540)) ([#2541](https://github.com/Selftend/selftend/issues/2541)) ([19b3713](https://github.com/Selftend/selftend/commit/19b371301b4b86ee562555e069c8e2d728c894c1))
+* **store:** promoText leaves the mirror, because App Store Connect never held it ([#2540](https://github.com/Selftend/selftend/issues/2540)) ([#2545](https://github.com/Selftend/selftend/issues/2545)) ([fabe719](https://github.com/Selftend/selftend/commit/fabe719fabde81bb199bd5ddd3ed6852b0959f42))
+
 ## [0.20.0](https://github.com/Selftend/selftend/compare/v0.19.0...v0.20.0) (2026-09-15)
 
 
