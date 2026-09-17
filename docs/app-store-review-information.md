@@ -29,7 +29,7 @@ Before sending, Sign-In Information was switched to **`demo@selftend.org`** (own
 
 ## ⚠️ This document describes build 6, not `dev`
 
-Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.18.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the Looking back screen was rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
+Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.18.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the Looking back screen was rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned — and since 2026-09-15 `dev` has no Looking back screen at all — its row, route and band left with #2431, so the two tables and both paste blocks below describe a screen `dev` no longer has. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
 
 Two corrections this produced, recorded so no later session re-inherits them:
 
@@ -69,7 +69,7 @@ Selftend is a free, non-profit, open-source **wellness and guided self-help** ap
 | Routines      | User-built routines, with their own navigation entry                                                                                                                                                                                              |
 | Looking back  | Progress across the tools                                                                                                                                                                                                                         |
 | Home          | A dashboard the user assembles from 28 widgets; nothing is seeded without the user choosing it                                                                                                                                                    |
-| Notifications | Ten reminder targets, **every one off by default**                                                                                                                                                                                                |
+| Notifications | Twelve reminder targets - one general, eleven per tool - **every one off by default**                                                                                                                                                             |
 
 **Target audience:** adults aged 18 and older who want structured self-help they can run themselves. It is **not** a diagnosis engine, a therapist replacement, or crisis support, and the app says so in six separate places — see item 7.
 
@@ -174,7 +174,7 @@ CRISIS GUIDANCE
 Kept separate from the self-help features and reachable before sign-in, from the sign-in screen footer, and afterwards from Support, from Legal and from a crisis bar on the module exercise screens. It points to external emergency services and to the Find A Helpline directory, and states that the app is not monitored.
 
 NOTIFICATIONS
-Ten reminder targets, every one off by default. Nothing is sent unless the user enables a reminder, which is what raises the iOS notification prompt.
+Twelve reminder targets - one general, eleven per tool - every one off by default. Nothing is sent unless the user enables a reminder, which is what raises the iOS notification prompt.
 
 DATA
 Entries are encrypted at rest. Data export and account deletion are both in Settings > Account; deletion is also documented at https://selftend.org/account-deletion.

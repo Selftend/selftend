@@ -136,9 +136,10 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     // only styling is the muted text variant.
     "src/features/home/tool-row-stats.tsx",
   ],
-  // #981: the reminders screen lists the same ten tools and modules as home, one row each,
-  // so it is the same identity surface wearing a different control. Its leading glyph is
-  // CHROME_MARK for the same reason home's is.
+  // #981: the reminders screen lists the same eleven tools and modules as home, one row each
+  // - plus the general reminder, which names no tool (#2491) - so it is the same identity
+  // surface wearing a different control. Its leading glyph is CHROME_MARK for the same
+  // reason home's is.
   "the reminder rows": [
     "src/features/notifications/notifications-screen.tsx",
     "src/features/notifications/notification-target-row.tsx",

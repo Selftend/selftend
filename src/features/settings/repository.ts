@@ -71,6 +71,10 @@ interface UserPreferenceRow {
   dbt_reminder_hour: number | null;
   dbt_reminder_minute: number | null;
   dbt_reminder_timezone: string | null;
+  general_reminders_enabled: boolean | null;
+  general_reminder_hour: number | null;
+  general_reminder_minute: number | null;
+  general_reminder_timezone: string | null;
   act_program_started_at: string | null;
   act_program_completed_at: string | null;
   act_program_prompt_dismissed_at: string | null;
@@ -189,6 +193,11 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     dbtReminderHour: row.dbt_reminder_hour ?? defaultUserPreferences.dbtReminderHour,
     dbtReminderMinute: row.dbt_reminder_minute ?? defaultUserPreferences.dbtReminderMinute,
     dbtReminderTimezone: row.dbt_reminder_timezone ?? null,
+    generalRemindersEnabled: Boolean(row.general_reminders_enabled),
+    generalReminderHour: row.general_reminder_hour ?? defaultUserPreferences.generalReminderHour,
+    generalReminderMinute:
+      row.general_reminder_minute ?? defaultUserPreferences.generalReminderMinute,
+    generalReminderTimezone: row.general_reminder_timezone ?? null,
     actProgramStartedAt: row.act_program_started_at ?? null,
     actProgramCompletedAt: row.act_program_completed_at ?? null,
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
@@ -444,6 +453,10 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   dbtReminderHour: "dbt_reminder_hour",
   dbtReminderMinute: "dbt_reminder_minute",
   dbtReminderTimezone: "dbt_reminder_timezone",
+  generalRemindersEnabled: "general_reminders_enabled",
+  generalReminderHour: "general_reminder_hour",
+  generalReminderMinute: "general_reminder_minute",
+  generalReminderTimezone: "general_reminder_timezone",
   actProgramStartedAt: "act_program_started_at",
   actProgramCompletedAt: "act_program_completed_at",
   actProgramPromptDismissedAt: "act_program_prompt_dismissed_at",

@@ -634,6 +634,40 @@ describe("RoutineEditorScreen", () => {
     expect(screen.queryByLabelText("Turn off the Journal reminder")).toBeNull();
   });
 
+  /**
+   * The general reminder never overlaps a routine (#2417, ADR-0010): overlap is
+   * the same WORK nudged twice, never the same minute, and the general reminder
+   * names no work. Today that is an accident of matching by a step's tool; this
+   * makes it a rule. With the routine reminder on, every step's tool reminder on
+   * and the general reminder on, the note names only the step tools.
+   */
+  it("never lists the general reminder in the overlap note, even with everything on (#2417)", () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        generalRemindersEnabled: true,
+        moodRemindersEnabled: true,
+        journalRemindersEnabled: true,
+      },
+    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockUseRoutines.mockReturnValue({ data: [EXISTING] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+
+    renderWithProviders(
+      <RoutineEditorScreen fallbackHref="/routines/r-1" mode="edit" routineId="r-1" />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Remind me about this routine"));
+
+    expect(screen.getByLabelText("Turn off the Mood check-in reminder")).toBeTruthy();
+    expect(screen.getByLabelText("Turn off the Journal reminder")).toBeTruthy();
+    expect(screen.queryByLabelText("Turn off the Selftend reminder")).toBeNull();
+    expect(screen.queryByLabelText(/Turn off the Selftend/)).toBeNull();
+    // Exactly the two step tools, so a third entry of any name is loud.
+    expect(screen.getAllByLabelText(/^Turn off the /)).toHaveLength(2);
+  });
+
   it("one tap disables exactly that per-tool reminder; nothing changes without a tap", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: {

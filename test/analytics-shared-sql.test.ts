@@ -28,6 +28,22 @@ const EXPECTED_BLOCKS: Record<string, string[]> = {
   // k=5 cell suppression governs all three reports, not just the segment one
   // where it was first implemented (#2373, docs/analytics.md).
   k_suppression: ALL_REPORTS,
+  // Route 1 of docs/analytics.md, "What the floor does not guarantee": the
+  // caveat that a suppressed cell in an exhaustively printed partition is
+  // bounded by subtraction from a raw total printed elsewhere in the same
+  // report. Two files, not three - analytics-engagement.sql has no section
+  // whose arms partition a population, and printing a partition warning beside
+  // a table that has no partitioned arms would add one more false statement to
+  // a file family whose comments have already asserted the opposite twice
+  // (#2556).
+  partition_caveat: ["analytics-onboarding.sql", "analytics-segment.sql"],
+  // Route 2 of the same section: the digest republishes these tables monthly,
+  // and a cell suppressed in one publication and printed in a later one
+  // discloses the MOVEMENT between them. ☠️ All three files, and printed ONCE
+  // PER REPORT rather than beside a section - unlike partition_caveat, whose
+  // census names three sections, every suppressed cell in all three reports is
+  // series-exposed, so there is nothing to exempt and no list to keep (#2557).
+  series_caveat: ALL_REPORTS,
   // Who is in the population: the owner count, the heuristic upper bound, and
   // the standing line that the guest arm is not identifiable at all. Printed by
   // each report separately and deliberately - every report runs independently,
@@ -287,6 +303,120 @@ describe("k=5 cell suppression is defined once, for all three reports", () => {
       expect(sqlLinesMatching(file, /pg_temp\.k_(count|pct)\(/).length).toBeGreaterThan(0);
     });
   }
+});
+
+describe("every section that claims a partition prints the partition caveat", () => {
+  // ☠️ #2556. No `shared:` marker covers the CALL SITES, and that is the
+  // plumbing that drifts silently: a file can carry the block, pass every check
+  // above, and never print a word of it. The census is deliberately NOT kept
+  // here - route 1 is a structural test a section classifies itself against
+  // (docs/analytics.md, "What the floor does not guarantee") - so this reads the
+  // section's own printed claim instead. A section that tells a reader its arms
+  // partition a population has to tell them what that costs.
+  //
+  // ⚠️ It is a tripwire on the section's printed CLAIM, not a proof: a
+  // qualifying section that never tells its reader the arms partition anything
+  // is not caught here, and nothing static can catch it - that is what makes
+  // route 1 a structural test a human applies. What this does catch is the
+  // likely drift, a partition section added or reworded beside the caveat.
+  const CAVEAT_ECHO = "\\echo :partition_caveat";
+
+  /** The phrasings the three qualifying sections use today, in their own words. */
+  const A_PARTITION_CLAIM = /partition|appears exactly once|is in exactly one/;
+
+  /** The printed sections of one report: each `=== n)` heading with its body. */
+  function printedSections(file: string): string[] {
+    const lines = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8").split("\n");
+    const sections: string[][] = [];
+    for (const line of lines) {
+      if (/^\\echo '=== /.test(line)) sections.push([]);
+      if (sections.length > 0) sections[sections.length - 1].push(line);
+    }
+    return sections.map((body) => body.join("\n"));
+  }
+
+  /** Printed lines only: a `--` comment saying "partition" claims nothing to a reader. */
+  const claimsAPartition = (body: string) =>
+    body
+      .split("\n")
+      .filter((line) => line.startsWith("\\echo") && line !== CAVEAT_ECHO)
+      .some((line) => A_PARTITION_CLAIM.test(line));
+
+  for (const file of reportFiles()) {
+    it(`${file}: every section claiming a partition echoes the caveat`, () => {
+      const offenders = printedSections(file)
+        .filter(claimsAPartition)
+        .filter((body) => !body.includes(CAVEAT_ECHO))
+        .map((body) => body.split("\n")[0]);
+      expect(offenders).toEqual([]);
+    });
+
+    if (EXPECTED_BLOCKS.partition_caveat.includes(file)) {
+      it(`${file} prints the caveat it carries`, () => {
+        // The other half: a block defined and never echoed is a caveat nobody
+        // reads, and every check above is satisfied by it.
+        const printed = printedSections(file).filter((body) => body.includes(CAVEAT_ECHO));
+        expect(printed.length).toBeGreaterThan(0);
+      });
+    } else {
+      it(`${file} never echoes a caveat it does not define`, () => {
+        // Without the block the variable is unset, and psql prints its name.
+        expect(fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8")).not.toContain(CAVEAT_ECHO);
+      });
+    }
+  }
+});
+
+describe("the series caveat prints once per report, ahead of every table", () => {
+  // ☠️ #2557. The two caveats differ in SHAPE, not just in wording, and the
+  // difference is the whole census: route 1 names three qualifying sections, so
+  // its caveat is echoed per section; route 2 has nothing to exempt, because
+  // every suppressed cell in all three reports can move between publications.
+  // A series caveat that drifted into a per-section echo would say, by
+  // repetition, that some sections are exposed and others are not.
+  const SERIES_NOTE = "THE SERIES IS THE RELEASE, NOT EACH COMMENT";
+  const A_SECTION_HEADING = /^\\echo '=== /m;
+
+  /** The line that prints the note, wherever it sits. */
+  const printedNote = (source: string) =>
+    source.split("\n").filter((line) => line.startsWith("\\echo") && line.includes(SERIES_NOTE));
+
+  for (const file of reportFiles()) {
+    const source = () => fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
+
+    it(`${file} prints it exactly once`, () => {
+      expect(printedNote(source())).toHaveLength(1);
+    });
+
+    it(`${file} prints it before its first section, under no heading of its own`, () => {
+      // ⚠️ A note qualifying every table has to arrive before them - the digest
+      // comment is read top to bottom. And it must not trail the population
+      // block: by the section-slicing every helper here uses, a line after a
+      // `=== ` heading BELONGS to that heading, which would attach a note about
+      // suppression to the one block exempt from the rule.
+      const text = source();
+      const firstHeading = text.search(A_SECTION_HEADING);
+      expect(firstHeading).toBeGreaterThan(-1);
+      const [note] = printedNote(text);
+      expect(note).toBeDefined();
+      expect(text.indexOf(note)).toBeLessThan(firstHeading);
+    });
+  }
+
+  it("says the same thing the document says", () => {
+    // ☠️ The one pairing the byte-identity gate cannot see. It compares the
+    // three SQL copies to each other, so all three can agree and still
+    // contradict docs/analytics.md - and the reports exist precisely because
+    // the document does not travel with the table. Pinned on the discriminator,
+    // which is the sentence a reader acts on.
+    const doc = fs.readFileSync(path.resolve(__dirname, "..", "docs", "analytics.md"), "utf8");
+    const block = blocksByFile.get("analytics-segment.sql")?.get("series_caveat") ?? "";
+
+    expect(doc).toContain("the series is the release");
+    expect(doc).toContain("nothing suppressed in these reports is immutable");
+    expect(block).toContain("THE SERIES IS THE RELEASE");
+    expect(block).toContain("nothing suppressed in these reports is immutable");
+  });
 });
 
 describe("an email address never leaves the database", () => {

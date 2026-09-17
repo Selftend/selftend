@@ -106,7 +106,9 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: new Date().toISOString(),
-        dbtProgramCompletedAt: null,
+        // ☠️ `dbtProgramCompletedAt` is deliberately NOT nulled here. It means
+        // the last time this person finished DBT, and the fresh `startedAt`
+        // above retires it by itself (ADR-0012, #2530).
         dbtProgramPromptDismissedAt: null,
         dbtProgramPhaseIndex: 0,
         dbtProgramPhaseStartedAt: new Date().toISOString(),
@@ -129,6 +131,20 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
       .catch(() => undefined);
   };
 
+  /**
+   * ☠️ **What this payload leaves out is the point.** `dbtProgramPhaseIndex` and
+   * `dbtProgramPhaseStartedAt` stay exactly where they were, and that pair
+   * surviving beside a null `dbtProgramStartedAt` is the ONLY record that this
+   * run ever existed and how far it got - the **fossil** (ADR-0012, #2530).
+   *
+   * ⚠️ So do not "finish the job" by nulling them. It reads like a tidy-up and
+   * it is the whole of #2386: someone who reached phase 4 and stopped would
+   * become indistinguishable from someone who never opened the module, with no
+   * way to recover the difference afterwards. #2530 refused to keep the dates a
+   * run would otherwise carry, and that refusal only holds because this survives.
+   *
+   * `test/programme-fossil-contract.test.ts` fails if anything nulls it.
+   */
   const abandonProgram = () => {
     if (!preferences) return;
     // ☠️ Records are untouched. Leaving the programme is leaving a path, not
@@ -136,7 +152,8 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: null,
-        dbtProgramCompletedAt: null,
+        // ☠️ `dbtProgramCompletedAt` is deliberately NOT nulled: leaving a
+        // programme must not erase that you once finished it (ADR-0012).
         dbtProgramPromptDismissedAt: new Date().toISOString(),
       })
       .catch(() => undefined);
@@ -149,7 +166,8 @@ export function useDbtProgram(userId: string | null): UseDbtProgramResult {
     void updatePreferences
       .mutateAsync({
         dbtProgramStartedAt: new Date().toISOString(),
-        dbtProgramCompletedAt: null,
+        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
+        // is a new run, not a retraction of the one that finished (ADR-0012).
         dbtProgramPromptDismissedAt: null,
         dbtProgramPhaseIndex: 0,
         dbtProgramPhaseStartedAt: new Date().toISOString(),

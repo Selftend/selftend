@@ -63,7 +63,31 @@ export function targetPathname(href: Href): string {
 }
 
 /**
- * The one navigation helper that records an Origin (#1261, O3).
+ * Records an Origin for a navigation something else performs - an anchor.
+ *
+ * `usePushWithOrigin` below is for call sites that navigate imperatively. A
+ * cross-link that is a real `<a href>` (`LinkButton`, #2476) navigates through
+ * expo-router's `Link`, and a bare `href` carries no Origin - so the anchor's
+ * `onPress` records one here and lets the Link do the moving. The order of the
+ * two handlers is not what makes this safe: on native radix's Slot runs the
+ * child's `onPress` before the Link's, on web the Link's `onClick` and RNW's
+ * press responder are different props that nothing composes - but both run
+ * inside the press's own dispatch, before the destination mounts and consumes
+ * the record. Same `forPathname` derivation as the push helper, so that
+ * consuming read matches it the same way. `nav-chrome-origin.test.ts` guards
+ * this hook by the same case-insensitive scan as the push helper.
+ */
+export function useRecordOrigin() {
+  const pathname = usePathname();
+
+  return (href: Href) => {
+    recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
+  };
+}
+
+/**
+ * The navigation helper that records an Origin (#1261, O3). `useRecordOrigin`
+ * above is its record-only half, for an anchor that navigates as a `Link`.
  *
  * Recording is **opt-out, not opt-in**: every push through this helper records
  * `{ origin: <where you are>, forPathname: <where you are going> }`, and the
@@ -90,10 +114,10 @@ export function targetPathname(href: Href): string {
  * compete with the sidebar itself as the way back.
  */
 export function usePushWithOrigin() {
-  const pathname = usePathname();
+  const recordOriginFor = useRecordOrigin();
 
   return (href: Href, options?: PushOptions) => {
-    recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
+    recordOriginFor(href);
     // Forwarded only when given, never as an explicit `undefined`. Jest's
     // `toHaveBeenCalledWith(href)` does not match a call of `(href, undefined)`,
     // so passing it unconditionally would break the existing navigation

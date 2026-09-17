@@ -245,8 +245,8 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // ☠️ So why does a 15-string edit to consent-bearing copy not bump the version?
 // Because the version has ALREADY moved and has not shipped:
 //
-//     origin/main : 2026-08-27-feedback-processors
-//     origin/dev  : 2026-09-04-teen-floor   ← unreleased
+//     origin/main : 2026-08-27-feedback-processors   ← as it stood at #2131
+//     origin/dev  : 2026-09-04-teen-floor   ← unreleased AT THE TIME
 //
 // No user has ever been shown `2026-09-04-teen-floor`, so there is nobody whose
 // consent is attached to the text these 15 strings live in - there is nobody to
@@ -261,6 +261,27 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // ☠️ This window is the reason for the timing, and it CLOSES at the next dev→main
 // release. A later pass that wants to move policy strings should check these two
 // refs before assuming the cost is zero - it will not be.
+//
+// ☠️☠️ **THE WINDOW IS CLOSED. Checked 2026-09-17: `origin/main` AND `origin/dev`
+// both carry `2026-09-04-teen-floor`.** teen-floor released, so the six
+// digest-only moves above are history and their "cost of the wrong call
+// temporarily at zero" no longer describes this file. Every user has now been
+// shown this text and accepted it.
+//
+// So a digest-only move is once again the judgement the top of this file
+// describes - did a DISCLOSURE change - and a version bump is once again a real
+// re-gate: `needsConsent` in `protected-layout.tsx` is a blocking wall, and every
+// existing user meets a re-consent screen on next open, on every platform.
+//
+// ⚠️ The snapshot above is left in place, marked, rather than deleted: it is the
+// evidence for six recorded decisions, and a reader who finds those moves without
+// it will not understand why they were free. What was corrected is only the tense
+// - it read as a live statement about `main` and is now a dated one.
+//
+// ☠️ And the tempting wrong fix, named so nobody reaches for it: **do not move
+// the digest alone to make this green after a disclosure changes.** The test
+// passes and users end up consented to text they were never shown, which is the
+// exact failure this pin exists to prevent.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
   englishDigest: "48a50348c22d1bd3c82d72cf3b84c41c5460395c63552e2f9f74ad51aea6f5bf",

@@ -56,7 +56,13 @@ describe("the App Store listing drift comparison", () => {
   it("passes when the expected locale carries every committed value", () => {
     const result = findListingDrift(COMMITTED, { "en-US": matching() });
 
-    expect(result).toEqual({ ok: true, drifted: [], locales: ["en-US"] });
+    expect(result).toEqual({
+      ok: true,
+      absent: [],
+      drifted: [],
+      fields: ["promoText", "subtitle"],
+      locales: ["en-US"],
+    });
   });
 
   it("ignores other locales that legitimately differ", () => {
@@ -100,6 +106,12 @@ describe("the App Store listing drift comparison", () => {
     expect(result.drifted).toHaveLength(2);
   });
 
+  /**
+   * ⚠️ The assertion moved from `drifted` to `absent` on #2540 and the CLAIM is
+   * unchanged: a match in another locale must not cover a miss in `en-US`, and
+   * it still fails. `promoText` is not present in the `en-US` block at all
+   * here, so it is the absent case rather than the changed one.
+   */
   it("does not let a match in another locale cover a miss in the expected one", () => {
     const result = findListingDrift(COMMITTED, {
       "en-US": { subtitle: COMMITTED.subtitle },
@@ -107,8 +119,8 @@ describe("the App Store listing drift comparison", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.drifted).toHaveLength(1);
-    expect(result.drifted[0]).toMatch(/^promoText:/);
+    expect(result.absent).toEqual(["promoText"]);
+    expect(result.drifted).toEqual([]);
   });
 
   /**
@@ -159,7 +171,72 @@ describe("the App Store listing drift comparison", () => {
     const result = findListingDrift(COMMITTED, { "en-US": { subtitle: COMMITTED.subtitle } });
 
     expect(result.ok).toBe(false);
+    expect(result.absent).toEqual(["promoText"]);
+  });
+
+  /**
+   * ☠️ THE LIVE CASE THIS BRANCH WAS ADDED FOR (#2540). The weekly job read red
+   * on `promoText` for weeks with the message "App Store Connect no longer
+   * matches" — but nothing had drifted: the pulled `en-US` block carries no
+   * such key, so there is no live value to have moved. Naming App Store Connect
+   * as the wrong side there sends the reader to edit a listing that is not the
+   * problem, and the two causes (never entered, or not carried by the pull)
+   * both get fixed on this side.
+   *
+   * The advisory half of the same workflow has drawn exactly this distinction
+   * since #1611; the listing half was missing it.
+   */
+  it("separates a field the pull does not carry from a field that changed", () => {
+    const result = findListingDrift(COMMITTED, {
+      "en-US": { subtitle: "A different subtitle" },
+    });
+
+    expect(result.ok).toBe(false);
+    // Absent, and NOT dressed up as drift.
+    expect(result.absent).toEqual(["promoText"]);
+    // The one that really did change is still reported as drift, with both sides.
+    expect(result.drifted).toEqual([
+      `subtitle: committed "${COMMITTED.subtitle}", en-US has "A different subtitle"`,
+    ]);
+  });
+
+  /**
+   * ⚠️ The one thing the absent branch must never become: a way to pass. The
+   * presence test is `Object.hasOwn`, so a committed empty string is compared
+   * rather than waved through, and a pulled `undefined` never satisfies a
+   * committed value of any kind.
+   */
+  it("does not let an explicit undefined in the pulled block pass as a match", () => {
+    const result = findListingDrift(COMMITTED, {
+      "en-US": { subtitle: COMMITTED.subtitle, promoText: undefined },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.drifted).toHaveLength(1);
     expect(result.drifted[0]).toMatch(/^promoText:/);
+  });
+
+  it("compares a committed empty string rather than treating it as absent", () => {
+    const result = findListingDrift({ subtitle: "" }, { "en-US": { subtitle: "" } });
+
+    expect(result).toMatchObject({ ok: true, absent: [], drifted: [] });
+  });
+
+  /**
+   * AC1 of #2540: the job deletes `store.config.json` on the way out, so after
+   * the fact nothing said whether a field came back missing or came back
+   * changed. This is what the run logs.
+   *
+   * ☠️ NAMES ONLY. The values are listing copy and the log is public.
+   */
+  it("reports the pulled field names, and never their values", () => {
+    const result = findListingDrift(COMMITTED, {
+      "en-US": { promoText: COMMITTED.promoText, subtitle: COMMITTED.subtitle },
+    });
+
+    expect(result.fields).toEqual(["promoText", "subtitle"]);
+    expect(result.fields.join(" ")).not.toContain(COMMITTED.subtitle);
+    expect(result.fields.join(" ")).not.toContain(COMMITTED.promoText);
   });
 
   /** The override exists so this branch is drivable without faking the constant. */

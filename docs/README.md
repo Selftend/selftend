@@ -15,15 +15,19 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [architecture.md](architecture.md) - routes, providers, auth, data, reminders
 - [data-privacy-model.md](data-privacy-model.md) - stored data, ownership, export, deletion
 - [accessibility.md](accessibility.md) - accessibility baseline
+- [sound.md](sound.md) - the sound spec (decided, not built): how the app plays a looping bed, the per-platform looper and why only web changes, what a bed swap sounds like, and the sound door and panel that change the bed from inside a running sit
 - [modules/cbt.md](modules/cbt.md) - CBT thought-record flow and data contract
 - [modules/tools.md](modules/tools.md) - the module contract
 - [modules/gratitude-log.md](modules/gratitude-log.md) - gratitude log scope and data contract
-- [modules/dbt-mckay-skills-workbook.md](modules/dbt-mckay-skills-workbook.md) - the DBT module spec (decided, not built); its design brief is [design/1980-handoff/](design/1980-handoff/README.md)
+- [modules/dbt-mckay-skills-workbook.md](modules/dbt-mckay-skills-workbook.md) - the DBT module spec; the first-release slice shipped in v0.18.0, and the second slice and post-MVP sections stay specified and unscheduled. Its design brief was [design/1980-handoff/](design/1980-handoff/README.md)
 
 ## Launch And Operations
 
 - [deployment.md](deployment.md) - web deployment and Supabase callbacks
-- [indexability.md](indexability.md) - the indexability spec (decided, not built): how selftend.org is made readable by search engines, the instruments, and the owner's dashboard steps
+- [indexability.md](indexability.md) - the indexability spec, as built in v0.19.0: how selftend.org is made readable by search engines, the instruments, and the owner's dashboard steps
+- [brand-result.md](brand-result.md) - the brand-result spec (decided; being built - the footer, the two structured-data properties and the two ungated explainer pages are in, the three gated explainers and the release are ahead): what a search for Selftend can truthfully show - explainer pages from content the app already holds, one footer linking every public page, two more structured-data properties, and the honest ceiling on sitelinks and knowledge panels
+- [search-operations.md](search-operations.md) - the search-operations spec (decided; the Ahrefs settings applied and the two privacy-page links built): what the monthly Ahrefs audit is allowed to hide and what it must show, the once-a-year standings reading beside the December coverage read, and the never-edited baseline it compares against
+- [reminders.md](reminders.md) - the reminders spec (built, bar two cleanups, the release and the hold-out lift): one general reminder, suggested by placement alone on the Reminders screen and the settings card, and every per-tool and routine reminder manual-only; the data model, the copy in both locales, and the numbered build list
 - [android-development.md](android-development.md) - Android dev-build setup
 - [internal-testing.md](internal-testing.md) - internal build and testing checklist
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness

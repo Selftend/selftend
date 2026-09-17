@@ -20,29 +20,35 @@ interface AmbientLaneOptions {
  * `none` (the catalog's null-asset row) and any id the catalog lacks play nothing:
  * a stored id is free text, and silence is the only safe reading of one we do not
  * know. The repository resolves retired ids to `none` before they get here; the
- * `?? null` is the null-guard for a caller that bypasses it.
+ * missing-row branch is the null-guard for a caller that bypasses it.
  */
 export function useAmbientLane({ active, soundId, volume }: AmbientLaneOptions): void {
   // Lazy useState instead of a render-written ref: same one-instance-per-mount
   // semantics, no ref access during render.
   const [lane] = useState(createLanePlayer);
 
-  // Start/stop with the session; restart when the chosen sound changes. `active`
-  // drops on every pause as well as at the end, and the lane fades on both (#1743):
-  // stop() ramps the bed to 0 before releasing it, play() ramps the next one up
-  // from 0. A swap runs this effect's cleanup (stop) and body (play) in one tick;
-  // the lane cuts the outgoing bed and fades the new one in - see `lane-player.ts`.
+  // Start/stop with the session; swap when the chosen sound changes. `active` drops on
+  // every pause as well as at the end, and the lane fades on both (#1743): stop() ramps
+  // the bed to 0 before releasing it, play() ramps the next one up from 0.
+  //
+  // ☠️ NO CLEANUP that stops the lane. A cleanup here would turn every bed change into
+  // a stop() immediately followed by a play() - the cut this effect used to hand the
+  // lane, and the one the crossfade exists to remove (#2484, `docs/sound.md` §4). The
+  // lane crossfades a swap on its own; the other two cases a cleanup would have covered
+  // are already covered, by the `!active` branch above and by the unmount effect below.
   useEffect(() => {
     if (!active) {
       void lane.stop();
       return;
     }
-    const asset = ambientSoundLookup[soundId]?.asset ?? null;
-    if (asset !== null) void lane.play(asset, volume, true);
+    const bed = ambientSoundLookup[soundId];
+    // ☠️ Guarded on the asset being an actual NUMBER, not on `!== null`. A stored id is
+    // free text and the lookup is a plain object, so `"constructor"` is a hit whose
+    // `asset` is `undefined` - which `!== null` lets straight through to `play()`.
+    // `nominalSeconds` rides along for the web loop window (`docs/sound.md` §3.1.6);
+    // every catalogue row that has an asset has one.
+    if (typeof bed?.asset === "number") void lane.play(bed.asset, volume, true, bed.nominalSeconds);
     else void lane.stop();
-    return () => {
-      void lane.stop();
-    };
     // Volume changes are handled in the volume effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lane, active, soundId]);

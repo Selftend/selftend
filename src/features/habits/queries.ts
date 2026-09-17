@@ -20,7 +20,6 @@ import {
   type HabitLogsScope,
 } from "@/src/features/habits/optimistic-logs";
 import type { HabitInput, HabitLog } from "@/src/features/habits/types";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { noteToolSave } from "@/src/stores/tool-save-store";
@@ -160,15 +159,9 @@ export function useRestoreHabit(userId: string | null) {
 }
 
 export function useDeleteHabit(userId: string | null) {
-  // Deleting a habit takes its logs with it, so days it alone marked stop
-  // being marked days.
-  return useDeleteMutation(
-    userId,
-    deleteHabit,
-    habitKeys.all,
-    recordDaysKeys.all,
-    homeToolStatsKeys.all,
-  );
+  // Deleting a habit takes its logs with it, so Home's "N of M done today"
+  // can move.
+  return useDeleteMutation(userId, deleteHabit, habitKeys.all, homeToolStatsKeys.all);
 }
 
 /**
@@ -240,12 +233,10 @@ export function useToggleHabitLog(userId: string | null) {
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: habitKeys.all }),
-        // A tick adds `loggedOn` to the record days and an untick removes it, so
-        // this rides the same both-arms settle as the rest: a rollback restores a
-        // guess, not the server's answer.
-        invalidateRecordDays(queryClient),
-        // A tick also moves Home's "N of M done today" (#2212), and that root is
-        // reached by name for the same reason: it spans seven tables.
+        // A tick moves Home's "N of M done today" (#2212). That root is reached
+        // by name because it spans seven tables and no habit prefix reaches it,
+        // and it rides the same both-arms settle as the rest: a rollback
+        // restores a guess, not the server's answer.
         invalidateHomeToolStats(queryClient),
       ]);
     },
@@ -287,9 +278,8 @@ export function useUpsertHabitLogNote(userId: string | null) {
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: habitKeys.all }),
-        // The note upsert INSERTS when no log exists for that day, so it can mark
-        // a day that was not marked before - and tick it, so Home's fraction moves.
-        invalidateRecordDays(queryClient),
+        // The note upsert INSERTS when no log exists for that day, ticking it,
+        // so Home's fraction moves.
         invalidateHomeToolStats(queryClient),
       ]);
     },

@@ -34,6 +34,29 @@ jest.mock("@/src/lib/supabase", () => ({
   },
 }));
 
+/**
+ * The hero pills bearing `name`.
+ *
+ * ☠️ A bare `getByText` is no longer unambiguous on this screen. Since #2469 the
+ * site footer the landing renders (#2467) lists `/meditation`, labelled - by the
+ * anchor-text rule - with that page's H1, "Meditation": the same word the
+ * meditation pill carries, so `getByText("Meditation")` throws "Found multiple
+ * elements". Taking the first match instead would be a coin toss on tree order
+ * and would keep passing if the pill itself disappeared.
+ *
+ * ☠️ Disambiguating on the pill's `text-[13.5px]` was the first fix and was
+ * WRONG: that utility is not unique to this row - `how-it-works-section.tsx`
+ * sets the same scale - so the filter only worked by the accident that no step
+ * body's text equals a tool name. The pill carries a `testID` instead, which is
+ * a structural handle rather than a styling coincidence, and a restyle no longer
+ * reds this test.
+ *
+ * The count is asserted rather than the presence, so a pill that stops being
+ * rendered fails here even while the footer still says the word.
+ */
+const heroPills = (name: string) =>
+  screen.getAllByTestId("hero-tool-pill").filter((node) => node.props.children === name);
+
 describe("LandingScreen", () => {
   it("renders the hero headline as the single top-level heading", () => {
     renderWithProviders(<LandingScreen />);
@@ -57,6 +80,20 @@ describe("LandingScreen", () => {
         "A set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
+  });
+
+  // #2468: the landing's structured-data block asserts `isAccessibleForFree`
+  // on its WebSite node, and `docs/brand-result.md` § 6 admits that property
+  // for one reason - this page says it. The property is a boolean, so no
+  // assertion in the head's own test can tie it to rendered copy; what can be
+  // tied is its justification, and it is tied here, where the copy renders.
+  // If the hero stops saying it, the block is left asserting a claim the page
+  // no longer makes, which is the drift § 6's rule exists to prevent.
+  it("states in the hero the free access the structured-data block asserts", () => {
+    renderWithProviders(<LandingScreen />);
+
+    expect(screen.getByText("Free · Open source · Private")).toBeTruthy();
+    expect(screen.getByText(/No ads, no subscriptions\./)).toBeTruthy();
   });
 
   // #1441: the primary CTA is an action, not a link - it creates the guest
@@ -110,7 +147,7 @@ describe("LandingScreen", () => {
       "Sleep",
       "Habits",
     ]) {
-      expect(screen.getByText(name)).toBeTruthy();
+      expect(heroPills(name)).toHaveLength(1);
     }
   });
 });

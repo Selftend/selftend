@@ -48,7 +48,7 @@ import { useToolSaveStore } from "@/src/stores/tool-save-store";
 // completion moment was removed outright (#2342, ADR-0008), so there is no
 // second floater to collide with and nothing to defer to: this offer now fires
 // on the FIRST qualifying save, which is what #1677 intended before the
-// reminder card started taking that save for each of ten tools in turn. The
+// reminder card started taking that save for each tool in turn. The
 // deferral was deleted, not replaced with a fresh one.
 //
 // This is deliberately NOT a Home starter card - that surface was rejected

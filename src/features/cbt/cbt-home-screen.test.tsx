@@ -17,6 +17,8 @@ import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/set
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // `CrisisSupportCallout`'s button became a `LinkButton` on #2496.
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
@@ -112,7 +114,7 @@ function setupDefaultMocks() {
   });
   mockUseCbtProgram.mockReturnValue({
     program: {
-      status: "not_started",
+      status: "not_in_progress",
       startedAt: null,
       summaryStats: {
         thoughtRecords: 0,
@@ -178,7 +180,7 @@ describe("CbtHomeScreen onboarding", () => {
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({
       program: {
-        status: "not_started",
+        status: "not_in_progress",
         startedAt: null,
         summaryStats: {
           thoughtRecords: 0,

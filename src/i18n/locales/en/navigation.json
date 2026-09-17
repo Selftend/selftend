@@ -13,7 +13,6 @@
   },
   "sidebar": {
     "home": "Home",
-    "progress": "Looking back",
     "routines": "Routines",
     "notifications": "Reminders",
     "settings": "Settings",
@@ -325,21 +324,6 @@
       }
     }
   },
-  "progress": {
-    "title": "Looking back",
-    "description": "Your record over time, and a question to sit with.",
-    "timelineTitle": "Your days",
-    "timelineDescription": "One mark for each day with a record.",
-    "timelineEmpty": "Days you record anything will appear here.",
-    "timelineSingleDay": "Today is on your record.",
-    "timelineError": "Your days could not be loaded just now.",
-    "timelineA11y": "Record timeline, {{from}} to {{to}}.",
-    "reflectionTitle": "Reflection prompt",
-    "reflectionDescription": "A quiet question to sit with.",
-    "prompt": "Looking back over this stretch, what stands out to you?",
-    "recoveryTitle": "Your recovery plan",
-    "recoveryDescription": "What you wrote about what helps."
-  },
   "headerButton": {
     "tune": "Customise",
     "notifications": "Reminders",
@@ -349,7 +333,6 @@
   "breadcrumb": {
     "session": "Session",
     "history": "History",
-    "progress": "Looking back",
     "legal": "Legal",
     "entry": "Entry",
     "entries": "Entries",

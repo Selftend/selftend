@@ -217,21 +217,6 @@ env:
     timeout: 10000
 - takeScreenshot: screenshots/05-breathing
 
-- openLink:
-    link: ${APP_LINK}progress
-- runFlow:
-    when:
-      visible: ".*Open in.*"
-    commands:
-      - tapOn: "Open"
-- extendedWaitUntil:
-    visible:
-      text: "Looking back"
-    timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 10000
-- takeScreenshot: screenshots/06-insights
-
 # The catalogue of eight tools. This shot answers Apple's 2.1 App Completeness
 # citation directly - eight working tools, each showing a real count - so it is
 # kept rather than dropped.
@@ -265,4 +250,4 @@ env:
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: screenshots/07-tools
+- takeScreenshot: screenshots/06-tools

@@ -103,6 +103,18 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
 -- information, and it discloses nothing.
 --
+-- ⚠️ THAT ORDERING DESCRIBES THE SUPPRESSED-COUNT ROUTES, not every route
+-- out of these tables. Where a rate prints `0.0%` or `100.0%` the
+-- false-precision leg is not engaged at all — those two figures are exactly
+-- true, and are the least falsely-precise numbers these reports can print —
+-- and privacy is the only leg in play.
+--
+-- ☠️ THE RULE REASONS ABOUT CELL SIZE, NEVER ABOUT CELL VALUE, and never
+-- about what a reader derives from the cells printed BESIDE it. What it
+-- therefore does NOT guarantee is written out in docs/analytics.md, "What the
+-- floor does not guarantee": the routes that bound or recover a suppressed
+-- cell, and the guards that were priced against them and refused.
+--
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
@@ -146,6 +158,36 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
     end
   $$;
 -- <<< shared:k_suppression
+
+-- >>> shared:partition_caveat
+-- Route 1 of docs/analytics.md, "What the floor does not guarantee": the caveat
+-- printed beside every section whose arms partition a population.
+-- Byte-identical in analytics-onboarding.sql and analytics-segment.sql;
+-- test/analytics-shared-sql.test.ts fails if they drift. analytics-engagement.sql
+-- deliberately does NOT carry it - no section there partitions a population, and
+-- a partition warning printed beside a table that has no partitioned arms would
+-- be one more false sentence in a file family whose comments have already
+-- asserted the opposite of this one twice.
+--
+-- ☠️ A RAW TOTAL BESIDE A SUPPRESSED CELL IS NOT THE DEFECT - AN EXHAUSTIVELY
+-- PRINTED PARTITION IS. Three conditions, and they hold together or not at all:
+-- the arms partition a population EXHAUSTIVELY; EVERY arm prints; and that
+-- population's total prints RAW somewhere in the same report. Every other
+-- suppressed cell in these reports has a complement that is never printed, so
+-- there is nothing to subtract it from.
+--
+-- ⚠️ The test is STRUCTURAL, so a future section classifies ITSELF against it:
+-- there is no list of qualifying sections kept here, and no review gate to
+-- remember. One variable, echoed once per qualifying section, so the sentence
+-- cannot drift between the sections that print it.
+\set partition_caveat '    WHAT `<5` DOES NOT HIDE HERE. These arms partition a population exhaustively, every arm prints,'
+\set partition_caveat :partition_caveat '\n    and that population\'s total prints raw elsewhere in this report - so the arms that DID print, taken'
+\set partition_caveat :partition_caveat '\n    from that total, bound the ones that did not. `<5` publishes the interval 1..4, so a hidden cell is at'
+\set partition_caveat :partition_caveat '\n    most FOUR VALUES WIDE - however many cells are hidden - and EXACTLY ONE whenever the remainder left'
+\set partition_caveat :partition_caveat '\n    over sits at either end of its range. Four is a maximum, not a guarantee: a small raw base printed'
+\set partition_caveat :partition_caveat '\n    beside a suppressed cell caps it lower still. The guards against this were priced and refused - see'
+\set partition_caveat :partition_caveat '\n    docs/analytics.md, What the floor does not guarantee.'
+-- <<< shared:partition_caveat
 
 -- The block below is byte-identical in analytics-engagement.sql;
 -- test/analytics-shared-sql.test.ts fails if they drift. A new content table
@@ -370,6 +412,52 @@ create temp view axis_coverage(axis, arms_total, arms_with_mature_users, readabl
             join user_w4 w on w.user_id = um.user_id
            where w.w4_mature) c;
 
+-- >>> shared:series_caveat
+-- Route 2 of docs/analytics.md, "What the floor does not guarantee". Printed
+-- ONCE PER REPORT, ahead of the first table and under no heading of its own,
+-- because this census has nothing to exempt: every suppressed cell in all three
+-- reports can move between publications. Byte-identical in all three files;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ⚠️ It prints ABOVE the population block deliberately. A note that qualifies
+-- every table has to arrive before them, and trailing the population block
+-- would attach it to the one block EXEMPT from the k=5 rule - the section it
+-- has the least to say about.
+--
+-- ⚠️ Plain `\echo` lines here, where shared:partition_caveat uses a psql
+-- variable. That block is echoed at three call sites and would drift between
+-- them; this one prints once per file, so a variable would buy nothing.
+--
+-- ☠️ KEPT SEPARATE FROM shared:partition_caveat DELIBERATELY. Merging the two
+-- would print a partition warning on analytics-engagement.sql, which has no
+-- partitioned arm table - one more false sentence in a file family whose
+-- comments have already asserted the opposite twice.
+--
+-- ⚠️ The k=5 rule is written, reasoned and tested as a property of ONE RUN of
+-- one report. Since the monthly digest it is not: the same tables accumulate as
+-- a series on one standing issue, and each run computes its suppression from
+-- its own month alone. Nothing is guarded, and what ships is the statement -
+-- docs/analytics.md does not travel with the table, and the digest comment
+-- carries only the legend.
+--
+-- ☠️ The refusal below names the MARKER reason first and the statelessness
+-- second, and that order is the finding rather than a style choice: an
+-- architectural objection can be engineered around, and the marker one cannot.
+\echo
+\echo '    REPORT-WIDE NOTE, TRUE OF EVERY TABLE BELOW - THE SERIES IS THE RELEASE, NOT EACH COMMENT. This'
+\echo '    report is republished monthly onto one standing issue, and each run computes its suppression from'
+\echo '    its own month alone. So a cell can print `<5` in one publication and a real count in a later one,'
+\echo '    and what that pair discloses is the MOVEMENT between them - which is time-localised in a way a'
+\echo '    level is not, and which the four-value bound does not speak to at all. A republished cell is safe'
+\echo '    exactly when it CANNOT MOVE, and nothing suppressed in these reports is immutable.'
+\echo '    NOTHING IS GUARDED. CROSS-RELEASE SUPPRESSION CONSISTENCY - holding a cell suppressed once it has'
+\echo '    passed four, so that it never crosses the floor in public - is REFUSED, because it means'
+\echo '    suppressing a LARGE cell, which can print neither `<5` (false) nor a distinct marker (which cracks'
+\echo '    the suppression) - the same wall complementary suppression hits. That these reports are'
+\echo '    deliberately stateless is the SECOND reason and not the first. See docs/analytics.md, What the'
+\echo '    floor does not guarantee, route 2.'
+-- <<< shared:series_caveat
+
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
 -- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
@@ -493,25 +581,35 @@ from user_w4;
 \echo '    so it can open while every one of those users sits in a single arm.'
 \echo '    Counts ARMS, never people, so there is no cell here for the k=5 rule to suppress.'
 \echo '    Coverage is computed over the WHOLE population, not per account type, while sections 3'
-\echo '    and 4 print both. So an axis covered by registered accounts alone still prints a guest'
-\echo '    ordering whose arms are all one arm. That is deliberate - the segment question is about'
-\echo '    the population, and forking the precondition per account type would make readable mean'
-\echo '    two different things - but read a guest ordering beside a small guest population with that'
-\echo '    in mind. Tracked as issue 2389, not as a defect in the precondition.'
+\echo '    and 4 print both. So an account half may hold ZERO OR ONE arm with mature users while the'
+\echo '    axis is population-readable, and what prints for that half is not an ordering.'
+\echo '    That scope is deliberate and decided: the segment question is about the population, and'
+\echo '    forking this precondition per account type would give readable a second meaning, which is'
+\echo '    how two conditions drift apart. The mismatch it leaves is closed by a LABEL, not by a'
+\echo '    second gate - such a half still prints IN FULL, with one row naming the reason, computed'
+\echo '    from the per-account form of the test above. See docs/analytics.md, Everything is split'
+\echo '    by account type.'
 select axis, arms_total, arms_with_mature_users, readable
 from axis_coverage order by axis;
 
 \echo
 -- ☠️ WHAT THE k=5 FLOOR DOES AND DOES NOT GUARANTEE IN SECTIONS 3 AND 4, so
 -- that a later reader neither mistakes it for a guarantee nor tears it out as
--- theatre. Both are wrong; the truth is in between and it is worth ten lines.
+-- theatre. Both are wrong; the truth is in between, and the part a reader of
+-- the OUTPUT needs is printed beside both sections by the shared
+-- partition_caveat block above.
 --
 -- These arms PARTITION the population, and section 1 prints `users`,
 -- `w4_mature_users` and `w4_retained_users` RAW per account type (its carve-out,
--- with its own reasons recorded beside it). An exhaustive partition of a raw
--- total leaks any SINGLE hidden cell by subtraction: the total minus the arms
--- that printed recovers the one that did not. Where two or more arms are
--- suppressed only their SUM is recoverable, which is the floor working.
+-- with its own reasons recorded beside it). So the arms that printed, taken
+-- from that total, bound the arms that did not. The bound is the one the caveat
+-- prints, said again here because this is where it was once said wrongly: `<5`
+-- publishes the interval 1..4, so a hidden cell is AT MOST FOUR VALUES WIDE
+-- however many arms are hidden, and EXACTLY ONE whenever the remainder sits at
+-- either end of its range. ☠️ TWO FALSE SENTENCES STOOD HERE - that a
+-- multi-arm suppression leaves only a SUM recoverable, and that the floor holds
+-- wherever more than one arm is small. Do not restore either: what bounds the
+-- cell is the interval, never the number of arms that happened to be hidden.
 --
 -- ⚠️ THE LOCALE AXIS IS THE BAD CASE, and it is the ordinary case rather than a
 -- corner. `other locale` is unreachable while the CHECK constraint allows only
@@ -520,26 +618,30 @@ from axis_coverage order by axis;
 -- two visible zeros, and a suppressed `bg` is recoverable exactly. That is the
 -- same arithmetic the section 1 carve-out calls theatre.
 --
--- It is recorded rather than fixed, and the reason is that every available fix
--- is worse: section 1 cannot be suppressed without blinding the gate, an empty
--- arm may not print `<5` without forking the shared rule, and dropping the count
--- columns would leave an ordering with no weight beside it. ⚠️ THIS IS NOT
--- SPECIFIC TO THIS FILE - section 4 of analytics-onboarding.sql partitions the
--- population the same way, so the property is general to these reports and the
--- decision about it is not this section's to make alone. Tracked as issue 2388.
---
--- What survives is real: the floor still stops a small cell being read casually,
--- and it still holds wherever more than one arm is small. Do not read it as a
--- privacy guarantee on a two-arm axis.
+-- It is recorded rather than fixed, and that is now a DECISION rather than a
+-- tracking note: every guard anyone proposed was priced and refused, and the
+-- prices are written out in docs/analytics.md, "What the floor does not
+-- guarantee". The three that bear on this section: section 1 cannot be
+-- suppressed without blinding the gate; an empty arm may not print `<5` without
+-- forking the shared rule; and dropping the count columns would leave an
+-- ordering with no weight beside it AND make an empty arm indistinguishable
+-- from a suppressed one, since `k_pct(0, 0)` prints the same `-` a withheld
+-- percentage does. ⚠️ NONE OF THIS IS SPECIFIC TO THIS FILE - section 4 of
+-- analytics-onboarding.sql partitions the population the same way, which is why
+-- the caveat above is a shared block rather than a sentence written here.
 \echo '=== 3) W4 retention by locale (arms partition the population; every account appears exactly once) ==='
 \echo '    Ordered by retention rate: READ THE ORDERING, not the percentages.'
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
 \echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
 \echo '    bug, never a reading.'
+\echo '    A (not an ordering) row heads ONE account half when that half holds fewer than two arms with'
+\echo '    mature users, so the rows BENEATH IT, for that half, rank nothing. The half still prints in'
+\echo '    full - the row annotates it, it does not withhold it - and BOTH halves can carry one at once.'
 \echo '    user_preferences.language is NOT NULL DEFAULT en, so the en arm holds both people using'
 \echo '    Selftend in English and people who never touched the setting. bg is the arm carrying an'
 \echo '    unambiguous affirmative signal - read the axis as bg-versus-the-rest.'
+\echo :partition_caveat
 with section_rows as (
   select l.account,
          ll.arm,
@@ -557,17 +659,46 @@ with section_rows as (
   left join user_w4 w on w.user_id = ul.user_id
   where (select ac.readable from axis_coverage ac where ac.axis = 'locale')
   group by l.account, ll.arm, ll.arm_order
+),
+-- ☠️ SECTION 2'S OWN TEST, APPLIED PER ACCOUNT TYPE - one definition of NOT AN
+-- ORDERING at a second scope, with gating authority at only one of them.
+-- `readable` stays population-wide and remains the only thing deciding whether
+-- an ordering PRINTS; this decides only whether a row naming the reason appears
+-- beside a half that prints either way. The subquery below is the axis_coverage
+-- subquery with `and ul.account = l.account` added and nothing else
+-- changed, so the two cannot drift into two definitions of the same word.
+half_coverage as (
+  select l.account,
+         (select count(distinct ul.arm)
+            from user_locale ul
+            join locale_labels lb on lb.arm = ul.arm
+            join user_w4 w on w.user_id = ul.user_id
+           where w.w4_mature and ul.account = l.account) as arms_with_mature_users
+  from account_labels l
 )
 select account, arm, users, w4_mature, w4_retained, w4_pct
 from (
-  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm,
+         0 as empty_marker, 1 as row_kind
     from section_rows
   union all
+  -- ⚠️ The half still prints IN FULL: this removes no count and no arm, so the
+  -- exposed-section census is unchanged. BOTH halves can take it at once -
+  -- `readable` is true when one arm holds a mature registered user and a
+  -- DIFFERENT arm holds a mature guest, which is two arms population-wide and
+  -- one in each half.
+  select hc.account,
+         '(not an ordering) fewer than two arms in this account type hold a mature user',
+         null, null, null, null, null, null, 0, 0
+    from half_coverage hc
+   where hc.arms_with_mature_users < 2
+     and exists (select 1 from section_rows)
+  union all
   select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
-         null, null, null, null, null, null, 1
+         null, null, null, null, null, null, 1, 1
    where not exists (select 1 from section_rows)
 ) t
-order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
+order by t.empty_marker, t.account, t.row_kind, t.sort_rate desc nulls last, t.sort_arm;
 
 \echo
 \echo '=== 4) W4 retention by module usage (arms partition the population; every account appears exactly once) ==='
@@ -576,11 +707,15 @@ order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
 \echo '    A single (ordering withheld) row means section 2 found THIS axis carries no values; it does'
 \echo '    NOT mean nobody is retained, and it says nothing about the other axis. NO rows at all is a'
 \echo '    bug, never a reading.'
+\echo '    A (not an ordering) row heads ONE account half when that half holds fewer than two arms with'
+\echo '    mature users, so the rows BENEATH IT, for that half, rank nothing. The half still prints in'
+\echo '    full - the row annotates it, it does not withhold it - and BOTH halves can carry one at once.'
 \echo '    The arm is measured over THE FIRST 28 DAYS AFTER SIGNUP, the window ending where the W4'
 \echo '    window begins, so the axis is prior to the outcome instead of partly being it. An account'
 \echo '    younger than 28 days carries a provisional arm and is excluded from the rate by maturity.'
 \echo '    other module only should always be empty: it means content_events grew a module the arm'
 \echo '    list above does not name.'
+\echo :partition_caveat
 with section_rows as (
   select l.account,
          ml.arm,
@@ -598,14 +733,43 @@ with section_rows as (
   left join user_w4 w on w.user_id = um.user_id
   where (select ac.readable from axis_coverage ac where ac.axis = 'module usage')
   group by l.account, ml.arm, ml.arm_order
+),
+-- ☠️ SECTION 2'S OWN TEST, APPLIED PER ACCOUNT TYPE - one definition of NOT AN
+-- ORDERING at a second scope, with gating authority at only one of them.
+-- `readable` stays population-wide and remains the only thing deciding whether
+-- an ordering PRINTS; this decides only whether a row naming the reason appears
+-- beside a half that prints either way. The subquery below is the axis_coverage
+-- subquery with `and um.account = l.account` added and nothing else
+-- changed, so the two cannot drift into two definitions of the same word.
+half_coverage as (
+  select l.account,
+         (select count(distinct um.arm)
+            from user_modules um
+            join module_labels lb on lb.arm = um.arm
+            join user_w4 w on w.user_id = um.user_id
+           where w.w4_mature and um.account = l.account) as arms_with_mature_users
+  from account_labels l
 )
 select account, arm, users, w4_mature, w4_retained, w4_pct
 from (
-  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm, 0 as empty_marker
+  select account, arm, users, w4_mature, w4_retained, w4_pct, sort_rate, sort_arm,
+         0 as empty_marker, 1 as row_kind
     from section_rows
   union all
+  -- ⚠️ The half still prints IN FULL: this removes no count and no arm, so the
+  -- exposed-section census is unchanged. BOTH halves can take it at once -
+  -- `readable` is true when one arm holds a mature registered user and a
+  -- DIFFERENT arm holds a mature guest, which is two arms population-wide and
+  -- one in each half.
+  select hc.account,
+         '(not an ordering) fewer than two arms in this account type hold a mature user',
+         null, null, null, null, null, null, 0, 0
+    from half_coverage hc
+   where hc.arms_with_mature_users < 2
+     and exists (select 1 from section_rows)
+  union all
   select '(ordering withheld)', 'section 2 found fewer than two arms holding a mature user',
-         null, null, null, null, null, null, 1
+         null, null, null, null, null, null, 1, 1
    where not exists (select 1 from section_rows)
 ) t
-order by t.empty_marker, t.account, t.sort_rate desc nulls last, t.sort_arm;
+order by t.empty_marker, t.account, t.row_kind, t.sort_rate desc nulls last, t.sort_arm;

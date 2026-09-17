@@ -164,4 +164,44 @@ describe("the ambient lane", () => {
   it("is reachable by id from the lookup", () => {
     for (const bed of AMBIENT_SOUNDS) expect(ambientSoundLookup[bed.id]).toBe(bed);
   });
+
+  /**
+   * ☠️ **"Every bed is 30 s" is false**, and it was a premise the map behind
+   * `docs/sound.md` carried until #2437 measured it. `fire` and `stream` are
+   * folded beds — the seam gate's fold fallback ran on them — and they are
+   * shorter by the fold. Pinning the three numbers here means the catalogue
+   * cannot be quietly re-authored to match a bad re-encode.
+   *
+   * ⚠️ These are the declared values only. Whether each one matches the bytes
+   * of the file that ships is `test/audio-bed-nominal-length.test.ts`, which
+   * reads every bed's `mdhd` and edit list.
+   */
+  it("declares 30.000 for seven beds, and the two folded beds' own lengths", () => {
+    expect(Object.fromEntries(AMBIENT_SOUNDS.map((s) => [s.id, s.nominalSeconds]))).toEqual({
+      none: undefined,
+      rain: 30,
+      ocean: 30,
+      stream: 29.6,
+      forest: 30,
+      night: 30,
+      fire: 29.52,
+      "brown-noise": 30,
+      "pink-noise": 30,
+      "white-noise": 30,
+    });
+  });
+
+  /**
+   * The type already forbids both halves of this (`AmbientBed | AmbientSilence`
+   * is discriminated on `asset`), but the type is only checked where the
+   * catalogue is authored — a row arriving from a cast, a merge resolution or a
+   * `@ts-expect-error` would carry a length with no file to measure it against,
+   * and the loop window would size itself from a number nothing pins.
+   */
+  it("pairs a length with a file, both ways round", () => {
+    for (const bed of AMBIENT_SOUNDS) {
+      expect(bed.asset === null).toBe(bed.nominalSeconds === undefined);
+      if (bed.nominalSeconds !== undefined) expect(bed.nominalSeconds).toBeGreaterThan(0);
+    }
+  });
 });

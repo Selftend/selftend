@@ -62,6 +62,11 @@ export interface UserPreferences {
   dbtReminderHour: number;
   dbtReminderMinute: number;
   dbtReminderTimezone: string | null;
+  // The one general reminder (#2413, ADR-0010): leads to the app, not a tool.
+  generalRemindersEnabled: boolean;
+  generalReminderHour: number;
+  generalReminderMinute: number;
+  generalReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   appOnboardingCompletedVia: "finish" | "skip" | null;
   appOnboardingCompletedAt: string | null;
@@ -243,6 +248,13 @@ export const defaultUserPreferences: UserPreferences = {
   dbtReminderHour: 19,
   dbtReminderMinute: 0,
   dbtReminderTimezone: null,
+  generalRemindersEnabled: false,
+  // 18:00 (#2413 § 3.3): a free slot, early evening, and BEFORE the 19:00 module
+  // cluster so a person with a module reminder on is not hit twice within a minute
+  // by default. Mirrors the column default in the #2489 migration.
+  generalReminderHour: 18,
+  generalReminderMinute: 0,
+  generalReminderTimezone: null,
   appOnboardingCompleted: false,
   appOnboardingCompletedVia: null,
   appOnboardingCompletedAt: null,

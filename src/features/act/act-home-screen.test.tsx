@@ -14,6 +14,8 @@ import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // `CrisisSupportCallout`'s button became a `LinkButton` on #2496.
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
@@ -81,7 +83,7 @@ function setCounts({
 }
 
 const defaultActProgram = {
-  status: "not_started" as const,
+  status: "not_in_progress" as const,
   startedAt: null,
   summaryStats: {
     choicePoints: 0,

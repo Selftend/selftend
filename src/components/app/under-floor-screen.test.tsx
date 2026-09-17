@@ -11,7 +11,7 @@ jest.mock("expo-router", () => {
   const React = require("react");
   return {
     // Mirror Link asChild: forward the href onto the wrapped pressable so the
-    // real link target can be asserted (the shape landing-footer.test uses).
+    // real link target can be asserted (the shape site-footer.test uses).
     Link: ({
       href,
       asChild: _asChild,

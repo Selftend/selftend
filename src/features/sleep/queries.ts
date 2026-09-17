@@ -12,7 +12,6 @@ import {
 import type { SleepInput, SleepLog } from "@/src/features/sleep/types";
 import type { QueryClient } from "@tanstack/react-query";
 import { nextDescendingDayCursor, type DayRecordCursor } from "@/src/lib/descending-cursor";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { homeToolStatsKeys, invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { noteToolSave } from "@/src/stores/tool-save-store";
@@ -129,20 +128,11 @@ export function useSaveSleepLog(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: sleepKeys.all }),
         invalidateHomeToolStats(queryClient),
-        // A windowed entry files on the night it BEGAN (#800), not the day it
-        // was logged, so a save can mark a day that is not today.
-        invalidateRecordDays(queryClient),
       ]);
     },
   });
 }
 
 export function useDeleteSleepLog(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteSleepLog,
-    sleepKeys.all,
-    recordDaysKeys.all,
-    homeToolStatsKeys.all,
-  );
+  return useDeleteMutation(userId, deleteSleepLog, sleepKeys.all, homeToolStatsKeys.all);
 }

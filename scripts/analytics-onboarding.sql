@@ -74,6 +74,18 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
 -- information, and it discloses nothing.
 --
+-- ⚠️ THAT ORDERING DESCRIBES THE SUPPRESSED-COUNT ROUTES, not every route
+-- out of these tables. Where a rate prints `0.0%` or `100.0%` the
+-- false-precision leg is not engaged at all — those two figures are exactly
+-- true, and are the least falsely-precise numbers these reports can print —
+-- and privacy is the only leg in play.
+--
+-- ☠️ THE RULE REASONS ABOUT CELL SIZE, NEVER ABOUT CELL VALUE, and never
+-- about what a reader derives from the cells printed BESIDE it. What it
+-- therefore does NOT guarantee is written out in docs/analytics.md, "What the
+-- floor does not guarantee": the routes that bound or recover a suppressed
+-- cell, and the guards that were priced against them and refused.
+--
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
 -- counts the people who did something (activated, completed, retained, used a
@@ -117,6 +129,36 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
     end
   $$;
 -- <<< shared:k_suppression
+
+-- >>> shared:partition_caveat
+-- Route 1 of docs/analytics.md, "What the floor does not guarantee": the caveat
+-- printed beside every section whose arms partition a population.
+-- Byte-identical in analytics-onboarding.sql and analytics-segment.sql;
+-- test/analytics-shared-sql.test.ts fails if they drift. analytics-engagement.sql
+-- deliberately does NOT carry it - no section there partitions a population, and
+-- a partition warning printed beside a table that has no partitioned arms would
+-- be one more false sentence in a file family whose comments have already
+-- asserted the opposite of this one twice.
+--
+-- ☠️ A RAW TOTAL BESIDE A SUPPRESSED CELL IS NOT THE DEFECT - AN EXHAUSTIVELY
+-- PRINTED PARTITION IS. Three conditions, and they hold together or not at all:
+-- the arms partition a population EXHAUSTIVELY; EVERY arm prints; and that
+-- population's total prints RAW somewhere in the same report. Every other
+-- suppressed cell in these reports has a complement that is never printed, so
+-- there is nothing to subtract it from.
+--
+-- ⚠️ The test is STRUCTURAL, so a future section classifies ITSELF against it:
+-- there is no list of qualifying sections kept here, and no review gate to
+-- remember. One variable, echoed once per qualifying section, so the sentence
+-- cannot drift between the sections that print it.
+\set partition_caveat '    WHAT `<5` DOES NOT HIDE HERE. These arms partition a population exhaustively, every arm prints,'
+\set partition_caveat :partition_caveat '\n    and that population\'s total prints raw elsewhere in this report - so the arms that DID print, taken'
+\set partition_caveat :partition_caveat '\n    from that total, bound the ones that did not. `<5` publishes the interval 1..4, so a hidden cell is at'
+\set partition_caveat :partition_caveat '\n    most FOUR VALUES WIDE - however many cells are hidden - and EXACTLY ONE whenever the remainder left'
+\set partition_caveat :partition_caveat '\n    over sits at either end of its range. Four is a maximum, not a guarantee: a small raw base printed'
+\set partition_caveat :partition_caveat '\n    beside a suppressed cell caps it lower still. The guards against this were priced and refused - see'
+\set partition_caveat :partition_caveat '\n    docs/analytics.md, What the floor does not guarantee.'
+-- <<< shared:partition_caveat
 
 -- The identity clock (#2366, #2376). One row per account, carrying the instant
 -- its first sign-in identity was attached - which is what makes a conversion
@@ -191,6 +233,51 @@ create temp view conversion_arm_labels(arm, arm_order) as values
   ('registered at mint', 3),
   ('is_anonymous disagrees with the identity record (CONTRADICTION)', 4);
 
+-- >>> shared:series_caveat
+-- Route 2 of docs/analytics.md, "What the floor does not guarantee". Printed
+-- ONCE PER REPORT, ahead of the first table and under no heading of its own,
+-- because this census has nothing to exempt: every suppressed cell in all three
+-- reports can move between publications. Byte-identical in all three files;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ⚠️ It prints ABOVE the population block deliberately. A note that qualifies
+-- every table has to arrive before them, and trailing the population block
+-- would attach it to the one block EXEMPT from the k=5 rule - the section it
+-- has the least to say about.
+--
+-- ⚠️ Plain `\echo` lines here, where shared:partition_caveat uses a psql
+-- variable. That block is echoed at three call sites and would drift between
+-- them; this one prints once per file, so a variable would buy nothing.
+--
+-- ☠️ KEPT SEPARATE FROM shared:partition_caveat DELIBERATELY. Merging the two
+-- would print a partition warning on analytics-engagement.sql, which has no
+-- partitioned arm table - one more false sentence in a file family whose
+-- comments have already asserted the opposite twice.
+--
+-- ⚠️ The k=5 rule is written, reasoned and tested as a property of ONE RUN of
+-- one report. Since the monthly digest it is not: the same tables accumulate as
+-- a series on one standing issue, and each run computes its suppression from
+-- its own month alone. Nothing is guarded, and what ships is the statement -
+-- docs/analytics.md does not travel with the table, and the digest comment
+-- carries only the legend.
+--
+-- ☠️ The refusal below names the MARKER reason first and the statelessness
+-- second, and that order is the finding rather than a style choice: an
+-- architectural objection can be engineered around, and the marker one cannot.
+\echo
+\echo '    REPORT-WIDE NOTE, TRUE OF EVERY TABLE BELOW - THE SERIES IS THE RELEASE, NOT EACH COMMENT. This'
+\echo '    report is republished monthly onto one standing issue, and each run computes its suppression from'
+\echo '    its own month alone. So a cell can print `<5` in one publication and a real count in a later one,'
+\echo '    and what that pair discloses is the MOVEMENT between them - which is time-localised in a way a'
+\echo '    level is not, and which the four-value bound does not speak to at all. A republished cell is safe'
+\echo '    exactly when it CANNOT MOVE, and nothing suppressed in these reports is immutable.'
+\echo '    NOTHING IS GUARDED. CROSS-RELEASE SUPPRESSION CONSISTENCY - holding a cell suppressed once it has'
+\echo '    passed four, so that it never crosses the floor in public - is REFUSED, because it means'
+\echo '    suppressing a LARGE cell, which can print neither `<5` (false) nor a distinct marker (which cracks'
+\echo '    the suppression) - the same wall complementary suppression hits. That these reports are'
+\echo '    deliberately stateless is the SECOND reason and not the first. See docs/analytics.md, What the'
+\echo '    floor does not guarantee, route 2.'
+-- <<< shared:series_caveat
 
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
@@ -344,12 +431,15 @@ order by t.empty_marker, t.sort_users desc, t.account, t.via;
 \echo '=== 4) Guest-to-registered conversion (the identity clock; 7-day maturity window) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'
 \echo '    STANDING NOTE: a conversion count below five is withheld and prints `<5`. That is the floor doing its'
-\echo '    job, not an absence - read it as "between one and four", never as "none". A true zero prints as 0.'
+\echo '    job, not an absence - read it as AT MOST FOUR, and never as more than the base printed beside it: a'
+\echo '    numerator cannot exceed its denominator, so a small raw base caps the withheld cell below four and'
+\echo '    at a base of one defeats it outright. A true zero prints as 0, so `<5` never means none.'
 \echo '    The four arms partition the whole population: every account is in exactly one.'
 \echo '    ☠️ The last arm must always be EMPTY. An entry means `is_anonymous` and the identity record disagree'
 \echo '    about who is a guest - EITHER WAY ROUND: registered while holding no identity, or a guest holding'
 \echo '    one. That is a drift between two definitions of the same word, never a count of people to read as'
 \echo '    behaviour. Everyone else is in exactly one of the three arms above it.'
+\echo :partition_caveat
 -- ☠️ THIS IS THE PROJECT'S OWN DEFINITION EXECUTED, NOT A PROXY (#2366).
 -- CONTEXT.md defines conversion as attaching the first sign-in identity, and a
 -- registered account as one holding at least one. `auth.identities` records

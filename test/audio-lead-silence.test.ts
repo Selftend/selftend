@@ -8,22 +8,35 @@
  * pointed at a file by hand. So the pass could finish with every clip reported
  * PASS and the rule unchecked on the only class that has ever broken it.
  *
- * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set: the four
- * `guide_*` clips carry 36.2 / 34.1 / 15.0 / 3.2 ms of lead, and every bed, texture
- * and bell measures 0.0. #1210 restates it as one — and adds the case a limit has
- * to survive: "if voice masters are MP3, confirm ffmpeg strips the encoder delay
- * before calling this met".
+ * ⚠️ On the FINISHED file it is in practice a VOICE-clip rule. #1138 measured the
+ * shipped set: the four `guide_*` clips carry 36.2 / 34.1 / 15.0 / 3.2 ms of lead
+ * there, and every bed, texture and bell measures 0.0. #1210 restates it as one —
+ * and adds the case a limit has to survive: "if voice masters are MP3, confirm
+ * ffmpeg strips the encoder delay before calling this met".
  *
- * ☠️ The check runs on the FINISHED file, not the master. Encoding is where a
- * delay can be introduced, so measuring the input would answer a question nobody
- * asked. #1138 measured AAC round-tripping sample-exact at +8 samples (0.18 ms),
- * which is what the limit has to sit above.
+ * ☠️☠️ THE FINISHED FILE IS NOT ENOUGH, AND THIS DOCBLOCK USED TO SAY IT WAS.
+ * The old wording was "the check runs on the FINISHED file, not the master —
+ * encoding is where a delay can be introduced, so measuring the input would answer
+ * a question nobody asked". Measured false by #2460: the CHAIN put 4.97 ms of
+ * digital silence at the head of all nine beds, three steps before the encoder,
+ * and the encoder then filled it with pre-echo well above the −60 dBFS floor. So
+ * the gate read 0.00 ms on nine files that start late. Since #2508 the master is
+ * measured too — beds only, because the artefact is the limiter's.
+ *
+ * #1138 measured AAC round-tripping sample-exact at +8 samples (0.18 ms), which is
+ * what the limit has to sit above.
  */
+import fs from "fs";
+import path from "path";
+
 import { LEAD_SILENCE_LIMIT_MS, report } from "../scripts/audio/postprocess.mjs";
 import { OUTPUT_SAMPLE_RATE, outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const VOICE = outputSpecFor("guide_inhale");
 const BELL = outputSpecFor("meditation-bell");
+// The class the master-lead gate exists for: only beds run through the limiter
+// that prepended the hole, and its target loudness differs from the voice's.
+const BED = outputSpecFor("rain");
 
 /**
  * The measurements a clean pass produces, with the edges under test.
@@ -35,6 +48,15 @@ const BELL = outputSpecFor("meditation-bell");
 const result = (
   spec: { lufs: number } & Record<string, unknown>,
   edges: { leadMs: number; tailMs: number },
+  // The pre-encode master's own edges (#2508).
+  //
+  // ☠️ DEFAULTS TO MIRRORING THE FINISHED LEAD, not to zero. A take that starts
+  // 3.2 ms late starts 3.2 ms late on both files - the encoder adds only 0.18 ms -
+  // so `{ leadMs: 0 }` alongside a late finished file is a state that cannot
+  // physically occur, and defaulting to it made the double-failure regression
+  // below unreachable from every existing case in this file. The one shape that
+  // IS asymmetric is the one this ticket is about, and it passes both explicitly.
+  masterEdges: { leadMs: number; tailMs: number } = { leadMs: edges.leadMs, tailMs: edges.tailMs },
 ) => ({
   spec,
   pre: { lufs: spec.lufs - 2.2, dbtp: -1.1 },
@@ -46,6 +68,7 @@ const result = (
   ceilingBound: false,
   folded: false,
   edges: { silent: false, peakDbfs: -3.2, floorDbfs: -60, ...edges },
+  masterEdges: { silent: false, peakDbfs: -3.2, floorDbfs: -60, ...masterEdges },
 });
 
 let lines: string[];
@@ -155,5 +178,146 @@ describe("a result with no edges", () => {
     // failure mode this file exists to remove.
     const { edges: _edges, ...withoutEdges } = result(VOICE, { leadMs: 0, tailMs: 0 });
     expect(report("guide_inhale", withoutEdges)).toBe(false);
+  });
+});
+
+/**
+ * ☠️ The half of the rule that was missing for three weeks (#2460, fixed in
+ * #2508). Every case below is a FINISHED file that reads clean — because that is
+ * exactly the shape of the defect: the encoder does not leave digital silence
+ * silent, it fills the head with pre-echo at −10…−31 dBFS, an order of magnitude
+ * above the −60 dBFS floor `edgeSilence` works to. The old gate saw "starts on
+ * time" on nine beds that started 4.97 ms late.
+ */
+describe("leading silence is gated on the master too (#2508)", () => {
+  it("passes a master whose first sample is the take's first sample", () => {
+    expect(report("rain", result(BED, { leadMs: 0, tailMs: 0 }))).toBe(true);
+    expect(lines.join("\n")).not.toContain("the master starts");
+  });
+
+  it("does not run on voice, where a late take would be reported TWICE and blamed on the chain", () => {
+    // ☠️ #1359's invariant, and the regression an unscoped version of this gate
+    // introduced. `guide_hold` ships 3.2 ms late — in the TAKE, so the master is
+    // 3.2 ms late as well, and both checks fire: two FAIL lines for one defect,
+    // the second saying "suspect the chain rather than the take" when the take is
+    // precisely what is wrong. Voice never runs the limiter, so it never carries
+    // the hole this gate exists for.
+    const ok = report("guide_hold", result(VOICE, { leadMs: 3.2, tailMs: 0 }));
+
+    expect(ok).toBe(false);
+    const failures = lines.filter((line) => line.includes("FAIL:"));
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain("starts 3.20 ms late");
+    expect(failures[0]).not.toContain("the master starts");
+  });
+
+  it("does not run on bells either, for the same reason", () => {
+    expect(report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 0 }))).toBe(true);
+    expect(lines.join("\n")).not.toContain("master    lead");
+  });
+
+  it("fails the 4.97 ms hole alimiter left, on a finished file that reads 0.00", () => {
+    // The measured numbers from the shipped `rain`, before the fix: the two
+    // checks disagree, and only the master's is telling the truth.
+    const ok = report("rain", result(BED, { leadMs: 0, tailMs: 0 }, { leadMs: 4.97, tailMs: 0 }));
+
+    expect(ok).toBe(false);
+    const failures = lines.filter((line) => line.includes("FAIL:"));
+    // Exactly one problem: the finished-file check must NOT also fire, or the
+    // count double-reports a single defect.
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain("the master starts 4.97 ms late");
+    expect(failures[0]).toContain("which the finished file hides");
+  });
+
+  it("prints both leads, so the disagreement is visible rather than inferred", () => {
+    report("rain", result(BED, { leadMs: 0, tailMs: 0 }, { leadMs: 4.97, tailMs: 0 }));
+
+    const printed = lines.join("\n");
+    expect(printed).toContain("edges     lead 0.00 ms");
+    expect(printed).toContain("master    lead 4.97 ms");
+  });
+
+  it("does not silently pass the master rule it could not check", () => {
+    // The same reasoning as the finished-file case below it: a rule that was not
+    // measured is not a rule that passed.
+    //
+    // A BED, because that is the class the rule applies to - and the source asks
+    // `if (spec.limit)` rather than `if (masterEdges)` precisely so that a bed
+    // arriving without the measurement FAILS instead of quietly skipping it.
+    const { masterEdges: _masterEdges, ...withoutMaster } = result(BED, {
+      leadMs: 0,
+      tailMs: 0,
+    });
+
+    expect(report("rain", withoutMaster)).toBe(false);
+    expect(lines.join("\n")).toContain("leading silence was not measured on the master");
+  });
+
+  it("holds the master to the same 1 ms limit, which the AAC round-trip no longer has to fit under", () => {
+    // 0.18 ms is the encoder's round-trip (#1138) and it is why the finished-file
+    // limit cannot be tighter. The master never passes through an encoder at all,
+    // so the same limit is if anything generous there — sharing it keeps one
+    // number to reason about rather than two.
+    expect(report("rain", result(BED, { leadMs: 0, tailMs: 0 }, { leadMs: 0.18, tailMs: 0 }))).toBe(
+      true,
+    );
+    expect(report("rain", result(BED, { leadMs: 0, tailMs: 0 }, { leadMs: 1.01, tailMs: 0 }))).toBe(
+      false,
+    );
+  });
+});
+
+/**
+ * ☠️ A STRUCTURAL PIN ON ONE TOKEN, because nothing else can hold it.
+ *
+ * The nine beds are committed binaries: deleting `latency=1` from the limiter
+ * leaves every shipped file untouched and every other test in this repo green.
+ * The damage would land on the NEXT bed anyone renders, months later, as the
+ * same 4.97 ms hole #2460 spent a bisect finding — and the gate above would
+ * catch it only if somebody happened to read the run's output.
+ *
+ * So this reads the source. It is deliberately the narrowest possible assertion:
+ * the argument string the bed limiter is built from, and nothing about how.
+ *
+ * ⚠️ A source-grepping test is invisible to `jest --findRelatedTests`, so a
+ * commit touching only `postprocess.mjs` will not run it locally in the
+ * pre-commit hook. CI's full suite is what actually enforces this one.
+ */
+describe("the bed limiter's lookahead compensation (#2460)", () => {
+  const SOURCE = fs.readFileSync(
+    path.resolve(__dirname, "..", "scripts", "audio", "postprocess.mjs"),
+    "utf8",
+  );
+
+  it("passes latency=1, so the limiter delay-compensates instead of prepending zeros", () => {
+    // At ffmpeg's default latency=0, alimiter prepends 219 frames (4.97 ms) of
+    // digital silence as its lookahead and drops the source's last 219 frames.
+    // The AAC encoder then fills that silence with pre-echo, which reads as a
+    // fade-in at every loop point and is not a fade at all.
+    expect(SOURCE).toContain("alimiter=limit=${BED_LIMITER_PEAK}:level=disabled:latency=1");
+  });
+
+  it("builds exactly one alimiter, so the pin above cannot be satisfied by a second one", () => {
+    // ⚠️ `alimiter=limit=` rather than bare `alimiter=`: the bare form would make
+    // the word a forbidden substring in COMMENTS anywhere in this file, which is a
+    // trap for the next person explaining the filter in prose. This form still
+    // catches the case that matters - a second construction, or the pinned string
+    // sitting in a comment where it satisfies the assertion above without running.
+    expect(SOURCE.match(/alimiter=limit=/g)).toHaveLength(1);
+  });
+
+  it("measures the master's lead from the NORMALISED wav, not by reusing the finished edges", () => {
+    // ☠️ Without this, `masterEdges = edges` passes every other test in the repo
+    // and silently restores the blindness the whole ticket removes: the two
+    // numbers would agree by construction, the gate would never disagree with the
+    // finished file, and 4.97 ms of hole would read as 0.00 again. Nothing else
+    // can see that seam - `postprocess()` needs real ffmpeg, so jest never runs it.
+    expect(SOURCE).toContain("const master = parseWav(await readFile(normalised));");
+    expect(SOURCE).toContain(
+      "masterEdges = edgeSilence(master.samples, master.channels, master.sampleRate)",
+    );
+    // And it is derived once, beside the seam gate, from that same parse.
+    expect(SOURCE.match(/edgeSilence\(master\.samples/g)).toHaveLength(1);
   });
 });

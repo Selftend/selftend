@@ -11,7 +11,6 @@ import {
 } from "@/src/features/dbt/repository";
 import type { OppositeActionDoneInput, OppositeActionPlanInput } from "@/src/features/dbt/types";
 import { noteToolSave } from "@/src/stores/tool-save-store";
-import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { DBT_HISTORY_PAGE_SIZE, dbtKeys } from "./keys";
@@ -62,12 +61,7 @@ export function useSaveOppositeActionPlan(userId: string | null) {
     onSuccess: async () => {
       noteToolSave();
       if (!userId) return;
-      // An open plan marks no day, but the rule is coarse on purpose (#1906):
-      // any write to a `record_days` source invalidates.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: dbtKeys.oppositeActionList(userId) }),
-        invalidateRecordDays(queryClient),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: dbtKeys.oppositeActionList(userId) });
     },
   });
 }
@@ -84,17 +78,11 @@ export function useMarkOppositeActionPlanDone(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: dbtKeys.oppositeActionList(userId) }),
         queryClient.invalidateQueries({ queryKey: dbtKeys.oppositeActionDetail(userId, plan.id) }),
-        invalidateRecordDays(queryClient),
       ]);
     },
   });
 }
 
 export function useDeleteOppositeActionPlan(userId: string | null) {
-  return useDeleteMutation(
-    userId,
-    deleteOppositeActionPlan,
-    dbtKeys.oppositeActionList(userId),
-    recordDaysKeys.all,
-  );
+  return useDeleteMutation(userId, deleteOppositeActionPlan, dbtKeys.oppositeActionList(userId));
 }

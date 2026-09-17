@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
-import { Button } from "@/src/components/react-native-reusables/button";
+import { LinkButton } from "@/src/components/app/link-button";
 import {
   Card,
   CardDescription,
@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useRecordOrigin } from "@/src/lib/escape-origin";
 
 type CrisisSupportCalloutProps = {
   /**
@@ -65,7 +65,15 @@ export function CrisisSupportCallout({ level = 2 }: CrisisSupportCalloutProps = 
   // The callout's twin of the bar's jump (#1265, O3): `/crisis` is rooted at the
   // top, so its Up is Home, and a module home reached through it is exactly what
   // the user should be handed back.
-  const pushWithOrigin = usePushWithOrigin();
+  //
+  // ☠️ An ANCHOR since #2496, not a press handler - `docs/brand-result.md` § 7.4
+  // reaches shared chrome, not only a page's own body. `/faq` is public, so a
+  // person reading it can middle-click this, copy its link and hand it to
+  // somebody else, and a screen reader calls it a link. `useRecordOrigin` is the
+  // record-only half of the helper above it, for exactly this shape: the `Link`
+  // navigates and the Origin is still recorded, so Escape still hands a module
+  // home back.
+  const recordOriginFor = useRecordOrigin();
 
   return (
     <Card className="border-destructive/40">
@@ -79,9 +87,9 @@ export function CrisisSupportCallout({ level = 2 }: CrisisSupportCalloutProps = 
         <CardDescription>{t("safety.description")}</CardDescription>
       </CardHeader>
       <View className="px-6">
-        <Button onPress={() => pushWithOrigin("/crisis")} variant="secondary">
+        <LinkButton href="/crisis" variant="secondary" onPress={() => recordOriginFor("/crisis")}>
           <Text>{t("safety.openCrisis")}</Text>
-        </Button>
+        </LinkButton>
       </View>
     </Card>
   );

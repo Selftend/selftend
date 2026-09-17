@@ -65,8 +65,8 @@ navigation panel (#2085/#2106).
 The panel is the drawer behind the hamburger. It carries what surrounds the practice, never the
 practice itself.
 
-- the panel lists exactly seven rows, in this order: Home, Looking back, Routines, then a divider,
-  then Reminders, Settings, Support, Donate (six on a build whose `EXPO_PUBLIC_SPONSORS_URL` is set
+- the panel lists exactly six rows, in this order: Home, Routines, then a divider, then Reminders,
+  Settings, Support, Donate (five on a build whose `EXPO_PUBLIC_SPONSORS_URL` is set
   to an empty string — the Donate row drops rather than pointing at someone else's page, so check
   which build you are on; an unset variable falls back to the maintainer's page and keeps the row)
 - no tool or module row appears anywhere in it, and there are no group headings
@@ -77,7 +77,7 @@ practice itself.
 
 - reminders are off by default
 - enabling reminders asks for permission
-- disabling native reminders cancels the scheduled local notification
+- disabling a native reminder stops the server sending it; there is no device-side schedule to cancel
 - disabling web reminders unsubscribes the browser push subscription
 - web reminders are tested only after VAPID keys, Edge Function secrets, and the Supabase cron job are configured
 
@@ -103,7 +103,7 @@ Android's update popup runs on Google Play Core, which no automated layer can dr
 - web build loads
 - authenticated flow works
 - thought records save and reload
-- `/privacy`, `/terms`, `/crisis`, and `/account-deletion` load without sign-in
+- `/privacy`, `/terms`, `/crisis`, `/account-deletion`, `/meditation` and `/habits` load without sign-in
 - `/auth-callback` loads directly and shows the missing-link state
 
 ### Future data separation docs smoke

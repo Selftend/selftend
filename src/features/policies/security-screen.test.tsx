@@ -9,6 +9,8 @@ import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => "/security",
 }));
@@ -53,9 +55,14 @@ describe("SecurityScreen folds into the shared policy layout (#2146)", () => {
     renderWithProviders(<SecurityScreen />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // The title once, not twice: the one-crumb trail still hides itself, so the
-    // page name is not repeated above its own heading.
-    expect(screen.getAllByText(enSecurity.page.pageTitle)).toHaveLength(1);
+    // One heading, and the string exactly twice on the page: the heading and the
+    // site footer's `/security` entry, which the anchor-text rule labels with
+    // this page's H1 (#2467). The one-crumb trail still hides itself - a leaked
+    // crumb is a `Text` inside a link, not a heading, which is why the count is
+    // on TEXT hits: a third occurrence is the trail repeating the page name
+    // above its own heading.
+    expect(screen.getAllByRole("heading", { name: enSecurity.page.pageTitle })).toHaveLength(1);
+    expect(screen.getAllByText(enSecurity.page.pageTitle)).toHaveLength(2);
     expect(screen.getByText(enSecurity.page.pageDescription)).toBeTruthy();
   });
 

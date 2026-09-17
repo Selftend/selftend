@@ -12,8 +12,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/legal";
 
 jest.mock("expo-router", () => ({
+  // The site footer on every policy page is made of LinkButtons (#2467).
+  Link: require("@/test/expo-router-link-mock").MockLink,
   router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => mockPathname,
+  // The privacy page's cross-links are anchors (#2476): the mock forwards the
 }));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
@@ -53,11 +56,21 @@ describe("policy cross-links record the page they were left from", () => {
     });
   });
 
+  /**
+   * ☠️ Two links on `/privacy` carry this name since #2467: the in-body anchor
+   * and the site footer's `/security` entry, which the anchor-text rule labels
+   * with that page's H1 - the same string. The in-body one comes first in tree
+   * order and is the one that records; the footer's is chrome and records
+   * nothing, exactly like the landing footer never did.
+   */
   it("records /privacy as the Origin when crossing to security", () => {
     mockPathname = "/privacy";
     renderWithProviders(<PrivacyScreen />);
 
-    fireEvent.press(screen.getByText("How we protect your data"));
+    const [inBody, footer] = screen.getAllByRole("link", { name: "How we protect your data" });
+    expect(inBody.props.href).toBe("/security");
+    expect(footer.props.href).toBe("/security");
+    fireEvent.press(inBody);
 
     expect(useNavigationOriginStore.getState().pending).toEqual({
       origin: "/privacy",

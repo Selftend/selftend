@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { REPLAY_INTRODUCTION_PREFERENCES } from "@/src/features/settings/onboarding-reset";
+import bgSettings from "@/src/i18n/locales/bg/settings.json";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -224,13 +225,35 @@ describe("SettingsScreen structure", () => {
       expect(screen.getByText("One JSON file, everything you've written.")).toBeTruthy();
     });
 
-    /** The shorter drawn line: the same thing in fewer words. */
-    it("shortens the reminders description", async () => {
+    /**
+     * The card's sentence is one of the two surfaces where the product names the
+     * general reminder in its own voice (#2412, ADR-0010) - the other is the
+     * Reminders screen's first row. It stays a navigation row: label,
+     * description, chevron, and NO inline switch, because the Reminders screen
+     * alone owns the channel-permission flow, the blocked-channel card and the
+     * master switch. "or one per tool" is description, not suggestion (#2414).
+     */
+    it("names the general reminder in the reminders row and keeps it a navigation row", async () => {
       renderWithProviders(<SettingsScreen />);
       await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
 
-      expect(screen.getByText("Off by default. You choose which ones to turn on.")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "One reminder from Selftend at a time you pick, or one per tool. All off until you turn them on.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByText("Off by default. You choose which ones to turn on.")).toBeNull();
       expect(screen.queryByText(/Reminders stay explicit/)).toBeNull();
+      // The bg sentence, pinned to the ruled wording as well: locale parity proves the key
+      // exists in both files, not that either says what #2413 decided.
+      expect(bgSettings.reminders.description).toBe(
+        "Едно напомняне от Selftend в час, който избираш, или по едно за всеки инструмент. Всички са изключени, докато не ги включиш.",
+      );
+      // No switch on the row: a switch here would be a second arming point that bypasses
+      // the Reminders screen's permission flow.
+      expect(
+        within(screen.getByTestId("settings-row-reminders")).queryAllByRole("switch"),
+      ).toHaveLength(0);
     });
 
     /**

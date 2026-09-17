@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 import { HowItWorksSection } from "./how-it-works-section";
 import { AndroidDownloadBar } from "@/src/components/app/android-download-bar";
-import { LandingFooter } from "./landing-footer";
+import { SiteFooter } from "@/src/components/app/site-footer";
 import { LandingHead } from "./landing-head";
 import { ModulesSection } from "./modules-section";
 import { PrivacySection } from "./privacy-section";
@@ -23,7 +23,10 @@ import { PrivacySection } from "./privacy-section";
  *
  * Sections render in a single vertical stack inside the centered content
  * column below. Each section is self-contained (its own `landing-*.tsx`)
- * so they can evolve independently.
+ * so they can evolve independently - except the footer, which is the site's
+ * `SiteFooter` rather than a landing section (#2467): one footer everywhere,
+ * listing the same public pages, so the landing's links and the policy pages'
+ * links cannot drift apart.
  */
 export default function LandingScreen() {
   return (
@@ -36,7 +39,7 @@ export default function LandingScreen() {
           <ModulesSection />
           <HowItWorksSection />
           <PrivacySection />
-          <LandingFooter />
+          <SiteFooter />
         </View>
       </ScrollView>
       {/* Public-route Android offer (#388 section 4). */}
@@ -118,7 +121,16 @@ function LandingHero() {
             )}
           >
             <Icon name={icon} size={17} className={CHROME_MARK} />
-            <Text className={cn("text-[13.5px] font-semibold", CHROME_TEXT)}>
+            {/* The testID is the pill's only STRUCTURAL handle (#2469). Since the
+                landing renders the site footer, "Meditation" appears twice on
+                this screen - once here, once as the footer's link to the
+                explainer page - so the pill test cannot find its subject by text
+                alone, and this row's type scale is not unique to it either
+                (`how-it-works-section.tsx` shares it). */}
+            <Text
+              testID="hero-tool-pill"
+              className={cn("text-[13.5px] font-semibold", CHROME_TEXT)}
+            >
               {t(`landingPage.tools.${key}`)}
             </Text>
           </View>

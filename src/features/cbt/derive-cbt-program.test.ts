@@ -27,9 +27,9 @@ function input(overrides: Partial<DeriveProgramInput> = {}): DeriveProgramInput 
 }
 
 describe("deriveCbtProgram", () => {
-  it("reports not_started when there is no start timestamp", () => {
+  it("reports not_in_progress when there is no start timestamp", () => {
     const result = deriveCbtProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
   });
 
   it("reports in_progress when started", () => {
@@ -103,6 +103,21 @@ describe("deriveCbtProgram", () => {
   it("stays graduated once completedAt is set, even if data is later removed", () => {
     const result = deriveCbtProgram(input({ completedAt: "2026-05-20T00:00:00Z" }));
     expect(result.status).toBe("graduated");
+  });
+
+  /**
+   * ☠️ Since ADR-0012 `completedAt` is NOT nulled by `startProgram`,
+   * `abandonProgram` or `replayProgram` - it means the last time this person
+   * finished CBT. So a completion can outlive the run that earned it, and the
+   * test for "graduate of the run you are in" is `completedAt >= startedAt`.
+   * Without that, someone who finished last year and started again today would
+   * be congratulated on finishing a run they have barely begun.
+   */
+  it("is in progress again when an older completion predates the current run", () => {
+    const result = deriveCbtProgram(
+      input({ startedAt: START, completedAt: "2026-04-01T00:00:00.000Z" }),
+    );
+    expect(result.status).toBe("in_progress");
   });
 
   // ── Phase-based view (Task 3) ──────────────────────────────────────────────
@@ -217,9 +232,9 @@ describe("deriveCbtProgram", () => {
     expect(thinking.phase!.leadsWithDailyPractice).toBe(false);
   });
 
-  it("phase is null when status is not_started", () => {
+  it("phase is null when status is not_in_progress", () => {
     const result = deriveCbtProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
     expect(result.phase).toBeNull();
     expect(result.phaseReady).toBe(false);
     expect(result.totalPhases).toBe(5);

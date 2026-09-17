@@ -16,10 +16,12 @@ import { stripCommentsAndStrings } from "@/test/source-scan";
  * changes by accident.
  */
 describe("HELD_OUT_REMINDER_TARGETS (#2260)", () => {
-  it("holds DBT out until the native build that routes /modules/dbt is live on both stores", () => {
+  it("holds DBT and the general reminder out until the native builds that route /modules/dbt and / are live on both stores", () => {
     // Named, not derived - the list is the delta between the shipped native
     // allowlist and this one, and nothing in the repo can compute that.
-    expect([...HELD_OUT_REMINDER_TARGETS]).toEqual(["dbt"]);
+    // `general` (#2491): its deep link is Home, `/`, allowlisted by the client
+    // shipping with this list and by no earlier one; lifted by #2494.
+    expect([...HELD_OUT_REMINDER_TARGETS]).toEqual(["dbt", "general"]);
   });
 
   it("names only targets the registry knows, so a typo cannot hold out nothing", () => {

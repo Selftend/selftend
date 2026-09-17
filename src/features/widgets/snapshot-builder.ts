@@ -23,6 +23,7 @@ import { countWords } from "@/src/features/journal/word-count";
 import { answeredCount } from "@/src/features/gratitude/questions";
 import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
 import { ACT_PROGRAM } from "@/src/features/act/program-definition";
+import { isGraduated } from "@/src/features/modules/program-graduation";
 import {
   CARD_IDS,
   type CardId,
@@ -441,13 +442,13 @@ function buildProgrammeCard(
           return 0;
         })
     : [];
-  const goals = programme.startedAt && !programme.completedAt ? allGoals.slice(0, 2) : [];
+  // ☠️ `completedAt` survives a start, an abandon and a replay since ADR-0012,
+  // so it no longer answers "is this run finished" on its own - `isGraduated`
+  // does. A bare null check here would show a fresh run as already completed.
+  const graduated = isGraduated(programme.startedAt, programme.completedAt);
+  const goals = programme.startedAt && !graduated ? allGoals.slice(0, 2) : [];
   const remaining = Math.max(0, allGoals.length - goals.length);
-  const state = !programme.startedAt
-    ? "not-enrolled"
-    : programme.completedAt
-      ? "completed"
-      : "in-progress";
+  const state = !programme.startedAt ? "not-enrolled" : graduated ? "completed" : "in-progress";
 
   return {
     kind: "programme",

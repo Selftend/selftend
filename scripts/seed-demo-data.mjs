@@ -4311,7 +4311,6 @@ function alignmentFor(domain, dayIndex) {
       myths_acknowledged: true,
       onboarding_completed_at: onboardedAt,
       last_check_in_at: latestReview.reviewed_at,
-      preferred_check_in_time: "20:30",
       created_at: onboardedAt,
       updated_at: latestReview.reviewed_at,
     },
@@ -5771,13 +5770,18 @@ const SEEDED_ROUTINES = [
     ["alice", "00000000-0000-0000-0000-000000000001"],
     ["bob", "00000000-0000-0000-0000-000000000002"],
   ];
-  // Every per-tool reminder switch on `user_preferences`. Listed rather than
-  // globbed: a new tool's column has to be added here on purpose, and a guard
-  // that silently stopped covering one would be worse than no guard.
+  // Every reminder switch on `user_preferences` - the eleven per-tool ones and
+  // the general one. Listed rather than globbed: a new target's column has to
+  // be added here on purpose, and a guard that silently stopped covering one
+  // would be worse than no guard. ☠️ It did exactly that once: `dbt` shipped
+  // its columns without joining this list, and nothing failed (#2415). Twelve
+  // since #2489.
   const TARGET_COLUMNS = [
     "act_reminders_enabled",
     "breathing_reminders_enabled",
     "cbt_reminders_enabled",
+    "dbt_reminders_enabled",
+    "general_reminders_enabled",
     "gratitude_reminders_enabled",
     "grounding_reminders_enabled",
     "habits_reminders_enabled",
@@ -5838,7 +5842,7 @@ const SEEDED_ROUTINES = [
       `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
         `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
         "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
-        "the Reminders screen is ten off toggles and an armed row is never rendered without " +
+        "the Reminders screen is twelve off toggles and an armed row is never rendered without " +
         "a reviewer arming one by hand.",
     );
   }

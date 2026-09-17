@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { countDbtSessions, listDbtSessions, saveDbtSession } from "@/src/features/dbt/repository";
 import type { DbtSessionInput } from "@/src/features/dbt/types";
 import { noteToolSave } from "@/src/stores/tool-save-store";
-import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { dbtKeys } from "./keys";
 
 /** Newest first - the programme's read (#1990). No sessions list route exists. */
@@ -33,10 +32,7 @@ export function useSaveDbtSession(userId: string | null) {
     onSuccess: async () => {
       noteToolSave();
       if (!userId) return;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: dbtKeys.sessionList(userId) }),
-        invalidateRecordDays(queryClient),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: dbtKeys.sessionList(userId) });
     },
   });
 }

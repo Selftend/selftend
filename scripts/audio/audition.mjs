@@ -168,8 +168,10 @@ async function build(round, { repeats, all }) {
         gain: result.gain,
         ceilingBound: result.ceilingBound,
         seam: result.seam,
-        // #1134's hard rule, measured on the finished file. It is in practice a
-        // voice-clip rule (#1138), which is the half that had no audition at all.
+        // #1134's hard rule, measured on the finished file. On that file it is in
+        // practice a voice-clip rule (#1138), which is the half that had no audition
+        // at all. `masterEdges` is not carried here on purpose - see the card's own
+        // note in `audition-plan.mjs`.
         edges: result.edges,
         // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen
         // `guide_intro`, never from an estimate — this page is where that number

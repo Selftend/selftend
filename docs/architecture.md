@@ -49,6 +49,8 @@ app/
 ├── terms.tsx              public
 ├── cookies.tsx            public
 ├── crisis.tsx             public
+├── meditation.tsx         public - the meditation framework, readable with no account
+├── habits.tsx             public - the ten core ideas of habit building, readable with no account
 ├── account-deletion.tsx   public
 ├── faq.tsx                public
 ├── security.tsx           public
@@ -56,7 +58,6 @@ app/
 └── (app)/                 protected app shell
     ├── index.tsx          home
     ├── settings.tsx       settings
-    ├── progress.tsx       looking back
     ├── notifications.tsx  reminders
     ├── legal.tsx
     ├── support.tsx
@@ -66,7 +67,7 @@ app/
                            meditation, sleep, habits  (index.tsx redirects to home)
 ```
 
-The tree names the screens, not every route file. Ten route files render only a `<Redirect>` and are deliberately absent above — among them `tools/act.tsx` (to `/modules/act`), the whole of `tools/mood-tracker/` (to `/tools/check-in`, kept forever because the path is frozen in `ALLOWED_REMINDER_ROUTES` and there is no OTA channel), and the two `index.tsx` files noted in the tree. `test/escape-coverage.test.ts` pins that set by name, and the router remains the source of truth for routing — this listing is orientation, not an inventory.
+The tree names the screens, not every route file. Eleven route files render only a `<Redirect>` and are deliberately absent above — among them `tools/act.tsx` (to `/modules/act`), the whole of `tools/mood-tracker/` (to `/tools/check-in`, kept forever because the path is frozen in `ALLOWED_REMINDER_ROUTES` and there is no OTA channel), and the two `index.tsx` files noted in the tree. `test/escape-coverage.test.ts` pins that set by name, and the router remains the source of truth for routing — this listing is orientation, not an inventory.
 
 Public routes stay reachable without sign-in. The `(app)` group is gated by [src/providers/session-provider.tsx](../src/providers/session-provider.tsx).
 

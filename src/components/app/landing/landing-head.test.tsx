@@ -136,15 +136,48 @@ describe("the structured-data block (#2296)", () => {
     expect(organization.logo).toBe(meta("og:image")[0].props.content);
   });
 
-  it("follows the visitor's language after hydration, with the meta description", async () => {
+  // brand-result.md § 6 (#2468): the two truthful properties. Which node
+  // carries them is pinned by the module's own key-set assertion; what this
+  // test can prove and that one cannot is the tie to the document. The
+  // `inLanguage` is read back from the rendered `<html lang>` the site head
+  // owns, never from a literal, so the block cannot disagree with the page
+  // it sits in. `isAccessibleForFree` restates the landing's visible "Free ·
+  // Open source · Private" and "No ads, no subscriptions" - a boolean, so no
+  // assertion here can tie the value itself to rendered copy. What can be
+  // tied is its justification, and `landing-screen.test.tsx` ties it, where
+  // that copy renders: blank the hero eyebrow and that case fails.
+  it("pins the WebSite's inLanguage to the rendered <html lang>, and says the site is free", () => {
+    render(
+      <>
+        <SiteHead />
+        <LandingHead />
+      </>,
+    );
+
+    const { webSite } = block();
+    const lang = tags().filter(({ type }) => type === "html");
+    expect(lang).toHaveLength(1);
+    expect(lang[0].props.lang).toBe("en");
+    expect(webSite.inLanguage).toBe(lang[0].props.lang);
+    expect(webSite.isAccessibleForFree).toBe(true);
+  });
+
+  it("follows the visitor's language after hydration, with the meta description and <html lang>", async () => {
     i18n.addResourceBundle("bg", "auth", bgAuth, true, true);
     await act(() => i18n.changeLanguage("bg"));
 
-    render(<LandingHead />);
+    render(
+      <>
+        <SiteHead />
+        <LandingHead />
+      </>,
+    );
 
-    const { organization } = block();
+    const { organization, webSite } = block();
     expect(organization.description).toBe(bgAuth.landingPage.metaDescription);
     expect(organization.description).toBe(meta("description")[0].props.content);
+    expect(tags().find(({ type }) => type === "html")?.props.lang).toBe("bg");
+    expect(webSite.inLanguage).toBe("bg");
   });
 
   // The block is a data block: nothing executable, and it is the only script

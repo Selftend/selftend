@@ -60,6 +60,12 @@ const INTENTIONALLY_DROPPED = new Set([
   // (`reminder_consent`, `reminder_consent_updated_at`) are a different thing
   // and are still exported.
   "user_preferences.reminder_prompted_tools",
+  // `20260919000000_drop_act_preferred_check_in_time.sql` drops the column
+  // (#2490). It was an HH:mm string for an ACT check-in reminder that no screen
+  // ever collected and nothing ever read back; ACT's reminder time lives in the
+  // `act_reminder_*` columns on `user_preferences` like every other module's.
+  // Dropped for data minimisation, so there is nothing left to export.
+  "act_program_state.preferred_check_in_time",
 ]);
 
 /**

@@ -32,7 +32,6 @@ export interface ACTProgramState {
   mythsAcknowledged: boolean;
   onboardingCompletedAt: string | null;
   lastCheckInAt: string | null;
-  preferredCheckInTime: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,7 +42,6 @@ export interface ACTProgramStateInput {
   mythsAcknowledged?: boolean;
   onboardingCompletedAt?: string | null;
   lastCheckInAt?: string | null;
-  preferredCheckInTime?: string | null;
 }
 
 export interface DefusionLog {

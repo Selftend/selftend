@@ -55,6 +55,25 @@
 \set age_gate_cutoff_source 'AGE_GATE_INTRODUCED_AT'
 \set age_gate_cutoff '2026-09-05T00:00:00Z'
 
+-- ☠️ THE MODULE GATE DATE, AND IT IS DELIBERATELY EMPTY (#2553, ruled on #2535).
+-- When the module gate (#2446) removes a programme's door, every run still open
+-- stops advancing FOR A REASON THE PRODUCT CAUSED. Section 7b's buckets would
+-- then show a population going quiet and mean nothing about the people in it.
+--
+-- ⚠️ It ANNOTATES, it does not suppress. A rule that hid rows past this date
+-- would be the report deciding what the reader may see; a sentence saying what
+-- the window contains lets them read the rows and know what they are. That is
+-- the same choice 7b makes about thresholds, one layer out.
+--
+-- Set it to the release instant when the gate ships. While it is empty the
+-- annotation does not print at all - not a half-sentence, not an empty date.
+--
+-- ⚠️ The on/off flag is derived in section 7b, immediately before it is read,
+-- NOT here. Deriving it beside this `\set` would freeze it at definition time
+-- and make the variable un-overridable, which is the one thing the comment on
+-- `age_gate_cutoff` above says these variables are for.
+\set programme_gate_date ''
+
 -- The block below is byte-identical in analytics-onboarding.sql and
 -- analytics-segment.sql; test/analytics-shared-sql.test.ts fails if they drift.
 -- >>> shared:accounts
@@ -84,6 +103,18 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- believed. A count of 1..4 prints `<5`; a percentage whose numerator or
 -- denominator is suppressed prints `-`. Zero prints as 0 — an empty arm is
 -- information, and it discloses nothing.
+--
+-- ⚠️ THAT ORDERING DESCRIBES THE SUPPRESSED-COUNT ROUTES, not every route
+-- out of these tables. Where a rate prints `0.0%` or `100.0%` the
+-- false-precision leg is not engaged at all — those two figures are exactly
+-- true, and are the least falsely-precise numbers these reports can print —
+-- and privacy is the only leg in play.
+--
+-- ☠️ THE RULE REASONS ABOUT CELL SIZE, NEVER ABOUT CELL VALUE, and never
+-- about what a reader derives from the cells printed BESIDE it. What it
+-- therefore does NOT guarantee is written out in docs/analytics.md, "What the
+-- floor does not guarantee": the routes that bound or recover a suppressed
+-- cell, and the guards that were priced against them and refused.
 --
 -- ☠️ WHAT IS A SLICE, AND WHAT IS NOT (docs/analytics.md, "Small cells print as
 -- `<5`"). The rule governs any cell that SLICES the population — a cell that
@@ -229,19 +260,33 @@ create temp view programme_progress as
          p.programme,
          p.started_at,
          p.phase_index,
+         p.phase_started_at,
          p.completed_at,
          p.graduation_dismissed_at
   from accounts a
   left join public.user_preferences up on up.user_id = a.user_id
   cross join lateral (values
     ('cbt', up.cbt_program_started_at, up.cbt_program_phase_index,
+            up.cbt_program_phase_started_at,
             up.cbt_program_completed_at, up.cbt_graduation_dismissed_at),
     ('act', up.act_program_started_at, up.act_program_phase_index,
+            up.act_program_phase_started_at,
             up.act_program_completed_at, up.act_graduation_dismissed_at),
     ('dbt', up.dbt_program_started_at, up.dbt_program_phase_index,
+            up.dbt_program_phase_started_at,
             up.dbt_program_completed_at, up.dbt_graduation_dismissed_at)
-  ) as p(programme, started_at, phase_index,
+  ) as p(programme, started_at, phase_index, phase_started_at,
          completed_at, graduation_dismissed_at);
+
+-- ☠️ `phase_started_at` is here for ONE reason, and it is not the phase window:
+-- it is half of the FOSSIL. A non-null `phase_started_at` beside a NULL
+-- `started_at` is the only record that somebody ran this programme and left,
+-- and `phase_index` says where they stopped (#2530, ADR-0012). Until #2552 the
+-- view did not select it, so the report could not see a left run at all - which
+-- is what made §7's drop-off optimistic and what #2386 was filed about.
+--
+-- ⚠️ It dates A phase, never THE FIRST time anybody reached one: every advance
+-- overwrites it. The first-occurrences exclusion below still stands unchanged.
 
 -- The funnel's steps, generated from each programme's own length rather than
 -- listed: started, then one row per later phase, then completed, then
@@ -267,6 +312,23 @@ create temp view programme_steps(programme, step_order, step, kind, min_phase_in
   union all
   select pl.programme, pl.total_phases + 2, 'graduation dismissed', 'graduation_dismissed', null
     from programme_labels pl;
+
+-- Section 7b's buckets, listed here rather than derived, because a duration
+-- band is a reporting choice and not a fact about the data. A FIXED-shape list
+-- for the same reason every other table in this file is fixed: every bucket
+-- prints for every programme and both account types, zeros included.
+--
+-- ☠️ These bounds are NOT a threshold and must never acquire one. #2530 refused
+-- to store a `stalled` status because a threshold freezes an analyst's
+-- judgement into a person's row; naming one of these bands "too long" in a
+-- label, a heading or a comment re-commits that error where the reader will
+-- read it as the report's own verdict. The bands exist to make a distribution
+-- legible, and the reader draws every conclusion.
+create temp view quiet_buckets(bucket_order, bucket, from_days, to_days) as values
+  (1, '0-7 days', 0, 7),
+  (2, '8-30 days', 8, 30),
+  (3, '31-90 days', 31, 90),
+  (4, '90+ days', 91, null);
 
 -- ============================================================================
 -- FIRST OCCURRENCES (#2379). Facts that became true for the FIRST TIME EVER
@@ -333,7 +395,7 @@ create temp view core_tool_labels(feature) as values
 -- The watch list: every fixed-shape row the three reports print, each with the
 -- instant it first became true, or null if it never has.
 --
--- ☠️ ONE FACT THE SCHEMA CANNOT DATE, AND IT IS EXCLUDED RATHER THAN FAKED:
+-- ☠️ TWO FACTS THE SCHEMA CANNOT DATE, AND BOTH ARE EXCLUDED RATHER THAN FAKED:
 --
 --   * PER-PHASE PROGRAMME MILESTONES. The funnel's "reached phase N" steps come
 --     from `*_program_phase_index`, and `*_program_phase_started_at` holds only
@@ -342,6 +404,16 @@ create temp view core_tool_labels(feature) as values
 --     graduation-dismissed all have their own columns and ARE covered. Verified
 --     against the live schema: there is no event, audit or history table for
 --     programme phases anywhere.
+--
+--   * A PROGRAMME BEING LEFT. The fossil says THAT somebody left and AT WHICH
+--     PHASE - block A in section 7 prints it - but never WHEN. #2530 refused
+--     the date deliberately, on data minimisation, and it is not recoverable
+--     afterwards. ☠️ `*_program_prompt_dismissed_at` is NOT that date. Yes,
+--     `abandonProgram` happens to write it; but `dismissProgramPrompt` writes
+--     the same column, so any later dismissal overwrites it with no trace. A
+--     value an unrelated tap can silently replace is not a record. DO NOT DATE
+--     THIS FACT FROM IT - the column sits right there looking exactly like a
+--     leave timestamp, which is why this warning is worth its space.
 --
 -- ⚠️ AGE-GATE ATTESTATION WAS ALMOST EXCLUDED ON A FALSE PREMISE, and the near
 -- miss is worth recording. `age_floor_met` is a bare boolean, so a search for a
@@ -352,8 +424,10 @@ create temp view core_tool_labels(feature) as values
 --
 -- ☠️ AND A CAVEAT THAT APPLIES TO EVERY FACT DATED FROM `user_preferences`:
 -- those columns are STATE, NOT EVENTS. `abandonProgram` NULLS
--- `*_program_started_at`, replay clears `*_program_completed_at`, and
--- `reminder_consent_updated_at` holds the time of the LAST change, so a
+-- `*_program_started_at`; `*_program_completed_at` now SURVIVES every writer
+-- (#2530, ADR-0012) but still holds only the MOST RECENT completion, so a
+-- person who finishes, replays and finishes again overwrites their first one;
+-- and `reminder_consent_updated_at` holds the time of the LAST change, so a
 -- consent later revoked is not visible at all. A `min()` over current state can
 -- therefore be LATER than the truth, and a fact can fire a month late - or, if
 -- everyone who held it has since reverted, not yet at all. Facts dated from
@@ -432,6 +506,52 @@ create temp view first_occurrences(fact_order, fact, first_at) as
             join accounts a on a.user_id = f.user_id
            where f.first_identity_at > a.created_at + interval '1 second');
 
+-- >>> shared:series_caveat
+-- Route 2 of docs/analytics.md, "What the floor does not guarantee". Printed
+-- ONCE PER REPORT, ahead of the first table and under no heading of its own,
+-- because this census has nothing to exempt: every suppressed cell in all three
+-- reports can move between publications. Byte-identical in all three files;
+-- test/analytics-shared-sql.test.ts fails if they drift.
+--
+-- ⚠️ It prints ABOVE the population block deliberately. A note that qualifies
+-- every table has to arrive before them, and trailing the population block
+-- would attach it to the one block EXEMPT from the k=5 rule - the section it
+-- has the least to say about.
+--
+-- ⚠️ Plain `\echo` lines here, where shared:partition_caveat uses a psql
+-- variable. That block is echoed at three call sites and would drift between
+-- them; this one prints once per file, so a variable would buy nothing.
+--
+-- ☠️ KEPT SEPARATE FROM shared:partition_caveat DELIBERATELY. Merging the two
+-- would print a partition warning on analytics-engagement.sql, which has no
+-- partitioned arm table - one more false sentence in a file family whose
+-- comments have already asserted the opposite twice.
+--
+-- ⚠️ The k=5 rule is written, reasoned and tested as a property of ONE RUN of
+-- one report. Since the monthly digest it is not: the same tables accumulate as
+-- a series on one standing issue, and each run computes its suppression from
+-- its own month alone. Nothing is guarded, and what ships is the statement -
+-- docs/analytics.md does not travel with the table, and the digest comment
+-- carries only the legend.
+--
+-- ☠️ The refusal below names the MARKER reason first and the statelessness
+-- second, and that order is the finding rather than a style choice: an
+-- architectural objection can be engineered around, and the marker one cannot.
+\echo
+\echo '    REPORT-WIDE NOTE, TRUE OF EVERY TABLE BELOW - THE SERIES IS THE RELEASE, NOT EACH COMMENT. This'
+\echo '    report is republished monthly onto one standing issue, and each run computes its suppression from'
+\echo '    its own month alone. So a cell can print `<5` in one publication and a real count in a later one,'
+\echo '    and what that pair discloses is the MOVEMENT between them - which is time-localised in a way a'
+\echo '    level is not, and which the four-value bound does not speak to at all. A republished cell is safe'
+\echo '    exactly when it CANNOT MOVE, and nothing suppressed in these reports is immutable.'
+\echo '    NOTHING IS GUARDED. CROSS-RELEASE SUPPRESSION CONSISTENCY - holding a cell suppressed once it has'
+\echo '    passed four, so that it never crosses the floor in public - is REFUSED, because it means'
+\echo '    suppressing a LARGE cell, which can print neither `<5` (false) nor a distinct marker (which cracks'
+\echo '    the suppression) - the same wall complementary suppression hits. That these reports are'
+\echo '    deliberately stateless is the SECOND reason and not the first. See docs/analytics.md, What the'
+\echo '    floor does not guarantee, route 2.'
+-- <<< shared:series_caveat
+
 -- >>> shared:population_provenance
 -- Who is in this population (docs/analytics.md, "Who is in the population").
 -- Byte-identical in all three reports; test/analytics-shared-sql.test.ts fails
@@ -499,7 +619,6 @@ cross join lateral (
               or lower(a.email) like '%test%'))            as demo_or_test_string
 ) p;
 -- <<< shared:population_provenance
-
 
 \echo
 \echo '=== First occurrences (facts true for the FIRST TIME EVER during the covered period) ==='
@@ -593,6 +712,16 @@ order by t.empty_marker, t.week desc, t.account;
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
 \echo '    `-` = percentage withheld because a contributing cell rests on fewer than five users.'
 \echo '    `cohort_size` is how many people arrived that week - a whole-population count - and prints raw.'
+\echo '    ☠️ THE ONE SECTION WHERE A PRINTED RATE CAN DISCLOSE WHAT A COUNT MAY NOT. It prints percentages'
+\echo '    with NO NUMERATOR COLUMN, and each rate is taken over its own separately maturity-filtered'
+\echo '    denominator, so `cohort_size` is the denominator of none of them: neither side of a printed rate'
+\echo '    appears anywhere on the row. k_pct withholds a rate resting on too few people; it does NOT guard'
+\echo '    the rate VALUE. So a printed 0.0% says NOBODY and 100.0% says EVERYBODY - both exactly true, and'
+\echo '    an exact fact about EVERY MEMBER of the group that rate is taken over, which is the maturity-'
+\echo '    filtered subset and never the cohort beside it. Deliberate, not an omission: an arm at nought or'
+\echo '    at a hundred per cent is the strongest reading this instrument can produce, and banding it away'
+\echo '    would blunt the finding to guard against a reader who already holds a database credential. See'
+\echo '    docs/analytics.md, What the floor does not guarantee, route 3.'
 \echo '    OPEN SHAPE: only what exists prints, so a single (no rows) row means the query ran'
 \echo '    and matched nothing. A section printing NO rows at all is a bug, never a reading.'
 with flags as (
@@ -755,11 +884,13 @@ group by 1 order by 1;
 \echo '    Every step prints for every programme and both account types, zeros included: those zeros are the'
 \echo '    watch list, and the month somebody first completes a programme is the month this stops being zero.'
 \echo '    `pct_of_starters` is a share of the people whose start is STILL ON RECORD - never of the population.'
-\echo '    ☠️ READ THIS BEFORE READING THE NUMBERS. Abandoning a programme sets started_at back to null, so a'
-\echo '    person who started, got part way and left is counted at NO step here, and is absent from the'
-\echo '    denominator too. This table is a snapshot of runs in progress and runs completed - it is NOT a'
-\echo '    cohort of everyone who ever began, and the drop-off it shows is therefore OPTIMISTIC. Replaying'
-\echo '    likewise clears completed_at, so a graduate who starts again stops counting as completed.'
+\echo '    ☠️ READ THIS BEFORE READING THE NUMBERS. The funnel is a snapshot of runs IN PROGRESS and runs'
+\echo '    COMPLETED. Leaving a programme sets started_at back to null, so somebody who started and left is'
+\echo '    counted at NO step here and is absent from the denominator too - the drop-off this table shows is'
+\echo '    OPTIMISTIC as a funnel. It is no longer the whole picture: the block below counts the people who'
+\echo '    left and the phase they left at, from the record a leave keeps (#2530). What nothing here can'
+\echo '    show is WHEN a run started that was later left, WHEN it was left, or that a previous run existed'
+\echo '    at all - all three refused on purpose, not missing by accident.'
 -- #2375. None of this was reported anywhere before, which is an odd gap for the
 -- part of the product AGENTS.md names as core MVP alongside the everyday tools.
 --
@@ -769,18 +900,22 @@ group by 1 order by 1;
 -- population as having reached phase 1.
 --
 -- ☠️ THE COLUMNS ARE CURRENT STATE, NOT EVENTS, and that bounds what this
--- section can honestly claim. `abandonProgram` in src/features/<module>/
--- use-<module>-program.ts writes `started_at = null` and leaves phase_index
--- where it was, so abandonment is not merely unreported - it is ERASED, and the
--- person disappears from both the numerator and the denominator. Someone who
--- quit at phase 3 is indistinguishable here from someone who never began.
--- `replayProgram` clears completed_at for the same reason.
+-- section can honestly claim - but the bound is narrower than it used to be.
+-- `abandonProgram` in src/features/<module>/use-<module>-program.ts writes
+-- `started_at = null` and leaves phase_index AND phase_started_at where they
+-- were, so a leave is not erased: that pair is the FOSSIL, and block A below
+-- reads it. What a leave does not carry is a DATE (#2530, ADR-0012).
 --
--- ⚠️ So do not describe this as a funnel over everyone who ever started, and do
--- not use it to argue that stalling is measured: it shows how far the people
--- still in a programme have got. Recording abandonment properly needs the app
--- to stop destroying the start date, which is a schema change and not a report
--- change; that is tracked separately.
+-- ⚠️ So do not describe THE FUNNEL as a cohort of everyone who ever started -
+-- it shows how far the people still in a programme have got, and block A stands
+-- beside it for the ones who left. ☠️ And do not fold block A into the funnel:
+-- an abandoned run is not FURTHER ALONG, the step table is generated from
+-- programme length keyed on min_phase_index, and forcing an exit into it would
+-- corrupt a shape that is load-bearing. What the fossil holds is a
+-- DISTRIBUTION OVER EXIT PHASE, and it prints as one.
+--
+-- ⚠️ Stalling is still not measured here. #2553 adds the quiet-duration
+-- buckets; this section says nothing about how long anybody has been anywhere.
 with reached as (
   select l.account,
          s.programme,
@@ -811,6 +946,122 @@ select account,
        pg_temp.k_pct(users, starters) as pct_of_starters
 from reached
 order by account, programme, step_order;
+
+\echo
+\echo '    -- 7a) Programmes people left, by the phase they left at --'
+\echo '    `<5` = k=5 suppressed count. Every phase prints for every programme and both account types,'
+\echo '    zeros included, exactly as the funnel above does: those zeros are the watch list.'
+\echo '    ☠️ This is BESIDE the funnel and is NOT a step in it. A left run is not further along.'
+\echo '    It says THAT somebody left and AT WHICH PHASE. It cannot say WHEN, and never will (#2530).'
+-- ☠️ BLOCK A (#2552). The first place anywhere in the product that a left
+-- programme is visible. Before this, somebody who reached phase 4 and stopped
+-- appeared in no number at all - which is the whole of #2386.
+--
+-- The fossil is `phase_started_at is not null AND started_at is null`:
+-- `abandonProgram` nulls the start and leaves the phase pair standing, and
+-- #2530 promoted that omission to a contract with a test behind it
+-- (test/programme-fossil-contract.test.ts). `phase_index` is the exit phase,
+-- 0-based, so it prints as `phase_index + 1`.
+--
+-- ⚠️ FIXED SHAPE, like everything else in this file: the phase list is
+-- generated from `programme_labels.total_phases` and cross-joined against both
+-- account labels, so a phase nobody has left still prints a zero. A block that
+-- printed only non-empty rows would silently stop mentioning a programme, and
+-- the absence would read as "nothing to see" rather than "nobody left".
+--
+-- ⚠️ There is no percentage here on purpose. A share needs a denominator, and
+-- the only honest one would be "everyone who ever started this programme" -
+-- which is exactly the number the schema does not keep. Counts only.
+with left_at as (
+  select l.account,
+         pl.programme,
+         ph.phase,
+         count(pp.user_id) filter (
+           where pp.started_at is null and pp.phase_started_at is not null
+             and pp.phase_index = ph.phase - 1
+         ) as users
+  from account_labels l
+  cross join programme_labels pl
+  cross join lateral generate_series(1, pl.total_phases) as ph(phase)
+  left join programme_progress pp
+         on pp.account = l.account
+        and pp.programme = pl.programme
+  group by l.account, pl.programme, ph.phase
+)
+select account,
+       programme,
+       'left at phase ' || phase as exit_phase,
+       pg_temp.k_count(users) as users
+from left_at
+order by account, programme, phase;
+
+\echo
+\echo '    -- 7b) How long since a run still open last moved --'
+\echo '    `<5` = k=5 suppressed count. Every bucket prints for every programme and both account types,'
+\echo '    zeros included. Counts runs that are STILL OPEN - not the ones above, which are over.'
+\echo '    ☠️ These are durations, not a verdict. The report states how long; it does not say how long is'
+\echo '    too long, and no number here is a judgement about any person. Read the buckets yourself.'
+select case when :'programme_gate_date' = '' then 'off' else 'on' end
+  as programme_gate_annotated \gset
+\if :programme_gate_annotated
+\echo '    ⚠️ Buckets reaching past the module gate date include a window in which no run COULD advance,'
+\echo '    because the door was gone. That part of the wait is the product, not the person.'
+\endif
+-- ☠️ BLOCK B (#2553, ruled on #2535). The ONE thing this block must never do is
+-- classify. #2530 refused to STORE a `stalled` status because a threshold
+-- freezes one analyst's judgement into a person's row, as an inference about a
+-- mental-health behaviour. A block that printed `stalled: 10` would commit that
+-- same error one layer out, in a column heading instead of a column.
+--
+-- ☠️ SO: no threshold, and the word "stalled" appears NOWHERE in what this
+-- prints. Buckets state the record and the reader does the reading - which is
+-- `show the record, don't read it` (#711) applied to the instrument itself.
+-- test/analytics-quiet-buckets.test.ts fails if that word reaches the output.
+--
+-- ⚠️ "Last moved" is `coalesce(phase_started_at, started_at)`: the current
+-- phase's start, falling back to the programme's for a run that has never
+-- advanced. That coalesce is the same read the app itself does, and #2533's
+-- guardrail - the product may show WHERE you are, never HOW LONG - binds
+-- RENDERING, not reading. This is a maintainer's report, not a surface.
+--
+-- ⚠️ A run is open when it has a start and is not graduated, and graduated is
+-- `completed_at >= started_at` (ADR-0012), never `completed_at is not null` -
+-- a completion now outlives the run that earned it. A left run has no
+-- `started_at` and is therefore absent here, where it belongs: it is over, and
+-- block A above is where it is counted.
+with open_runs as (
+  select pp.account,
+         pp.programme,
+         floor(
+           extract(epoch from (now() - coalesce(pp.phase_started_at, pp.started_at))) / 86400
+         )::bigint as quiet_days
+  from programme_progress pp
+  where pp.started_at is not null
+    and (pp.completed_at is null or pp.completed_at < pp.started_at)
+),
+bucketed as (
+  select l.account,
+         pl.programme,
+         b.bucket_order,
+         b.bucket,
+         count(r.account) filter (
+           where r.quiet_days >= b.from_days
+             and (b.to_days is null or r.quiet_days <= b.to_days)
+         ) as users
+  from account_labels l
+  cross join programme_labels pl
+  cross join quiet_buckets b
+  left join open_runs r
+         on r.account = l.account
+        and r.programme = pl.programme
+  group by l.account, pl.programme, b.bucket_order, b.bucket
+)
+select account,
+       programme,
+       bucket as since_last_phase_move,
+       pg_temp.k_count(users) as users
+from bucketed
+order by account, programme, bucket_order;
 
 \echo '=== 8) Reminder adoption (user_preferences.reminder_consent) ==='
 \echo '    `<5` = k=5 suppressed count; `-` = percentage withheld because a contributing cell is suppressed.'

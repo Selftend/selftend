@@ -6,7 +6,7 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { disableDevicePushToken, ensureDevicePushToken } from "@/src/lib/push-token";
 
-// `ReminderTarget` lived here as a second list of the ten reminder targets, existing only
+// `ReminderTarget` lived here as a second list of the reminder targets, existing only
 // because `scheduleReminder` took a target it then ignored. With the channel API taking just
 // a user (#981), `NotificationTargetKey` in the notifications registry is the only list.
 
@@ -104,6 +104,11 @@ function getNativeNotifications() {
  * `test/check-in-route-compat.test.tsx` fails if either side is "tidied".
  */
 const ALLOWED_REMINDER_ROUTES = new Set<string>([
+  // Home: the general reminder's door (#2413 § 3.4). The one reminder that names no
+  // tool lands on the screen every tool's door sits on. The target ships held out
+  // (`reminder-rollout.ts`) until the native build carrying this entry is live on
+  // both stores, so no shipped phone is ever handed a url it cannot route.
+  "/",
   "/modules/cbt",
   "/tools/meditation",
   "/modules/act",

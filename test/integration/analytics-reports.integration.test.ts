@@ -74,6 +74,29 @@ function section(name: string, number: number): string {
 }
 
 /**
+ * The statements of one printed section, in order.
+ *
+ * ⚠️ A numbered section is not always one query. Section 7 prints the programme
+ * funnel and then block A - the people who left, by exit phase (#2552) - under
+ * ONE caveat, deliberately: the caveat states what the instrument cannot see,
+ * and splitting it across two numbered sections would mean maintaining it twice.
+ * So a test that wants the funnel's rows has to say which statement it means,
+ * or it silently parses both tables as one and every fixed-shape assertion
+ * counts the wrong thing.
+ */
+function sectionStatements(name: string, number: number): string[] {
+  const statements = section(name, number)
+    .split(/;\s*\n/)
+    .map((statement) => statement.trim())
+    .filter((statement) => statement !== "" && !/^(--[^\n]*\n?)*$/.test(statement))
+    .map((statement) => `${statement};`);
+  if (statements.length === 0) {
+    throw new Error(`analytics-${name}.sql section ${number} has no statements`);
+  }
+  return statements;
+}
+
+/**
  * A printed section addressed by the start of its heading line, so a section
  * with no number - the first-occurrences section (#2379) - can be run too.
  */
@@ -350,6 +373,13 @@ function insertProgrammeRows(
     programme?: "cbt" | "act" | "dbt";
     startedAtSql?: string;
     phaseIndex?: number;
+    /**
+     * ☠️ The other half of the FOSSIL. Set beside a null `startedAtSql`, this is
+     * what a programme somebody LEFT looks like (#2530, ADR-0012) - and until
+     * #2552 no fixture in this file could express one, which is why nothing
+     * tested a left run anywhere.
+     */
+    phaseStartedAtSql?: string;
     completedAtSql?: string;
     graduationDismissedAtSql?: string;
     reminderConsentSql?: string;
@@ -365,6 +395,7 @@ function insertProgrammeRows(
       ? `
         ${row.programme}_program_started_at = ${row.startedAtSql ?? "null"},
         ${row.programme}_program_phase_index = ${row.phaseIndex ?? 0},
+        ${row.programme}_program_phase_started_at = ${row.phaseStartedAtSql ?? "null"},
         ${row.programme}_program_completed_at = ${row.completedAtSql ?? "null"},
         ${row.programme}_graduation_dismissed_at = ${row.graduationDismissedAtSql ?? "null"},`
       : "";
@@ -700,6 +731,37 @@ describe("aggregate analytics reports (integration)", () => {
         .filter((table) => !surface.includes(table) || covered.includes(table))
         .sort();
       expect(unnecessary).toEqual([]);
+    });
+  });
+
+  describe("the partition caveat reaches the reader it is written for", () => {
+    // ☠️ #2556. The caveat is the one psql VARIABLE in this report family: a
+    // `\set` with continuation lines, echoed once per qualifying section. Its
+    // whole point is that a reader of the OUTPUT - who does not have
+    // docs/analytics.md in front of them - is told what `<5` does not hide, so
+    // a stray quote that collapsed it to one line, dropped its indentation, or
+    // left `:partition_caveat` unset would defeat it silently.
+    //
+    // ⚠️ test/analytics-shared-sql.test.ts cannot catch that: it compares the
+    // two copies to each other, and both would be wrong together. Only psql
+    // can say what psql prints.
+    const rendered = () =>
+      runSql(`${sharedBlock("segment", "partition_caveat")}\n\\echo :partition_caveat\n`);
+
+    it("prints as an indented block of legend lines, not one long line", () => {
+      // runSql trims, so the first line loses the indentation it is sent with;
+      // every line after it still carries the legend's four spaces.
+      const lines = rendered().split("\n");
+      expect(lines.length).toBeGreaterThan(1);
+      expect(lines.slice(1).filter((line) => !line.startsWith("    "))).toEqual([]);
+    });
+
+    it("states the interval the floor actually publishes", () => {
+      // The correction this block exists to carry: 1..4, four as a ceiling.
+      const output = rendered();
+      expect(output).toContain("1..4");
+      expect(output).toContain("FOUR VALUES WIDE");
+      expect(output).not.toContain(":partition_caveat");
     });
   });
 
@@ -1074,6 +1136,203 @@ describe("aggregate analytics reports (integration)", () => {
            delete from auth.users where id = '${userId(99)}';`,
         );
       }
+    });
+  });
+
+  describe("segment report: a degenerate account half announces itself", () => {
+    // ☠️ #2559, and it is the false green one scope down. `axis_coverage` asks
+    // whether an axis carries values across the WHOLE population, and sections
+    // 3 and 4 then print `account × arm`, both halves. So a half whose arms hold
+    // ZERO OR ONE mature user still prints beneath a population-wide
+    // `readable = t`, looking like an ordering when it is not one - and both
+    // sections instruct the reader to READ THE ORDERING, which is exactly what
+    // a degenerate half destroys.
+    //
+    // ⚠️ What ships is a LABEL, not a second gate. `readable` keeps one meaning
+    // and stays the only thing deciding whether an ordering PRINTS; the
+    // per-account test decides only whether a row naming the reason appears
+    // beside a half that prints either way. These tests pin both halves of that:
+    // the marker appears where the ordering is fake, and stays away where it is
+    // real. A label that fired everywhere would satisfy the first alone.
+    const MARKER = "(not an ordering)";
+
+    /** The account halves carrying the marker row in one section. */
+    const markedHalves = (sectionNumber: number) =>
+      queryWithinCohort("segment", section("segment", sectionNumber))
+        .filter((row) => (row[1] ?? "").startsWith(MARKER))
+        .map((row) => row[0])
+        .sort();
+
+    /** Every arm row still printed for one half, marker rows excluded. */
+    const armsPrintedFor = (sectionNumber: number, account: string) =>
+      queryWithinCohort("segment", section("segment", sectionNumber)).filter(
+        (row) => row[0] === account && !(row[1] ?? "").startsWith(MARKER),
+      );
+
+    describe("one half degenerate, one half healthy", () => {
+      // Registered holds two locale arms and two module arms; the single guest
+      // holds one of each. Population-wide that is three arms per axis, so both
+      // axes are readable and both sections print in full.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(160), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(161), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(162), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(160), languageSql: `'en'` },
+          { id: userId(161), languageSql: `'bg'` },
+        ]);
+        // Inside the first 28 days, so these decide the module arm rather than
+        // the W4 outcome: `gratitude only` and `core tools only` against the
+        // guest's `no content`.
+        insertModuleContent([
+          { id: userId(160), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(161), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("finds both axes readable population-wide, so nothing is withheld", () => {
+        expect(queryWithinCohort("segment", section("segment", 2))).toEqual([
+          ["locale", "4", "3", "t"],
+          ["module usage", "9", "3", "t"],
+        ]);
+      });
+
+      it("marks the guest half in both orderings, and only the guest half", () => {
+        expect(markedHalves(3)).toEqual(["guest"]);
+        expect(markedHalves(4)).toEqual(["guest"]);
+      });
+
+      it("☠️ removes no count from the half it marks", () => {
+        // The property the census depends on: the marker annotates, it never
+        // withholds. Every arm of the fixed-shape axis still prints for the
+        // marked half, so no cell becomes newly exposed or exempt.
+        expect(armsPrintedFor(3, "guest")).toHaveLength(4);
+        expect(armsPrintedFor(4, "guest")).toHaveLength(9);
+      });
+
+      it("names the reason in the row rather than leaving it to be inferred", () => {
+        const [row] = queryWithinCohort("segment", section("segment", 3)).filter(
+          (r) => r[0] === "guest" && (r[1] ?? "").startsWith(MARKER),
+        );
+        expect(row[1]).toContain("fewer than two arms");
+        expect(row[1]).toContain("account type");
+      });
+    });
+
+    describe("⚠️ both halves degenerate at once", () => {
+      // The case the scope ruling makes reachable and a per-half gate would
+      // have hidden: `readable` is true because one arm holds a mature
+      // REGISTERED user and a DIFFERENT arm holds a mature GUEST. Two arms
+      // population-wide, one in each half, and neither half is an ordering.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(170), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(171), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(170), languageSql: `'en'` },
+          { id: userId(171), languageSql: `'bg'` },
+        ]);
+        insertModuleContent([
+          { id: userId(170), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(171), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("still reports the axes as readable, because the scope is the population", () => {
+        expect(queryWithinCohort("segment", section("segment", 2))).toEqual([
+          ["locale", "4", "2", "t"],
+          ["module usage", "9", "2", "t"],
+        ]);
+      });
+
+      it("marks both halves rather than neither", () => {
+        expect(markedHalves(3)).toEqual(["guest", "registered"]);
+        expect(markedHalves(4)).toEqual(["guest", "registered"]);
+      });
+    });
+
+    describe("☠️ a half holding no mature users at all", () => {
+      // The case the rewritten section 2 legend is ABOUT. The sentence it
+      // replaced claimed such a half "still prints a guest ordering whose arms
+      // are all one arm" — false, because a half may hold ZERO arms with mature
+      // users, not one. Registered carries both axes on its own; the single
+      // guest is four days old, so it is in every table and mature in none.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(190), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(191), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(192), createdAtSql: "now() - interval '4 days'", isAnonymous: true },
+        ]);
+        insertLanguages([
+          { id: userId(190), languageSql: `'en'` },
+          { id: userId(191), languageSql: `'bg'` },
+        ]);
+        insertModuleContent([
+          { id: userId(190), module: "gratitude", createdAtSql: "now() - interval '38 days'" },
+        ]);
+        insertMoodLogs([{ id: userId(191), createdAtSql: "now() - interval '38 days'" }]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("counts zero arms with mature users for that half", () => {
+        // Pinned directly, because zero and one are the two shapes the deleted
+        // sentence conflated.
+        const [row] = queryWithinCohort(
+          "segment",
+          `select count(distinct ul.arm)
+             from user_locale ul
+             join locale_labels ll on ll.arm = ul.arm
+             join user_w4 w on w.user_id = ul.user_id
+            where w.w4_mature and ul.account = 'guest';`,
+        );
+        expect(row).toEqual(["0"]);
+      });
+
+      it("marks it, exactly as it marks a half holding one", () => {
+        expect(markedHalves(3)).toEqual(["guest"]);
+        expect(markedHalves(4)).toEqual(["guest"]);
+      });
+
+      it("still prints every arm for it, zeros included", () => {
+        expect(armsPrintedFor(3, "guest")).toHaveLength(4);
+        expect(armsPrintedFor(4, "guest")).toHaveLength(9);
+      });
+    });
+
+    describe("a withheld ordering says so once, and does not also take the marker", () => {
+      // Where `readable` is false the section is replaced by the single
+      // `(ordering withheld)` row, and the per-half label must stay silent -
+      // two markers for one situation is the second vocabulary this ticket
+      // exists to avoid.
+      beforeAll(() => {
+        deleteSuiteUsers();
+        insertAuthUsers([
+          { id: userId(180), createdAtSql: "now() - interval '40 days'" },
+          { id: userId(181), createdAtSql: "now() - interval '40 days'", isAnonymous: true },
+        ]);
+      });
+
+      afterAll(deleteSuiteUsers);
+
+      it("prints one withheld row and no marker row", () => {
+        for (const number of [3, 4]) {
+          const rows = queryWithinCohort("segment", section("segment", number));
+          expect(rows).toHaveLength(1);
+          expect(rows[0][0]).toBe("(ordering withheld)");
+          expect(markedHalves(number)).toEqual([]);
+        }
+      });
     });
   });
 
@@ -1570,11 +1829,28 @@ describe("aggregate analytics reports (integration)", () => {
     // asserted only for row presence and zeros - so breaking the join on
     // `pp.account` would leave every other test in this suite passing.
     const GUESTS_ON_ACT = [96, 97, 98, 99, 110];
+    // ☠️ THE FOSSIL: a phase start with NO programme start, which is what
+    // `abandonProgram` leaves behind. Five at phase 3 so the cell clears k=5 and
+    // prints a real number rather than `<5`.
+    const LEFT_AT_PHASE_3 = [111, 112, 113, 114, 115];
+    // ☠️ Block B's fixture (#2553), on the `guest/dbt` arm because nothing else
+    // asserts it - so a duration fixture cannot perturb a single funnel count.
+    // Started long ago, moved phase RECENTLY: the bucket must follow the phase
+    // move, not the programme start, or "how long since this last moved" is
+    // silently "how long since this began".
+    const MOVED_RECENTLY = [116, 117, 118, 119, 140];
 
-    /** Section 7 as shipped, over this suite's fixtures, keyed `account/programme/step`. */
+    /** Section 7's FIRST statement - the funnel proper. Block A is the second. */
+    const funnelStatement = () => sectionStatements("engagement", 7)[0]!;
+    /** Section 7's SECOND statement - block A, the people who left (#2552). */
+    const leftStatement = () => sectionStatements("engagement", 7)[1]!;
+    /** Section 7's THIRD statement - block B, quiet-duration buckets (#2553). */
+    const quietStatement = () => sectionStatements("engagement", 7)[2]!;
+
+    /** The funnel as shipped, over this suite's fixtures, keyed `account/programme/step`. */
     function funnel(): Map<string, { users: string; pct: string }> {
       return new Map(
-        queryWithinCohort("engagement", section("engagement", 7)).map(
+        queryWithinCohort("engagement", funnelStatement()).map(
           ([account, programme, step, users, pct]) => [
             `${account}/${programme}/${step}`,
             { users, pct },
@@ -1583,14 +1859,34 @@ describe("aggregate analytics reports (integration)", () => {
       );
     }
 
+    /** Block B, keyed `account/programme/bucket`. */
+    function quietBuckets(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("engagement", quietStatement()).map(
+          ([account, programme, bucket, users]) =>
+            [`${account}/${programme}/${bucket}`, users!] as const,
+        ),
+      );
+    }
+
+    /** Block A, keyed `account/programme/exit phase`. */
+    function leftAt(): Map<string, string> {
+      return new Map(
+        queryWithinCohort("engagement", leftStatement()).map(
+          ([account, programme, exitPhase, users]) =>
+            [`${account}/${programme}/${exitPhase}`, users!] as const,
+        ),
+      );
+    }
+
     beforeAll(() => {
       deleteSuiteUsers();
       insertAuthUsers([
-        ...[...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED].map((n) => ({
+        ...[...STARTED_ONLY, ...NEVER_STARTED, ...COMPLETED, ...LEFT_AT_PHASE_3].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
         })),
-        ...GUESTS_ON_ACT.map((n) => ({
+        ...[...GUESTS_ON_ACT, ...MOVED_RECENTLY].map((n) => ({
           id: userId(n),
           createdAtSql: "now() - interval '40 days'",
           isAnonymous: true,
@@ -1629,6 +1925,29 @@ describe("aggregate analytics reports (integration)", () => {
           startedAtSql: "now() - interval '30 days'",
           phaseIndex: 4,
           completedAtSql: "now() - interval '2 days'",
+        })),
+        // ☠️ LEFT. Exactly what `abandonProgram` writes: the start nulled, the
+        // phase pair standing. `phase_index: 2` is 0-based, so they left DURING
+        // phase 3 and block A prints them at "left at phase 3".
+        //
+        // ⚠️ These five must appear at NO funnel step - they have no
+        // `started_at`, so the funnel's own guard already excludes them - and
+        // they must NOT be confused with NEVER_STARTED above, which carries a
+        // default phase index and no phase start. That is the distinction block
+        // A turns on, and the two fixtures exist side by side to prove it.
+        ...LEFT_AT_PHASE_3.map((n) => ({
+          id: userId(n),
+          programme: "cbt" as const,
+          phaseIndex: 2,
+          phaseStartedAtSql: "now() - interval '15 days'",
+        })),
+        // Open for 60 days, but the phase moved 3 days ago.
+        ...MOVED_RECENTLY.map((n) => ({
+          id: userId(n),
+          programme: "dbt" as const,
+          startedAtSql: "now() - interval '60 days'",
+          phaseIndex: 1,
+          phaseStartedAtSql: "now() - interval '3 days'",
         })),
       ]);
     });
@@ -1699,11 +2018,114 @@ describe("aggregate analytics reports (integration)", () => {
       // tell which.
       const empty = rowsAfterMarker(
         definitionsWithPopulation("engagement", "false"),
-        section("engagement", 7),
+        funnelStatement(),
         "engagement",
       );
       expect(empty).toHaveLength(2 * (7 + 6 + 6));
       for (const row of empty) expect(row[3]).toBe("0");
+    });
+
+    it("☠️ block A prints its whole fixed shape on an empty population too", () => {
+      // Same reasoning as the funnel above, and the same failure if the phase
+      // list is ever derived from the rows present rather than from
+      // `programme_labels.total_phases`: a block that prints nothing reads as
+      // "nobody left" when it means "this query is broken".
+      const empty = rowsAfterMarker(
+        definitionsWithPopulation("engagement", "false"),
+        leftStatement(),
+        "engagement",
+      );
+      // One row per phase, per programme, per account type: CBT 5, ACT 4, DBT 4.
+      expect(empty).toHaveLength(2 * (5 + 4 + 4));
+      for (const row of empty) expect(row[3]).toBe("0");
+    });
+
+    /**
+     * ☠️ #2552. The first assertion anywhere in this repo that a LEFT programme
+     * is visible. Before this the five fixtures above appeared in no number the
+     * product prints - which is exactly what #2386 was filed about, and what
+     * made the funnel's drop-off optimistic.
+     */
+    it("☠️ counts the people who left, at the phase they left at", () => {
+      const rows = leftAt();
+      expect(rows.get("registered/cbt/left at phase 3")).toBe("5");
+    });
+
+    /**
+     * ☠️ The distinction the whole block turns on, and the one a careless
+     * rewrite loses. NEVER_STARTED carries a phase index of 4 and NO phase
+     * start - the shape every untouched account has, because `phase_index`
+     * defaults to 0 and nothing has to write it. A block reading `phase_index`
+     * alone would report those five as having left at phase 5.
+     */
+    it("☠️ never counts a phase index that no phase start supports", () => {
+      const rows = leftAt();
+      // NEVER_STARTED sits at phase index 4 → would print here as "phase 5".
+      expect(rows.get("registered/cbt/left at phase 5")).toBe("0");
+    });
+
+    it("keeps the people who left out of the funnel entirely", () => {
+      // They have no `started_at`, so they are in neither the numerator nor the
+      // denominator - the funnel is a snapshot of runs in progress and runs
+      // completed, and block A stands beside it rather than inside it.
+      const rows = funnel();
+      expect(rows.get("registered/cbt/started")?.users).toBe("11");
+      expect(rows.get("registered/cbt/reached phase 3")?.users).toBe("5");
+      expect([...rows.keys()].filter((key) => key.includes("left"))).toEqual([]);
+    });
+
+    it("prints every phase for every programme and both account types", () => {
+      const phases = [...leftAt().keys()];
+      expect(phases).toHaveLength(2 * (5 + 4 + 4));
+      for (const account of ["guest", "registered"]) {
+        expect(phases).toContain(`${account}/cbt/left at phase 5`);
+        expect(phases).toContain(`${account}/act/left at phase 4`);
+        expect(phases).toContain(`${account}/dbt/left at phase 1`);
+      }
+      // ⚠️ And no phase 5 for the four-phase programmes: the shape comes from
+      // each programme's own length, not from CBT's.
+      expect(phases).not.toContain("registered/act/left at phase 5");
+      expect(phases).not.toContain("registered/dbt/left at phase 5");
+    });
+
+    /** ☠️ Block B (#2553). Durations, in fixed bands, with no verdict attached. */
+    it("☠️ buckets an open run by its LAST PHASE MOVE, not by when it began", () => {
+      // The fixture started 60 days ago and moved phase 3 days ago. A block
+      // that measured from `started_at` would file it under "31-90 days" and
+      // report a person as long-quiet who was active this week.
+      const rows = quietBuckets();
+      expect(rows.get("guest/dbt/0-7 days")).toBe("5");
+      expect(rows.get("guest/dbt/31-90 days")).toBe("0");
+    });
+
+    it("falls back to the programme start for a run that has never advanced", () => {
+      // STARTED_ONLY has no `phase_started_at` at all - the shape of a run that
+      // started and never moved - so `coalesce` reads the 20-day-old start.
+      const rows = quietBuckets();
+      expect(rows.get("registered/cbt/8-30 days")).toBe("6");
+    });
+
+    it("counts only runs that are still open", () => {
+      // ☠️ Three shapes must be absent, and each would be a different bug:
+      // a graduate (over), someone who left (over, and counted by block A),
+      // and an account that never started (never in it).
+      const rows = quietBuckets();
+      // COMPLETED finished 2 days ago; if graduates leaked in they would land
+      // in 0-7 days beside nothing else on this arm.
+      expect(rows.get("registered/cbt/0-7 days")).toBe("0");
+      // LEFT_AT_PHASE_3 has a 15-day-old phase start and no programme start.
+      expect(rows.get("registered/cbt/31-90 days")).toBe("0");
+      expect(rows.get("registered/act/8-30 days")).toBe("0");
+    });
+
+    it("prints every bucket for every programme and both account types", () => {
+      const buckets = [...quietBuckets().keys()];
+      expect(buckets).toHaveLength(2 * 3 * 4);
+      for (const account of ["guest", "registered"]) {
+        for (const programme of ["cbt", "act", "dbt"]) {
+          expect(buckets).toContain(`${account}/${programme}/90+ days`);
+        }
+      }
     });
 
     it("prints every step for every programme and both account types", () => {
@@ -2252,15 +2674,25 @@ describe("aggregate analytics reports (integration)", () => {
       }
     });
 
-    it("records why the undatable fact is excluded rather than faked", () => {
+    it("records why the undatable facts are excluded rather than faked", () => {
       // ☠️ `age_floor_met` is a boolean with NO timestamp column anywhere, and
       // `*_program_phase_started_at` holds only the CURRENT phase's start. Both
       // facts are in the ticket's watch list and NEITHER can be dated. An
       // exclusion with no recorded reason is indistinguishable from an omission,
       // and this is the repo where an undecided exemption has bitten before.
       const source = reportSql("engagement");
-      expect(source).toContain("ONE FACT THE SCHEMA CANNOT DATE");
+      // ⚠️ TWO facts since #2552, not one: a leave joined the list. The fossil
+      // says THAT somebody left and AT WHICH PHASE, never WHEN.
+      expect(source).toContain("TWO FACTS THE SCHEMA CANNOT DATE");
       expect(source).toContain("PER-PHASE PROGRAMME MILESTONES");
+      expect(source).toContain("A PROGRAMME BEING LEFT");
+      // ☠️ The highest-value line in #2552, and the reason the block was worth
+      // extending rather than just adding a bullet: `prompt_dismissed_at` sits
+      // in the schema looking exactly like a leave timestamp, and
+      // `dismissProgramPrompt` overwrites it with no trace. A reader who dates
+      // a leave from it produces a number that is quietly wrong.
+      expect(source).toContain("DO NOT DATE");
+      expect(source).toContain("dismissProgramPrompt");
       // And the state-not-event caveat that applies to several of the rest.
       expect(source).toContain("STATE, NOT EVENTS");
       // ☠️ The near miss, kept deliberately: age-gate attestation was almost

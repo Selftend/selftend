@@ -11,9 +11,18 @@ import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 
 /**
- * ☠️☠️ **EVERY NOTIFICATION TARGET IS A PRACTICE TARGET - something the
- * person DOES - and never an announcement, update, news or promotion channel**
- * (#1928, from #1852).
+ * ☠️☠️ **EVERY NOTIFICATION TARGET IS A PRACTICE TARGET - a tool's practice, or
+ * the one general practice with no tool named - and never a broadcast: never an
+ * announcement, update, news or promotion channel** (#1928, from #1852; the
+ * general target argued through this gate on #2413, ADR-0010).
+ *
+ * A practice is something the person DOES on a schedule they set for
+ * themselves. Eleven of the twelve name a tool. The general reminder names none -
+ * it is a personal schedule toward doing one thing, whichever tool that turns
+ * out to be, set by the person, carrying no project event and no argument about
+ * returning (the clock is the trigger, never absence). That is what keeps it a
+ * practice rather than a broadcast, and it is why `general` sits in this list
+ * as a rule rather than beside it as an exception.
  *
  * Push is **the only channel Selftend owns that can send with no project
  * event.** Every other way we reach someone - GitHub release watchers, YouTube,
@@ -45,7 +54,10 @@ import { defaultUserPreferences } from "@/src/features/modules/types";
  * the point.** Adding a broadcast target means editing a rule that explains why
  * you should not.
  */
+const GENERAL_TARGET: NotificationTargetKey = "general";
+
 const PRACTICE_TARGETS: NotificationTargetKey[] = [
+  GENERAL_TARGET,
   "cbt",
   "act",
   "dbt",
@@ -68,6 +80,15 @@ describe("NOTIFICATION_TARGETS", () => {
     }
   });
 
+  it("the general target leads the list under the app's own name, with the home icon (#2413, #2416)", () => {
+    const general = getNotificationTarget(GENERAL_TARGET);
+    expect(NOTIFICATION_TARGETS[0]).toBe(general);
+    expect(general.labelKey).toBe("targets.general.label");
+    // The tap lands on Home (the url `/` is pinned in web-reminders.test.ts), so the icon is
+    // Home's - the row must not read as a twelfth tool with an odd name.
+    expect(general.icon).toBe("home");
+  });
+
   it("no longer contains the stale mindfulness target", () => {
     expect(NOTIFICATION_TARGETS.map((t) => String(t.key))).not.toContain("mindfulness");
   });
@@ -87,9 +108,9 @@ describe("NOTIFICATION_TARGETS", () => {
    * take. The first `toolKey` occurrence wins, which is what the old `tier === "tool"`
    * filter amounted to: the two programme ids sit behind their module's tool rows.
    */
-  it("is ordered by the widget catalogue", () => {
+  it("is ordered general first, then by the widget catalogue, then the catalogue-less tail", () => {
     const reminderKeys = new Set<string>(PRACTICE_TARGETS);
-    const seen = new Set<string>();
+    const seen = new Set<string>([GENERAL_TARGET]);
     const catalogueOrder: string[] = [];
     for (const meta of Object.values(WIDGET_META)) {
       if (!reminderKeys.has(meta.toolKey) || seen.has(meta.toolKey)) continue;
@@ -103,8 +124,17 @@ describe("NOTIFICATION_TARGETS", () => {
     // after the ones it does. Derived either way: adding a widget id ahead of
     // another still reorders this screen.
     const withoutWidget = PRACTICE_TARGETS.filter((key) => !seen.has(key));
-    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length - withoutWidget.length);
-    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual([...catalogueOrder, ...withoutWidget]);
+    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length - withoutWidget.length - 1);
+    // The general target LEADS (#2412, ADR-0010): the one reminder the product
+    // suggests, and it suggests it by placement alone - first row, always,
+    // statically, before every tool row. The catalogue does not name it either,
+    // but it is not part of the tail: the tail is the catalogue's leftovers, and
+    // the general target is the row the catalogue order is measured from.
+    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual([
+      GENERAL_TARGET,
+      ...catalogueOrder,
+      ...withoutWidget,
+    ]);
   });
 
   it.each(PRACTICE_TARGETS)("%s names all four preference columns", (key) => {
@@ -147,13 +177,39 @@ describe("NOTIFICATION_TARGETS", () => {
    *
    * ⚠️ Derived from `CATALOGUE`, so it follows the catalogue rather than
    * pinning destinations that go stale.
+   *
+   * **Exactly one target is exempt: `general`** (#2413, ADR-0010). Its door is
+   * Home itself - the screen every catalogue item sits on - so no catalogue
+   * item can name it, and asking for one would be asking the one reminder that
+   * names no tool to pick a tool. Its destination is pinned where the url is
+   * minted instead: `web-reminders.test.ts` asserts `TARGET_CONFIGS.general.url`
+   * is `/`, and `test/check-in-route-compat.test.tsx` walks every minted url
+   * through the client allowlist. The exemption set is asserted as exactly that
+   * one key below, so nothing else can shelter under it.
    */
-  it.each(PRACTICE_TARGETS)("%s is a catalogue item with somewhere to go", (key) => {
-    const items = CATALOGUE.filter((item) => item.key === key);
+  const CATALOGUE_EXEMPT: NotificationTargetKey[] = [GENERAL_TARGET];
 
-    expect(items).toHaveLength(1);
-    expect(typeof items[0].href).toBe("string");
-    expect(String(items[0].href).length).toBeGreaterThan(1);
+  it.each(PRACTICE_TARGETS.filter((key) => !CATALOGUE_EXEMPT.includes(key)))(
+    "%s is a catalogue item with somewhere to go",
+    (key) => {
+      const items = CATALOGUE.filter((item) => item.key === key);
+
+      expect(items).toHaveLength(1);
+      expect(typeof items[0].href).toBe("string");
+      expect(String(items[0].href).length).toBeGreaterThan(1);
+    },
+  );
+
+  it("exempts exactly the general target from the catalogue lock, and it names no catalogue item", () => {
+    expect(CATALOGUE_EXEMPT).toEqual(["general"]);
+    // A non-vacuous walk: the exemption must leave the lock running over every tool target.
+    expect(PRACTICE_TARGETS.filter((key) => !CATALOGUE_EXEMPT.includes(key))).toHaveLength(
+      PRACTICE_TARGETS.length - 1,
+    );
+    // And the exemption is needed: the general target really is absent from the catalogue,
+    // so dropping it from CATALOGUE_EXEMPT would fail the lock rather than pass it silently.
+    // `String(...)`: the catalogue's key union has no `general` member - which is the point.
+    expect(CATALOGUE.filter((item) => String(item.key) === GENERAL_TARGET)).toHaveLength(0);
   });
 
   /**
@@ -216,8 +272,8 @@ describe("NOTIFICATION_TARGETS", () => {
 
   it("carries no placeholder status and no description key", () => {
     for (const target of NOTIFICATION_TARGETS) {
-      // Both were dead: `status: "placeholder"` was never used, and all ten descriptions
-      // restated their own labels (#981). Asserted as absence so a revert is loud.
+      // Both were dead: `status: "placeholder"` was never used, and every description
+      // restated its own label (#981). Asserted as absence so a revert is loud.
       expect(target).not.toHaveProperty("status");
       expect(target).not.toHaveProperty("descriptionKey");
     }

@@ -269,8 +269,10 @@ export function voiceRowsBySlot(rows) {
  * by dBTP would import a rule no ticket decided onto the one class that does not
  * need it. What a voice take IS gated on happens later and by ear, plus the one
  * measurement that has always been a voice-clip rule in practice: leading silence
- * (#1134, #1138 — the four `guide_*` clips are the only files in the app that have
- * ever had any). `postprocess` measures that on the finished file.
+ * (#1134, #1138 — the four `guide_*` clips are the only files whose FINISHED form
+ * has ever had any). `postprocess` measures that on the finished file. ⚠️ Since
+ * #2508 it measures the pre-encode master too, but only for beds: that half exists
+ * for a limiter artefact (#2460) and voice never runs the limiter.
  */
 export function statusOfVoice(row, identity) {
   return voiceIdentity(row) === identity ? STATUS.accepted : STATUS.superseded;
@@ -415,8 +417,12 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
           ? `wrap ${num(row.seam.wrapStepRatio, 2)}× · head/tail ${num(row.seam.energyDeltaRatio, 2)}×`
           : "—";
         // ⚠️ #1134's hard rule, on the finished file. In practice a voice-clip rule
-        // (#1138: only the four `guide_*` files have ever carried any lead), which
-        // is why it sits beside the player on the half that had no page at all.
+        // (#1138: only the four `guide_*` files have ever carried any lead THERE),
+        // which is why it sits beside the player on the half that had no page at all.
+        // ☠️ Deliberately still the finished number, even though #2508 added a
+        // master one: the master check catches a PIPELINE artefact, not anything
+        // about the take being auditioned, and a run carrying it fails before a
+        // card is ever drawn.
         const edges = row.edges
           ? `lead ${num(row.edges.leadMs, 2)} ms · tail ${num(row.edges.tailMs, 2)} ms`
           : "—";

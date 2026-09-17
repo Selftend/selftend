@@ -297,7 +297,7 @@ describe("NotificationTargetRow - state it renders", () => {
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(true);
   });
 
-  it("names its own control, so ten rows are ten distinguishable switches", () => {
+  it("names its own control, so twelve rows are twelve distinguishable switches", () => {
     renderRow();
 
     expect(screen.getByLabelText("Sleep")).toBeTruthy();
@@ -379,6 +379,25 @@ describe("NotificationTargetRow - a held-out target (#2260)", () => {
 
     // Belt and braces: a press that somehow lands writes nothing and asks the channel nothing.
     fireEvent(screen.getByLabelText("DBT"), "valueChange", true);
+    await act(async () => {});
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockEnsure).not.toHaveBeenCalled();
+  });
+
+  it("shows the general reminder's row the same way: Selftend, off, disabled, under the note (#2491)", async () => {
+    // The general reminder ships held out (#2413 § 3.4): its deep link is Home, `/`,
+    // which no shipped native build allowlists yet. Same shape as DBT's row today.
+    renderRow({ targetKey: "general" });
+
+    expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
+    expect(screen.getByText(NOTE)).toBeTruthy();
+    expect(screen.getByLabelText("Selftend").props.accessibilityState.checked).toBe(false);
+    expect(screen.getByLabelText("Selftend").props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByLabelText("Selftend reminder time").props.accessibilityState?.disabled).toBe(
+      true,
+    );
+
+    fireEvent(screen.getByLabelText("Selftend"), "checkedChange", true);
     await act(async () => {});
     expect(mockMutateAsync).not.toHaveBeenCalled();
     expect(mockEnsure).not.toHaveBeenCalled();
@@ -520,7 +539,7 @@ describe("NotificationRowSkeleton - the row's real height", () => {
     expect(skeletonLabel.props.className).toContain("text-[15px] font-semibold");
   });
 
-  it("stays hidden from assistive tech - ten empty rows are worth nothing to announce", () => {
+  it("stays hidden from assistive tech - twelve empty rows are worth nothing to announce", () => {
     atWidth(360, () => {
       renderWithProviders(<NotificationRowSkeleton target={getNotificationTarget("sleep")} />);
 
@@ -534,7 +553,7 @@ describe("NotificationRowSkeleton - the row's real height", () => {
       expect(skeleton.props.importantForAccessibility).toBe("no-hide-descendants");
       // ☠️ The two props above are the NATIVE half. react-native-web implements neither -
       // `node_modules/react-native-web/dist` has no reference to either name - so on web the
-      // only thing standing between ten real names and a screen reader is `aria-hidden`.
+      // only thing standing between twelve real names and a screen reader is `aria-hidden`.
       // jest runs as ios, so nothing else in this file can fail when it goes missing.
       expect(skeleton.props["aria-hidden"]).toBe(true);
       expect(screen.getByText("Sleep", { includeHiddenElements: true }).props.className).toContain(

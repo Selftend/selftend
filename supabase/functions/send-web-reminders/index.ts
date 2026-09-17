@@ -147,7 +147,7 @@ Deno.serve(async (request) => {
       supabase
         .from("web_push_subscriptions")
         .select(
-          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
+          "id,user_id,endpoint,p256dh,auth,time_zone,last_general_reminder_key,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
         )
         .eq("enabled", true),
     )) as WebPushSubscriptionRow[];
@@ -159,7 +159,7 @@ Deno.serve(async (request) => {
       supabase
         .from("device_push_tokens")
         .select(
-          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
+          "id,user_id,expo_push_token,time_zone,failure_count,last_general_reminder_key,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
         )
         .eq("enabled", true),
     )) as TokenRow[];
@@ -179,6 +179,10 @@ Deno.serve(async (request) => {
       "notifications_enabled_global",
       "reminder_consent",
       "language",
+      "general_reminders_enabled",
+      "general_reminder_hour",
+      "general_reminder_minute",
+      "general_reminder_timezone",
       "cbt_reminders_enabled",
       "cbt_reminder_hour",
       "cbt_reminder_minute",
@@ -301,17 +305,21 @@ Deno.serve(async (request) => {
         const config = TARGET_CONFIGS[target];
 
         // Suppression: if the user already used this tool today in their timezone, skip the
-        // push but stamp the key so we don't re-check it every cron tick.
-        const activityTimeZone =
-          subscription.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
-        const activityWindows = activityWindowsForTarget(target, activityTimeZone, now);
-        if (await usedToolToday(supabase, subscription.user_id, target, activityWindows, "web")) {
-          await supabase
-            .from("web_push_subscriptions")
-            .update({ [config.lastKeyField]: reminderKey })
-            .eq("id", subscription.id);
-          (subscription as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
-          continue;
+        // push but stamp the key so we don't re-check it every cron tick. A `"never"` target
+        // (the general reminder) reads nothing - the clock is the trigger, never absence -
+        // so the lookup is skipped outright rather than run over an empty list.
+        if (config.suppression === "on-use") {
+          const activityTimeZone =
+            subscription.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
+          const activityWindows = activityWindowsForTarget(target, activityTimeZone, now);
+          if (await usedToolToday(supabase, subscription.user_id, target, activityWindows, "web")) {
+            await supabase
+              .from("web_push_subscriptions")
+              .update({ [config.lastKeyField]: reminderKey })
+              .eq("id", subscription.id);
+            (subscription as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
+            continue;
+          }
         }
 
         const copy = getNotificationCopy(preferences.language, target);
@@ -480,16 +488,19 @@ Deno.serve(async (request) => {
         if (!reminderKey) continue;
 
         const config = TARGET_CONFIGS[target];
-        const timeZone =
-          row.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
-        const activityWindows = activityWindowsForTarget(target, timeZone, now);
-        if (await usedToolToday(supabase, row.user_id, target, activityWindows, "native")) {
-          await supabase
-            .from("device_push_tokens")
-            .update({ [config.lastKeyField]: reminderKey })
-            .eq("id", row.id);
-          (row as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
-          continue;
+        // Same skip as the web loop: a `"never"` target runs no activity lookup.
+        if (config.suppression === "on-use") {
+          const timeZone =
+            row.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
+          const activityWindows = activityWindowsForTarget(target, timeZone, now);
+          if (await usedToolToday(supabase, row.user_id, target, activityWindows, "native")) {
+            await supabase
+              .from("device_push_tokens")
+              .update({ [config.lastKeyField]: reminderKey })
+              .eq("id", row.id);
+            (row as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
+            continue;
+          }
         }
 
         const copy = getNotificationCopy(preferences.language, target);

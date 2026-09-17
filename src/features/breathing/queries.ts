@@ -10,7 +10,6 @@ import {
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { breathingSlugs } from "@/src/constants/breathing";
 import { groundingSlugs } from "@/src/constants/grounding";
-import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { invalidateHomeToolStats } from "@/src/features/home/tool-stats-queries";
 import { noteToolSave } from "@/src/stores/tool-save-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -110,7 +109,6 @@ export function useSaveBreathingSession(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: ["breathing"] }),
         queryClient.invalidateQueries({ queryKey: ["grounding"] }),
         queryClient.invalidateQueries({ queryKey: ["mindfulness"] }),
-        invalidateRecordDays(queryClient),
         invalidateHomeToolStats(queryClient),
       ]);
     },

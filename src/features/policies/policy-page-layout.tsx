@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { RouteHead } from "@/src/components/app/route-head";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { SiteFooter } from "@/src/components/app/site-footer";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
 
@@ -40,8 +41,8 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  *
  * ☠️ **The column goes on the PADDED BOX, not the inner `View`** (#2148, ruled on
  * #2136). `HOME_COLUMN` is 720; merged into `contentContainerClassName` beside
- * `p-6` it reads 720 outer − 2×24 gutters = the **672** that `/support`,
- * `/legal` and `/progress` already show. On the inner `View` the same constant
+ * `p-6` it reads 720 outer − 2×24 gutters = the **672** that `/support` and
+ * `/legal` already show. On the inner `View` the same constant
  * would read the full 720 — the module-home width, not this page's. `layout.ts`
  * documents the distinction; #1721 is where it was learned, and a previous
  * ticket got it backwards.
@@ -56,6 +57,14 @@ interface PolicyPageLayoutProps extends PropsWithChildren {
  * assertion that proves it lives in this file's test rather than
  * `info-screen.test.tsx`, where it was really a `ScreenHeader` test wearing an
  * `InfoScreen` costume.
+ *
+ * **The site footer closes every page that goes through here** (#2467,
+ * docs/brand-result.md § 7): the same `SiteFooter` the landing renders, so a
+ * person who lands cold on any policy page can reach every other public page
+ * in one click, and crisis guidance is on every public page in the same place
+ * every time. Rendered by the layout rather than by each screen so that a
+ * public route cannot forget it - the footer's own test pins its links to the
+ * index list, and this is what puts the footer on every route the list names.
  */
 export function PolicyPageLayout({
   children,
@@ -78,6 +87,7 @@ export function PolicyPageLayout({
 
           {children}
         </View>
+        <SiteFooter className="mt-12" />
       </ScrollView>
     </SafeAreaView>
   );

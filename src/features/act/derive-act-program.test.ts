@@ -30,9 +30,9 @@ function input(overrides: Partial<DeriveActProgramInput> = {}): DeriveActProgram
 }
 
 describe("deriveActProgram", () => {
-  it("reports not_started when there is no start timestamp", () => {
+  it("reports not_in_progress when there is no start timestamp", () => {
     const result = deriveActProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
   });
 
   it("reports in_progress when started", () => {
@@ -42,6 +42,18 @@ describe("deriveActProgram", () => {
   it("reports graduated when completedAt is set", () => {
     const result = deriveActProgram(input({ completedAt: "2026-05-20T00:00:00Z" }));
     expect(result.status).toBe("graduated");
+  });
+
+  /**
+   * ☠️ Since ADR-0012 `completedAt` survives a start, an abandon and a replay,
+   * so it can outlive the run that earned it. "Graduate of the run you are in"
+   * is `completedAt >= startedAt`, not `completedAt != null`.
+   */
+  it("is in progress again when an older completion predates the current run", () => {
+    const result = deriveActProgram(
+      input({ startedAt: START, completedAt: "2026-04-01T00:00:00.000Z" }),
+    );
+    expect(result.status).toBe("in_progress");
   });
 
   it("counts only data created at/after startedAt toward summaryStats", () => {
@@ -183,9 +195,9 @@ describe("deriveActProgram", () => {
     expect(high.phaseIndex).toBe(3);
   });
 
-  it("phase is null when status is not_started", () => {
+  it("phase is null when status is not_in_progress", () => {
     const result = deriveActProgram(input({ startedAt: null }));
-    expect(result.status).toBe("not_started");
+    expect(result.status).toBe("not_in_progress");
     expect(result.phase).toBeNull();
     expect(result.phaseReady).toBe(false);
     expect(result.totalPhases).toBe(4);

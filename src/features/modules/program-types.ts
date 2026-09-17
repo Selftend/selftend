@@ -1,6 +1,6 @@
 import type { Href } from "expo-router";
 
-export type ProgramStatus = "not_started" | "in_progress" | "graduated";
+export type ProgramStatus = "not_in_progress" | "in_progress" | "graduated";
 
 export interface ProgramTaskView {
   key: string;

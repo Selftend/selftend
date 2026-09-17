@@ -152,7 +152,7 @@ const ALL_TARGETS_OFF: Record<string, boolean> = Object.fromEntries(
 );
 
 // Cleanup is mandatory: settings-account.e2e.test.ts's master-switch-back-ON
-// assertion holds only because the clean seed leaves all ten targets off -
+// assertion holds only because the clean seed leaves all twelve targets off -
 // under prompt-needed + needsRearm the switch is replaced by the pending
 // spinner and the write gates on browser permission. Leaked target state from
 // this spec would break it, and a leaked subscription row would leak state

@@ -36,13 +36,35 @@ const SITE_ORIGIN = "https://selftend.org";
 
 /**
  * The index list: every public route, as its runtime pathname. Order is the
- * sitemap's order. Adding a public route means adding it here; nothing else
- * makes a page findable, and nothing off the list is (§ 3).
+ * sitemap's order, and since #2467 it is also the site footer's order: the
+ * footer renders the crisis row first and then the nav list (explainers, then
+ * policies), and `src/components/app/site-footer.test.tsx` asserts the footer's
+ * hrefs equal this list minus `/` as ORDERED arrays (docs/brand-result.md
+ * § 7.6). Adding a public route means adding it here; nothing else makes a
+ * page findable, and nothing off the list is (§ 3) - and the footer's pin then
+ * fails until the footer knows the route, which is the point.
+ *
+ * `/meditation` and `/habits` sit between `/crisis` and `/faq` because the
+ * explainers are the nav list's first row and the policies its second (#2469,
+ * #2470). They are the only two of the spec's five explainers the module gate
+ * does not reach; the three module pages join this row with their modules'
+ * return (docs/brand-result.md § 3.3). Each entry's
+ * reason for existing is recorded in docs/indexability.md § 3, not here: the
+ * list is machinery, and motive is invisible in the finished artifact unless it
+ * is written down somewhere a person reads (docs/brand-result.md § 0).
+ *
+ * ☠️ **One row here drags THREE test pins, not one**: `test/index-list.test.ts`'s
+ * literal list, and `index-list.test.js`'s export fixture AND its expected
+ * sitemap - plus the footer's map and its two pins. A focused jest run missed
+ * the second file in this directory on the #2404 prototype, and the pre-commit
+ * hook caught it with seven tests red.
  */
 const INDEX_LIST = Object.freeze([
   "/",
-  "/faq",
   "/crisis",
+  "/meditation",
+  "/habits",
+  "/faq",
   "/privacy",
   "/terms",
   "/cookies",

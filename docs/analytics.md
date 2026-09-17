@@ -52,11 +52,17 @@ Two things to know when reading it:
 - **Fixed-shape tables print both populations always**, zeros included — the two
   account types, the five modules, the four locale arms and the nine
   module-usage arms. Open-shape tables (weeks, feature names) print only what
-  exists. Section 0 of each report carries the axis unconditionally. ⚠️ The one
-  deliberate exception is an ordering the segment report has **withheld** for
-  failing its axis-coverage precondition: that prints a single
-  `(ordering withheld)` row naming the reason, and the section above it says
-  which axis failed.
+  exists. Section 0 of each report carries the axis unconditionally. ⚠️ There are
+  **two** deliberate exceptions, and they differ in scope and in what they do to
+  the table:
+  - the **withheld ordering** — population-wide, `readable` false, the section
+    replaced by a single `(ordering withheld)` row naming the reason, and the
+    section above it says which axis failed;
+  - the **annotated non-ordering** — per account type, the half still printed
+    **in full**, with one row naming the reason. It fires where a half holds
+    fewer than two arms with mature users while the axis is readable across the
+    population, so the ordering printed for that half ranks nothing. It removes
+    no count, and both halves can carry it at once.
 - **The split reads current account state, not state at signup.** Signing up
   from a guest session converts the same `auth.users` row in place, so a
   converted guest reads as `registered` across their whole history. The `guest`
@@ -129,6 +135,11 @@ reports, not just the segment one where it was first implemented. It is a
 **false-precision control first** and a privacy control second: a printed "67%"
 that means two users out of three is the number that gets believed.
 
+⚠️ **That ordering describes the suppressed-count routes, not every route below.**
+Where a rate prints `0.0%` or `100.0%` the false-precision leg is not engaged at
+all — those two figures are exactly true, and are the least falsely-precise
+numbers these reports can print — and privacy is the only leg in play.
+
 It applies to slices only, **never to whole-population counts** — without that
 carve-out a blanket rule would print `<5` over the very trend the digest exists
 to show.
@@ -163,6 +174,158 @@ and the split has exactly two arms printed beside their own total, so
 suppressing one arm would leave it recoverable by subtraction. Half-suppressing
 a two-arm split is not a control. Where retention is cut by _arm_, in the same
 report, the rule applies normally.
+
+###### What the floor does not guarantee
+
+**The floor is a cell-size rule.** It reasons about how many people a cell
+counts — never about the cell's _value_, and never about what a reader derives
+from the cells printed _beside_ it. Four routes bound or recover a suppressed
+cell. They are written out because the rule's own comments asserted the opposite
+twice, and both sentences had to be deleted.
+
+⚠️ **This is the same rule stated once, not a second voice.** The two exempt
+blocks and the one carved-out section above are places the floor deliberately
+does **not apply**; the routes below are about the cells where it **does** apply
+and still does not deliver what its name suggests. Nothing here narrows either
+exemption or the carve-out. ☠️ **The gate-status carve-out is route 1 accepted
+with its eyes open**: the raw total it prints is exactly what route 1's
+subtraction runs against, and its own stated reason — half-suppressing a two-arm
+split is not a control — _is_ route 1's arithmetic, written down as a carve-out
+on one section before it was understood as a limit on the rule.
+
+**1 · Subtraction across an exhaustively printed partition.** ☠️ _A raw total
+beside a suppressed cell is not the defect — an exhaustively printed partition
+is._ A section is exposed when all three hold: its arms partition a population
+**exhaustively**; **every** arm prints; and that population's total prints
+**raw** somewhere in the same report. Three sections qualify today:
+`analytics-segment.sql` §3 and §4, and `analytics-onboarding.sql` §4. Every other
+suppressed cell in the three reports has a complement that is **never printed**,
+so there is nothing to subtract from. A future section self-classifies against
+the test; there is no review gate. The caveat prints beside each qualifying
+section from the shared `partition_caveat` block, because this document does not
+travel with the table.
+
+**2 · Repeated publication.** The digest publishes the same tables monthly, and
+**the series is the release**, not each comment (see _The monthly digest_). A
+section is exposed when its row **key recurs** across publications, its cell is
+**mutable** for that key, and the cell can **cross the floor** — suppressed in
+one publication, printed in a later one. ☠️ **Every suppressed cell in all three
+reports qualifies**, so there is nothing to exempt and no list to keep. The
+discriminator is worth stating on its own: **a republished cell is safe exactly
+when it cannot move, and nothing suppressed in these reports is immutable.** What
+this route discloses is **movement**, not level — and a movement is
+_time-localised_, which a level is not. The caveat prints once per report, beside
+no section, from the shared `series_caveat` block.
+
+**3 · The value of a printed rate.** `k_pct` withholds a rate whose denominator
+is below the floor or whose numerator would have printed `<5`. It does not guard
+the rate's **value**. So `0.0%` says nobody and `100.0%` says everybody — an
+exact fact about **every member** of the group. This is **class disclosure**; it
+is the privacy leg and not the false-precision one. ☠️ **It is the one route with
+no ceiling**, because a rate is a statement about a group of unbounded size. One
+section is exposed — `analytics-engagement.sql` §3, the only section printing
+rates with **no numerator column**, and whose denominators are separately
+maturity-filtered so `cohort_size` is not one of them. Everywhere else the
+`k_count` numerator sits in the adjacent column, so an extreme rate is redundant
+with counts already printed. ☠️ **Routes 1 and 3 are near-disjoint, and the same
+property causes both:** route 1 needs printed counts, route 3 needs their
+absence. Closing one opens the other — §3 is exempt from route 1 precisely
+_because_ it prints percentages only, which is what exposes it here.
+
+Two guards were considered for it and both were refused. **Banding the extremes**
+is in the list below: an arm at 0% or 100% is the finding, and blunting it
+protects against a reader who already holds a database credential. **Raising the
+denominator floor** fails differently and worse — it would render a genuine zero
+rate as `-`, collapsing _no rate_ into _a zero rate_ and reopening a marker
+decision this document has already settled.
+
+**4 · A small printed base.** Where a raw base caps a suppressed cell —
+`activated` cannot exceed `signups`, a numerator cannot exceed its denominator —
+the cell lies in `[1, min(4, b)]`. ⚠️ **Unlike the three above, this is a _row_
+property, decided by data at print time**, so no section can be listed as exposed
+or exempt: the same section is exposed on a week holding one account and not on
+one holding two hundred. It is **inert at b ≥ 4**, narrows at 2 or 3, and ☠️ **at
+b = 1 the cell is binary — `0` or `<5` — so the glyph pair is a one-bit readout
+of that single account.** At the bottom of the range the suppression is not
+narrowed by the base but **defeated** by it. The base prints raw under the
+whole-population carve-out above, so this route is the **price of a decision
+already taken and defended**, not a defect in the floor: the alternative is
+suppressing the very trend the digest exists to show.
+
+###### The bound, stated as a number
+
+`<5` publishes the two-sided interval **1..4**, because zero prints as `0`. So a
+hidden cell is **at most four values wide — always, and however many cells are
+hidden** — and collapses to **exactly one** whenever a recoverable remainder sits
+at either end of its range. ☠️ **The multi-cell case is therefore a _weaker_ form
+of the single-cell case, not a different kind of thing.**
+
+☠️ **Four is a maximum, not a guarantee.** The true bound is the **minimum over
+every applicable route**: route 4 bounds below four whenever a printed base is
+small, and route 3 is not bounded at all. Stating four unqualified would publish
+a limit two of these routes break.
+
+###### The worst case, composed
+
+☠️ Route 4 at `b = 1` composed with route 2 gives the strongest disclosure these
+reports admit: a cell flipping from `0` in one digest to `<5` in the next is an
+**exact, time-localised fact about one individual**, identified by cohort. It is
+written here rather than left for a reader to assemble from the routes, because a
+document that knows something it does not say is the same overclaiming in
+different clothes.
+
+###### What is not done about it, and why
+
+**The floor keeps printing counts, and no guard is added.** The options were
+priced on **preserving false precision**, not on maximising privacy, and on that
+criterion none of them pays:
+
+- **Dropping the count columns** closes a privacy hole by opening a
+  false-precision one: an empty arm's rate is `k_pct(0, 0)` → `-`, **the same
+  glyph a withheld percentage prints**, so a reader could no longer tell an empty
+  arm from a suppressed one.
+- **Complementary suppression** — the field's standard first answer — requires a
+  complement to print either `<5` (false, since a complement is by definition not
+  small) or a distinct marker (which cracks the suppression). It buys privacy
+  with the readable glyph, the wrong currency, and fails outright where one arm
+  is populated and the rest are zero.
+- **Collapsing arms** is free on every technical constraint and pays in the
+  axis's meaning: the arms exist to answer a question, and merging them answers
+  it with _we no longer ask_.
+- **Cross-release suppression consistency** — the field's standing remedy for
+  route 2 — would mean holding a cell suppressed after it passes four — **suppressing a large cell**, which runs into the same
+  marker wall as complementary suppression. ⚠️ Its collision with the reports'
+  statelessness is the _second_ reason, not the first: an architectural objection
+  can be engineered around, and this one cannot.
+- **Banding extreme rates** (`<10%` / `>90%`) is technically clean and fails on
+  purpose: an arm at 0% or 100% is the strongest segment signal the instrument
+  can produce — **it is the finding**.
+- **Bucketing or dropping small-base rows** is the field's _first_ recommendation
+  and the one place it fails for a product reason: on weekly trend data,
+  collapsing weeks destroys the trend and dropping rows is worse than suppressing
+  them.
+
+⚠️ **The floor is self-imposed and no user-facing copy promises k-anonymity** —
+`policies.json` denies advertising and analytics SDKs, profiling and third-party
+sharing, and product principle 7 says _avoid surveillance-style analytics_.
+Nothing here can break a user-facing commitment, and the floor has to be
+justified on that ground rather than on a promise.
+
+☠️ **The privacy leg is asymmetric by route out of the database.** On the digest
+and ad-hoc routes it is a self-imposed **discipline** — it withholds from a
+reader who can already `select` the rows. It is a **genuine control** only on
+onward quotation into public. The floor stays **uniform across routes**
+regardless: a public-safe render would be a mode nobody invokes when it is
+needed, and _the report is the instrument, not the judgement_.
+
+###### The marker pair is a choice, with a price
+
+An empty cell prints `0` and a withheld cell prints `<5`. ⚠️ Disclosure-control
+practice objects to distinct markers for zero and for a withheld cell, and the
+objection is recorded rather than dismissed: **visible zeros are exactly what
+make a hidden arm _exactly_ recoverable rather than merely bounded.** The pair is
+kept because an empty arm is information and a reader who cannot tell "none" from
+"withheld" has lost a real reading. This is a trade, not an oversight.
 
 `npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
 2026-07-14). It covers: activation (first row in any user-content table, ever
@@ -244,14 +407,62 @@ report is read by people who did not write it:
   and it is the only section that re-bases. Every other percentage in these
   reports is a share of that account type's population. Drop-off is the question
   a funnel answers, and a share of everyone answers a different one.
-- ☠️ **It cannot see abandonment, and must not be described as if it can.** The
-  columns are current state, not events: abandoning writes `started_at = null`
-  and leaves `phase_index`, so a person who quit part way is counted at no step
-  and is absent from the denominator too. The table is a snapshot of runs in
-  progress and runs completed, so the drop-off it shows is **optimistic**.
-  Replaying clears `completed_at`, so a graduate who begins again stops counting
-  as completed. Fixing this means changing what the app writes, not what the
-  report reads.
+- ☠️ **It sees that people left, not when — and that is ruled, not pending
+  ([#2530](https://github.com/Selftend/selftend/issues/2530)).** The columns are
+  current state: leaving writes `started_at = null`, so a person who quit is
+  counted at no funnel step and is absent from the denominator, and the drop-off
+  the funnel prints is **optimistic as a funnel**. Standing beside it now is a
+  count of the people who left and the phase they left at, read from
+  `*_program_phase_started_at` outliving a null `*_program_started_at` — a record
+  the app keeps on purpose, with a test holding it
+  (`test/programme-fossil-contract.test.ts`). Replaying no longer clears
+  `completed_at` either, so a graduate who begins again still counts as having
+  completed. What is deliberately **not** kept, and so can never be reported:
+  when a left run started, when it was left, and that a previous run existed.
+  Those were refused on data minimisation, not deferred —
+  [ADR-0012](adr/0012-a-programme-records-where-you-stopped-never-when.md).
+
+##### What the app records about a programme's life, and what it refuses
+
+Ruled across [map #2529](https://github.com/Selftend/selftend/issues/2529) and
+recorded in [ADR-0012](adr/0012-a-programme-records-where-you-stopped-never-when.md).
+Stated here because this document is where the next person reaches for it, and
+because a refusal nobody wrote down is rediscovered as a gap — which is exactly
+how [#2386](https://github.com/Selftend/selftend/issues/2386) came to be filed.
+
+**A stall is a reading, not a record.** A run that has gone quiet —
+`*_program_phase_started_at` ageing while `*_program_started_at` stays set — is
+derivable from the columns as they are, and the app deliberately stores no
+`stalled` status. Nothing in the product is awake to write one: there is no
+cron, no server job and no `pg_cron`, so a stored status would be wrong from the
+moment it became true until somebody next opened the app. Section 7b computes
+the staleness itself, in fixed buckets with no threshold — and because the
+module gate ([#2446](https://github.com/Selftend/selftend/issues/2446)) removes
+the door rather than the person's interest, it carries a gate-date annotation
+saying which part of a wait the product caused.
+
+**The dates of a run that ended are refused, and the fossil is the record.**
+`*_program_started_at` means _when the current run started_, null when there is
+none — state by definition, not an event that was destroyed. What survives an
+abandonment is `*_program_phase_started_at` non-null beside a null
+`*_program_started_at`, which says a run existed, and `*_program_phase_index`,
+which says how far it got. That pair is a contract and is pinned by
+`test/programme-fossil-contract.test.ts`. _When_ the run started and _when_ it
+was left are not kept: neither earns a column under `AGENTS.md`'s feature-level
+bar, and no product feature reads either.
+
+⚠️ **Do not read `*_program_prompt_dismissed_at` as a leave time.**
+`abandonProgram` happens to write it, but `dismissProgramPrompt` writes the same
+column, so any later dismissal silently overwrites it. It is evidence, never a
+record, and no report may date an exit from it. The engagement report's watch
+list names this exclusion in its own comments so the next reader meets it before
+the column.
+
+**Only the most recent run is visible, by decision.** A start or a replay
+overwrites the fossil, so the app keeps no history of how many times a person
+began and stopped a programme, and will not. A `programme_runs` table was
+priced and refused: what it would eventually hold is a log of repeated attempts
+at a mental-health programme.
 
 **Reminder adoption** reads `reminder_consent`, and this is the section most at
 risk of being "improved" into uselessness. ☠️ **It must not read
@@ -457,6 +668,47 @@ How to read it, in the order the report prints:
   there is enough retention to read; this says there is an axis to read it along.
   An open gate does not imply a readable cross-tab — that implication is exactly
   the false green — and neither does a covered axis imply an open gate.
+
+  ☠️ **`readable` is population-wide by decision.** The segment question is about
+  the population — [positioning.md](positioning.md)'s segment slot is a claim
+  about who loves Selftend, not about account type — and forking `readable` per
+  account type would give it a different scope from the gate, which is how two
+  conditions drift apart.
+
+  ⚠️ **It leaves a mismatch, and the mismatch is closed by a label rather than by
+  a second gate.** The precondition asks a population-wide question, but the
+  artifact it protects — the **ordering** — is printed per account row. So an
+  account half may hold **zero or one** arm with mature users while the axis is
+  population-readable. That half prints in full, with one row naming the reason,
+  computed from the per-account form of section 2's own test. ☠️ **One definition
+  of _not an ordering_, applied at two scopes, with gating authority at only one
+  of them.**
+
+  ⚠️ **The precondition's threshold is coherent and is not mismatched against the
+  floor.** The ordering is sorted on the **raw** rate, not on `k_pct`'s output,
+  so an ordering is real at one mature user per arm even when every displayed
+  percentage is withheld at `den < 5`. _At least two arms hold a mature user_ is
+  what the **ordering** needs.
+
+  ☠️ **Which sections need a precondition is a property, not a report.** One is
+  needed where a section **orders its arms by a measured quantity** _and_ its arm
+  list is **fixed-shape**, so a degenerate axis still prints a full table. That
+  pair selects `analytics-segment.sql` §3 and §4 and nothing else: every other
+  ranking section in the family is **open-shape**, where a degenerate axis prints
+  one row and **the row count is the evidence**.
+
+  ⚠️ **`analytics-onboarding.sql` has no precondition by decision, not by
+  omission.** Two independent reasons: it has **no gate**, and a false green
+  needs a green — an unreachable gate is at least honestly silent; and every
+  onboarding section that ranks (§3, §5) is open-shape. Its §4 is ordered by a
+  **declared label order** and ranks nothing. ☠️ **Partition-exposure and
+  precondition-need are independent properties** — the first is about recovering
+  a cell by subtraction, the second about whether an ordering may be read — and
+  conflating them is what raised the question. **If a future section ever
+  qualifies on the test above, `axis_coverage` becomes a shared block at that
+  point**, named to the files that need it; until then there is one copy and it
+  cannot drift.
+
 - **Cells below k=5 print `<5`.** See _Small cells print as `<5`_ above, which
   now governs all three reports rather than this one.
 - ☠️ **A flat reading is a finding, and it now terminates rather than
@@ -529,6 +781,12 @@ already compute, orderings and trends included, and the distance to a threshold
 this document has **already committed to in writing**. It may not introduce a
 threshold, comparison, verdict or recommendation this document has not already
 made.
+
+☠️ **The series is the release, not each comment.** One standing issue rather
+than an issue per month, _it always arrives even empty_, and _its absence must
+never be mistaken for a quiet month_ are three statements about a continuous
+record. What follows for suppression is in _What the floor does not guarantee_,
+route 2.
 
 - **The 1st, deliberately not the 9th.** The 9th is
   [operations-runbook.md](operations-runbook.md)'s recurring-checks duty day, and
@@ -615,9 +873,12 @@ attestation. The fact is covered. A later reader should not re-exclude it on the
 strength of `age_floor_met` having no `_at` twin.
 
 ⚠️ **And a caveat on every fact dated from `user_preferences`: those columns are
-state, not events.** `abandonProgram` nulls `*_program_started_at`, replay clears
-`*_program_completed_at`, `reminder_consent_updated_at` holds the time of the
-_last_ change, and `age_attested_at` is overwritten if somebody attests again. A
+state, not events.** `abandonProgram` nulls `*_program_started_at`;
+`*_program_completed_at` now survives every writer ([#2530](https://github.com/Selftend/selftend/issues/2530),
+ADR-0012) but still holds only the _most recent_ completion, so a person who
+finishes, replays and finishes again overwrites their first one;
+`reminder_consent_updated_at` holds the time of the _last_ change, and
+`age_attested_at` is overwritten if somebody attests again. A
 `min()` over current state can be later than the truth, so such a fact can fire a
 month late — or, where somebody consented and later revoked, **name a month that
 is not really the first**, which is a wrong statement rather than a late one.
@@ -688,6 +949,11 @@ route — an agent session querying through the Supabase MCP — already exists 
 is the looser of the two; a rule written for the scheduled job alone would leave
 the wider hole uncontrolled while implying that automation is where the risk
 lives.
+
+⚠️ **The k=5 floor and this rule are different controls and stay separate.** This
+one binds every route equally; the floor's privacy leg does not — it is a
+discipline on the digest and ad-hoc routes and a genuine control only on onward
+quotation into public (see _What the floor does not guarantee_).
 
 The digest runs as a **dedicated read-only Postgres role**, not the credential
 the nightly backup uses. The asymmetry that decides it: the backup runs a fixed
@@ -791,24 +1057,30 @@ Only proceed if Supabase aggregate queries cannot answer a concrete product ques
 > population — and it is now a reported section. Only abandonment **inside a
 > single wizard form** needs client-side events.
 >
-> ⚠️ **Correction, made while building the funnel (#2375): it does not show
-> abandonment, and the sentence that said so was wrong.** The programme columns
-> are **current state, not events**. `abandonProgram` writes `started_at = null`
-> and leaves `phase_index` where it was, so quitting does not merely go
-> unreported — it is **erased**, and the person leaves the numerator and the
-> denominator together. Someone who stopped at phase 3 is indistinguishable from
-> someone who never began, and the drop-off the funnel prints is therefore
-> optimistic. Replaying clears `completed_at` the same way.
+> ⚠️ **Corrected twice, and settled on [map #2529](https://github.com/Selftend/selftend/issues/2529).**
+> The first correction (#2375, while building the funnel) said the funnel did
+> not show abandonment and that quitting was **erased**. The first half was
+> right and the second **overstated it**: `abandonProgram` writes
+> `started_at = null` but leaves `phase_index` **and `phase_started_at`**
+> standing, which identifies the ended run exactly. Nothing was destroyed. What
+> was never kept is two dates, and [#2530](https://github.com/Selftend/selftend/issues/2530)
+> refused them deliberately rather than leaving the gap open.
+>
+> The funnel now prints what the record supports: who is still in a programme,
+> who completed, and — beside it, never as a step in it — **who left and at
+> which phase**. It still cannot date a leave, and that is a **refusal rather
+> than a gap**. So the question this passage once stood on is answered, and it
+> is no longer one of the things standing behind Phase 3.
 >
 > That leaves in-wizard abandonment and seen-but-unused discovery as the genuine
 > candidates, and **neither is named as a trigger**. Before anyone reaches for an
-> event library to learn where people stall, **read the programme funnel** — it
-> shows how far the people still in a programme have got, which is less than the
-> question but is not nothing, and it costs no new collection. ☠️ **Recording
-> abandonment properly is a change to what the app writes, not to what the
-> report reads**, so it is not an argument for client-side events either. A named
-> trigger is a loaded gun for the next reader, and nothing here warrants leaving
-> one out.
+> event library to learn where people stall, **read section 7** — the funnel, the
+> people who left by exit phase, and how long each still-open run has been quiet,
+> all of it from columns the app already writes. ☠️ **Recording a leave properly
+> was a change to what the app writes, not to what the report reads** — that
+> change has now been made and it needed no new field, so it is not an argument
+> for client-side events either. A named trigger is a loaded gun for the next
+> reader, and nothing here warrants leaving one out.
 
 #### Tool options (self-hostable, privacy-respecting)
 

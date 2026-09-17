@@ -16,7 +16,13 @@ _Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sl
 **programme**:
 The noun of a module's own staged progression — authored, phased, and graduated from once: the CBT programme (five phases), the ACT programme (four), and the DBT programme (four, decided in [docs/modules/dbt-mckay-skills-workbook.md](docs/modules/dbt-mckay-skills-workbook.md) §4 and built on map [#1980](https://github.com/Selftend/selftend/issues/1980)). The frame sentence names only the CBT one, because that is the method the category is paired with; the word itself belongs to every module that has one ([#1991](https://github.com/Selftend/selftend/issues/1991)). ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above, and [#2004](https://github.com/Selftend/selftend/issues/2004) kept it there when the category moved again.
 
+_Avoid_: run, session, cycle — a programme has no object for one pass through it; see the note.
+
 > Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
+
+> Note: a programme has **three** states and no fourth — _not in progress_, _in progress_, _graduated_ (`ProgramStatus`). ☠️ There is deliberately **no state for "left"**: someone who started and quit is not distinguished from someone who never began on any surface a person can see, which is [#2533](https://github.com/Selftend/selftend/issues/2533)'s guardrail expressed in the type rather than in a comment. The fact is not lost — `*_program_phase_started_at` outliving a null `*_program_started_at` identifies a programme somebody left, and `*_program_phase_index` says where they stopped. ☠️ **Nothing may null `*_program_phase_started_at`**: that pair is a contract with a test behind it (`test/programme-fossil-contract.test.ts`), not an accident of three `abandonProgram` bodies ([#2530](https://github.com/Selftend/selftend/issues/2530), [ADR-0012](docs/adr/0012-a-programme-records-where-you-stopped-never-when.md)). ⚠️ **Stalled** is a reading the report makes from that timestamp ageing — never a status the product stores, because nothing in the app is awake to write one. And **paused**, a value `GoalStatus` carries, is deliberately **not** adopted here: `goals`, `procrastination_tasks` and `act_committed_actions` carry such a status because they are **content the person authored**; a programme is **a path the product offered**, and that asymmetry is why programmes are the outlier in their own codebase rather than an oversight.
+
+> Note: there is intentionally no **run** term for programmes, for the same reason routines have none (see **Routine**): a programme is an authored definition plus per-person state, and no object represents one pass. Say _the programme_, _the phase you reached_, or _starting again_. ☠️ [#2530](https://github.com/Selftend/selftend/issues/2530) refused to keep any history of prior passes, so `programme_runs` is a **decided no**, not a deferred idea.
 
 ### DBT
 
@@ -106,8 +112,12 @@ The suggested sequence in which steps are presented and revealed. It is advisory
 _Avoid_: sequence-gate, prerequisite
 
 **Reminder** (of a routine):
-An optional, single, user-chosen daily time at which the app nudges the user toward the routine. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders.
+An optional, single, user-chosen daily time at which the app nudges the user toward the routine, set from the routine's editor. Off unless the user sets it. Distinct from a per-tool reminder, which is set from that tool's reminder bell or from Settings › Reminders, and from the general reminder below.
 _Avoid_: notification, alarm, schedule
+
+**General reminder**:
+The one reminder that leads to the app rather than to a tool or a routine. A single daily time the person sets, off unless they set it, identical whether or not the app was opened that day, and the only reminder the product names in its own voice. Distinct from a per-tool reminder (set from that tool's bell or from Settings › Reminders) and from a routine's reminder (set from the routine's editor).
+_Avoid_: app reminder, check-in reminder (Check-in is a tool), engagement nudge
 
 **Anchor**:
 The everyday behaviour a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
@@ -133,7 +143,7 @@ _Avoid_: session, cycle
 ### Reminder channel
 
 **Reminder channel**:
-The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a tenth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
+The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a twelfth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
 _Avoid_: subscription (only half the channel), per-reminder permission
 
 **Re-arm**:
@@ -141,12 +151,30 @@ Restoring a lost reminder channel for a user who has already said yes, without a
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
 
 **Reminder consent**:
-Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-tool enabled flag, and a channel — and consent is the **permission** where the per-tool flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
+Account-wide permission to deliver any reminder at all. Delivery needs three separate things — consent, a per-reminder enabled flag, and a channel — and consent is the **permission** where the per-reminder flag is the **nudge**; the quiet-by-default guardrail bites on the nudge. Consent arms nothing by itself. Unlike the channel it belongs to the account rather than to a device, which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path produces.
 
 The question is never put on its own: consent is recorded as a side effect of turning some reminder on, so the account either **has consented** or has **never been asked**. There is no declined state. The product used to carry one in theory — a post-completion prompt it would then withhold — but nothing ever wrote it, and that prompt was removed outright (ADR-0008). Consent itself stays load-bearing: delivery reads it on every send. What the prompt's removal orphaned is only the **date** the answer was recorded, which nothing reads any more; it is kept as a consent trail.
 
 Invariant: an account cannot hold an enabled reminder without consent.
 _Avoid_: notification permission (that is the channel's half, and it belongs to a device), opt-in (names the tap, not the account-wide permission it leaves behind)
+
+### Sound
+
+**Bed**:
+The looping background sound under a meditation sit or a breathing session. Chosen from a fixed catalogue whose first and default entry is `None`, and always optional — a session with no bed is the ordinary case, not an unfinished one. Distinct from the cues the app fires at a moment (a bell, a guided voice line), which are one-shots and never loop.
+_Avoid_: soundscape, track, ambience (names a mood, not the thing), background music (none of them are music)
+
+**Swap**:
+Replacing the bed under a running session with another one. Distinct from starting a bed (nothing is outgoing) and from choosing `None` (a stop, not a swap). A swap crossfades, and it is the only moment a lane holds two live players.
+_Avoid_: change (too broad — a volume move is a change too), switch, transition
+
+**Sound door**:
+The control on a session's focus surface that opens the sound panel. It is always shown and always plain: it names no bed and carries no marker, because a marker when a bed is playing reads as a suggestion when none is.
+_Avoid_: toggle (it opens something, it does not turn anything on), sound button
+
+**Sound panel**:
+Where the bed and its volume are changed from inside a running session. Everything in it applies live and persists; it has no confirm and no cancel, so closing it changes nothing. The pick belongs to the session in progress: what is playing is what was picked here, whether or not the write reached the server.
+_Avoid_: sound settings (settings are a place you leave the session for), picker, mixer
 
 ### Design language ("Color field")
 
@@ -255,9 +283,10 @@ and is **never** inferred from navigation history: `dangerouslySingular` replace
 rather than adding them, and the Escape itself navigates with `replace`, so history here does not
 describe where the user came from.
 
-It is carried in memory — `navigation-origin-store.ts`, recorded through the one helper
-`usePushWithOrigin` and **consumed on mount**, so a screen holds the Origin it arrived with and the
-next arrival at the same route finds nothing (#1261). Never a route param: Expo Router serialises
+It is carried in memory — `navigation-origin-store.ts`, recorded through `usePushWithOrigin` (a
+push) or `useRecordOrigin` (the record alone, for an anchor that navigates as a `Link`, #2476) and
+**consumed on mount**, so a screen holds the Origin it arrived with and the next arrival at the same
+route finds nothing (#1261). Never a route param: Expo Router serialises
 params into the address bar, and on this app a route names which therapy module the user was in.
 Recording is **opt-out** — everything that pushes through the helper records, and only the global
 nav chrome stays out, because opt-in fails invisibly (a cross-link that forgets just quietly shows
@@ -282,9 +311,10 @@ The navigation drawer behind the hamburger (`SidebarNav`, opened as an overlay),
 navigation chrome on every platform — there is no desktop rail (#667). Not a way _out_ of a screen
 but a way _across_ to a peer, which is why it navigates `dangerouslySingular` rather than pushing.
 
-What it is for: **Home is the doing; the panel is everything around the doing** — the record
-(Looking back), the plans (Routines), the reminders, and the account, plus the outbound Donate row.
-Seven rows, no group headings, nothing per-person and nothing contextual (#2085/#2106).
+What it is for: **Home is the doing; the panel is everything around the doing** — the plans
+(Routines), the reminders, and the account, plus the outbound Donate row. Six rows, no group
+headings, nothing per-person and nothing contextual (#2085/#2106; the record's row left with Looking
+back, #2431).
 
 It is **not an index of the app**. Home carries the whole catalogue of tools and modules, drawn from
 the one catalogue constant, and the panel does not restate it: **the panel may duplicate a fixed door, it may not
@@ -401,3 +431,38 @@ three are one fact, never three: a route is on the index list or it is not, and 
 state such as "published but hidden" (#2287, #2288). Adding a public page means adding it to the
 index list; nothing else makes a page findable, and nothing off the list is.
 _Avoid_: keep-list, allow-list, prune list (mechanism words, not the term); whitelist
+
+**Explainer**:
+Content the app already holds that exists to explain a concept to someone who does not know it yet -
+what the thinking patterns are, what DBT is, the meditation framework. An explainer may also be a
+public page on the website, because it would exist with every search engine removed. Its opposite is
+an _instrument_ - a form, a record, a log, a session - which a person operates, and which stays behind
+the gate: a public copy of one has no reason to exist except to be found (#2403). The test is what the
+content is for, never which screen it sits on.
+_Avoid_: learn page, article, content page (a route, not the reason); guide (implies someone guiding)
+
+**Expected row**:
+An audit finding the search-operations policy names as by design or as the instrument's own
+artefact - the `www` seed's 3XX, the one-inlink notice - which recurs every month with a stated count
+and is never a regression (#2424). A row is expected by its name and its count together: the same name at a
+different count is a fact to read, not a row to ignore.
+_Avoid_: known issue, ignored issue (the row is true; it is just not a defect); false positive (the
+instrument is right about what it sees)
+
+**Audit regression**:
+A new Error on an index-list URL, a new issue type, or a changed status, canonical or description on
+a listed page, read on the monthly Ahrefs audit; always a GitHub build issue, never a marketing
+reading (#2424). Its opposite is an expected row.
+_Avoid_: SEO regression, ranking drop (a reading, never a ranking); health-score drop (the score can
+fall on an expected row's count and rise on a hidden defect)
+
+**Standings reading**:
+The once-a-year act of reading where the site stands in search - Search Console's impressions,
+clicks and named query rows, plus Ahrefs Free's referring-domain and organic-keywords snapshot -
+taken at the 2026-12-10 sitting beside the coverage read and nowhere else, and written to a dated
+file that is never edited (#2425). Distinct from the marketing plan's **standing-surface reading**,
+which says what those numbers _are_ - never an arrival, never a judgement on a channel's window
+(marketing-plan.md § 3). One is the act, the other is the status of what the act produces, and a
+standings reading may fire exactly one marketing finding: a named query row whose text is Bulgarian.
+_Avoid_: monitoring, tracking (both imply a cadence and an alert this has neither of); SEO report;
+rank check (position is deliberately not read)

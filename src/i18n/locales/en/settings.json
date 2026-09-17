@@ -34,7 +34,7 @@
   },
   "reminders": {
     "title": "Reminders",
-    "description": "Off by default. You choose which ones to turn on."
+    "description": "One reminder from Selftend at a time you pick, or one per tool. All off until you turn them on."
   },
   "onboarding": {
     "saving": "Saving...",
@@ -96,11 +96,6 @@
     "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
     "deleteAccount": "Delete account",
     "version": "Selftend v{{version}}"
-  },
-  "home": {
-    "title": "A calm starting point",
-    "description": "The app starts with a single complete CBT section. Other modules stay out of the way until they are justified.",
-    "recentActivity": "Recent activity"
   },
   "avatarCrop": {
     "title": "Crop profile picture",

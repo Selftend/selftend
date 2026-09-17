@@ -253,10 +253,23 @@ describe("the route population (pinned, G5)", () => {
     // routes each.
     // 150 → 156: #1980's opposite-action plan and its script, three routes
     // each - the module's last two tools.
-    expect(ROUTES).toHaveLength(156);
+    // 156 → 157: #2469 added `app/meditation.tsx`, the first PUBLIC explainer
+    // page - the meditation framework readable with no account. The first route
+    // to enter this census from outside `(app)` since the policy pages, and it
+    // lands in `covered` below rather than among the stubs: it is a real screen,
+    // and it reaches the Escape the same way the policy pages do, through
+    // `PolicyPageLayout` → `ScreenHeader`. The gated `/tools/meditation/learn`
+    // is untouched - its body moved to a shared component, which is not a route
+    // change.
+    // 157 → 158: #2470 added `app/habits.tsx`, the second public explainer -
+    // the ten core ideas of habit building, readable with no account. Same
+    // shape as `/meditation` above and the same reason it lands in `covered`.
+    // The gated `/tools/habits/learn` is untouched - its ten rows moved to a
+    // shared component, which is not a route change.
+    expect(ROUTES).toHaveLength(158);
   });
 
-  it("derives exactly the ten <Redirect>-only stubs", () => {
+  it("derives exactly the eleven <Redirect>-only stubs", () => {
     expect(redirectStubs).toEqual([
       // #1379 folded the alignment check-in onto the values screen, so this
       // route became a stub. The file is MANDATORY rather than deletable: the
@@ -272,6 +285,12 @@ describe("the route population (pinned, G5)", () => {
       // `ROUTES` is still 156 - and neither URL moved. Each file's own docblock
       // says why it survives its screen.
       "app/(app)/modules/index.tsx",
+      // 10 → 11 with #2431: Looking back left the product and `/progress` became
+      // a redirect to Home. The file re-exported the screen and sat in `covered`
+      // below; it now renders `<Redirect href="/" />` and nothing else. No route
+      // file was added or removed - `ROUTES` is still 156 - and the URL did not
+      // move. Its docblock says why it survives its screen.
+      "app/(app)/progress.tsx",
       "app/(app)/tools/act.tsx",
       "app/(app)/tools/index.tsx",
       "app/(app)/tools/meditation/stages/[n].tsx",
@@ -297,7 +316,16 @@ describe("the route population (pinned, G5)", () => {
     // above, because both stopped re-exporting a hub screen and now render only
     // `<Redirect href="/" />`. Nothing left the route population - this is the
     // gate watching its subject change shape, not a screen losing its Escape.
-    expect(covered).toHaveLength(144);
+    // Then 144 → 143 with #2431: `app/(app)/progress.tsx` made the same move, for
+    // the same reason - Looking back left and the file is now a redirect to Home.
+    // Then 143 → 144 with #2469: `app/meditation.tsx` joined the population as a
+    // real screen, so it joins this class too. A public page is not exempt from
+    // G3 - a reader who lands on it cold from a search result needs the way out
+    // more than a signed-in one does, not less.
+    // Then 144 → 145 with #2470: `app/habits.tsx`, on the same reasoning - a
+    // reader who lands cold on a public page from a search result needs the way
+    // out more than a signed-in one does, not less.
+    expect(covered).toHaveLength(145);
   });
 });
 
