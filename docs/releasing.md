@@ -20,6 +20,8 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 3. CI must pass (`verify`, `integration`, `e2e`) and the PR needs one approving review (maintainer may bypass the review, never the checks).
 4. **Squash-merge.** The squashed commit title must be a Conventional Commit — it is the version and CHANGELOG signal release-please reads later.
 
+   ☠️ **The squash title comes from the PR TITLE, not from your commit messages, and that is how a change reaches `main` and never ships.** It happened on 2026-09-18: [#2582](https://github.com/Selftend/selftend/issues/2582) was opened as a draft titled `draft(positioning): …`, finished, marked ready, and squashed — GitHub took the stale title, release-please logged _"No user facing commits found … skipping"_, and the change sat on `main` with no release and no CHANGELOG entry. **Retitle a PR before merging it if its title changed meaning while it was open**, and note that `draft:` is not a Conventional Commit type. Recovering needs a later commit carrying a `Release-As:` footer, because the offending commit's type can never be reinterpreted.
+
 ## Cutting a release (`dev → main` promotion)
 
 1. Open a PR from `dev` into `main` when ready to release.
@@ -292,7 +294,7 @@ CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shippe
 
    - **Two of the eight iPhone screenshots.** `iphone-02-cbt.png` and `iphone-03-act.png` photograph screens a gated build cannot open. This is the sharpest item: App Review guideline 2.3.3 asks screenshots to show the app in use, so this is a rejection risk, not only a copy defect — and it is the same `.maestro` capture problem as item 1, arriving on the listing rather than in the job.
    - **The `description` (1215 chars).** Its opening is the frame sentence, and its "What is inside" list names _CBT thought records, with a guided walkthrough_ and _ACT tools: values, defusion, expansion, committed action_. ⚠️ The gate removes far more than "a programme": everything under `app/(app)/modules/cbt/` goes with it — thought records, activities, worry, beliefs, exposure, goals, anger, self-care, weekly review — plus all of ACT and DBT.
-   - **`promoText`** (`store/apple-info.json`) likewise names _CBT thought records_. It is **168 of 170** characters, so there is no room to add a qualifier; it needs a rewrite, not an edit.
+   - ⚠️ **There is no `promoText` to worry about.** An earlier revision of this section said the field named _CBT thought records_ at 168 of 170 characters. It does not exist: `promoText` left `store/apple-info.json` on `fabe719f`, _"because App Store Connect never held it"_, and the console's Promotional Text field reads empty. The mirror carries `subtitle` and `description`, and nothing else.
    - **`whatsNew`** for 0.21.0 opens with _"DBT joins CBT…"_. Version-scoped, so it ages out on its own — but do not repeat the shape in the release notes of a gated build.
 
    **The `subtitle` is NOT in this list.** It reads _"Private mental health tools."_ and makes no method claim, so it needs no change for the gate. (Its own separate defect — the live field still carrying the pre-#2009 phrase — is [#1760](https://github.com/Selftend/selftend/issues/1760) and unrelated.)
