@@ -6,7 +6,11 @@
 
 **Free, open-source mental health tools for web, iOS, and Android.**
 
-Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. The current working slice pairs three evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning), an ACT module, and a DBT module for when feelings run high (a coping plan, dated skill records, a guided muscle-relaxation session and a four-phase programme, with learn pages on the approach) - with eight small tools for right now that ask nothing of you, not even an account. It has no ads, subscriptions, or paywalls.
+Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. Nothing is compulsory, nothing asks for an account, and it has no ads, subscriptions, or paywalls.
+
+Alongside those everyday tools the repository builds three evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning), an ACT module, and a DBT module for when feelings run high (a coping plan, dated skill records, a guided muscle-relaxation session and a four-phase programme, with learn pages on the approach).
+
+> ⚠️ **The three modules are in beta.** They render labelled beta on Android and web, and are hidden entirely on iOS production builds (`modulesAreVisible`, `src/lib/module-visibility.ts`). Because they are beta they are deliberately **not** named in copy that says what Selftend is - see [docs/positioning.md](docs/positioning.md) § 3. They are described here because this file tells a contributor what the repository builds, which is a different job from a store listing.
 
 Your entries are encrypted in the database at the field level; a leaked database backup exposes only ciphertext, not your content. See [.github/SECURITY.md](.github/SECURITY.md) for the full security posture.
 

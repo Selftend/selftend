@@ -1897,11 +1897,25 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
     },
   ];
 
-  it("names the method on every frame-carrying surface, in both locales", () => {
+  /**
+   * ☠️☠️ **This assertion used to be the merge gate for clause 1 — `names the method on
+   * every frame-carrying surface, in both locales` — and it is RETIRED, not inverted.**
+   *
+   * Beat two of the frame sentence was removed on 2026-09-18 by owner instruction: the
+   * three modules are beta, and a beta thing must not be named in copy that says what
+   * Selftend is. The method is therefore named on no surface, clause 1 has nothing left
+   * to be satisfied by, and `docs/positioning.md` § 3 records the retreat in full.
+   *
+   * ⚠️ **It is replaced by its opposite rather than deleted outright**, so the change
+   * cannot silently undo itself. If beat two ever comes back — or if a surface starts
+   * naming the method on its own — this fails and sends the reader to the § 3 note,
+   * instead of a dead gate quietly passing on copy nobody re-decided.
+   */
+  it("names the method on NO frame-carrying surface, in either locale (beat two is gone)", () => {
     for (const { id, locale, text } of FRAME_CARRIERS) {
       expect({ id, namesTheMethod: METHOD[locale].test(text) }).toEqual({
         id,
-        namesTheMethod: true,
+        namesTheMethod: false,
       });
     }
   });
@@ -1974,7 +1988,19 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
    * reason `METHOD` above gives: naming a tool is not naming the method, so a
    * draft saying "CBT thought records" and nothing else must still fail.
    */
-  it("keeps the method in every Reddit draft that names the category (#1901)", () => {
+  /**
+   * ☠️☠️ **RETIRED, not inverted by accident — this was clause 1's merge gate over the
+   * Reddit drafts, the sibling of the frame-carrier gate above.** Beat two left every
+   * surface on 2026-09-18 by owner instruction (the three modules are beta, and a beta
+   * thing is not named in copy that says what Selftend is), so there is no method left
+   * for a draft to keep. `docs/positioning.md` § 3 records the retreat in full.
+   *
+   * Everything the docblock above says about HOW this scans still holds — sections, not
+   * the whole file; the exemption earned by the text rather than by a list; the compound
+   * and never the bare acronym. Only the expected answer flipped, and it is asserted
+   * rather than deleted so a draft that quietly reintroduces the method fails here.
+   */
+  it("keeps the method OUT of every Reddit draft that names the category (beat two is gone)", () => {
     const sections = draftSections(readFile(DRAFTS_DOC).text);
 
     // Positive control: a renamed heading level or a moved file would return an
@@ -1988,7 +2014,7 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
       checked.push(id);
       expect({ id, namesTheMethod: METHOD[locale].test(text) }).toEqual({
         id,
-        namesTheMethod: true,
+        namesTheMethod: false,
       });
     }
 
@@ -2259,10 +2285,19 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
    * keeps this honest — a silent `continue` with no positive claim would be
    * the tolerated violation exclusion 2 exists to refuse.
    */
-  it("leaves the App Store description out, though it carries the method today", () => {
+  /**
+   * ⚠️ **The "though it carries the method today" half is gone, and the exclusion is
+   * not.** Beat two left every surface on 2026-09-18, so the App Store `description` no
+   * longer carries the method — but that was never why it sat outside `FRAME_CARRIERS`.
+   * It is out for **exclusion 2's** reason, unchanged: it mirrors a record only an owner
+   * can change in App Store Connect, so a divergence is fixed in the console and never by
+   * editing the file. Asserting the absence keeps the claim positive rather than letting
+   * a silent `continue` stand in for it.
+   */
+  it("leaves the App Store description out, and it no longer carries the method either", () => {
     const APPLE = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
 
-    expect(METHOD.en.test(APPLE[SHORT_FIELD_EXCEPTION])).toBe(true);
+    expect(METHOD.en.test(APPLE[SHORT_FIELD_EXCEPTION])).toBe(false);
     expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-info"))).toBe(false);
   });
 
