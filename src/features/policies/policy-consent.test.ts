@@ -20,6 +20,7 @@ const SHIPPED_VERSIONS = [
   "2026-08-27-feedback-processors",
   "2026-09-02-donations",
   "2026-09-04-teen-floor",
+  "2026-09-18-programme-retention",
 ] as const;
 
 describe("policyVersionDate", () => {

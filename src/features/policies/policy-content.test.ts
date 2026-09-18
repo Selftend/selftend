@@ -282,9 +282,42 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // the digest alone to make this green after a disclosure changes.** The test
 // passes and users end up consented to text they were never shown, which is the
 // exact failure this pin exists to prevent.
+// 2026-09-18-programme-retention (#2554, ruling #2533) is a BOTH-fields move,
+// and the smallest one on this list that is still a real disclosure: privacy
+// §8 gains one body entry and nothing else in the four consent-bearing
+// sections moves.
+//
+// It is a bump because retention is the one category on the digest-only list
+// that this map actually changed. #2530 ruled that leaving a programme no
+// longer erases where you got to, and that a completion date is durable; #2550
+// and #2552 shipped that. §8 said only "account and app data: retained for as
+// long as your account is active", which covers the fossil the way a generic
+// clause covers anything - without telling the person it is there. The new
+// entry names what is kept after leaving (the phase reached, and the date that
+// phase began), what is not (the date the programme was started), that a finish
+// date survives a restart, that a later run replaces the earlier record, and
+// that deleting the account removes it.
+//
+// ☠️ The digest-only reading was considered and refused. It runs: §8 already
+// lists specifics at this granularity, and the data always sat inside "account
+// and app data", so the entry only sharpens what was disclosed. That fails on
+// the fact that makes the entry necessary at all - per #2533 there is no
+// per-feature erasure, so the only in-app ways to remove this record are
+// deleting the account or starting the programme again. Nobody who consented to
+// the generic clause was told that. An earlier bump carried the guest model and
+// its 12-month rule; a retention fact added to §8 is the precedent this follows.
+//
+// ⚠️ And this one does not ride the free window above - that window closed with
+// teen-floor. Every existing user meets the consent gate once on next open.
+//
+// ☑️ It does, however, OPEN one, on the same argument the entries above made: from
+// now until this version releases, nobody has been shown it, so a further policy-text
+// move costs no additional re-gate - it rides the same one. A pass that wants to move
+// policy strings should check `origin/main` first, and should expect this window to be
+// gone the moment it carries `2026-09-18-programme-retention`.
 const pinnedPolicyRelease = {
-  version: "2026-09-04-teen-floor",
-  englishDigest: "48a50348c22d1bd3c82d72cf3b84c41c5460395c63552e2f9f74ad51aea6f5bf",
+  version: "2026-09-18-programme-retention",
+  englishDigest: "20a015a41b02a167cda7a3dbb3fc822e74c9e7cf988b942e56ab3c25031ea72c",
 };
 
 describe("policy content - version pinning", () => {
