@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-09-04";
-export const policyVersion = "2026-09-04-teen-floor";
+export const policyLastUpdated = "2026-09-18";
+export const policyVersion = "2026-09-18-programme-retention";
 
 /**
  * Set to true while policies await final human/legal review.
