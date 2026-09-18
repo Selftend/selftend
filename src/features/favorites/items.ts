@@ -1,6 +1,7 @@
 import type { Href } from "expo-router";
 
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { modulesAreVisible } from "@/src/lib/module-visibility";
 
 /**
  * The catalogue: ONE ordered array of eleven items — the eight tool hubs, then the three
@@ -163,11 +164,38 @@ export function isFavorite(favorites: readonly Favorite[], kind: FavoriteKind, k
 }
 
 /**
+ * The catalogue this build actually shows.
+ *
+ * ☠️ `CATALOGUE` above stays the **eleven** whatever the gate says, and that is the whole
+ * design: it is "the single referent for catalogue order", so shrinking it would make
+ * catalogue order mean two different things in two builds. The gate filters here, at the
+ * read, exactly as favourites does.
+ *
+ * The flag is a parameter with a default rather than a bare call, so a test can drive
+ * both states without moving `__DEV__` and `appEnv` around the module system - the whole
+ * existing suite runs with `__DEV__` true and would otherwise only ever see the visible
+ * half.
+ */
+export function visibleCatalogue(showModules = modulesAreVisible()): CatalogueItem[] {
+  return showModules ? [...CATALOGUE] : CATALOGUE.filter((item) => item.kind !== "module");
+}
+
+/**
  * The catalogue filtered to the person's rows — a FILTER, so the order is the
  * catalogue's. A row whose key the catalogue does not know is ignored on read: that is
  * what lets a future tool land without a migration and keeps a downgraded build from
  * erroring on a row it does not recognise (`key` is deliberately unconstrained in SQL).
+ *
+ * ☠️ It filters {@link visibleCatalogue}, not `CATALOGUE`, and that is the trap this
+ * function exists to avoid: a person who starred CBT on a build that showed it still has
+ * that `kind: "module"` row, and filtering the full catalogue would render the card in
+ * the Favourites section of a build whose Modules section is gone. The row is untouched
+ * in the database and comes back the moment the gate opens - the same "ignored on read"
+ * tolerance the paragraph above describes, reached through a different door.
  */
-export function favoriteItems(favorites: readonly Favorite[]): CatalogueItem[] {
-  return CATALOGUE.filter((item) => isFavorite(favorites, item.kind, item.key));
+export function favoriteItems(
+  favorites: readonly Favorite[],
+  showModules = modulesAreVisible(),
+): CatalogueItem[] {
+  return visibleCatalogue(showModules).filter((item) => isFavorite(favorites, item.kind, item.key));
 }

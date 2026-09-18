@@ -122,6 +122,18 @@ The old rule protected the tools' **subordination** — _"Supporting. Never lead
 
 ☠️ **Clause 1 is not a deletion rule, and reading it as one is how this gets reverted** — the same warning the old rule carried, for the same reason. The tools appearing as a chip row, a nav group or a home section is **inventory**, which the frame does not bind ([#1610](https://github.com/Selftend/selftend/issues/1610)). What clause 1 forbids is a surface where the method is _absent_, never one where the tools are _prominent_.
 
+☠️☠️ **Clause 1 is in breach on iOS production builds as of 2026-09-17, by owner instruction, and this note exists so the breach is quotable rather than discovered.** The three modules — CBT, ACT and DBT — sit behind a build gate (`modulesAreVisible`, `src/lib/module-visibility.ts`). **The gate is iOS-only.** Android and web show all three in every build, labelled **beta**; iOS shows them only in a development build. The method **is** those modules, so an iOS production Home shows the eight tools and nothing behind them: the bare inventory the clause names, arrived at deliberately.
+
+✅ **The platform scoping is what keeps this narrow, and it was not the first shape.** The change initially hid modules on _every_ production build, which put clause 1 in breach everywhere and made the Play listing and this repo's own landing page promise a programme the app did not ship. Scoped to iOS, Android and web keep the method on Home and pass the first reading test unchanged.
+
+What remains unresolved:
+
+1. **iOS in-app surfaces fail the first reading test.** Every one of them, at once — the gate removes the method from the whole platform.
+2. ⚠️ **The App Store surfaces now overstate what their platform delivers.** The frame sentence's second beat — _a CBT programme — cognitive behavioural therapy — to work through when you want one_ — is committed in the App Store `description` and `subtitle` (§ 3 records where each is pinned). A person reading those on iOS and installing cannot reach a programme. That is a truthfulness problem in live copy, not a positioning preference, and it wants either the gate lifted or those two fields rewritten **before the next App Store submission**. The Play listing and the landing hero are unaffected: their platforms still ship the modules.
+3. **_Beta_ is now a word this product says about itself**, on the Home module cards and the landing module cards. It is not in § _Words never to use_ and does not touch the category noun — it qualifies the module, not what Selftend is — so the frame does not bind it. Recorded because it is new vocabulary on a governed surface.
+
+The **inventory** row in § The hierarchy is what permits the change at all: what the product contains is unbound by the frame. What the frame does bind is copy, and copy is where the cost landed. Nothing here rewrites clause 1 — reversing an owner instruction is not this document's to do, and a clause quietly softened to fit a build is worth less than a clause recorded as breached.
+
 ✅ **_"Don't list everything flat"_ survives verbatim inside clause 1.** Promoting the tools does not repeal it: **eight items is still a flat list.** The landing hero is the worked example. Before [#1616](https://github.com/Selftend/selftend/issues/1616), `src/i18n/locales/en/auth.json` read:
 
 > _"Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions."_

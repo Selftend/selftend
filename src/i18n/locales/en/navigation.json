@@ -79,7 +79,8 @@
       "actName": "Acceptance & commitment",
       "actSub": "Act on what matters",
       "dbtName": "Dialectical behaviour therapy",
-      "dbtSub": "For when feelings run high"
+      "dbtSub": "For when feelings run high",
+      "betaLabel": "Beta"
     },
     "tools": {
       "moodTracker": "Check-in",
