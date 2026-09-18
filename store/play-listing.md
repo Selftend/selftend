@@ -48,7 +48,7 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 
 **Full description:**
 
-> Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme — cognitive behavioural therapy — to work through when you want one. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
 >
 > What's inside:
 >
