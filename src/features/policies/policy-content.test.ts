@@ -309,6 +309,12 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 //
 // ⚠️ And this one does not ride the free window above - that window closed with
 // teen-floor. Every existing user meets the consent gate once on next open.
+//
+// ☑️ It does, however, OPEN one, on the same argument the entries above made: from
+// now until this version releases, nobody has been shown it, so a further policy-text
+// move costs no additional re-gate - it rides the same one. A pass that wants to move
+// policy strings should check `origin/main` first, and should expect this window to be
+// gone the moment it carries `2026-09-18-programme-retention`.
 const pinnedPolicyRelease = {
   version: "2026-09-18-programme-retention",
   englishDigest: "20a015a41b02a167cda7a3dbb3fc822e74c9e7cf988b942e56ab3c25031ea72c",
