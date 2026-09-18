@@ -10,6 +10,27 @@ The app shell introduction is tracked in `user_preferences`; module introduction
 
 Meditation and ACT are no longer placeholders - both shipped with reviewed module specs (`meditation-tmi.md`, `act-harris-happiness-trap.md`) and both persist their own data (`meditation_sessions` / `meditation_program_state`; the ACT exercise tables). The conditions the placeholder rule set have been met, so the standing product guardrails apply to them as they do to every shipped module: reminders stay opt-in and quiet by default, no streak pressure, no implied therapeutic outcomes.
 
+## Module visibility (2026-09-17)
+
+☠️ **The three modules — CBT, ACT and DBT — are hidden on iOS production builds, and shipped as beta everywhere else.**
+
+| Platform      | Production / preview       | Development build |
+| ------------- | -------------------------- | ----------------- |
+| iOS           | **hidden**                 | visible, beta     |
+| Android / web | visible, **labelled beta** | visible, beta     |
+
+`modulesAreVisible()` (`src/lib/module-visibility.ts`) returns true for every non-iOS platform unconditionally; on iOS it needs a Metro/debug bundle or an EAS `development` environment. `modulesAreBeta()` is a separate answer to a separate question — beta is a property of the modules, not of a platform — so lifting beta and opening the iOS gate are independent acts.
+
+This was an owner instruction reversing a standing decision, not a defect being fixed, so the reasons the old decision gave still stand unanswered **on iOS** — `CONTEXT.md`'s favourites entry and `docs/positioning.md` § 1 record what it cost. On Android and web the old reason still holds and nothing about Home changed except the beta mark.
+
+What the gate does **not** touch, and must not:
+
+- **Data.** Every `*_program_*` column and every `act_*` / `dbt_*` table stays. Export and account deletion still cover them — a hidden surface must never strand rows a person can no longer reach or erase.
+- **The catalogue constant.** `CATALOGUE` in `src/features/favorites/items.ts` is still the eleven, so "catalogue order" keeps a single referent; the gate filters at the render sites.
+- **The module contract below.** A hidden module is still a shipped module: its reminders stay opt-in, its copy stays non-medical, and the programme lifecycle rules still bind it.
+
+⚠️ Note for whoever lifts this: iOS `preview` is gated too, so the modules cannot be exercised on an internal-distribution **iOS** device build. Android preview is unaffected. That is the clause most likely to want revisiting.
+
 ## Expansion Rule
 
 Before a placeholder becomes real, add a module spec covering:

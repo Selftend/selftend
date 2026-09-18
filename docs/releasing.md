@@ -281,6 +281,30 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 
 For a production emergency where `dev` carries unrelated unreleased work, use the [hotfix path](#hotfixes) instead of a revert-through-promotion.
 
+## ☠️ Modules are hidden on iOS, and beta elsewhere (2026-09-17) — what it changes at release time
+
+CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shipped **labelled beta** on Android and web (`modulesAreVisible` / `modulesAreBeta`, `src/lib/module-visibility.ts`). Owner instruction. Because the gate is iOS-only, **Android and web releases are unaffected** apart from the beta mark; everything below is iOS.
+
+1. **The App Store screenshot job cannot capture its CBT image.** [`.maestro/app-store-screenshots.yaml`](../.maestro/app-store-screenshots.yaml) runs against `appId: org.vasilyoshev.selftend` — the **production** bundle id, not the `.dev` variant — and line 161 deep-links `${APP_LINK}modules/cbt` to capture the `02-cbt` listing image. That link now redirects to Home, so the job either captures Home twice or fails its wait. Decide before the next listing refresh: point the job at a dev build (it then photographs "Selftend Dev" branding, which must not be published), or drop the CBT image from the App Store set. **The Play screenshot set is unaffected** — Android still shows the modules.
+2. **The App Store listing will overstate what iOS delivers — from the first build that carries the gate, and not before.** ☠️ **Do not "fix" the listing early; checked in App Store Connect on 2026-09-18 and the correct action was to change nothing.** The gate is on `dev`; `main` is at 0.21.0, so the approved build (0.21.0 (18)) predates it and **still contains all three modules**. Every claim on the live page is true of the binary about to ship, and editing it now would make the listing wrong for that version.
+
+   What becomes false at the first gated iOS build, in descending order of risk:
+
+   - **Two of the eight iPhone screenshots.** `iphone-02-cbt.png` and `iphone-03-act.png` photograph screens a gated build cannot open. This is the sharpest item: App Review guideline 2.3.3 asks screenshots to show the app in use, so this is a rejection risk, not only a copy defect — and it is the same `.maestro` capture problem as item 1, arriving on the listing rather than in the job.
+   - **The `description` (1215 chars).** Its opening is the frame sentence, and its "What is inside" list names _CBT thought records, with a guided walkthrough_ and _ACT tools: values, defusion, expansion, committed action_. ⚠️ The gate removes far more than "a programme": everything under `app/(app)/modules/cbt/` goes with it — thought records, activities, worry, beliefs, exposure, goals, anger, self-care, weekly review — plus all of ACT and DBT.
+   - **`promoText`** (`store/apple-info.json`) likewise names _CBT thought records_. It is **168 of 170** characters, so there is no room to add a qualifier; it needs a rewrite, not an edit.
+   - **`whatsNew`** for 0.21.0 opens with _"DBT joins CBT…"_. Version-scoped, so it ages out on its own — but do not repeat the shape in the release notes of a gated build.
+
+   **The `subtitle` is NOT in this list.** It reads _"Private mental health tools."_ and makes no method claim, so it needs no change for the gate. (Its own separate defect — the live field still carrying the pre-#2009 phrase — is [#1760](https://github.com/Selftend/selftend/issues/1760) and unrelated.)
+
+   ⚠️ **Mechanically, the `description` cannot be edited on an approved version at all.** Every metadata field on a _Ready for Distribution_ version renders `disabled`; only Promotional Text and Copyright carry an Edit affordance. So the rewrite necessarily rides the **same submission** as the first gated build — it cannot be done ahead of it, which is another reason not to reach for it early.
+
+   ☠️ **And there may be no listing that is both truthful and compliant.** [`positioning.md`](positioning.md) § 1 makes beat two the sole carrier of the method and says outright that the noun alone _"**is** a flat inventory"_ — the thing the refusals table refuses. A description honest about a module-less iOS build has no method to name, so it fails clause 1 on arrival. Resolving this is a positioning decision (amend the doc for iOS, or lift the gate), not a copy edit.
+
+3. **iOS `preview` is gated too**, so modules cannot be exercised on an internal-distribution iOS build. Android preview is unaffected.
+
+The in-app surfaces the gate covers are listed in [`modules/tools.md`](modules/tools.md); the data layer, export and deletion are deliberately untouched.
+
 ## Store metadata drift
 
 Selftend's Apple **age-rating declaration** is mirrored in the repository at [`store/apple-advisory.json`](../store/apple-advisory.json), and `store-metadata-drift.yml` pulls the live values from App Store Connect every Monday and fails if they no longer match.

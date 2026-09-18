@@ -6,7 +6,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, toggleButtonStateProps } from "@/src/lib/accessibility";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { CHROME_ACCENT_MARK, CHROME_MARK, CHROME_TEXT } from "@/src/lib/theme/chrome";
+import {
+  CHROME_ACCENT_MARK,
+  CHROME_MARK,
+  CHROME_MUTED_TEXT,
+  CHROME_TEXT,
+} from "@/src/lib/theme/chrome";
+import { modulesAreBeta } from "@/src/lib/module-visibility";
 import { isFavorite, type CatalogueItem, type Favorite } from "@/src/features/favorites/items";
 import { useToggleFavorite } from "@/src/features/favorites/queries";
 import { ToolStat } from "@/src/features/home/tool-row-stats";
@@ -133,7 +139,35 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
           </Text>
         )}
         <View className="min-w-0 flex-1 gap-0.5">
-          <Text className="text-[15px] font-semibold leading-snug">{name}</Text>
+          {/*
+           * The name, and for a module the beta mark beside it.
+           *
+           * ☠️ It sits on the NAME ROW, not in the stat slot below, and that placement is
+           * ruling #2040 being respected rather than dodged. That ruling refuses a module
+           * card "a figure of its own" — a use count is the product reading the person's
+           * record back at them, which ADR-0004 forbids. Beta is neither: it is a fact
+           * about the software, true for every reader, derived from nothing the person
+           * did. Putting it in the empty stat slot would still have been the wrong shape,
+           * because that slot means "what this holds for you".
+           *
+           * Wrapping row rather than a fixed pair: the card reflows at 260px and the
+           * longest module name plus the mark must be allowed to drop rather than
+           * truncate.
+           */}
+          <View className="flex-row flex-wrap items-center gap-x-2 gap-y-0.5">
+            <Text className="text-[15px] font-semibold leading-snug">{name}</Text>
+            {item.kind === "module" && modulesAreBeta() ? (
+              <Text
+                testID={`card-beta-${item.key}`}
+                className={cn(
+                  "rounded-full border border-border px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide",
+                  CHROME_MUTED_TEXT,
+                )}
+              >
+                {t("today.modules.betaLabel")}
+              </Text>
+            ) : null}
+          </View>
           <Text variant="muted" className="text-[13px] leading-snug">
             {t(item.subKey)}
           </Text>

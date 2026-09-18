@@ -1,6 +1,22 @@
 import { Platform } from "react-native";
 
 export const appEnv = {
+  /**
+   * The EAS environment baked into this bundle - `development`, `preview` or
+   * `production`. One shared Sentry DSN tells its events apart by this (decision #16),
+   * and `modulesAreVisible` (src/lib/module-visibility.ts) decides on it too.
+   *
+   * ⚠️ Unset reads as `production`, and that default is load-bearing rather than tidy: a
+   * build that was handed no environment must fail *closed* for the module gate, because
+   * the cost of guessing wrong is shipping a surface that was meant to be hidden.
+   *
+   * It lives on `appEnv` rather than being read inline at the point of use because
+   * `babel-preset-expo` INLINES `process.env.EXPO_PUBLIC_*` at transform time - a test
+   * that assigns to `process.env` after the fact changes nothing, because there is no
+   * longer a lookup there to change. Assigning to this object is the pattern that works,
+   * and it is the one the rest of this file already documents.
+   */
+  appEnvName: process.env.EXPO_PUBLIC_APP_ENV ?? "production",
   githubRepoUrl: process.env.EXPO_PUBLIC_GITHUB_REPO_URL ?? "https://github.com/Selftend/selftend",
   // Both apps are published, so the live listings are the default - a build that
   // was handed no store config still points at a real store, the way the Discord
