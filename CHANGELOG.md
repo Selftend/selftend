@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/Selftend/selftend/compare/v0.22.0...v0.23.0) (2026-09-18)
+
+
+### Documentation
+
+* **releasing:** the squash title comes from the PR title, and a stale one stranded a release ([#2587](https://github.com/Selftend/selftend/issues/2587)) ([d63d43d](https://github.com/Selftend/selftend/commit/d63d43de36914ac547ea68014865ac9b9fa86255))
+
 ## [0.22.0](https://github.com/Selftend/selftend/compare/v0.21.0...v0.22.0) (2026-09-18)
 
 
