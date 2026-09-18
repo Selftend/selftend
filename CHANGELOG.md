@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.0](https://github.com/Selftend/selftend/compare/v0.21.0...v0.22.0) (2026-09-18)
+
+
+### Features
+
+* **modules:** CBT, ACT and DBT hidden on iOS, shipped as beta on Android and web ([#2579](https://github.com/Selftend/selftend/issues/2579)) ([2500b2d](https://github.com/Selftend/selftend/commit/2500b2d0ca3800956b1101af34e55158fdcad6d6))
+
+
+### Bug Fixes
+
+* **sentry:** the offline filter only spoke Android and Chrome, and an emailed link opened elsewhere paged someone ([#2578](https://github.com/Selftend/selftend/issues/2578)) ([dc55e67](https://github.com/Selftend/selftend/commit/dc55e67b82f02f084ec29177cab246b4f877dcca))
+
 ## [0.21.0](https://github.com/Selftend/selftend/compare/v0.20.0...v0.21.0) (2026-09-17)
 
 
