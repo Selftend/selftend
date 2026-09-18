@@ -48,7 +48,9 @@ describe("LandingHead (#2293)", () => {
   it("carries the decided short form and the frame description verbatim", () => {
     expect(TITLE).toBe("Selftend - private mental health tools");
     expect(DESCRIPTION).toBe(
-      "Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. Open source, no ads, no subscriptions.",
+      // Beat two removed 2026-09-18 by owner instruction - the modules are beta, so the
+      // method is named on no surface. `docs/positioning.md` § 3 records the retreat.
+      "Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. Open source, no ads, no subscriptions.",
     );
   });
 

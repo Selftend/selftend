@@ -97,7 +97,7 @@ import { CORPUS_PATH, draft, releaseFromCorpus } from "./picker.mjs";
  * sub's hyphens-only shape. Pinned to the doc by test.
  */
 export const FRAME_SENTENCE =
-  "Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.";
+  "Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you.";
 
 /**
  * `docs/positioning.md` § *Approved supporting lines*, in the doc's order and

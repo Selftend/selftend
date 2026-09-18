@@ -46,8 +46,8 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
 
    Bulgarian twin (`bg` `auth:landingPage.heroSupport`), for draft 7:
 
-   > Набор от безплатни, лични инструменти за психично здраве: ежедневни инструменти за момента
-   > и КПТ програма - когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
+   > Набор от безплатни, лични инструменти за психично здраве: ежедневни инструменти за момента,
+   > които избираш и ползваш със своето темпо.
 
    Short form: **Private mental health tools.** / **Лични инструменти за психично здраве.**
 
@@ -148,8 +148,7 @@ Body:
 
 > I built this, so read it as my own project rather than a recommendation.
 >
-> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
-> CBT programme - cognitive behavioural therapy - to work through when you want one. Same
+> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. Same
 > codebase on web, Android and iOS.
 >
 > The everyday tools are what most people actually use: eight of them, each built for the next
@@ -183,8 +182,7 @@ Title:
 
 Body:
 
-> I built this. Selftend is a set of free, private mental health tools: everyday tools for right
-> now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.
+> I built this. Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you.
 > Non-profit and open source.
 >
 > The everyday side is eight small tools that take a few minutes and ask nothing of you - not
@@ -214,8 +212,7 @@ Body:
 > I built this and it is fully open source under AGPL-3.0:
 > https://github.com/Selftend/selftend
 >
-> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
-> CBT programme - cognitive behavioural therapy - to work through when you want one. The
+> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. The
 > everyday side is eight small tools that ask nothing of you, not even an account. No ads, no
 > subscriptions, no tracking-based business model - the license and the non-profit setup are
 > the point, because this is exactly the kind of software whose incentives you want
@@ -242,8 +239,7 @@ Title:
 Body:
 
 > I built this. Selftend (https://selftend.org) is a set of free, private mental health
-> tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy -
-> to work through when you want one. The same codebase is live on web, Google Play and the App
+> tools: everyday tools for right now, yours to pick from at whatever pace suits you. The same codebase is live on web, Google Play and the App
 > Store, and the web story is the part this sub might find interesting:
 >
 > - React Native Web static-exported via Expo Router, served as static assets on Cloudflare
@@ -267,8 +263,8 @@ Title:
 Body:
 
 > I built this. Selftend is a set of free, private mental health tools: everyday tools for
-> right now, and a CBT programme - cognitive behavioural therapy - to work through when you
-> want one. The same Expo codebase is live on all three platforms. Things I would tell past me:
+> right now, yours to pick from at whatever pace suits you. The same Expo codebase is live on
+> all three platforms. Things I would tell past me:
 >
 > - React Native Web is a different platform, not a free target. onLayout is a mount-time
 >   decision there, Modal animations eat clicks mid-slide, and jest never sees any of it -
@@ -294,8 +290,7 @@ Body:
 
 > I built this. Fully open source (AGPL-3.0), non-profit, no ads, no subscriptions.
 >
-> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
-> CBT programme - cognitive behavioural therapy - to work through when you want one. Everyday
+> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. Everyday
 > side: eight small tools that take a few minutes and ask nothing of you, not even an account.
 > Not therapy, not diagnosis - structured self-help with crisis resources kept visibly
 > separate.
@@ -314,8 +309,8 @@ Title:
 Body:
 
 > Аз го направих, затова направо казвам: това е моят проект. Selftend е набор от безплатни,
-> лични инструменти за психично здраве: ежедневни инструменти за момента и КПТ програма -
-> когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
+> лични инструменти за психично здраве: ежедневни инструменти за момента, които избираш и
+> ползваш със своето темпо.
 >
 > Ежедневните инструменти са това, което повечето хора ползват: осем са, всеки отнема няколко
 > минути и не иска нищо от теб - дори акаунт. Отваряш един, ползваш го и си готов. Програмата

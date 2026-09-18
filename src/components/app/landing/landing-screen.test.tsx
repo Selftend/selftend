@@ -77,7 +77,10 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "A set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. No ads, no subscriptions.",
+        // Beat two removed 2026-09-18 by owner instruction (the modules are beta), so the
+        // frame no longer names the method at all. What this assertion still watches for
+        // is unchanged: ACT named here, or the eight tools enumerated beside the frame.
+        "A set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });
