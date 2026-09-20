@@ -146,6 +146,87 @@ The name collision is what caused it: `src/features/widgets` holds **both** the 
 
 ⚠️ **The phrasing is fair for Play but is not portable.** There is exactly **one** OS widget, and it is **Android-only** — nothing in `app.config.ts` declares an iOS WidgetKit extension. Reused verbatim on the App Store listing, "home-screen widgets" would be inaccurate twice over.
 
+## The screenshot set, read from the public listing on 2026-09-20
+
+☠️ **This set had no representation in the repository at all until now** ([#2616](https://github.com/Selftend/selftend/issues/2616)). `docs/launch/play-listing/` holds the feature graphic and the three phone mockups composited **inside** it — never the swipeable phone screenshots the store page actually ships. So the question [#2606](https://github.com/Selftend/selftend/issues/2606) needed answering — _do the Play screenshots carry module frames?_ — was unanswerable from here, and this section exists so it is not unanswerable twice.
+
+✅ **It needs no Play Console visit, and that corrects the premise #2616 was written on.** The published screenshot set is **public**: `play.google.com/store/apps/details?id=org.vasilyoshev.selftend` serves every image from `play-lh.googleusercontent.com`, and appending `=s0` to the token returns the original upload. This is the Play twin of the `itunes.apple.com/lookup` read the App Store half already relies on — credential-free, repeatable, and safe to re-run. **Re-read it rather than trusting the date on this heading.**
+
+### What is live: 24 images, three device tiers, eight screens
+
+The same eight screens, captured three times. Read in DOM order from the carousel.
+
+| #   | Screen              | Phone<br>1080×1920 | Tablet<br>1080×1920 | Tablet<br>2160×3840 |
+| --- | ------------------- | ------------------ | ------------------- | ------------------- |
+| 1   | Home                | 01                 | 09                  | 17                  |
+| 2   | **CBT module home** | 02                 | 10                  | 18                  |
+| 3   | **ACT module home** | 03                 | 11                  | 19                  |
+| 4   | Check-in            | 04                 | 12                  | 20                  |
+| 5   | Journal             | 05                 | 13                  | 21                  |
+| 6   | Breathing           | 06                 | 14                  | 22                  |
+| 7   | Gratitude log       | 07                 | 15                  | 23                  |
+| 8   | ☠️ **Tools hub**    | 08                 | 16                  | 24                  |
+
+⚠️ **The three tiers are not one capture rescaled — they are three different runs, and they disagree.** All 24 files are byte-distinct, and the copy differs between tiers: `17` (Home, large tablet) reads **"Guided programmes"** and **"CBT programme"**, British, while `01` and `09` show the older `Your tools` shape with no programme row at all. Treat each tier as its own artefact.
+
+☠️ **The phone set is the App Store set.** Screen for screen, in the same order: home, cbt, act, check-in, journal, breathing, gratitude, tools — the same eight [#2598](https://github.com/Selftend/selftend/issues/2598) cut to five on the Apple side. The two listings have been shipping one stale capture run between them.
+
+### ✅ Two things that are NOT defects, recorded so the next reader does not "fix" them
+
+- **A screenshot showing a module screen is truthful on Android.** All three modules ship here; #2606 ruled that inventory is unbound by the frame. `02`/`03`, `10`/`11` and `18`/`19` stay on those grounds. The gate is iOS-only.
+- ✅ **No screenshot carries the frame sentence, and none carries the retired beat two.** #2616 asked specifically whether any image reads _"a CBT programme — cognitive behavioural therapy — to work through when you want one"_ the way `feature-graphic.html:130–131` still does. **It does not** — the frame sentence appears on no screenshot at all. That exposure is the feature graphic's alone.
+
+### ☠️☠️ The one that is not a spelling problem: "guided self-help", published
+
+Screenshot **19** — the ACT module home at 2160×3840 — is tall enough to include the crisis callout at the foot of the screen, and it reads:
+
+```text
+Use urgent support for urgent risk
+Selftend is for guided self-help when there is time and safety to reflect.
+It is not emergency support and is not monitored by crisis responders.
+```
+
+⚠️ **That quote is deliberately a fenced block and must stay one.** `test/store-listing-text.ts` builds the Play corpus by taking **every `>` line from the `## Verbatim, as saved` heading to the end of the file** — so a blockquote anywhere below it is read as listing text, and quoting this string as one turns `test/positioning-copy.test.ts` red on the ban it is reporting. Quote pixels in a fence, never in a blockquote.
+
+That is row 1 of [docs/positioning.md](../docs/positioning.md) § _Words never to use_ — **"the livest row on the table"**, banned as clinically meaning _with a practitioner_, which Selftend does not have. It is the same string the _Known contradictions_ table above records being removed from the listing **text** in the 2026-09-02 visit. It went from the text and stayed in the pixels.
+
+✅ **The app itself is clean.** `common.json` `safety.description` now reads _"Selftend is **a set of mental health tools** for when there is time and safety to reflect."_, and `guided self-help` appears in no locale file in either language. So this is a stale capture preserving copy the product no longer says — not a live app defect.
+
+⚠️ **It is legible on exactly ONE published image across both stores, and that was checked rather than assumed.** The App Store's `iphone-03-act.png` and `ipad-03-act.png` both crop **above** the callout (they end at the framework pillars), so **Apple is not carrying this phrase.** Do not widen the remedy to the App Store set on account of it.
+
+### ☠️ #2041's defect, in the surface #2041 never looked at
+
+The paragraph above records three pre-v0.5.0 mockups inside the **feature graphic** reading _"Cognitive Behavioral Therapy"_, _"Your CBT program"_ and _"Start program"_, and records the fix: **new captures, because the words existed only as pixels.** Those captures were retaken on 2026-09-06. **The screenshot set was not**, and it carries the same words plus several more:
+
+| String, as pixels                             | On         | House rule it breaks                                                      |
+| --------------------------------------------- | ---------- | ------------------------------------------------------------------------- |
+| "Cognitive Behavioral Therapy"                | 02, 10, 18 | `behavioural` — [#1627](https://github.com/Selftend/selftend/issues/1627) |
+| "Your CBT program" · "Start program"          | 02, 10, 18 | `programme` — [#1651](https://github.com/Selftend/selftend/issues/1651)   |
+| "Start the ACT program" · "Start the program" | 03, 11, 19 | `programme` — #1651                                                       |
+| "Act · Behavioral" · "Behavioral Activation"  | 18         | `behavioural` — #1627                                                     |
+| ☠️ "Schedule meaningful behavior"             | 18         | `behaviour` — [#1638](https://github.com/Selftend/selftend/issues/1638)   |
+| "without judgment" (mindfulness sense)        | 18         | `judgement` — #1651                                                       |
+| "0 favorites" · a "Favorites" tab             | 07, 15, 23 | `favourite` — [#1639](https://github.com/Selftend/selftend/issues/1639)   |
+| "A long call with **mom**" (seeded)           | 07, 15, 23 | the same seed #2598 flagged on Apple's `07`                               |
+
+☠️ **"Schedule meaningful behavior" is the exact string #1638 was written against** — positioning.md cites it as having sat _"inside a single Think · Act · Be card, whose kicker read 'Behavioural' directly above a description that read 'Schedule meaningful behavior'"_. Screenshot 18 photographs that card in its pre-fix state and publishes it.
+
+✅ **Every one of these is fixed in the product.** On `origin/main`, `program` and `behavioral` survive only as JSON **keys** and in the sanctioned privacy sense (_"behavioral profiling tools"_); the rendered values are `"CBT programme"` and `"Behavioural activation"`; no locale value contains `favorites`. **The remedy is therefore new captures, exactly as #2041 ruled — not a copy edit, because there is no copy to edit.**
+
+### ☠️ Screens that no build can open, and chrome that no build renders
+
+- **The Tools hub (08, 16, 24) has been `<Redirect href="/" />` since [#2114](https://github.com/Selftend/selftend/issues/2114).** It is photographed three times on a listing for an app in which it cannot be reached. This is the identical defect #2598 found at position `08` of the App Store set — where it had passed App Review and gone live unnoticed.
+- **The `TOOLS ·` and `MODULES ·` breadcrumb prefixes** (04–07, 10–15, 18–23) name `/tools` and `/modules`, both deleted as pages by #2114.
+- **Home's `Your tools` section** (01, 09) predates [#1968](https://github.com/Selftend/selftend/issues/1968), which made Home _Favourites, Tools, Modules_.
+
+### ⚠️ Composition, on the 2160×3840 tier
+
+`17`, `20`, `21`, `22`, `23` and `24` render the phone-width content into a tablet frame and leave **half to three-quarters of the image empty**. `24` is the worst: eight tool cards across the top quarter, then nothing. Not a rule violation — but it is what a visitor comparing tablet listings sees.
+
+### The dating evidence, so staleness is a fact rather than an impression
+
+The seeded demo data stamps every capture: _"TODAY · WEDNESDAY, AUGUST 19"_, a journal group headed **"August 2026"**, and chart ranges ending `Aug 19`. **2026-08-19 was a Wednesday.** So the run is from on or about **2026-08-19** — before #2114 (shipped in 0.18.0, 2026-09-09) deleted the pages three of these screenshots photograph.
+
 ## When the listing is rewritten
 
 Take the frame sentence and the approved supporting lines from [docs/positioning.md](../docs/positioning.md) — once [#1999](https://github.com/Selftend/selftend/issues/1999) has settled which frame that document carries — bundle every pending fix into the same visit, then update the verbatim block here **and the date at the top** in the same PR. Every store-listing text edit is itself sent for review, so one visit that fixes everything costs one review; four visits cost four.
