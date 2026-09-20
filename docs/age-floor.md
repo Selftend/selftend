@@ -18,8 +18,13 @@ The minimum age for using Selftend, per country.
 > release that publishes this text, per §7's fixed order: owner legal review,
 > then release and publish together, then the Play Console pass. Until that day
 > the store record and the app disagree, which is why the order is not a
-> preference. `store/play-listing.md` and `docs/app-store-review-information.md`
-> reproduce live store values and are updated by that pass, not by this file.
+> preference. `store/play-listing.md` reproduces a live store value and is
+> updated by that pass, not by this file. ⚠️ **`docs/app-store-review-information.md`
+> is NOT in that pass** ([#2602](https://github.com/Selftend/selftend/issues/2602)):
+> the Play _target-audience declaration_ is a live store value #1771 owns, but
+> the review doc's audience sentence is a **private App Review field, editable
+> at any time** ([#2597](https://github.com/Selftend/selftend/issues/2597)) — it
+> waits for nobody, and it was corrected to this floor on 2026-09-20.
 
 Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Selftend/selftend/issues/227) §2**, the settled
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the

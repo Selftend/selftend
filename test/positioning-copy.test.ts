@@ -152,9 +152,15 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *   - `positioning.md` is the document the rules come from, so it necessarily
  *     quotes every banned phrasing in order to ban it. Same reason it is absent
  *     from `ALL_SURFACES`.
- *   - `app-store-review-information.md` is the reply ALREADY SENT to Apple for
- *     build 6, and its own line 84 forbids syncing it until the build under
- *     review carries the change.
+ *   - ☠️ `app-store-review-information.md` WAS here and is now SCANNED (#2602).
+ *     Its exemption rested on two clauses and both died: the file is not "the
+ *     reply already sent" — it is mostly a live draft of a private App Review
+ *     field that #2597 established is **editable at any time** — and the freeze
+ *     rule it cited has been re-scoped to *the version live on the App Store*,
+ *     which no longer forbids anything. The genuinely historical part of that
+ *     file records THAT a reply was sent, at what length and with what
+ *     attached; it never reproduces the reply text, so it survives the scan.
+ *     ✅ A regulator-facing file moved from exempt to guarded.
  *   - `app-store-recording-script.md` quotes the sign-in copy as it was when a
  *     video was recorded. Correcting the quote would make the script describe a
  *     recording that does not exist.
@@ -198,7 +204,6 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  */
 const PUBLISHED_RECORDS = [
   "docs/positioning.md",
-  "docs/app-store-review-information.md",
   "docs/app-store-recording-script.md",
   "docs/android-closed-testing.md",
   "docs/campaign/scripts/",
@@ -1107,7 +1112,6 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
 
     for (const record of [
       "docs/positioning.md",
-      "docs/app-store-review-information.md",
       "docs/app-store-recording-script.md",
       "docs/android-closed-testing.md",
       "docs/campaign/scripts/cbt.md",
@@ -1115,11 +1119,16 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       expect({ record, scanned: ids.has(record) }).toEqual({ record, scanned: false });
     }
 
-    // And each of those really does still contain the phrase - so the exclusion
-    // is load-bearing, not a leftover.
-    for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
-      expect(readFile(record).text).toMatch(/guided self-help/i);
-    }
+    // And that one really does still contain the phrase - so the exclusion is
+    // load-bearing, not a leftover. ☠️ `app-store-review-information.md` was the
+    // other half of this pair until #2602; it is SCANNED now, and this check
+    // going down to one file is the point rather than an erosion of it.
+    // `docs/campaign/scripts/cbt.md` keeps the assertion load-bearing alone.
+    expect(readFile("docs/campaign/scripts/cbt.md").text).toMatch(/guided self-help/i);
+
+    // ☠️ And the file that left is asserted to be scanned, so this exemption
+    // cannot quietly grow back.
+    expect({ scanned: ids.has("docs/app-store-review-information.md") }).toEqual({ scanned: true });
   });
 
   /**
