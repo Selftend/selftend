@@ -53,7 +53,14 @@ env:
       id: "sign-in-email"
     timeout: 60000
 
-- takeScreenshot: screenshots/00-sign-in
+# ☠️ NOT `screenshots/`. App Review guideline 2.3.3 names login pages explicitly
+# as what a screenshot must not merely show, so this frame must never sit in the
+# publishable set - but it is the single most useful image for debugging the TLS
+# failure that keeps this job from running at all (#547). It lives outside the
+# `NN-name` pattern the gather step collects, exactly as `after-submit` does, so
+# it structurally cannot reach the size gate, the duplicate gate or the upload.
+# Risk removed by construction rather than by discipline (#2598).
+- takeScreenshot: diagnostics/00-sign-in
 
 - tapOn:
     id: "sign-in-email"
@@ -158,21 +165,6 @@ env:
 - takeScreenshot: screenshots/01-home
 
 - openLink:
-    link: ${APP_LINK}modules/cbt
-- runFlow:
-    when:
-      visible: ".*Open in.*"
-    commands:
-      - tapOn: "Open"
-- extendedWaitUntil:
-    visible:
-      text: "Cognitive Behavioural Therapy"
-    timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 10000
-- takeScreenshot: screenshots/02-cbt
-
-- openLink:
     link: ${APP_LINK}tools/check-in
 - runFlow:
     when:
@@ -185,7 +177,7 @@ env:
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: screenshots/03-mood
+- takeScreenshot: screenshots/02-check-in
 
 - openLink:
     link: ${APP_LINK}tools/journal
@@ -200,8 +192,12 @@ env:
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: screenshots/04-journal
+- takeScreenshot: screenshots/03-journal
 
+# ☠️ "Breathing", not "Breathing exercises". The old wait asked for a string that
+# exists in NO locale file - a second hang sitting behind the CBT one, found by
+# grepping every `extendedWaitUntil` text against `src/i18n/locales/en/` rather
+# than trusting them. The heading is `navigation:sidebar.breathing`.
 - openLink:
     link: ${APP_LINK}tools/breathing
 - runFlow:
@@ -211,29 +207,16 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: "Breathing exercises"
+      text: "Breathing"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: screenshots/05-breathing
+- takeScreenshot: screenshots/04-breathing
 
-# The catalogue of eight tools. This shot answers Apple's 2.1 App Completeness
-# citation directly - eight working tools, each showing a real count - so it is
-# kept rather than dropped.
-#
-# It used to deep-link `/tools`. That page went with #2114 and the URL now
-# redirects to Home, which carries the same eight tools in a `Tools` section
-# below Favourites. So: land on Home and scroll the section into frame.
-#
-# ☠️ Both selectors here are SECTION IDS, per rule 1 above, and that is
-# load-bearing rather than tidy. Home renders a favourited item TWICE - once
-# under Favourites, again in its catalogue position - through the same component
-# with the same `testID`. A tool NAME as the scroll target would stop on the
-# Favourites copy whenever the demo account happens to have that tool starred,
-# and this shot would silently photograph the wrong rows. `home-tools` is on the
-# section itself, so there is exactly one of it.
+# The fifth and last. The route is `gratitude-log`, not `gratitude`: it is the
+# one tool whose path does not match its namespace.
 - openLink:
-    link: ${APP_LINK}
+    link: ${APP_LINK}tools/gratitude-log
 - runFlow:
     when:
       visible: ".*Open in.*"
@@ -241,13 +224,8 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      id: "home-favourites"
+      text: "Gratitude log"
     timeout: 30000
-- scrollUntilVisible:
-    element:
-      id: "home-tools"
-    direction: DOWN
-    timeout: 20000
 - waitForAnimationToEnd:
     timeout: 10000
-- takeScreenshot: screenshots/06-tools
+- takeScreenshot: screenshots/05-gratitude
