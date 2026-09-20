@@ -6,6 +6,7 @@ import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 import { APP_STORE_CAPS } from "@/test/store-caps";
 import {
   APPLE_INFO_SURFACE,
+  APPLE_RELEASE_NOTES_SURFACE,
   PLAY_VERBATIM_SURFACE,
   STORE_LISTING_TEXT as STORE_LISTING_ENTRIES,
   storeListingText,
@@ -1748,10 +1749,11 @@ describe("the store listings are in scope (#1760)", () => {
    * over a mutated listing is the only assertion here that would fail if
    * `corpusFor` stopped appending the store text.
    */
-  it("catches a banned phrase planted in either store surface", () => {
+  it("catches a banned phrase planted in any store surface", () => {
     const planted = storeListingText(
       JSON.stringify({ subtitle: "Calm, guided self-help tools" }),
       `## Verbatim, as saved on 2026-01-01\n\n> A guided self-help app.\n`,
+      `## Verbatim, as submitted\n\n> Now with guided self-help.\n`,
     );
 
     const caught = GUIDED_SELF_HELP.filter((rule) =>
@@ -1762,18 +1764,35 @@ describe("the store listings are in scope (#1760)", () => {
     expect(planted.map(({ surface }) => surface)).toEqual([
       APPLE_INFO_SURFACE,
       PLAY_VERBATIM_SURFACE,
+      APPLE_RELEASE_NOTES_SURFACE,
     ]);
   });
 
-  it("refuses to yield an empty corpus when the Play verbatim block moves", () => {
-    expect(() => storeListingText(`{"subtitle":"x"}`, "# no verbatim heading here\n")).toThrow(
+  /**
+   * ☠️ Both blockquote surfaces, not just Play. The release-notes file is the
+   * one whose text cannot be corrected after it ships (#2597), so a corpus that
+   * quietly empties there is worse than one that empties on Play.
+   */
+  it("refuses to yield an empty corpus when either verbatim block moves", () => {
+    const okNotes = `## Verbatim, as submitted\n\n> fine.\n`;
+    const okPlay = `## Verbatim, as saved on 2026-01-01\n\n> fine.\n`;
+
+    expect(() => storeListingText(`{"subtitle":"x"}`, "# no heading\n", okNotes)).toThrow(
       /Verbatim/,
     );
     expect(() =>
       storeListingText(
         `{"subtitle":"x"}`,
         "## Verbatim, as saved on 2026-01-01\n\nno quote lines\n",
+        okNotes,
       ),
+    ).toThrow(/Verbatim/);
+
+    expect(() => storeListingText(`{"subtitle":"x"}`, okPlay, "# no heading\n")).toThrow(
+      /Verbatim/,
+    );
+    expect(() =>
+      storeListingText(`{"subtitle":"x"}`, okPlay, "## Verbatim, as submitted\n\nno quotes\n"),
     ).toThrow(/Verbatim/);
   });
 });
@@ -2310,6 +2329,23 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
   it("leaves the Play transcript out, though it carries the method today", () => {
     expect(FRAME_CARRIERS.some(({ id }) => id.includes("play-listing"))).toBe(false);
     expect(METHOD.en.test(readFile("store/play-listing.md").text)).toBe(true);
+  });
+
+  /**
+   * Exclusion 3 (#2604). The release notes describe a **subtraction**, so they
+   * make no claim about what Selftend *is* — the only thing § 3 governs — and
+   * the modules appear there as the bare acronym, which this file's own
+   * `METHOD` note already rules is not naming the method.
+   *
+   * ☠️ **It asserts the exclusion and NOT the string, unlike its two siblings.**
+   * `apple-info.json`'s pins `METHOD.en === false` and Play's pins `true`;
+   * both are claims about copy that is already live and stable. This field is
+   * **version-scoped and replaced at every submission** (`store/apple-release-notes.md`
+   * says so), so pinning the method either way here would re-create exactly the
+   * rot the `docs/positioning.md` fact block below this one exists to catch.
+   */
+  it("leaves the App Store release notes out, and asserts nothing about their text", () => {
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-release-notes"))).toBe(false);
   });
 });
 
