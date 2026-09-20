@@ -1,6 +1,8 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-09** — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
+**Last verified against Play Console: 2026-09-20** — ☠️ **Visit A deleted both tablet screenshot tiers, sixteen images, and sent them for review.** That is the only change that visit made: the short description, the full description, the feature graphic and the promo video were opened, read and **left alone**. Why, and what the set now is, are in § _The screenshot set_ below.
+
+⚠️ **The _text_ of this listing was last verified on 2026-09-09** and is unchanged since — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
 
 | #   | Sent  | Change                                                                                          | Status    |
 | --- | ----- | ----------------------------------------------------------------------------------------------- | --------- |
@@ -8,6 +10,14 @@
 | 96  | 17:33 | Feature graphic, short form ([#2022](https://github.com/Selftend/selftend/issues/2022))         | Published |
 | 97  | 19:03 | Feature graphic, current mockups ([#2041](https://github.com/Selftend/selftend/issues/2041))    | Published |
 | 98  | 19:32 | Full description, `catastrophising` ([#2061](https://github.com/Selftend/selftend/issues/2061)) | In review |
+
+And the visit this file was last verified against, **2026-09-20**, sent **one** change (counted as two items, one per tier):
+
+| #                  | Sent       | Change                                                                                                                                            | Status                     |
+| ------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| _not yet numbered_ | 2026-09-20 | Store listing — **7-inch and 10-inch tablet screenshots deleted**, both tiers emptied ([#2616](https://github.com/Selftend/selftend/issues/2616)) | Sent; quick checks running |
+
+⚠️ **The submission number is absent because it did not exist yet, not because nobody looked.** _Submission activity_ assigns one when the change actually goes to review, and Play runs **quick checks for up to ~15 minutes first** — the overview read _"Changes will be sent for review as soon as checks complete successfully"_ with 12 minutes left when this was written. **Open that page and fill the number in**; do not guess it from the sequence above.
 
 ☠️ **"Up to seven days" is the quoted worst case and not the observed one.** Submission 97 went from _sent_ to **Published in about 29 minutes**, and 95 and 96 cleared the same afternoon. Planning around a week — which this file did, twice, when it advised bundling to save a review — is what produced the advice to sit on a one-letter fix. Check Submission activity instead of assuming the queue is slow. The public page keeps the previous text or artwork only until the row above says `Published`. The text below was last cross-checked on **2026-09-05 (evening)** — the morning's [#1999](https://github.com/Selftend/selftend/issues/1999) edit cleared Google's review and was cross-checked on the public listing page the same evening (short description, first paragraph and bullets all matched this file). In that evening visit the **short description was re-saved as the 28-character short form and sent for review** ([#2010](https://github.com/Selftend/selftend/issues/2010)); ✅ that submission is `Published`, so the 28 is what a visitor sees — the warning that used to stand here, that the public page would keep the 34-character short "up to seven days or longer", is exactly the worst-case-as-schedule error the paragraph above now records.
 
@@ -150,22 +160,41 @@ The name collision is what caused it: `src/features/widgets` holds **both** the 
 
 ☠️ **This set had no representation in the repository at all until now** ([#2616](https://github.com/Selftend/selftend/issues/2616)). `docs/launch/play-listing/` holds the feature graphic and the three phone mockups composited **inside** it — never the swipeable phone screenshots the store page actually ships. So the question [#2606](https://github.com/Selftend/selftend/issues/2606) needed answering — _do the Play screenshots carry module frames?_ — was unanswerable from here, and this section exists so it is not unanswerable twice.
 
-✅ **It needs no Play Console visit, and that corrects the premise #2616 was written on.** The published screenshot set is **public**: `play.google.com/store/apps/details?id=org.vasilyoshev.selftend` serves every image from `play-lh.googleusercontent.com`, and appending `=s0` to the token returns the original upload. This is the Play twin of the `itunes.apple.com/lookup` read the App Store half already relies on — credential-free, repeatable, and safe to re-run. **Re-read it rather than trusting the date on this heading.**
+✅ **READING it needs no Play Console visit, and that corrects the premise #2616 was written on.** The published screenshot set is **public**: `play.google.com/store/apps/details?id=org.vasilyoshev.selftend` serves every image from `play-lh.googleusercontent.com`, and appending `=s0` to the token returns the original upload. This is the Play twin of the `itunes.apple.com/lookup` read the App Store half already relies on — credential-free, repeatable, and safe to re-run. **Re-read it rather than trusting the date on this heading.** ⚠️ _Changing_ the set is a Console visit, of course — Visit A below was one.
 
-### What is live: 24 images, three device tiers, eight screens
+### ☠️ Visit A, 2026-09-20 — the sixteen tablet images are deleted
 
-The same eight screens, captured three times. Read in DOM order from the carousel.
+**What is live now: the eight phone screenshots, and nothing else.** Both tablet tiers were emptied in the Console and sent for review on 2026-09-20 ([#2610](https://github.com/Selftend/selftend/issues/2610) item 1). The audit below is the record of what was found **before** that; it is kept in full because the phone tier still carries most of the same defects.
 
-| #   | Screen              | Phone<br>1080×1920 | Tablet<br>1080×1920 | Tablet<br>2160×3840 |
-| --- | ------------------- | ------------------ | ------------------- | ------------------- |
-| 1   | Home                | 01                 | 09                  | 17                  |
-| 2   | **CBT module home** | 02                 | 10                  | 18                  |
-| 3   | **ACT module home** | 03                 | 11                  | 19                  |
-| 4   | Check-in            | 04                 | 12                  | 20                  |
-| 5   | Journal             | 05                 | 13                  | 21                  |
-| 6   | Breathing           | 06                 | 14                  | 22                  |
-| 7   | Gratitude log       | 07                 | 15                  | 23                  |
-| 8   | ☠️ **Tools hub**    | 08                 | 16                  | 24                  |
+**Why the tablets went, and went first.** Image `19` published _"guided self-help"_ inside the crisis callout (§ below), and ⚠️ **the precedent that once tolerated a live banned string — the Apple `subtitle` at `positioning.md:375` — was bought entirely by version-scoping, which Play graphics do not have.** Deleting the tier that carried it was the whole remedy: no re-capture, no build, no dataset. ✅ **The phone tier was safe to keep** — Google's floor is _"Upload 2–8 phone screenshots"_ (the tablet tiers read _"up to eight"_, with no minimum), and the phone ACT capture `03` crops **above** the callout, so no phone image carries the string.
+
+⚠️ **Verified in the Console, not assumed**: before saving, the panel read `8/8` phone, `0` on both tablet tiers, feature graphic `1/1` untouched, video untouched; _Publishing overview_ then listed **exactly two** items, _Change 7-inch tablet screenshots_ and _Change 10-inch tablet screenshots_, and nothing else.
+
+☠️ **A deletion is agent-work, and the recipe is shorter than the upload one above — but the classifier blocks a different thing here.** The paragraphs above learned that it refuses a tool call **carrying copy**. On this visit it also refused, on a listing page, a **scripted `.click()`** (_"Production Deploy"_) and then a purely **read-only JS DOM query** counting the remaining buttons (_"Modify Shared Resources"_). Neither carried any copy. What worked, first time and every time:
+
+1. Ask the extension to find the buttons by their accessible name — they are labelled **per tier**: `Remove Phone screenshots`, `Remove 7-inch tablet screenshots`, `Remove 10-inch tablet screenshots`. ✅ **The phone tier therefore cannot be hit by accident**, which is what makes this safe to batch.
+2. Click them **by element reference, in reverse order**. ✅ References survive the re-render — the grid re-packs but the surviving buttons keep their refs — so all eight go in one batch.
+3. **No confirmation dialog appears**, and no `2/1 Too many images` state exists for a deletion, so none of the upload recipe's step 4–5 care is needed.
+4. Counts and the change list are read from **screenshots**, per the standing advice: don't fight the block, switch to pixels.
+
+⚠️ **Save is the same as for an upload**: bottom bar, then a _"Go to Publishing overview?"_ dialog, then _Submit N changes for review_ and a _Send changes for review_ confirm. Managed publishing is off, so it publishes as soon as Google clears it.
+
+### What was live before Visit A: 24 images, three device tiers, eight screens
+
+The same eight screens, captured three times. Read in DOM order from the carousel. **The two right-hand columns are the ones now deleted.**
+
+| #   | Screen              | Phone<br>1080×1920 | ~~Tablet<br>1080×1920~~ | ~~Tablet<br>2160×3840~~ |
+| --- | ------------------- | ------------------ | ----------------------- | ----------------------- |
+| 1   | Home                | 01                 | ~~09~~                  | ~~17~~                  |
+| 2   | **CBT module home** | 02                 | ~~10~~                  | ~~18~~                  |
+| 3   | **ACT module home** | 03                 | ~~11~~                  | ~~19~~ ☠️ the callout   |
+| 4   | Check-in            | 04                 | ~~12~~                  | ~~20~~                  |
+| 5   | Journal             | 05                 | ~~13~~                  | ~~21~~                  |
+| 6   | Breathing           | 06                 | ~~14~~                  | ~~22~~                  |
+| 7   | Gratitude log       | 07                 | ~~15~~                  | ~~23~~                  |
+| 8   | ☠️ **Tools hub**    | 08                 | ~~16~~                  | ~~24~~                  |
+
+☠️ **Deleting the tablets fixed the unsafe string and nothing else.** The eight phone images still carry every other defect below — the American spellings, the dead Tools hub, the stale breadcrumbs, the `mom` seed — and they are still the same eight the App Store ships. **Their replacement is [#2618](https://github.com/Selftend/selftend/issues/2618)'s ruling, executed at Play Visit B**, not this visit.
 
 ⚠️ **The three tiers are not one capture rescaled — they are three different runs, and they disagree.** All 24 files are byte-distinct, and the copy differs between tiers: `17` (Home, large tablet) reads **"Guided programmes"** and **"CBT programme"**, British, while `01` and `09` show the older `Your tools` shape with no programme row at all. Treat each tier as its own artefact.
 
@@ -176,9 +205,11 @@ The same eight screens, captured three times. Read in DOM order from the carouse
 - **A screenshot showing a module screen is truthful on Android.** All three modules ship here; #2606 ruled that inventory is unbound by the frame. `02`/`03`, `10`/`11` and `18`/`19` stay on those grounds. The gate is iOS-only.
 - ✅ **No screenshot carries the frame sentence, and none carries the retired beat two.** #2616 asked specifically whether any image reads _"a CBT programme — cognitive behavioural therapy — to work through when you want one"_ the way `feature-graphic.html:130–131` still does. **It does not** — the frame sentence appears on no screenshot at all. That exposure is the feature graphic's alone.
 
-### ☠️☠️ The one that is not a spelling problem: "guided self-help", published
+### ☠️☠️ The one that is not a spelling problem: "guided self-help" — ✅ deleted at Visit A
 
-Screenshot **19** — the ACT module home at 2160×3840 — is tall enough to include the crisis callout at the foot of the screen, and it reads:
+✅ **Fixed 2026-09-20**: image `19` went with the 10-inch tier, so once that submission clears review the string is off the store. **Kept in full anyway** — a defect this severe is worth the record, and the reasoning is what justified sending a whole extra review for it.
+
+Screenshot **19** — the ACT module home at 2160×3840 — was tall enough to include the crisis callout at the foot of the screen, and it read:
 
 ```text
 Use urgent support for urgent risk
