@@ -18,10 +18,19 @@
 **The copy it carries** (#2022, 2026-09-05 reposition): the headline is the
 short form _“Private mental health tools.”_ and the line beneath it is the
 frame sentence in the brand-omitted form `auth:landing.subtitle` uses, because
-the brand block already prints “Selftend”. The sentence is not decoration:
+the brand block already prints “Selftend”. ☠️ **Re-rendered 2026-09-20** to the
+post-retreat sentence — _“…everyday tools for right now, yours to pick from at
+whatever pace suits you.”_ — replacing the beat-two form this asset had carried
+live on Play since 2026-09-06 (#2610 item 10). ⚠️ **The old rationale is dead
+and is not replaced by a new one.** It read: _“The sentence is not decoration:
 `docs/positioning.md`'s clause 1 requires the method on any surface that names
 the category, and since the category noun stopped carrying CBT, the sentence is
-the only thing putting it there. ☠️ The headline is set at 28px, not 30 — at
+the only thing putting it there.”_ **Clause 1 retired on 2026-09-18 and the
+sentence no longer carries the method at all** (#2582, #2608); it is here
+because it is the frame sentence, and for no stronger reason than that.
+✅ **Inverse of #2041**: that defect lived only as pixels so the fix was new
+captures; this one is **text in the HTML**, so the fix is an edit and a
+re-render. **The mockups are unchanged — verified pixel-identical.** ☠️ The headline is set at 28px, not 30 — at
 30 it measures exactly the 380px column and wraps to a `…mental health / tools.`
 orphan.
 
