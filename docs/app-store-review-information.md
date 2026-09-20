@@ -162,7 +162,9 @@ The app contains **no protected third-party material**. All content is written b
 
 Replaces the current Notes content, which covers only part of this. Device values are filled in. Credentials go in the Sign-In Information fields, never here.
 
-**2,498 characters** as written.
+**2,789 characters** as written — ⚠️ **re-measured 2026-09-20 after the catch-up** ([#2602](https://github.com/Selftend/selftend/issues/2602)), replacing a stale 2,498. **Re-measure whenever this block is edited**, because this is the doc's live product and the number is the only thing that catches a silent drift in it.
+
+☠️ **Do not assume the 4,000-character reply cap applies here.** [#2597](https://github.com/Selftend/selftend/issues/2597) found **no documented character limit** for the Notes field — the 4,000 is the _reply_ cap, a different field. Neither assume a limit nor assume headroom; if a paste is ever truncated, record the real limit here.
 
 ```text
 Selftend is a free, non-profit, open-source wellness and self-help app (AGPL-3.0) - a set of mental health tools you use on your own. No in-app purchases, no subscriptions, no ads, no analytics SDKs, no tracking, and no AI features of any kind.
