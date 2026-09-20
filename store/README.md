@@ -73,3 +73,13 @@ The drift check going red is not automatically a bug — it means the two copies
 - **The repository is right** (something changed in App Store Connect that should not have): fix it in App Store Connect. This is the case the 18+ episode was.
 
 Do not silence the check to make it green.
+
+### ⚠️ An expected red window on `description`, opening 2026-09-21 (dated note)
+
+☠️ **From the scheduled run of 2026-09-21 06:23 UTC, the listing half of this check will report `description` drifted, and that is correct rather than a bug.** ⚠️ It is **not** red yet, despite what it is easy to assume: the last run (2026-09-16) was green, and none has run since [#2582](https://github.com/Selftend/selftend/issues/2582)'s 970-character rewrite landed on 2026-09-18.
+
+**Neither side is wrong, so neither of the two remedies above applies.** The committed value is the rewrite; the live value is the original the approved build shipped. ☠️ **The committed one physically cannot reach App Store Connect yet** — every metadata field on a _Ready for Distribution_ version renders disabled, so the rewrite necessarily rides the same submission as the first gated build ([#2597](https://github.com/Selftend/selftend/issues/2597)). Editing the listing back would make it false for the version actually in the field.
+
+**So: tolerate and annotate.** The job is deliberately **not a required check** precisely for cases like this one — _a red run is a question rather than a verdict_ — and this note is the answer to the question, written down before anybody has to ask it. **Do not mute it, do not narrow its scope, and do not "fix" either side.** The window closes on its own when the gated submission goes live; delete this note then.
+
+_Recorded by [#2610](https://github.com/Selftend/selftend/issues/2610) item 13._
