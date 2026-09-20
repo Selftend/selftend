@@ -1831,7 +1831,9 @@ describe("the store listings are in scope (#1760)", () => {
  *  1. **Capped fields are out by RULE, not by timing.** `subtitle` (30) and
  *     Play's short description (80) carry the short form — *"Private mental
  *     health tools."*, 28 characters, no method — because the frame sentence is
- *     174 and does not fit. A pin over them is red by design, and no fix
+ *     132 and does not fit. ⚠️ The number was 174 until #2582 removed beat two
+ *     (corrected by #2608); the CONCLUSION survives at 132, since 132 still
+ *     exceeds both 30 and 80. A pin over them is red by design, and no fix
  *     anywhere turns it green. ⚠️ #1790 was filed believing it was blocked
  *     until #1760 cleared `subtitle`; it never was. #1760's own decided
  *     replacement is that same method-free 28, so closing it changes nothing
@@ -1854,7 +1856,7 @@ describe("the store listings are in scope (#1760)", () => {
  */
 const SHORT_FIELD_EXCEPTION = "description";
 
-describe("the frame's second beat survives on the surfaces this repo ships (#1790)", () => {
+describe("the frame's second beat is GONE from the surfaces this repo ships (#1790, inverted by #2582)", () => {
   /**
    * The method as beat two names it, per locale.
    *
