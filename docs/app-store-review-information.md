@@ -4,7 +4,7 @@ For [Task: write Selftend's App Review Information doc (items 2-6)](https://gith
 
 Sibling of the WikiCanvas doc of the same name, and the same kind of artifact: **the worked-out answer with the facts cited, so replying to App Review is transcription rather than judgement** — this time and for every future submission.
 
-Submission `ea996c51-00d9-4382-9a90-1449ad70f61c` (0.11.1, build 6) was rejected 2026-08-14 under **Guideline 2.1 — Information Needed**, citing 2.1.0 Performance: App Completeness and asking for seven items. No bug or crash was cited. The paste-ready blocks are at the bottom.
+Submission `ea996c51-00d9-4382-9a90-1449ad70f61c` (0.11.1, build 6) was rejected 2026-08-14 under **Guideline 2.1 — Information Needed**, citing 2.1.0 Performance: App Completeness and asking for seven items. No bug or crash was cited. ⚠️ **That letter is answered and closed** — 0.21.0 is approved. What this document is _for_ now is the **Notes** block at the bottom, which mirrors a live App Store Connect field and is kept continuously true; Items 3–7 are the worked-out source a future reply is assembled from.
 
 ---
 
@@ -27,11 +27,13 @@ Before sending, Sign-In Information was switched to **`demo@selftend.org`** (own
 
 ---
 
-## ⚠️ This document describes build 6, not `dev`
+## ⚠️ The build-6 delta, kept as history
 
-Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.18.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the Looking back screen was rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned — and since 2026-09-15 `dev` has no Looking back screen at all — its row, route and band left with #2431, so the two tables and both paste blocks below describe a screen `dev` no longer has. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
+☠️ **Superseded 2026-09-20** ([#2602](https://github.com/Selftend/selftend/issues/2602)). This section used to be the document's freeze rule, written when Apple was reviewing **0.11.1 build 6** and `dev` was at 0.18.0; it tracked the deltas between them — a tenth tools entry, the mood tool relabelled "Check-in", the Looking back screen rebuilt and then removed outright ([#2431](https://github.com/Selftend/selftend/issues/2431)). **The live approved version is now 0.21.0 and build 6 is long gone**, so the deltas are history and the rule they served has been re-scoped — see § _Which build this document describes_ below, which is the live one.
 
-Two corrections this produced, recorded so no later session re-inherits them:
+✅ **[#2457](https://github.com/Selftend/selftend/issues/2457) is absorbed here.** Its four _Looking back_ edits are done in this pass rather than waiting for a future submission: `/progress` has redirected since **v0.21.0**, so they were overdue against the version live today, not pending against one to come. Its instruction that survives and is kept: **name edits by table and block, never by line.**
+
+Two corrections from the build-6 era, recorded so no later session re-inherits them:
 
 - The shot-list on [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) says the tools index shows **ten** tools. In build 6 it shows **eight**. The tenth-tool count is a `dev` fact.
 - That same shot-list names `vasil.yoshev+demo@gmail.com` as the reviewer account. Superseded by [Task: verify and record reviewer access to Selftend](https://github.com/Selftend/selftend/issues/1005): the reviewer gets **`demo@selftend.org`**.
@@ -56,32 +58,37 @@ Two corrections this produced, recorded so no later session re-inherits them:
 
 ## Item 3 — What the app does, and who it is for
 
-Selftend is a free, non-profit, open-source **wellness and guided self-help** app. It gives a person a small set of everyday tools for noticing how they are doing and doing something about it, and structured educational material drawn from CBT and ACT.
+Selftend is a free, non-profit, open-source **wellness and self-help** app — a set of **mental health tools** a person uses on their own, with no practitioner involved. It gives a person a small set of everyday tools for noticing how they are doing and doing something about it, and structured educational material drawn from CBT and ACT.
 
 **The problem it solves:** self-help techniques that work are scattered across books, worksheets and paid apps, and the apps that do collect them tend to monetise attention — streaks that punish a missed day, reminders on by default, subscriptions in front of the useful part. Selftend puts the tools in one place, free, with the retention mechanics deliberately left out.
 
-**What is in build 6:**
+**What is in the live version, 0.21.0** (⚠️ re-derived at the `v0.21.0` tag, not carried forward from build 6):
 
-| Surface       | Contents                                                                                                                                                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tools hub     | Eight tools — mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking. Each records entries and shows history                                                                                               |
-| Modules       | **CBT** (Beta) and **ACT** (Beta), both fully usable — thought records, worry, beliefs, activities, exposure, goals; defusion, values, committed action, urge surfing. **DBT** is an overview screen marked "On the roadmap" (see the note below) |
-| Routines      | User-built routines, with their own navigation entry                                                                                                                                                                                              |
-| Looking back  | Progress across the tools                                                                                                                                                                                                                         |
-| Home          | A dashboard the user assembles from 28 widgets; nothing is seeded without the user choosing it                                                                                                                                                    |
-| Notifications | Twelve reminder targets - one general, eleven per tool - **every one off by default**                                                                                                                                                             |
+| Surface   | Contents                                                                                                                                                                                                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tools     | Eight tools — **Check-in**, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking. Each records entries and shows history. ⚠️ **They are reached from Home's _Tools_ section and from their eight individual sidebar entries — there is no "Tools hub" screen** |
+| Modules   | **CBT**, **ACT** and **DBT**, all three fully usable — thought records, worry, beliefs, activities, exposure, goals; defusion, values, committed action, urge surfing; and the DBT skill groups, its programme and its records                                                            |
+| Routines  | User-built routines, with their own navigation entry                                                                                                                                                                                                                                      |
+| Home      | A dashboard the user assembles from 28 widgets; nothing is seeded without the user choosing it                                                                                                                                                                                            |
+| Reminders | Twelve reminder targets - one general, eleven per tool - **every one off by default**                                                                                                                                                                                                     |
 
-**Target audience:** adults aged 18 and older who want structured self-help they can run themselves. It is **not** a diagnosis engine, a therapist replacement, or crisis support, and the app says so in six separate places — see item 7.
+**Target audience:** people aged **13 and older**, or their country's higher floor — 14, 15 or 16 across much of Europe — who want structured self-help they can run themselves. The floor is asked before the app opens and is **never below 13**; it is per-country, and the table is in [`docs/age-floor.md`](age-floor.md). There is no minor flag and no parental-consent path: the protections are universal, so teen-grade defaults apply to everyone. It is **not** a diagnosis engine, a therapist replacement, or crisis support, and the app says so in six separate places — see item 7.
 
 **Value:** the record is the point. Entries are private, encrypted at rest, exportable, and deletable, and the app never charges, advertises, or nags.
 
-### ⚠️ The one 2.1 App Completeness exposure worth naming
+### ✅ The 2.1 App Completeness exposure is gone, and the section that named it with it
 
-The **DBT** module is a nav entry badged **"Soon"** leading to a screen headed _"On the roadmap"_. Under a citation that is specifically about app completeness, that is the most plausible thing a reviewer would point at, and it is the only "coming soon" surface in build 6 — the widget picker's `Soon` chip exists in code but has nothing to render, because all 28 catalogued widgets are implemented.
+☠️ **Removed 2026-09-20** ([#2602](https://github.com/Selftend/selftend/issues/2602)). This document used to carry a section naming the **DBT** module's **"Soon"** badge and its _"On the roadmap"_ screen as the most plausible thing a reviewer would point at under a completeness citation. [#1020](https://github.com/Selftend/selftend/issues/1020) removed the badge, the screen and the **"Beta"** badges on CBT and ACT **before 0.18.0**, and `test/no-unshipped-status-copy.test.ts` has guarded them since. **The exposure does not exist in the live build, so the section goes with it rather than being reworded.**
 
-A copy change cannot reach build 6, so the only lever is the reply, which therefore names DBT as an educational overview of a planned module rather than leaving the reviewer to discover it.
+### ☠️ Which build this document describes — re-scoped 2026-09-20
 
-⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and it is measured with only 11 characters to spare.
+The rule this section used to carry read: _"this document must not be updated to match `dev` until the release that carries it is the build under review."_ ⚠️ **The reasoning was sound and the referent was wrong.** It read the pin as _the next submission_; the pin is _the version currently approved on the App Store_. Those coincided in August and have not since.
+
+> **The build-describing sections** — Item 3's contents table, Item 4's _How to reach it_ table, and this paragraph — describe **the version live on the App Store**, today **0.21.0**. They are updated when a new version goes live, **never to match `dev`**.
+>
+> **The paste block and the App Store Connect fields it mirrors are not frozen at all.** App Review Information is private to the reviewer and **editable at any time** ([#2597](https://github.com/Selftend/selftend/issues/2597)), so it is kept continuously true. There is no build, no version and no submission to wait for.
+
+☠️ **This is what stops "catch the document up" being executed as one careless sweep to `dev`.** `dev` is v0.23.0 and **gated** — iOS ships no modules there. The live build is **0.21.0** and **predates the gate**. Syncing this file to `dev` today would make it lie about the binary a reviewer would actually open, which is the exact failure the freeze rule exists to prevent. ⚠️ **Four module facts therefore wait**: Item 3's _Modules_ row, Item 4's _CBT / ACT modules_ row, and the two module sentences in the Notes block. They are **true of live 0.21.0** and false of the gated build, and they are the only part of this file that rides the gated submission.
 
 ## Item 4 — Setting up and accessing the main features
 
@@ -91,18 +98,17 @@ A copy change cannot reach build 6, so the only lever is the reply, which theref
 
 Sign-in also offers **Sign in with Apple** and **Google Sign-In**; either creates a fresh account.
 
-| Feature           | How to reach it                                                                                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The eight tools   | **Tools** in the navigation; each tile opens the tool and shows its own history                                                                                                                         |
-| CBT / ACT modules | **Modules** in the navigation                                                                                                                                                                           |
-| Home dashboard    | Landing screen after sign-in; widgets are added and reordered by the user                                                                                                                               |
-| Routines          | **Routines** in the navigation                                                                                                                                                                          |
-| Looking back      | **Looking back** in the navigation                                                                                                                                                                      |
-| Reminders         | Settings → Reminders, or the **Notifications** screen. Enabling one raises the iOS permission prompt                                                                                                    |
-| Profile picture   | Settings → profile picture, which raises the photo-library permission prompt                                                                                                                            |
-| Crisis guidance   | Linked from the signed-out sign-in screen's footer — reachable **before** sign-in — and, once signed in, from **Support**, from **Legal**, and from a crisis bar carried on the module exercise screens |
-| Data export       | Settings → Account → export data                                                                                                                                                                        |
-| Account deletion  | Settings → Account → delete account. Also documented at <https://selftend.org/account-deletion>                                                                                                         |
+| Feature           | How to reach it                                                                                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The eight tools   | Home's **Tools** section, or each tool's own entry in the sidebar — **Check-in**, Journal, Breathing, Meditation, Grounding, Gratitude log, Sleep, Habit tracking. Each opens the tool and shows its own history |
+| CBT / ACT modules | **CBT** and **ACT** in the sidebar (and **DBT** beside them)                                                                                                                                                     |
+| Home dashboard    | Landing screen after sign-in; widgets are added and reordered by the user                                                                                                                                        |
+| Routines          | **Routines** in the navigation                                                                                                                                                                                   |
+| Reminders         | Settings → Reminders, or the **Reminders** screen in the sidebar. Enabling one raises the iOS permission prompt                                                                                                  |
+| Profile picture   | Settings → profile picture, which raises the photo-library permission prompt                                                                                                                                     |
+| Crisis guidance   | Linked from the signed-out sign-in screen's footer — reachable **before** sign-in — and, once signed in, from **Support**, from **Legal**, and from a crisis bar carried on the module exercise screens          |
+| Data export       | Settings → Account → export data                                                                                                                                                                                 |
+| Account deletion  | Settings → Account → delete account. Also documented at <https://selftend.org/account-deletion>                                                                                                                  |
 
 ## Item 5 — External services
 
@@ -135,9 +141,9 @@ What varies is **interface language**, which follows the device locale and can b
 
 Decided in [Grilling: how does Selftend answer item 7 without inviting a medical classification?](https://github.com/Selftend/selftend/issues/1002), which checked each claim against the shipped copy rather than assuming it. Transcribed here in full.
 
-**No.** Selftend is a wellness and guided self-help app in the **Health & Fitness** category — not Medical, and with no secondary category. It requires no licence or professional accreditation to operate: it does not diagnose, treat, prescribe, or provide medical, psychological or professional advice, and it makes no claim of clinical or health outcomes anywhere in the app or the listing. A search of the English copy for efficacy language — reduce, relieve, improve, cure, paired with anxiety, depression, stress, symptoms — returns nothing.
+**No.** Selftend is a wellness and self-help app in the **Health & Fitness** category — not Medical, and with no secondary category. It requires no licence or professional accreditation to operate: it does not diagnose, treat, prescribe, or provide medical, psychological or professional advice, and it makes no claim of clinical or health outcomes anywhere in the app or the listing. A search of the English copy for efficacy language — reduce, relieve, improve, cure, paired with anxiety, depression, stress, symptoms — returns nothing.
 
-The boundary is stated to users, not only to App Review, in at least six places: Settings → About, Support, the onboarding wizard, the privacy policy, the product-boundary description, and a dedicated FAQ entry (_"Is Selftend therapy?"_ — "No. Selftend is guided self-help. It is not therapy, counseling, diagnosis, treatment, or a substitute for a licensed mental health professional"), published at <https://selftend.org/faq>.
+The boundary is stated to users, not only to App Review, in at least six places: Settings → About, Support, the onboarding wizard, the privacy policy, the product-boundary description, and a dedicated FAQ entry (_"Is Selftend therapy?"_ — "No. Selftend is a set of mental health tools, including a CBT programme, that you use on your own, with no practitioner involved. It is not therapy, counselling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."), published at <https://selftend.org/faq>. ⚠️ **Quoted from `policies.json` at edit time, not carried forward** — the previous version of this line quoted a sentence the app had stopped shipping, which is how a "record" becomes a misquotation.
 
 The app teaches self-help techniques drawn from CBT and ACT, and includes educational material describing what those approaches are clinically used for. **That material is descriptive, never diagnostic**: the app never assesses a user, never assigns a condition, and never recommends a course of treatment.
 
@@ -159,16 +165,19 @@ Replaces the current Notes content, which covers only part of this. Device value
 **2,498 characters** as written.
 
 ```text
-Selftend is a free, non-profit, open-source wellness and guided self-help app (AGPL-3.0). No in-app purchases, no subscriptions, no ads, no analytics SDKs, no tracking, and no AI features of any kind.
+Selftend is a free, non-profit, open-source wellness and self-help app (AGPL-3.0) - a set of mental health tools you use on your own. No in-app purchases, no subscriptions, no ads, no analytics SDKs, no tracking, and no AI features of any kind.
 
 ACCOUNT
 An account is required. Reviewer credentials are in the Sign-In Information fields. The account is staged, pre-seeded with sample entries, and belongs to no real person. Onboarding is already completed and the current policy version already accepted, so no wizard and no consent screen stands between sign-in and the app. Sign-in also offers Sign in with Apple and Google Sign-In, either of which creates a fresh account.
 
 WHAT THE APP IS, AND IS NOT
-It is wellness and guided self-help. It is not therapy, medical care, diagnosis, treatment, or emergency support, and it makes no clinical or outcome claims. The app states this to users in Settings, Support, onboarding, the privacy policy and the FAQ.
+It is a set of mental health tools you use on your own, with no practitioner involved. It is not therapy, medical care, diagnosis, treatment, or emergency support, and it makes no clinical or outcome claims. The app states this to users in Settings, Support, onboarding, the privacy policy and the FAQ.
+
+AUDIENCE
+People aged 13 and older, or their country's higher floor - 14, 15 or 16 across much of Europe. The floor is asked before the app opens and is never below 13. There is no minor flag and no parental-consent path: the protections are universal, so teen-grade defaults apply to everyone.
 
 WHAT IT CONTAINS
-Eight tools (mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking), two usable modules of educational CBT and ACT exercises, user-built routines, an insights screen, and a home dashboard the user assembles from 28 widgets. The DBT module is an overview screen for a planned module and is labelled "On the roadmap" in the app; everything else is fully functional.
+Eight tools (Check-in, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking), three usable modules of educational CBT, ACT and DBT exercises, user-built routines, and a home dashboard the user assembles from 28 widgets. Everything is fully functional.
 
 CRISIS GUIDANCE
 Kept separate from the self-help features and reachable before sign-in, from the sign-in screen footer, and afterwards from Support, from Legal and from a crisis bar on the module exercise screens. It points to external emergency services and to the Find A Helpline directory, and states that the app is not monitored.
@@ -189,41 +198,28 @@ TESTED ON
 iPhone 17 running iOS 26.6.
 ```
 
-## Paste block — App Review **reply**
+## The 2026-08-15 reply, as a record
 
-⚠️ **Item 3 was corrected 2026-09-02 — the reply that was actually sent on 2026-08-15 said "adults and older teenagers".** That wording contradicted the app's own consent checkbox ("I am 18 or older") and the adults-only launch posture recorded in `docs/product-principles.md`; [#1622](https://github.com/Selftend/selftend/issues/1622) records the mismatch. The block below now carries the corrected sentence so the next submission inherits it rather than the sent draft. The App Store Connect **Notes** field still holds the sent wording and is updated with the next submission — it is not urgent, and it does not touch the age rating. Whether Selftend ever admits under-18s is the teen-access effort's decision, not this document's.
+☠️ **Demoted from a paste block on 2026-09-20** ([#2602](https://github.com/Selftend/selftend/issues/2602)). What stood here was **neither the text that was sent nor a text anyone can send**, and keeping it as "paste-ready" was a trap rather than an asset:
 
-Answers items 1–7 in Apple's order so a reviewer can tick them off. Attach `selftend-0.11.1-build6-review.mp4` to the same reply. Device values are filled in; re-measure if the confirmed model name is longer than "iPhone 17".
+- It was **item-numbered against one specific rejection letter** — submission `ea996c51`, _2.1 Information Needed_, seven items. That letter is **answered and closed**; 0.21.0 is approved. A future rejection cites different items in a different order.
+- It had been **corrected on 2026-09-02**, so it no longer matched the reply that actually went out — a hybrid of a sent artefact and a draft, faithful to neither.
 
-⚠️ **The shot index carries no timestamps.** [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) decided the reply would index the recording by time. It does not, and cannot: at 11 characters spare there is no room for ten `mm:ss` markers, and timestamps would have to be re-derived from every re-take. The index is in shot order instead, which matches the recording exactly and survives a re-cut. If timestamps are wanted, something else has to come out.
+**What was sent, as history:** the reply went out on 2026-08-15 at **3,983 of 4,000 characters**, with `selftend-0.11.1-build6-review.mp4` attached, answering items 1–7 in Apple's order. ⚠️ **That number is history and is not re-measured** — it describes an artefact that cannot be changed, and it stops being a budget the moment nobody is pasting the block.
 
-⚠️ **3,989 characters as written (re-measured 2026-09-02) — only 11 spare against the 4,000-character reply cap.** Substituting the two placeholders moves it by a few characters either way, so **re-measure before sending**; a device name longer than "iPhone 15 Pro" needs a sentence trimmed somewhere. This is the tightest constraint on the whole reply, and it is why the wording is dense.
+✅ **The reusable source is Items 3–7 above**, which is where the document's stated purpose actually lives: _the worked-out answer with the facts cited, so replying to App Review is transcription rather than judgement._ A future reply is assembled from those, against whatever items that letter cites.
 
-```text
-Answering each item in order.
+☠️ **Two constraints fall away with the block, and neither needs deciding again.** The _"11 characters spare"_ squeeze that shaped this document's density binds nothing now; and the refusal to timestamp the shot index ([#1004](https://github.com/Selftend/selftend/issues/1004)), which was refused for space, is moot twice over — see the attachment ruling below.
 
-1. SCREEN RECORDING
-Attached, captured on a physical iPhone 17 running iOS 26.6, from app launch. It shows the signed-out screen with its crisis-guidance link; account creation; the home dashboard; the tools hub with all eight tools; the CBT module, its programme and a goal saved; a mood check-in saved and shown in its history and 7-day trend; the Notifications screen with every reminder off by default; Settings; and account deletion end to end, returning to the signed-out screen. The account is created on camera, so tools it never used show empty states - the reviewer account in Sign-In Information is pre-seeded.
+### ☠️ The attachment is dropped, not re-recorded
 
-2. DEVICES AND OS TESTED
-iPhone 17, iOS 26.6. iPhone only for this submission. The app supports iPad but iPad was not exercised in this round. The same codebase also runs on Android and on the web at https://selftend.org.
+`selftend-0.11.1-build6-review.mp4` shows `Selftend v0.11.1` in Settings, CBT and ACT badged **Beta** and DBT **Soon** — badges [#1020](https://github.com/Selftend/selftend/issues/1020) removed before 0.18.0. Against live **0.21.0** it is already wrong by ten minors; against the gated build it is worse.
 
-3. FUNCTION AND AUDIENCE
-Selftend is a free, non-profit, open-source wellness and guided self-help app for adults aged 18 and older who want structure they can run themselves. It provides eight tools - mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep and habit tracking - each recording entries and showing their history; two modules of educational CBT and ACT exercises; user-built routines; an insights screen; and a home dashboard of 28 widgets. No in-app purchases or subscriptions.
+- It answered **item 1 of a specific letter**. That letter is answered, and [#2597](https://github.com/Selftend/selftend/issues/2597) found **no guideline requiring a video**. There is no open request for one.
+- Re-recording costs a physical-device session and walks back into the documented upload trap above.
+- ⚠️ **The Attachment slot's permitted file types and size limit are undocumented** — #2597 could not close it. Ruling "re-record" today would be ruling on a constraint nobody has verified.
+- A video's whole job is to show the binary under review, so a re-record is worth nothing until the gated build exists.
 
-Two labels in this build are cosmetic rather than functional gaps: DBT is an overview marked "On the roadmap" and is the only planned module, and CBT and ACT are tagged "Beta" though both are complete and usable. Everything else is fully implemented.
+**So: dropped now, re-recorded only if a reviewer asks** — a hard cost becomes a contingent one. 📌 The undocumented attachment limits are a **precondition on any future re-record**, not open work.
 
-4. SETUP AND ACCESS
-An account is required; credentials are in the Sign-In Information fields. It is staged, belongs to no real person, and is pre-seeded; onboarding is completed and the current policy accepted, so no wizard or consent screen appears and the reviewer lands on a populated home screen. Sign-in also offers Sign in with Apple and Google Sign-In, either creating a fresh account. Reminders are in Settings and on the Notifications screen; data export and account deletion are in Settings > Account, deletion also at https://selftend.org/account-deletion.
-
-5. EXTERNAL SERVICES
-Supabase for database, authentication, storage and edge functions, with entry fields encrypted at rest. AWS SES for transactional email. Sentry for crash reports, which never receives entry content. Cloudflare for web hosting. Expo/EAS for builds, and Expo push, which forwards enabled reminders to APNs. Sign in with Apple and Google Sign-In for auth. There is no AI service, and no analytics, advertising or payment processing.
-
-6. REGIONAL DIFFERENCES
-The app functions identically in every region. No feature, screen or content is gated by country, and there is no geo-detection. The interface is localised in English and Bulgarian, following the device locale. Crisis guidance is deliberately country-neutral: instead of per-country helplines it links to the Find A Helpline directory and says to call your local emergency number.
-
-7. REGULATED INDUSTRY / PROTECTED MATERIAL
-No. Selftend is a wellness and guided self-help app in the Health & Fitness category. No licence is required to operate it: it does not diagnose, treat, prescribe, or give medical or professional advice, and it makes no clinical or outcome claims. It teaches techniques drawn from CBT and ACT and includes educational material describing what those approaches are used for - descriptive, never diagnostic; the app never assesses a user or assigns a condition. That boundary is stated to users in Settings, Support, onboarding, the privacy policy and the FAQ at https://selftend.org/faq. Crisis guidance is separate from the self-help features and points to external emergency services. There is no protected third-party material: all content is written by the project, which is open source (AGPL-3.0). No data providers, no AI services.
-
-Happy to provide anything further.
-```
+⚠️ **Precisely what "dropped" means, because half of it is impossible.** The **sent message is history and cannot be altered**: the 2026-08-15 reply keeps its attachment, and the record above keeps saying so. What changes is forward-looking — the standing instruction to attach that file to a future reply is **retired**, the file is attached to no future submission, and the Attachment slot is cleared if populated.
