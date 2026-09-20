@@ -2327,10 +2327,23 @@ describe("the frame's second beat is GONE from the surfaces this repo ships (#17
    * Play transcript DOES carry the method today. It is out because of where a
    * future divergence would have to be fixed — in the Play Console, by the
    * owner — and not because it currently fails.
+   *
+   * ☠️ **It used to read the WHOLE FILE, and was green for the wrong reason**
+   * (#2606, fixed by #2610 item 9). `readFile("store/play-listing.md").text`
+   * matched `/CBT programme/i` against the *Known contradictions* table, which
+   * quotes a **retired** frame — so the assertion stayed green while the
+   * verbatim block itself said only "CBT tools", and merely tidying that table
+   * would have turned it red. It now reads the **verbatim block**, which is the
+   * only part of the file that is the listing.
    */
-  it("leaves the Play transcript out, though it carries the method today", () => {
+  it("leaves the Play transcript out, though the LISTING ITSELF carries the method today", () => {
     expect(FRAME_CARRIERS.some(({ id }) => id.includes("play-listing"))).toBe(false);
-    expect(METHOD.en.test(readFile("store/play-listing.md").text)).toBe(true);
+
+    const verbatim = STORE_LISTING_ENTRIES.find(
+      ({ surface }) => surface === PLAY_VERBATIM_SURFACE,
+    )?.text;
+    expect(verbatim).toBeDefined();
+    expect(METHOD.en.test(verbatim ?? "")).toBe(true);
   });
 
   /**

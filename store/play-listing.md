@@ -44,6 +44,12 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
+### ☠️ The frame sentence below is the LIVE one, and a newer one is OWED to the Console
+
+⚠️ **Restored 2026-09-20** ([#2606](https://github.com/Selftend/selftend/issues/2606), executed by [#2610](https://github.com/Selftend/selftend/issues/2610) item 9). [#2582](https://github.com/Selftend/selftend/issues/2582) edited ¶1 of the block below to the post-retreat frame sentence **without visiting the Console** — the one thing this file forbids on its own face (_"a mirror, not a source"_, _"do not fix this file ahead of the store"_, _"word for word, not a summary"_), and its own commit message says no Console visit happened. The arithmetic gave it away: the paragraph above states **2,012** characters and the committed block had become **1,970**, exactly 42 short. ✅ **Reverted and re-measured at 2,012**, against the live public listing.
+
+**What is owed to the Console, and is not in the block below:** ¶1's frame sentence becomes _"…everyday tools for right now, yours to pick from at whatever pace suits you."_ ☠️ **The bullets stay.** The retreat's rule has a subject — _a beta thing must not be named in copy that says what Selftend **is**_ — and a _What's inside_ bullet says what the listing **contains**; `docs/positioning.md` carves inventory out of the frame, and Apple's bullets went for **truthfulness** (iOS ships no modules), which cannot reach Android-only copy about Android-shipped features. ⚠️ **No DBT bullet is added**: keeping a truthful bullet is free, adding one is a new act of naming a beta method. That edit rides **Play Visit B**, not a visit of its own.
+
 ## Verbatim, as saved on 2026-09-09
 
 Two edits since the 2026-09-05 save are folded into the block below, each one line of the full description and both saved in the Console form: `catastrophizing` → `catastrophising` on 2026-09-06 (submission 98, [#2061](https://github.com/Selftend/selftend/issues/2061)), and on 2026-09-09 the closing line of "What's inside", _"Everything is optional — use only the parts that help you. Missing a day is never punished."_ → _"Everything is optional — use only the parts that help you, at whatever pace suits you."_ ([#2216](https://github.com/Selftend/selftend/issues/2216); the full description is **2,012** characters with it, five fewer than before). The mirror carried that second sentence ahead of the Console from PR #2249 until the Console edit — the one exception ever made to the rule below, because the alternative was muting `test/restraint-copy.test.ts` on the day it reached this surface — and the diff that retired the warning paragraph is the record.
@@ -58,7 +64,7 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 
 **Full description:**
 
-> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme — cognitive behavioural therapy — to work through when you want one. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
 >
 > What's inside:
 >
