@@ -21,12 +21,28 @@ name: App Store screenshots
 # The resolution check at the end is the point of the whole job. Silently
 # producing almost-right images would be discovered at submission time, which is
 # the worst moment to find out.
-# STATUS: this workflow does NOT currently produce usable screenshots, and the
-# reason is not in this file. The app cannot complete a TLS handshake to
-# Supabase from inside the simulator on these runners - see the probe step
-# below and issue #547. Every flow-level fault has been fixed and the capture
-# reaches the sign-in submit; it stops there because the request never leaves
-# the app. The 0.9.0 listing was shot from the web build instead.
+# STATUS: this workflow does NOT currently produce usable screenshots. The
+# blocker nearest the surface is not in this file - the app cannot complete a
+# TLS handshake to Supabase from inside the simulator on these runners, see the
+# probe step below and issue #547.
+#
+# ☠️ "Every flow-level fault has been fixed" stood here and was WRONG (#2598,
+# corrected #2610 item 16). TWO hangs sat behind the TLS one, so fixing #547
+# alone would not have produced a set:
+#   - step 4 deep-linked `modules/cbt` and waited on "Cognitive Behavioural
+#     Therapy", which a gated iOS build can never render;
+#   - the breathing step waited on "Breathing exercises", a string that exists
+#     in NO locale file at all. Found by grepping every wait text against
+#     src/i18n/locales/en/ rather than trusting them.
+# Both are fixed now. That is the whole reason this file and the flow are kept
+# corrected while dormant: a stale flow is not inert, it is a trap that gets
+# re-derived - which is exactly how the dead `06-tools` screen reached the live
+# listing and passed App Review.
+#
+# ⚠️ The 0.9.0 listing was shot from the WEB build instead. That route is now
+# disqualified (#2598): the module gate is iOS-only, so a web capture
+# photographs the very surfaces iOS does not have. The next set is captured by
+# hand from a local `simulator`-profile build.
 #
 # Kept rather than deleted because the probe, the gates and the flow are the
 # expensive parts, and they are all correct. When the TLS question is answered
@@ -299,14 +315,26 @@ jobs:
           EXPECT_H: ${{ matrix.expect_height }}
         run: |
           # Keep in step with .maestro/app-store-screenshots.yaml.
+          #
+          # The decided publishable set, five per device (#2598). What left, and
+          # why, so nobody re-derives the old list:
+          #   - 00-sign-in  -> diagnostics/, NOT published: guideline 2.3.3 names
+          #                    login pages explicitly. Outside this pattern by
+          #                    construction, so it cannot reach these gates.
+          #   - 02-cbt      -> dropped. The modules are gated on iOS, so a gated
+          #                    build can never render that screen.
+          #   - 06-tools    -> dropped. It photographed the Tools hub, which has
+          #                    been `<Redirect href="/" />` since #2114 - a screen
+          #                    no build on any platform can open. It was published
+          #                    anyway, and passed App Review.
+          #   - 03-mood     -> renamed 02-check-in, the label the app has used
+          #                    since #1968.
           required=(
-            00-sign-in
             01-home
-            02-cbt
-            03-mood
-            04-journal
-            05-breathing
-            06-tools
+            02-check-in
+            03-journal
+            04-breathing
+            05-gratitude
           )
 
           bad=0
