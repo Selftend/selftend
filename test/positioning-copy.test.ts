@@ -2613,4 +2613,128 @@ describe("docs/positioning.md's own facts, which nothing else can check", () => 
     expect({ found: Boolean(quoted) }).toEqual({ found: true });
     expect(quoted![1]).toBe(shortForm);
   });
+
+  /**
+   * ☠️☠️ **THE FRAME SENTENCE, PINNED TO WHAT SHIPS** (#2619, from #2608).
+   *
+   * The short-form suite above has existed for a while; `### The frame
+   * sentence` had no equivalent, and it rotted exactly where you would expect.
+   * #2608 found the canonical **Bulgarian** sentence still carrying beat two
+   * while `bg/auth.json` had shipped without it for two days, plus two stated
+   * character counts reading **174** against a sentence that is **132** — one
+   * of them a live false constraint that inverted at the real length.
+   *
+   * ☠️ **A ban can never catch this.** `docs/positioning.md` is in
+   * `PUBLISHED_RECORDS` and must stay there: it is the document that quotes the
+   * banned words. But an **agreement** assertion is not a ban, and that is what
+   * this is — the document's quotation of a shipped string, pinned against that
+   * string, and its arithmetic pinned against the arithmetic.
+   *
+   * ⚠️ **PRESENCE OF THE OBJECT, NOT PHRASING.** Nothing here requires the
+   * sentence to be worded any particular way, or requires any sentence to
+   * exist. It requires that where the document *does* quote the frame sentence,
+   * the quotation matches what the app and the store actually carry.
+   */
+  const FRAME = section("### The frame sentence");
+  const SURFACES = section("### Which surfaces carry it");
+
+  /** One i18n value by `namespace:dotted.key`, from the same corpus the bans use. */
+  function i18n(locale: Locale, id: string): string {
+    const hit = LOCALE_STRINGS[locale].find(({ namespace, key }) => `${namespace}:${key}` === id);
+    if (!hit) throw new Error(`${locale} has no ${id}`);
+    return hit.text;
+  }
+
+  /** The three `auth` keys that carry the frame sentence, per § *Which surfaces carry it*. */
+  const FRAME_KEYS = [
+    "auth:landing.subtitle",
+    "auth:landingPage.heroSupport",
+    "auth:landingPage.metaDescription",
+  ];
+
+  it("parses both frame sections, rather than passing over an empty one", () => {
+    // The positive control, as every corpus in this file carries: a renamed
+    // heading or a reformatted section must fail rather than pass vacuously.
+    expect(FRAME.length).toBeGreaterThan(200);
+    expect(SURFACES).toContain("Bulgarian twins");
+    expect(FRAME_KEYS.length).toBe(3);
+  });
+
+  /**
+   * The English sentence, against the two places it is shipped verbatim: the
+   * App Store `description`'s first paragraph, and the three `auth` keys.
+   *
+   * ⚠️ Two of those keys carry the **brand-omitted** form — the page already
+   * prints "Selftend" above them — so the clause is what is matched, not the
+   * whole string. That is the form `docs/launch/play-listing/README.md` calls
+   * out for the feature graphic too.
+   */
+  it("quotes an English frame sentence that the store and the app both ship", () => {
+    const quoted = /^> \*\*(.+?)\*\*(.*)$/m.exec(FRAME);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+
+    const canonical = `${quoted![1]}${quoted![2]}`.replace(/\*\*/g, "").trim();
+
+    // The App Store description opens with it, byte for byte.
+    expect(APPLE_INFO.description.split("\n\n")[0]).toBe(canonical);
+
+    // And every frame-carrying `auth` key opens with it, in one of its two
+    // sanctioned forms.
+    const brandOmitted = canonical.replace(/^Selftend is a set of/, "A set of");
+    for (const id of FRAME_KEYS) {
+      const shipped = i18n("en", id);
+      expect({
+        id,
+        opens: shipped.startsWith(canonical) || shipped.startsWith(brandOmitted),
+      }).toEqual({ id, opens: true });
+    }
+  });
+
+  /**
+   * The Bulgarian twin — the one #2608 found divergent, and the reason this
+   * suite exists. `METHOD.bg` asserts over `FRAME_CARRIERS`, which are i18n
+   * values; nothing asserted that the *document's* copy of the sentence agreed
+   * with them.
+   */
+  it("quotes a Bulgarian frame sentence that the app ships", () => {
+    const quoted = /_(Набор от[^_]+?)_/.exec(SURFACES);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+
+    const canonical = quoted![1].replace(/\*\*/g, "").trim();
+    for (const id of FRAME_KEYS) {
+      const shipped = i18n("bg", id);
+      expect({ id, opens: shipped.startsWith(canonical) }).toEqual({ id, opens: true });
+    }
+  });
+
+  /**
+   * The arithmetic. ☠️ Both *live* claims are matched; a number inside a
+   * struck-and-quoted passage is history and is deliberately not pinned —
+   * #2608 kept the old "174 characters, up from 164" on the page as a record,
+   * and a guard that failed on it would be guarding the trail rather than the
+   * fact.
+   */
+  it("states the English frame sentence's real length wherever it claims one", () => {
+    const quoted = /^> \*\*(.+?)\*\*(.*)$/m.exec(FRAME);
+    const canonical = `${quoted![1]}${quoted![2]}`.replace(/\*\*/g, "").trim();
+
+    // ☠️ Both live phrasings, because the claim is made in two shapes and an
+    // earlier draft of this guard matched NEITHER - it searched only the frame
+    // section for `frame sentence is **N** characters` and found zero, which is
+    // a green test asserting nothing at all.
+    const CLAIM = /(?:frame )?sentence is \*{0,2}(\d+)\*{0,2} characters/g;
+    const stated = [FRAME, SHORT_FORM].flatMap((body) =>
+      [...body.matchAll(CLAIM)].map(([, n]) => Number(n)),
+    );
+
+    // Requiring at least one is the whole point: a reworded claim must fail
+    // here rather than silently stop being checked.
+    expect(stated.length).toBeGreaterThanOrEqual(2);
+    for (const n of stated) expect({ stated: n }).toEqual({ stated: canonical.length });
+
+    // ⚠️ The struck "174 characters, up from 164" is history that #2608
+    // deliberately kept on the page, and is NOT pinned - a guard that failed on
+    // it would be guarding the trail rather than the fact.
+    expect(FRAME).toContain("174 characters, up from 164");
+  });
 });
