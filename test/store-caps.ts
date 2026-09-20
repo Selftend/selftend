@@ -43,7 +43,7 @@
  * 2026-09-16, and the committed value below is that record, so the field is a
  * read value rather than a guess like every other entry here.
  *
- * ⚠️ 4000 is a cap that does not bind. The committed text spends 1215 of it,
+ * ⚠️ 4000 is a cap that does not bind. The committed text spends 970 of it,
  * and that is the point of the row rather than a note beside it: the escape
  * clause in § *The short form* - "if length is ever genuinely capped somewhere
  * new, the answer is the short form" - has no referent here, so the field

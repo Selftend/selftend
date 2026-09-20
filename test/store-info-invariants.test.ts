@@ -46,9 +46,12 @@ describe("Selftend's committed App Store listing text", () => {
     expect((info[field] as string).length).toBeLessThanOrEqual(cap);
   });
 
-  // Both live values sit within two characters of their cap, so a rewrite has
-  // almost no headroom. Failing here means the copy needs shortening BEFORE it
-  // is pushed to Apple, not after the weekly job notices.
+  // ⚠️ This used to say "both live values sit within two characters of their
+  // cap", which was true of `subtitle` and 3,030 characters wrong about
+  // `description` - it spends 970 of 4000 since #2582's rewrite (corrected by
+  // #2608). `subtitle` is still the tight one, and it is the reason the
+  // assertion below exists: failing here means the copy needs shortening
+  // BEFORE it is pushed to Apple, not after the weekly job notices.
   it("leaves the caps' tightness visible rather than implied", () => {
     const headroom = Object.entries(CAPS).map(([field, cap]) => ({
       field,
