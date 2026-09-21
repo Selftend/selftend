@@ -117,26 +117,33 @@ env:
 # device's. That one stays conditional, because the demo account may already
 # have accepted.
 #
-# ☠️ UNCONDITIONAL here, with a wait - and that is a correction, not a preference.
-# `runFlow: when: visible:` checks ONCE, immediately. If the gate has not
-# rendered yet the block is silently skipped and the run fails later, somewhere
-# else, with no trace of what was missed. That is exactly what happened on
-# 2026-09-21: the iPad won the race and ran this block, the iPhone lost it and
-# skipped BOTH this and the wizard, then failed at `home-layout`.
-# On a `clearState: true` launch all three gates always appear, so each one is
-# waited for and asserted - the same rule the rest of this file follows.
-- extendedWaitUntil:
-    visible:
-      id: "consent-accept-checkbox"
-    timeout: 60000
-- tapOn:
-    id: "consent-accept-checkbox"
-- tapOn:
-    id: "consent-health-data-checkbox"
-- tapOn:
-    id: "consent-submit"
+# ☠️ CONDITIONAL, and it has to be: measured on 2026-09-21, this gate appears on
+# the **iPad** after the age gate and does **not** appear on the **iPhone** -
+# same commit, same flow, both cleared installs. An unconditional wait was tried
+# and it failed the iPhone outright at 60s.
+#
+# ⚠️ But `runFlow: when: visible:` probes ONCE, immediately, so a bare
+# conditional loses a race against a screen that has not rendered yet - which is
+# how an earlier revision skipped this block AND the wizard and then failed far
+# away at `home-layout`, with nothing in the log naming what was missed. Hence
+# the settle above: conditional for the platform difference, settled for the
+# race. The wizard below is the opposite case and is asserted, because it always
+# appears.
 - waitForAnimationToEnd:
-    timeout: 10000
+    timeout: 15000
+- runFlow:
+    when:
+      visible:
+        id: "consent-accept-checkbox"
+    commands:
+      - tapOn:
+          id: "consent-accept-checkbox"
+      - tapOn:
+          id: "consent-health-data-checkbox"
+      - tapOn:
+          id: "consent-submit"
+      - waitForAnimationToEnd:
+          timeout: 10000
 
 # ☠️☠️ THERE IS NO SIGN-IN SCREEN ON A CLEARED INSTALL, AND THAT IS WHY THIS
 # FLOW'S ORIGINAL PREMISE WAS OBSOLETE RATHER THAN MERELY STALE.
