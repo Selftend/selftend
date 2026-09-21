@@ -184,12 +184,6 @@ export function UserMenu() {
           variant="ghost"
           size="icon"
           className="size-8 rounded-full"
-          // The only route to `user-menu-sign-in-row`, which is the only route
-          // from a guest session to the sign-in screen - so the App Store
-          // capture flow has to open this menu. An id rather than the
-          // accessibility label because `.maestro/app-store-screenshots.yaml`
-          // selects by id on purpose: a label is copy, and copy is translated.
-          testID="user-menu-trigger"
         >
           {isSignedIn ? (
             <ProfileAvatar avatarUrl={avatarUrl} email={email} name={displayName} />

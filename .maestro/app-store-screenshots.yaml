@@ -97,6 +97,40 @@ env:
 - tapOn:
     id: "age-gate-country-option-GB"
 
+# ☠️☠️ DISMISS THE KEYBOARD FIRST, OR THE SUBMIT TAP LANDS ON THE KEYBOARD.
+#
+# On the **iPhone** the gate's Continue button sits UNDER the software keyboard:
+# the card is centred at full screen height and the alphabetic keyboard - still
+# up from the country search - covers its bottom third. Maestro reported
+# `Tap on id: age-gate-submit... COMPLETED` and the app never moved, so the run
+# then failed 60s later at the wizard with the age gate still in frame. The
+# 2026-09-21 run shows it in both attempts, with the form filled and Continue
+# sliced in half by the keyboard's top edge.
+#
+# ⚠️ **The same false-COMPLETED signature as #2646**: the element resolves and
+# is "tappable", something else is drawn over it, and the failure surfaces far
+# away from its cause. Worth knowing that Maestro reporting a tap COMPLETED says
+# only that it dispatched a touch at those coordinates - never that the control
+# received it.
+#
+# The iPad does not hit this: more height, so the card clears the keyboard. That
+# is why every earlier run failed here on the phone alone.
+#
+# `optional: true` because iOS `hideKeyboard` is swipes rather than an API call,
+# and a flow must not die on the dismissal itself - if it silently does nothing,
+# the wizard wait downstream still catches it, now with the screenshot below to
+# say so immediately.
+- hideKeyboard:
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Unconditional, and purely diagnostic: this is the exact frame that took three
+# runs to obtain. `diagnostics/` sits outside the `NN-name` pattern the gather
+# step collects, so it cannot reach the size gate, the duplicate gate or the
+# upload.
+- takeScreenshot: diagnostics/age-gate-before-submit
+
 - tapOn:
     id: "age-gate-submit"
 - waitForAnimationToEnd:
@@ -160,8 +194,10 @@ env:
 # empty-shell listing the staged demo account exists to prevent, and the exact
 # weakness #2598 and the build-6 reply both call load-bearing.
 #
-# So: finish onboarding, then walk a guest to the sign-in screen the way a
-# person would - the user menu's own door (#1869).
+# So: finish onboarding, reach Home as a guest, and only THEN go to sign-in. The
+# route there is a deep link rather than the user menu's door (#1869) - see the
+# block below `home-layout` for why the menu cannot be driven.
+#
 # Waited for and asserted, for the same reason as the two gates above: a
 # `when: visible` probe here was skipped outright on the iPhone.
 - extendedWaitUntil:
@@ -183,22 +219,35 @@ env:
       id: "home-layout"
     timeout: 90000
 
-# ☠️ `user-menu-sign-in-row` is a plain `router.push("/(auth)/sign-in")`, NOT the
-# guest-conversion path - checked in `user-menu.tsx` before relying on it. That
-# matters: converting would link the guest to the demo identity, and this flow
-# must land in the demo account's own seeded session, not a merged one.
+# ☠️☠️ A GUEST REACHES SIGN-IN BY DEEP LINK, NOT THROUGH THE USER MENU - and
+# the reason is a Maestro limitation worth writing down, because it will bite
+# anything else that tries to drive a popover.
 #
-# The trigger carries `testID="user-menu-trigger"`, added with this change. It
-# had only an `accessibilityLabel`, which is copy and therefore translated - the
-# thing rule 1 at the top of this file exists to avoid.
-- tapOn:
-    id: "user-menu-trigger"
-- extendedWaitUntil:
-    visible:
-      id: "user-menu-sign-in-row"
-    timeout: 20000
-- tapOn:
-    id: "user-menu-sign-in-row"
+# The menu route was tried first and failed: the trigger tapped, the menu OPENED
+# (the debug screenshot shows "Guest" and a "Sign in" row in frame), and
+# `user-menu-sign-in-row` still asserted false. The captured accessibility
+# hierarchy explains it - it contains no "Sign in", no "user-menu", not even
+# "Guest". ⚠️ **The popover renders through a portal, and its contents are
+# absent from the tree Maestro reads**, so NO selector would have matched it -
+# not the id, not the text. Tapping by coordinate would be the only way in, and
+# this file does not do coordinates.
+#
+# The deep link avoids the whole problem and is what rule 2 at the top already
+# prescribes. `(auth)` is a route GROUP, so it contributes nothing to the URL:
+# the path is `/sign-in`.
+#
+# ✅ This is a plain navigation, NOT the guest-conversion path - the same thing
+# `user-menu-sign-in-row` does (`router.push("/(auth)/sign-in")`, checked in
+# `user-menu.tsx`). That distinction matters: converting would link the guest to
+# the demo identity, and this flow must land in the demo account's own seeded
+# session rather than a merged one.
+- openLink:
+    link: ${APP_LINK}sign-in
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
 
 - extendedWaitUntil:
     visible:
@@ -207,8 +256,8 @@ env:
 
 # ☠️ NOT `screenshots/`. App Review guideline 2.3.3 names login pages explicitly
 # as what a screenshot must not merely show, so this frame must never sit in the
-# publishable set - but it is the single most useful image for debugging the TLS
-# failure that keeps this job from running at all (#547). It lives outside the
+# publishable set - but it is the single most useful image for proving the
+# sign-in screen was actually reached. It lives outside the
 # `NN-name` pattern the gather step collects, exactly as `after-submit` does, so
 # it structurally cannot reach the size gate, the duplicate gate or the upload.
 # Risk removed by construction rather than by discipline (#2598).
