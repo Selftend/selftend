@@ -282,6 +282,16 @@ env:
 # reject the WHOLE FILE before a single command runs. This flow has already died
 # that way once, on `timeout:` passed to `assertVisible` - see the note at the
 # first gate.
+#
+# ⚠️ The settle below is not padding. Without it this probe fires on EVERY
+# run - measured on run 35665756780, where both devices went green and both
+# still logged `Run flow when id: sign-in-email is not visible... COMPLETED`,
+# because the probe runs the instant `openLink` returns and the app has not
+# navigated yet. Harmless, but it made a recovery path look like the norm and
+# spent a second `openLink` every time. Settle first, then ask - the same
+# correction the Save Password dismissal needed.
+- waitForAnimationToEnd:
+    timeout: 10000
 - runFlow:
     when:
       notVisible:
