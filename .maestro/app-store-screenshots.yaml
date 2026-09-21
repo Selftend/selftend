@@ -300,6 +300,42 @@ env:
       - tapOn:
           id: "sign-in-submit"
 
+# ☠️☠️ iOS ASKS TO SAVE THE PASSWORD, AND ITS ALERT HIDES THE WHOLE APP.
+#
+# After the password is submitted, iOS puts up its own **"Save Password?"**
+# sheet. It is system UI, not the app's, and while it is up the app's own
+# hierarchy is not readable at all - so every `assertVisible` below fails with
+# the screen it is asking about plainly in frame behind the alert.
+#
+# Measured on the 2026-09-21 run, on both devices and at different moments:
+#
+#   - **iPad**: up immediately after submit, over the demo account's server-side
+#     consent gate. `home-layout` failed; the consent conditional in between
+#     probed and found nothing, because the alert covers that too.
+#   - **iPhone**: it did NOT appear until after `04-breathing` - the first four
+#     captures are clean - and then failed the gratitude assertion. The app was
+#     on the Gratitude log screen, seeded content and all, behind the alert.
+#
+# ⚠️ **So a single dismissal after sign-in is not enough**: the alert can
+# arrive several screens later, most likely nudged by the `openLink` round trip
+# taking the app out and back. It is dismissed here AND before each capture.
+# `optional: true` is what makes that safe to repeat - the tap is a no-op on
+# every screen where the alert is absent.
+#
+# "Not Now", never "Save": declining is the privacy-preserving answer, and
+# nothing should offer to keep the demo credentials on a machine.
+#
+# ✅ Selecting by text is safe here even though rule 1 at the top prefers ids:
+# this is SYSTEM UI and has no `testID` to select by, and "Not Now" appears
+# nowhere in the app's own copy (checked against `src/i18n/locales/en/`), so the
+# tap cannot land on anything of ours.
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
+- waitForAnimationToEnd:
+    timeout: 5000
+
 # Unconditional, and the only reason it exists is diagnosis. When the home wait
 # below fails there is otherwise nothing in the artifact showing WHY - the run
 # that added this had to guess between "sign-in failed" and "a gate is in the
@@ -372,6 +408,10 @@ env:
 
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/01-home
 
 - openLink:
@@ -381,12 +421,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Check-in"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/02-check-in
 
 - openLink:
@@ -396,12 +444,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Journal"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/03-journal
 
 # ☠️ "Breathing", not "Breathing exercises". The old wait asked for a string that
@@ -415,12 +471,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Breathing"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/04-breathing
 
 # The fifth and last. The route is `gratitude-log`, not `gratitude`: it is the
@@ -432,10 +496,18 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Gratitude log"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/05-gratitude
