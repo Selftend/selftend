@@ -416,6 +416,41 @@ env:
     text: "Not Now"
     optional: true
     label: "Dismiss iOS's Save Password prompt if it is up"
+
+# ☠️☠️ ON THE iPAD, NO SELECTOR CAN REACH THAT ALERT - SO RELAUNCH INSTEAD.
+#
+# Tapping "Not Now" works on the iPhone: on the run that went green, exactly one
+# of the ten dismissals reported COMPLETED. On the **iPad** all three reported
+# WARNED - element not found - with the alert plainly in the failure screenshot.
+#
+# The captured hierarchy says why, and it is worse than a missing label:
+# ⚠️ **it is a stack of identical empty full-screen nodes with no text anywhere
+# in it.** Not the alert, and not the app either - `home-layout` is absent from
+# the same file. While that alert is up, iOS suppresses the app's accessibility
+# tree entirely and does not expose the alert's own, so there is nothing to
+# select by: not the id, not the text, not on any node.
+#
+# That is the third time this flow has met the shape - #2646's status bar,
+# #2647's keyboard, the user-menu popover above - and the second time the honest
+# answer was "stop trying to click it".
+#
+# So the alert is not dismissed here, it is **outlived**. A relaunch tears down
+# the process presenting it; the Supabase session is persisted, so the app comes
+# back signed in and lands on Home, which is where this flow wants to be anyway.
+#
+# ⚠️ Conditional on Home being INVISIBLE, deliberately - an unconditional
+# relaunch would also fire on the iPhone, which is already green, and this must
+# not regress it. When Home is readable there is nothing in the way and nothing
+# to do. When it is not, a relaunch costs fifteen seconds and is harmless: the
+# session restores, and Home is the launch destination regardless.
+- runFlow:
+    when:
+      notVisible:
+        id: "home-layout"
+    commands:
+      - launchApp
+      - waitForAnimationToEnd:
+          timeout: 15000
 # Home can take a moment: the session restores and the first queries resolve.
 - extendedWaitUntil:
     visible:
