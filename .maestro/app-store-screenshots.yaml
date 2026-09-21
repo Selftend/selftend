@@ -322,6 +322,20 @@ env:
 # `optional: true` is what makes that safe to repeat - the tap is a no-op on
 # every screen where the alert is absent.
 #
+# ✅ The design is confirmed working: on the iPhone run that went green,
+# exactly ONE of the ten dismissals reported COMPLETED and the other nine
+# WARNED - one alert, caught wherever it happened to appear.
+#
+# ☠️ SETTLE FIRST, THEN DISMISS. The dismissal used to fire the instant the
+# submit returned, and on the iPad the alert arrived about a second AFTER it:
+# the tap WARNED with nothing to hit, the consent and wizard probes then found
+# nothing because the alert covers those too, and `home-layout` failed ninety
+# seconds later with Home - signed in, seeded, "Good afternoon" - fully rendered
+# behind the alert. ⚠️ **Dismissing immediately is a race, and it is the wrong
+# side of one.** Waiting for the alert to arrive and then dismissing turns that
+# race into a wait; the second tap covers a late one, and the third, below the
+# gates, covers an alert that arrives while they run.
+#
 # "Not Now", never "Save": declining is the privacy-preserving answer, and
 # nothing should offer to keep the demo credentials on a machine.
 #
@@ -329,12 +343,18 @@ env:
 # this is SYSTEM UI and has no `testID` to select by, and "Not Now" appears
 # nowhere in the app's own copy (checked against `src/i18n/locales/en/`), so the
 # tap cannot land on anything of ours.
+- waitForAnimationToEnd:
+    timeout: 15000
 - tapOn:
     text: "Not Now"
     optional: true
     label: "Dismiss iOS's Save Password prompt if it is up"
 - waitForAnimationToEnd:
     timeout: 5000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 
 # Unconditional, and the only reason it exists is diagnosis. When the home wait
 # below fails there is otherwise nothing in the artifact showing WHY - the run
@@ -386,6 +406,16 @@ env:
       - waitForAnimationToEnd:
           timeout: 10000
 
+# Home can take a moment: the session restores and the first queries resolve.
+#
+# ☠️ One last dismissal before the assertion, because the two conditionals
+# above take about seven seconds each to probe and an alert arriving in that
+# window would hide Home for the whole ninety-second wait - which is exactly how
+# the iPad failed.
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 # Home can take a moment: the session restores and the first queries resolve.
 - extendedWaitUntil:
     visible:
