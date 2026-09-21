@@ -48,6 +48,60 @@ env:
 # "Unknown Property: timeout" before a single command runs, which is how the
 # first attempt at this flow died. Waiting longer than the built-in 7s is what
 # `extendedWaitUntil` is for, and a cold first launch needs longer than 7s.
+# ☠️☠️ THE AGE AND COUNTRY GATE COMES FIRST, AND THIS FLOW PREDATED IT.
+#
+# `#1764` put a neutral age-and-country gate on EVERY entry path, before the app
+# opens. On a `clearState: true` launch it is the first thing on screen, so this
+# flow - written before it shipped - sat waiting 60s for `sign-in-email`, failed,
+# and captured nothing.
+#
+# ⚠️ **That failure was misread as a TLS problem for weeks.** The workflow header
+# blamed a Supabase handshake from inside the simulator; the Maestro debug
+# artifact shows the gate, not a network error, and the host probe returns
+# `http=401 tls=0` - a healthy reachable endpoint. The in-simulator probe itself
+# reports `NSPOSIXErrorDomain code=2`, i.e. there is no `curl` in that runtime,
+# so it never measured anything either way.
+#
+# Unconditional rather than conditional on purpose: with `clearState: true` the
+# gate is always there, so a wait ASSERTS it and fails loudly here if it ever
+# moves - the same reason every other wait in this file names its destination.
+- extendedWaitUntil:
+    visible:
+      id: "age-gate-day"
+    timeout: 90000
+
+- tapOn:
+    id: "age-gate-day"
+- inputText: "01"
+- tapOn:
+    id: "age-gate-month"
+- inputText: "01"
+- tapOn:
+    id: "age-gate-year"
+- inputText: "1990"
+
+# The country list renders options only once a search matches, so the text goes
+# in first and the row is tapped by its own id rather than by name - the names
+# are bundled reference data (`src/features/auth/countries.ts`), not i18n keys,
+# so the id is the stable handle. ☠️ Tapping a result happens WHILE the keyboard
+# is open, which only works because the gate sets
+# `keyboardShouldPersistTaps="handled"`; without it the first tap is swallowed
+# as a keyboard dismissal.
+- tapOn:
+    id: "age-gate-country"
+- inputText: "United Kingdom"
+- extendedWaitUntil:
+    visible:
+      id: "age-gate-country-option-GB"
+    timeout: 15000
+- tapOn:
+    id: "age-gate-country-option-GB"
+
+- tapOn:
+    id: "age-gate-submit"
+- waitForAnimationToEnd:
+    timeout: 10000
+
 - extendedWaitUntil:
     visible:
       id: "sign-in-email"

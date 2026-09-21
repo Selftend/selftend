@@ -21,10 +21,25 @@ name: App Store screenshots
 # The resolution check at the end is the point of the whole job. Silently
 # producing almost-right images would be discovered at submission time, which is
 # the worst moment to find out.
-# STATUS: this workflow does NOT currently produce usable screenshots. The
-# blocker nearest the surface is not in this file - the app cannot complete a
-# TLS handshake to Supabase from inside the simulator on these runners, see the
-# probe step below and issue #547.
+# STATUS: ☠️ **THE TLS DIAGNOSIS WAS WRONG, and it cost this job two months of
+# being written off as unbounded infrastructure work.** Dispatched 2026-09-21
+# against a corrected flow, the run built, booted, installed and drove the app,
+# and the probe reported the host reaching Supabase at `http=401 tls=0` - a
+# healthy, reachable endpoint. ⚠️ The in-simulator half of that same probe
+# reports `NSPOSIXErrorDomain code=2`: there is no `curl` inside the simulator
+# runtime, so it has never measured anything in either direction.
+#
+# What actually stopped every run was THREE stale steps in the flow, none of
+# them networking:
+#   1. step 4 deep-linked `modules/cbt` and waited on "Cognitive Behavioural
+#      Therapy", which a gated iOS build can never render;
+#   2. the breathing step waited on "Breathing exercises", a string in NO
+#      locale file;
+#   3. ☠️ the flow predated the age-and-country gate (#1764), which stands in
+#      front of sign-in on every cleared launch - so the run waited 60s for
+#      `sign-in-email`, which was never going to appear. The Maestro debug
+#      artifact's failure screenshot shows that gate.
+# All three are fixed (#2610 item 16 and its follow-up).
 #
 # ☠️ "Every flow-level fault has been fixed" stood here and was WRONG (#2598,
 # corrected #2610 item 16). TWO hangs sat behind the TLS one, so fixing #547
