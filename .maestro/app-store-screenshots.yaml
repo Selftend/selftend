@@ -107,6 +107,8 @@ env:
 # 2026-09-21 run shows it in both attempts, with the form filled and Continue
 # sliced in half by the keyboard's top edge.
 #
+# Filed as #2647; this dismissal is a workaround for the capture, not a fix.
+#
 # ⚠️ **The same false-COMPLETED signature as #2646**: the element resolves and
 # is "tappable", something else is drawn over it, and the failure surfaces far
 # away from its cause. Worth knowing that Maestro reporting a tap COMPLETED says
