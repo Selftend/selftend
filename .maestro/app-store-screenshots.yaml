@@ -151,7 +151,14 @@ env:
     when:
       visible: "Welcome to Selftend"
     commands:
-      - tapOn: "Skip for now"
+      # ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the
+      # iPad status bar - the signal, wifi and battery icons sit on top of the
+      # words - so a tap there is swallowed by system UI. Maestro reports the
+      # tap COMPLETED and the wizard stays up, which is exactly how the
+      # 2026-09-21 run failed at `home-layout` with the wizard still in frame.
+      # Filed separately as a layout defect; "Finish" is the CTA, correctly
+      # placed, and completes onboarding rather than deferring it.
+      - tapOn: "Finish"
       - waitForAnimationToEnd:
           timeout: 10000
 
@@ -265,7 +272,14 @@ env:
     when:
       visible: "Welcome to Selftend"
     commands:
-      - tapOn: "Skip for now"
+      # ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the
+      # iPad status bar - the signal, wifi and battery icons sit on top of the
+      # words - so a tap there is swallowed by system UI. Maestro reports the
+      # tap COMPLETED and the wizard stays up, which is exactly how the
+      # 2026-09-21 run failed at `home-layout` with the wizard still in frame.
+      # Filed separately as a layout defect; "Finish" is the CTA, correctly
+      # placed, and completes onboarding rather than deferring it.
+      - tapOn: "Finish"
       - waitForAnimationToEnd:
           timeout: 10000
 
