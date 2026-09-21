@@ -97,6 +97,42 @@ env:
 - tapOn:
     id: "age-gate-country-option-GB"
 
+# ☠️☠️ DISMISS THE KEYBOARD FIRST, OR THE SUBMIT TAP LANDS ON THE KEYBOARD.
+#
+# On the **iPhone** the gate's Continue button sits UNDER the software keyboard:
+# the card is centred at full screen height and the alphabetic keyboard - still
+# up from the country search - covers its bottom third. Maestro reported
+# `Tap on id: age-gate-submit... COMPLETED` and the app never moved, so the run
+# then failed 60s later at the wizard with the age gate still in frame. The
+# 2026-09-21 run shows it in both attempts, with the form filled and Continue
+# sliced in half by the keyboard's top edge.
+#
+# Filed as #2647; this dismissal is a workaround for the capture, not a fix.
+#
+# ⚠️ **The same false-COMPLETED signature as #2646**: the element resolves and
+# is "tappable", something else is drawn over it, and the failure surfaces far
+# away from its cause. Worth knowing that Maestro reporting a tap COMPLETED says
+# only that it dispatched a touch at those coordinates - never that the control
+# received it.
+#
+# The iPad does not hit this: more height, so the card clears the keyboard. That
+# is why every earlier run failed here on the phone alone.
+#
+# `optional: true` because iOS `hideKeyboard` is swipes rather than an API call,
+# and a flow must not die on the dismissal itself - if it silently does nothing,
+# the wizard wait downstream still catches it, now with the screenshot below to
+# say so immediately.
+- hideKeyboard:
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Unconditional, and purely diagnostic: this is the exact frame that took three
+# runs to obtain. `diagnostics/` sits outside the `NN-name` pattern the gather
+# step collects, so it cannot reach the size gate, the duplicate gate or the
+# upload.
+- takeScreenshot: diagnostics/age-gate-before-submit
+
 - tapOn:
     id: "age-gate-submit"
 - waitForAnimationToEnd:
@@ -112,10 +148,25 @@ env:
 # health-data consent (#1766). `consent-submit` stays disabled until BOTH are
 # given, so ticking only the first leaves this flow stuck on the gate.
 #
-# ⚠️ Conditional, because the gate only appears when the stored
-# `policyVersionAccepted` is behind the current `policyVersion`. The block after
-# sign-in is kept as well and is NOT redundant: it covers the demo account's own
-# consent state, which is server-side and independent of this device's.
+# ⚠️ The block AFTER sign-in is kept as well and is NOT redundant: it covers the
+# demo account's own consent state, which is server-side and independent of this
+# device's. That one stays conditional, because the demo account may already
+# have accepted.
+#
+# ☠️ CONDITIONAL, and it has to be: measured on 2026-09-21, this gate appears on
+# the **iPad** after the age gate and does **not** appear on the **iPhone** -
+# same commit, same flow, both cleared installs. An unconditional wait was tried
+# and it failed the iPhone outright at 60s.
+#
+# ⚠️ But `runFlow: when: visible:` probes ONCE, immediately, so a bare
+# conditional loses a race against a screen that has not rendered yet - which is
+# how an earlier revision skipped this block AND the wizard and then failed far
+# away at `home-layout`, with nothing in the log naming what was missed. Hence
+# the settle above: conditional for the platform difference, settled for the
+# race. The wizard below is the opposite case and is asserted, because it always
+# appears.
+- waitForAnimationToEnd:
+    timeout: 15000
 - runFlow:
     when:
       visible:
@@ -130,6 +181,76 @@ env:
       - waitForAnimationToEnd:
           timeout: 10000
 
+# ☠️☠️ THERE IS NO SIGN-IN SCREEN ON A CLEARED INSTALL, AND THAT IS WHY THIS
+# FLOW'S ORIGINAL PREMISE WAS OBSOLETE RATHER THAN MERELY STALE.
+#
+# After the age gate and the consent gate, the app **creates a guest and runs
+# onboarding**. Its own wizard says so: "You're using Selftend as a guest - you
+# can create an account any time from Settings to protect your data." So the
+# opening sequence is age gate -> consent -> onboarding -> Home AS A GUEST, and
+# `sign-in-email` never appears. The run of 2026-09-21 proved it: every gate
+# step COMPLETED and the sign-in wait still failed, with the wizard in frame.
+#
+# ⚠️ Capturing the guest is NOT the answer, even though it is one step shorter.
+# A fresh guest has no entries, so every tool reads "Nothing here yet" - the
+# empty-shell listing the staged demo account exists to prevent, and the exact
+# weakness #2598 and the build-6 reply both call load-bearing.
+#
+# So: finish onboarding, reach Home as a guest, and only THEN go to sign-in. The
+# route there is a deep link rather than the user menu's door (#1869) - see the
+# block below `home-layout` for why the menu cannot be driven.
+#
+# Waited for and asserted, for the same reason as the two gates above: a
+# `when: visible` probe here was skipped outright on the iPhone.
+- extendedWaitUntil:
+    visible: "Welcome to Selftend"
+    timeout: 60000
+
+# ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the iPad
+# status bar - the signal, wifi and battery icons are drawn on top of the words
+# - so a tap there is swallowed by system UI. Maestro reports the tap COMPLETED
+# and the wizard stays up, which is how the 2026-09-21 run failed at
+# `home-layout` with the wizard still in frame. Filed as #2646; "Finish" is the
+# CTA, correctly placed, and completes onboarding rather than deferring it.
+- tapOn: "Finish"
+- waitForAnimationToEnd:
+    timeout: 10000
+
+- extendedWaitUntil:
+    visible:
+      id: "home-layout"
+    timeout: 90000
+
+# ☠️☠️ A GUEST REACHES SIGN-IN BY DEEP LINK, NOT THROUGH THE USER MENU - and
+# the reason is a Maestro limitation worth writing down, because it will bite
+# anything else that tries to drive a popover.
+#
+# The menu route was tried first and failed: the trigger tapped, the menu OPENED
+# (the debug screenshot shows "Guest" and a "Sign in" row in frame), and
+# `user-menu-sign-in-row` still asserted false. The captured accessibility
+# hierarchy explains it - it contains no "Sign in", no "user-menu", not even
+# "Guest". ⚠️ **The popover renders through a portal, and its contents are
+# absent from the tree Maestro reads**, so NO selector would have matched it -
+# not the id, not the text. Tapping by coordinate would be the only way in, and
+# this file does not do coordinates.
+#
+# The deep link avoids the whole problem and is what rule 2 at the top already
+# prescribes. `(auth)` is a route GROUP, so it contributes nothing to the URL:
+# the path is `/sign-in`.
+#
+# ✅ This is a plain navigation, NOT the guest-conversion path - the same thing
+# `user-menu-sign-in-row` does (`router.push("/(auth)/sign-in")`, checked in
+# `user-menu.tsx`). That distinction matters: converting would link the guest to
+# the demo identity, and this flow must land in the demo account's own seeded
+# session rather than a merged one.
+- openLink:
+    link: ${APP_LINK}sign-in
+- runFlow:
+    when:
+      visible: ".*Open in.*"
+    commands:
+      - tapOn: "Open"
+
 - extendedWaitUntil:
     visible:
       id: "sign-in-email"
@@ -137,8 +258,8 @@ env:
 
 # ☠️ NOT `screenshots/`. App Review guideline 2.3.3 names login pages explicitly
 # as what a screenshot must not merely show, so this frame must never sit in the
-# publishable set - but it is the single most useful image for debugging the TLS
-# failure that keeps this job from running at all (#547). It lives outside the
+# publishable set - but it is the single most useful image for proving the
+# sign-in screen was actually reached. It lives outside the
 # `NN-name` pattern the gather step collects, exactly as `after-submit` does, so
 # it structurally cannot reach the size gate, the duplicate gate or the upload.
 # Risk removed by construction rather than by discipline (#2598).
@@ -179,6 +300,62 @@ env:
       - tapOn:
           id: "sign-in-submit"
 
+# ☠️☠️ iOS ASKS TO SAVE THE PASSWORD, AND ITS ALERT HIDES THE WHOLE APP.
+#
+# After the password is submitted, iOS puts up its own **"Save Password?"**
+# sheet. It is system UI, not the app's, and while it is up the app's own
+# hierarchy is not readable at all - so every `assertVisible` below fails with
+# the screen it is asking about plainly in frame behind the alert.
+#
+# Measured on the 2026-09-21 run, on both devices and at different moments:
+#
+#   - **iPad**: up immediately after submit, over the demo account's server-side
+#     consent gate. `home-layout` failed; the consent conditional in between
+#     probed and found nothing, because the alert covers that too.
+#   - **iPhone**: it did NOT appear until after `04-breathing` - the first four
+#     captures are clean - and then failed the gratitude assertion. The app was
+#     on the Gratitude log screen, seeded content and all, behind the alert.
+#
+# ⚠️ **So a single dismissal after sign-in is not enough**: the alert can
+# arrive several screens later, most likely nudged by the `openLink` round trip
+# taking the app out and back. It is dismissed here AND before each capture.
+# `optional: true` is what makes that safe to repeat - the tap is a no-op on
+# every screen where the alert is absent.
+#
+# ✅ The design is confirmed working: on the iPhone run that went green,
+# exactly ONE of the ten dismissals reported COMPLETED and the other nine
+# WARNED - one alert, caught wherever it happened to appear.
+#
+# ☠️ SETTLE FIRST, THEN DISMISS. The dismissal used to fire the instant the
+# submit returned, and on the iPad the alert arrived about a second AFTER it:
+# the tap WARNED with nothing to hit, the consent and wizard probes then found
+# nothing because the alert covers those too, and `home-layout` failed ninety
+# seconds later with Home - signed in, seeded, "Good afternoon" - fully rendered
+# behind the alert. ⚠️ **Dismissing immediately is a race, and it is the wrong
+# side of one.** Waiting for the alert to arrive and then dismissing turns that
+# race into a wait; the second tap covers a late one, and the third, below the
+# gates, covers an alert that arrives while they run.
+#
+# "Not Now", never "Save": declining is the privacy-preserving answer, and
+# nothing should offer to keep the demo credentials on a machine.
+#
+# ✅ Selecting by text is safe here even though rule 1 at the top prefers ids:
+# this is SYSTEM UI and has no `testID` to select by, and "Not Now" appears
+# nowhere in the app's own copy (checked against `src/i18n/locales/en/`), so the
+# tap cannot land on anything of ours.
+- waitForAnimationToEnd:
+    timeout: 15000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
+
 # Unconditional, and the only reason it exists is diagnosis. When the home wait
 # below fails there is otherwise nothing in the artifact showing WHY - the run
 # that added this had to guess between "sign-in failed" and "a gate is in the
@@ -218,10 +395,62 @@ env:
     when:
       visible: "Welcome to Selftend"
     commands:
-      - tapOn: "Skip for now"
+      # ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the
+      # iPad status bar - the signal, wifi and battery icons sit on top of the
+      # words - so a tap there is swallowed by system UI. Maestro reports the
+      # tap COMPLETED and the wizard stays up, which is exactly how the
+      # 2026-09-21 run failed at `home-layout` with the wizard still in frame.
+      # Filed separately as a layout defect; "Finish" is the CTA, correctly
+      # placed, and completes onboarding rather than deferring it.
+      - tapOn: "Finish"
       - waitForAnimationToEnd:
           timeout: 10000
 
+# Home can take a moment: the session restores and the first queries resolve.
+#
+# ☠️ One last dismissal before the assertion, because the two conditionals
+# above take about seven seconds each to probe and an alert arriving in that
+# window would hide Home for the whole ninety-second wait - which is exactly how
+# the iPad failed.
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
+
+# ☠️☠️ ON THE iPAD, NO SELECTOR CAN REACH THAT ALERT - SO RELAUNCH INSTEAD.
+#
+# Tapping "Not Now" works on the iPhone: on the run that went green, exactly one
+# of the ten dismissals reported COMPLETED. On the **iPad** all three reported
+# WARNED - element not found - with the alert plainly in the failure screenshot.
+#
+# The captured hierarchy says why, and it is worse than a missing label:
+# ⚠️ **it is a stack of identical empty full-screen nodes with no text anywhere
+# in it.** Not the alert, and not the app either - `home-layout` is absent from
+# the same file. While that alert is up, iOS suppresses the app's accessibility
+# tree entirely and does not expose the alert's own, so there is nothing to
+# select by: not the id, not the text, not on any node.
+#
+# That is the third time this flow has met the shape - #2646's status bar,
+# #2647's keyboard, the user-menu popover above - and the second time the honest
+# answer was "stop trying to click it".
+#
+# So the alert is not dismissed here, it is **outlived**. A relaunch tears down
+# the process presenting it; the Supabase session is persisted, so the app comes
+# back signed in and lands on Home, which is where this flow wants to be anyway.
+#
+# ⚠️ Conditional on Home being INVISIBLE, deliberately - an unconditional
+# relaunch would also fire on the iPhone, which is already green, and this must
+# not regress it. When Home is readable there is nothing in the way and nothing
+# to do. When it is not, a relaunch costs fifteen seconds and is harmless: the
+# session restores, and Home is the launch destination regardless.
+- runFlow:
+    when:
+      notVisible:
+        id: "home-layout"
+    commands:
+      - launchApp
+      - waitForAnimationToEnd:
+          timeout: 15000
 # Home can take a moment: the session restores and the first queries resolve.
 - extendedWaitUntil:
     visible:
@@ -244,6 +473,10 @@ env:
 
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/01-home
 
 - openLink:
@@ -253,12 +486,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Check-in"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/02-check-in
 
 - openLink:
@@ -268,12 +509,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Journal"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/03-journal
 
 # ☠️ "Breathing", not "Breathing exercises". The old wait asked for a string that
@@ -287,12 +536,20 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Breathing"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/04-breathing
 
 # The fifth and last. The route is `gratitude-log`, not `gratitude`: it is the
@@ -304,10 +561,18 @@ env:
       visible: ".*Open in.*"
     commands:
       - tapOn: "Open"
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - extendedWaitUntil:
     visible:
       text: "Gratitude log"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
+- tapOn:
+    text: "Not Now"
+    optional: true
+    label: "Dismiss iOS's Save Password prompt if it is up"
 - takeScreenshot: screenshots/05-gratitude

@@ -160,9 +160,40 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      # ☠️ The installer exits 0 even when it installed nothing, so this step
+      # checks its own work. Measured on run 35618755971: the download took a
+      # 504 from the CDN, the script printed "Downloaded zip archive is corrupt"
+      # and returned success anyway. The job then carried on for twenty minutes,
+      # built the app, booted the simulator, and died in the drive step with
+      # `maestro: command not found` - after which the verify step reported
+      # ⚠️ **"screenshots/01-home.png is missing - the capture flow did not reach
+      # that screen"**, which is a true sentence about an entirely innocent
+      # flow. A transient CDN error must not read as a capture failure.
+      #
+      # Retried once rather than failed outright, because a 504 is exactly the
+      # kind of thing that succeeds on a second ask - and this job is a
+      # forty-five minute round trip.
       - name: Install Maestro
         run: |
-          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          install_maestro() {
+            curl -fsSL "https://get.maestro.mobile.dev" | bash
+          }
+
+          install_maestro || true
+          export PATH="$HOME/.maestro/bin:$PATH"
+
+          if ! maestro --version >/dev/null 2>&1; then
+            echo "::warning::Maestro did not install on the first attempt. Retrying once."
+            sleep 15
+            install_maestro || true
+          fi
+
+          if ! maestro --version >/dev/null 2>&1; then
+            echo "::error::Maestro failed to install - the download is unavailable or corrupt. This is an installer/CDN failure, NOT a capture failure."
+            exit 1
+          fi
+
+          maestro --version
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
       - name: Build for the simulator
@@ -292,6 +323,34 @@ jobs:
       # directory, not to the job's working directory - so depending on how the
       # workspace is inferred, the PNGs can land in `.maestro/screenshots/`
       # rather than `./screenshots/`. Rather than bet on which, gather them.
+      #
+      # ☠️☠️ MATCH ON THE DIRECTORY, NOT JUST THE FILENAME. This search used to
+      # be `-name '0[0-9]-*.png'` across the whole checkout, and that was wrong
+      # twice over - measured on the 2026-09-21 run, whose uploaded artifact
+      # contains every file named below:
+      #
+      #   1. **It swept the repository's own images in.** 67 tracked PNGs match
+      #      `0[0-9]-*.png` - design records under `docs/design/`, campaign
+      #      captures, web landing shots - and every one of them is the wrong
+      #      pixel size. The size gate below would have failed on all 67, so
+      #      ⚠️ **this job could never have passed, however perfect the
+      #      capture.** That is a second false blocker sitting behind the flow's
+      #      own, and it would have been read as "the captures are wrong".
+      #
+      #   2. ☠️ **It swept the SIGN-IN FRAME into the publishable set.**
+      #      `diagnostics/00-sign-in.png` matches the pattern, and the skip
+      #      below only excluded `./screenshots/*` - so the login screenshot was
+      #      copied into `screenshots/` and uploaded as part of the App Store
+      #      artifact. The flow file claimed this was impossible by
+      #      construction; it was not. Guideline 2.3.3 names login pages
+      #      explicitly, and #2598 chose structure over discipline precisely so
+      #      this could not happen. Now it cannot: `diagnostics/` is not a
+      #      `screenshots/` directory, so the path match excludes it outright.
+      #
+      # There is no directory named exactly `screenshots` anywhere in the repo
+      # (checked), so `*/screenshots/` matches Maestro's output and nothing
+      # else. `store/play-screenshots/` does not match - the path component has
+      # to be `screenshots` exactly.
       - name: Gather the captured screenshots
         if: always()
         run: |
@@ -302,7 +361,7 @@ jobs:
             esac
             echo "found $found"
             cp -f "$found" "screenshots/$(basename "$found")"
-          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -name '0[0-9]-*.png' -print)
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -path '*/screenshots/0[0-9]-*.png' -print)
           ls -la screenshots/ || true
 
           # Diagnostic captures are gathered separately and never enter
