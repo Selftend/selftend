@@ -112,23 +112,31 @@ env:
 # health-data consent (#1766). `consent-submit` stays disabled until BOTH are
 # given, so ticking only the first leaves this flow stuck on the gate.
 #
-# ⚠️ Conditional, because the gate only appears when the stored
-# `policyVersionAccepted` is behind the current `policyVersion`. The block after
-# sign-in is kept as well and is NOT redundant: it covers the demo account's own
-# consent state, which is server-side and independent of this device's.
-- runFlow:
-    when:
-      visible:
-        id: "consent-accept-checkbox"
-    commands:
-      - tapOn:
-          id: "consent-accept-checkbox"
-      - tapOn:
-          id: "consent-health-data-checkbox"
-      - tapOn:
-          id: "consent-submit"
-      - waitForAnimationToEnd:
-          timeout: 10000
+# ⚠️ The block AFTER sign-in is kept as well and is NOT redundant: it covers the
+# demo account's own consent state, which is server-side and independent of this
+# device's. That one stays conditional, because the demo account may already
+# have accepted.
+#
+# ☠️ UNCONDITIONAL here, with a wait - and that is a correction, not a preference.
+# `runFlow: when: visible:` checks ONCE, immediately. If the gate has not
+# rendered yet the block is silently skipped and the run fails later, somewhere
+# else, with no trace of what was missed. That is exactly what happened on
+# 2026-09-21: the iPad won the race and ran this block, the iPhone lost it and
+# skipped BOTH this and the wizard, then failed at `home-layout`.
+# On a `clearState: true` launch all three gates always appear, so each one is
+# waited for and asserted - the same rule the rest of this file follows.
+- extendedWaitUntil:
+    visible:
+      id: "consent-accept-checkbox"
+    timeout: 60000
+- tapOn:
+    id: "consent-accept-checkbox"
+- tapOn:
+    id: "consent-health-data-checkbox"
+- tapOn:
+    id: "consent-submit"
+- waitForAnimationToEnd:
+    timeout: 10000
 
 # ☠️☠️ THERE IS NO SIGN-IN SCREEN ON A CLEARED INSTALL, AND THAT IS WHY THIS
 # FLOW'S ORIGINAL PREMISE WAS OBSOLETE RATHER THAN MERELY STALE.
@@ -147,20 +155,21 @@ env:
 #
 # So: finish onboarding, then walk a guest to the sign-in screen the way a
 # person would - the user menu's own door (#1869).
-- runFlow:
-    when:
-      visible: "Welcome to Selftend"
-    commands:
-      # ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the
-      # iPad status bar - the signal, wifi and battery icons sit on top of the
-      # words - so a tap there is swallowed by system UI. Maestro reports the
-      # tap COMPLETED and the wizard stays up, which is exactly how the
-      # 2026-09-21 run failed at `home-layout` with the wizard still in frame.
-      # Filed separately as a layout defect; "Finish" is the CTA, correctly
-      # placed, and completes onboarding rather than deferring it.
-      - tapOn: "Finish"
-      - waitForAnimationToEnd:
-          timeout: 10000
+# Waited for and asserted, for the same reason as the two gates above: a
+# `when: visible` probe here was skipped outright on the iPhone.
+- extendedWaitUntil:
+    visible: "Welcome to Selftend"
+    timeout: 60000
+
+# ☠️ "Finish", NOT "Skip for now". The pinned Escape renders UNDER the iPad
+# status bar - the signal, wifi and battery icons are drawn on top of the words
+# - so a tap there is swallowed by system UI. Maestro reports the tap COMPLETED
+# and the wizard stays up, which is how the 2026-09-21 run failed at
+# `home-layout` with the wizard still in frame. Filed as #2646; "Finish" is the
+# CTA, correctly placed, and completes onboarding rather than deferring it.
+- tapOn: "Finish"
+- waitForAnimationToEnd:
+    timeout: 10000
 
 - extendedWaitUntil:
     visible:
