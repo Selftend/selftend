@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 
 import { AgeGate } from "./age-gate";
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
@@ -35,6 +35,17 @@ jest.mock("@/src/features/settings/queries", () => ({
 // suite aged (`reference_calendar_anchored_tests`).
 const TODAY = new Date(2026, 8, 3, 12, 0, 0);
 
+type KeyboardHandler = (event: { endCoordinates?: { height?: number } }) => void;
+
+/** The keyboard listeners `useKeyboardInset` registered, by event name. */
+let keyboardHandlers: Record<string, KeyboardHandler>;
+
+const ORIGINAL_PLATFORM = Platform.OS;
+
+function setPlatform(os: string) {
+  Object.defineProperty(Platform, "OS", { configurable: true, value: os });
+}
+
 beforeEach(() => {
   jest.useFakeTimers({ doNotFake: ["nextTick"] });
   jest.setSystemTime(TODAY);
@@ -42,10 +53,20 @@ beforeEach(() => {
   mockIsError = false;
   mockIsPending = false;
   mockUser = { id: "user-1" };
+  keyboardHandlers = {};
+  jest.spyOn(Keyboard, "addListener").mockImplementation(((
+    name: string,
+    handler: KeyboardHandler,
+  ) => {
+    keyboardHandlers[name] = handler;
+    return { remove: () => {} };
+  }) as unknown as typeof Keyboard.addListener);
 });
 
 afterEach(() => {
   jest.useRealTimers();
+  jest.restoreAllMocks();
+  setPlatform(ORIGINAL_PLATFORM);
 });
 
 function fillDate(day: string, month: string, year: string) {
@@ -202,6 +223,55 @@ describe("AgeGate", () => {
     expect(screen.UNSAFE_getAllByType(ScrollView)[0].props.keyboardShouldPersistTaps).toBe(
       "handled",
     );
+  });
+
+  // #2647. Measured on the 2026-09-21 capture run (iPhone, 440x956 points):
+  // the keyboard's top edge sat at 611, `Continue` occupied 591-631 so its
+  // centre landed exactly on that edge, and the card was centred in the full
+  // 956 rather than in the 611 above the keyboard - meaning the surrounding
+  // KeyboardAvoidingView contributed nothing. The card is only ~380 tall, so
+  // it fits above the keyboard easily; it was laid out as though the keyboard
+  // were not there.
+  describe("keeps Continue clear of the keyboard (#2647)", () => {
+    const KEYBOARD_HEIGHT = 345;
+
+    /** The style on the scroll view the gate renders its card into. */
+    function contentContainerStyle() {
+      return screen.UNSAFE_getAllByType(ScrollView)[0].props.contentContainerStyle;
+    }
+
+    it("pads the CONTENT container by the keyboard height on iOS", () => {
+      setPlatform("ios");
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      act(() => {
+        keyboardHandlers.keyboardWillChangeFrame({
+          endCoordinates: { height: KEYBOARD_HEIGHT },
+        });
+      });
+
+      // The content box, not the ScrollView: `justify-center` centres within
+      // the content box, so padding the view would move the card without
+      // changing what it is centred in.
+      expect(contentContainerStyle()).toEqual({ paddingBottom: KEYBOARD_HEIGHT });
+    });
+
+    it("pads nothing while the keyboard is closed", () => {
+      setPlatform("ios");
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      expect(contentContainerStyle()).toBeUndefined();
+    });
+
+    // Android keeps the KeyboardAvoidingView path and its edge-to-edge
+    // reasoning. A second source of truth there is the regression this
+    // scoping exists to avoid, so the absence is the assertion.
+    it("leaves Android alone", () => {
+      setPlatform("android");
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      expect(contentContainerStyle()).toBeUndefined();
+    });
   });
 
   it("shows the save error when the mutation is in its error state", () => {

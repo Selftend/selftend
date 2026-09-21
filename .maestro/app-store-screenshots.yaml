@@ -122,6 +122,18 @@ env:
 # and a flow must not die on the dismissal itself - if it silently does nothing,
 # the wizard wait downstream still catches it, now with the screenshot below to
 # say so immediately.
+# ✅ THE KEYBOARD IS STILL UP HERE, AND THAT IS THE POINT OF THIS FRAME.
+#
+# Taken BEFORE the dismissal below, so it photographs the state #2647 is about:
+# the gate with the software keyboard covering the bottom of the card. It is the
+# only instrument that can show whether `Continue` clears the keyboard, because
+# every frame after the dismissal has no keyboard in it to clear.
+#
+# Its companion `age-gate-before-submit` is taken after, and the pair is the
+# useful thing: one shows the layout under a keyboard, the other shows what the
+# flow actually taps.
+- takeScreenshot: diagnostics/age-gate-keyboard-up
+
 - hideKeyboard:
     optional: true
 - waitForAnimationToEnd:
