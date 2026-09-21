@@ -130,6 +130,53 @@ env:
       - waitForAnimationToEnd:
           timeout: 10000
 
+# ☠️☠️ THERE IS NO SIGN-IN SCREEN ON A CLEARED INSTALL, AND THAT IS WHY THIS
+# FLOW'S ORIGINAL PREMISE WAS OBSOLETE RATHER THAN MERELY STALE.
+#
+# After the age gate and the consent gate, the app **creates a guest and runs
+# onboarding**. Its own wizard says so: "You're using Selftend as a guest - you
+# can create an account any time from Settings to protect your data." So the
+# opening sequence is age gate -> consent -> onboarding -> Home AS A GUEST, and
+# `sign-in-email` never appears. The run of 2026-09-21 proved it: every gate
+# step COMPLETED and the sign-in wait still failed, with the wizard in frame.
+#
+# ⚠️ Capturing the guest is NOT the answer, even though it is one step shorter.
+# A fresh guest has no entries, so every tool reads "Nothing here yet" - the
+# empty-shell listing the staged demo account exists to prevent, and the exact
+# weakness #2598 and the build-6 reply both call load-bearing.
+#
+# So: finish onboarding, then walk a guest to the sign-in screen the way a
+# person would - the user menu's own door (#1869).
+- runFlow:
+    when:
+      visible: "Welcome to Selftend"
+    commands:
+      - tapOn: "Skip for now"
+      - waitForAnimationToEnd:
+          timeout: 10000
+
+- extendedWaitUntil:
+    visible:
+      id: "home-layout"
+    timeout: 90000
+
+# ☠️ `user-menu-sign-in-row` is a plain `router.push("/(auth)/sign-in")`, NOT the
+# guest-conversion path - checked in `user-menu.tsx` before relying on it. That
+# matters: converting would link the guest to the demo identity, and this flow
+# must land in the demo account's own seeded session, not a merged one.
+#
+# The trigger carries `testID="user-menu-trigger"`, added with this change. It
+# had only an `accessibilityLabel`, which is copy and therefore translated - the
+# thing rule 1 at the top of this file exists to avoid.
+- tapOn:
+    id: "user-menu-trigger"
+- extendedWaitUntil:
+    visible:
+      id: "user-menu-sign-in-row"
+    timeout: 20000
+- tapOn:
+    id: "user-menu-sign-in-row"
+
 - extendedWaitUntil:
     visible:
       id: "sign-in-email"
