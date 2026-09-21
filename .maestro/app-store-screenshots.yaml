@@ -263,6 +263,40 @@ env:
     commands:
       - tapOn: "Open"
 
+# ☠️ A DEEP LINK THAT DOES NOT LAND IS SILENT, SO ASK AGAIN BEFORE ASSERTING.
+#
+# `openLink` reports COMPLETED for handing the URL to the system, never for the
+# app having navigated. ⚠️ Measured on the iPad of run 35658173440: the link
+# COMPLETED, the `.*Open in.*` sheet was correctly SKIPPED, and `sign-in-email`
+# still failed - the app simply stayed on Home. The same run's first attempt had
+# reached Home perfectly, so nothing upstream was wrong; the link alone did not
+# take.
+#
+# One repeat, conditional on the destination being absent, which costs nothing
+# when the first link worked. Deliberately not a loop: if two openLinks in a row
+# do not navigate, the assertion below should fail and say so rather than spin.
+#
+# ⚠️ `notVisible` and `runFlow` only - NOT `optional:` on the wait below.
+# `optional` is documented for `tapOn` and `assertVisible`; `extendedWaitUntil`
+# documents only `visible` and `timeout`, and an unknown property makes Maestro
+# reject the WHOLE FILE before a single command runs. This flow has already died
+# that way once, on `timeout:` passed to `assertVisible` - see the note at the
+# first gate.
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-email"
+    commands:
+      - openLink:
+          link: ${APP_LINK}sign-in
+      - runFlow:
+          when:
+            visible: ".*Open in.*"
+          commands:
+            - tapOn: "Open"
+      - waitForAnimationToEnd:
+          timeout: 10000
+
 - extendedWaitUntil:
     visible:
       id: "sign-in-email"
