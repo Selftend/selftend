@@ -102,6 +102,34 @@ env:
 - waitForAnimationToEnd:
     timeout: 10000
 
+# ☠️ The consent gate comes SECOND, still before sign-in, and the flow used to
+# dismiss it only AFTER signing in - so on a cleared install it sat waiting for
+# `sign-in-email` while "Quick policy check" was on screen. The run of
+# 2026-09-21 proved this: every age-gate step COMPLETED, then the sign-in wait
+# failed with the consent card in the debug screenshot.
+#
+# Two checkboxes, deliberately separate: the policy acceptance and the Art. 9(2)(a)
+# health-data consent (#1766). `consent-submit` stays disabled until BOTH are
+# given, so ticking only the first leaves this flow stuck on the gate.
+#
+# ⚠️ Conditional, because the gate only appears when the stored
+# `policyVersionAccepted` is behind the current `policyVersion`. The block after
+# sign-in is kept as well and is NOT redundant: it covers the demo account's own
+# consent state, which is server-side and independent of this device's.
+- runFlow:
+    when:
+      visible:
+        id: "consent-accept-checkbox"
+    commands:
+      - tapOn:
+          id: "consent-accept-checkbox"
+      - tapOn:
+          id: "consent-health-data-checkbox"
+      - tapOn:
+          id: "consent-submit"
+      - waitForAnimationToEnd:
+          timeout: 10000
+
 - extendedWaitUntil:
     visible:
       id: "sign-in-email"
