@@ -46,10 +46,20 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 The lift is one edit plus its tests, in one change:
 
 1. drop the target from `HELD_OUT_REMINDER_TARGETS` in `src/features/notifications/reminder-rollout.ts`;
-2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition);
-3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
+2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition). `test/check-in-route-compat.test.tsx` asserts the same partition from the app side, and `src/features/notifications/notification-target-row.test.tsx` drives the held-out row from a mocked predicate so that path keeps its coverage while the list is empty;
+3. ☠️ **commit it as `feat:`, never `chore:`** — `SECTION_KINDS` in the release-thread picker admits only `feat`/`fix`/`perf`, so a `chore:` lift renders no changelog bullet, gives the release-thread drafter no `#N` to join on, and the news vanishes permanently. A held-out change is not announced at the release that built it, because no true sentence exists yet ([#2621](https://github.com/Selftend/selftend/issues/2621)); **the lift is the release at which the sentence becomes true, and the only one that can carry it.** The PR description carries that sentence;
+4. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
 
-Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store; and **the general reminder** (`general`, [#2491](https://github.com/Selftend/selftend/issues/2491)), held out until the build carrying `/` in `ALLOWED_REMINDER_ROUTES` is live on both — its lift is [#2494](https://github.com/Selftend/selftend/issues/2494).
+**Today's list: empty.** ✅ Emptied on 2026-09-22 by [#2698](https://github.com/Selftend/selftend/issues/2698) — the first lift this list has ever had.
+
+| Target                                                                | Needed                                      | Shipped in          | Lifted                                                                |
+| --------------------------------------------------------------------- | ------------------------------------------- | ------------------- | --------------------------------------------------------------------- |
+| `dbt` ([#1980](https://github.com/Selftend/selftend/issues/1980))     | `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` | v0.18.0, 2026-09-09 | 2026-09-22                                                            |
+| `general` ([#2491](https://github.com/Selftend/selftend/issues/2491)) | `/` in `ALLOWED_REMINDER_ROUTES`            | v0.21.0, 2026-09-17 | 2026-09-22, [#2494](https://github.com/Selftend/selftend/issues/2494) |
+
+Both were lifted against the same reading of the stores: **App Store 0.21.0** (released 2026-09-17) and **Google Play 0.23.0** (updated 2026-09-18), with `eas.json`'s production submit profile on `releaseStatus: "completed"`, so there is no staged rollout to wait out.
+
+☠️ **Read the delay, not the outcome.** `dbt` sat 13 days past its own condition and `general` 5, because nothing in the repo goes red while a target stays held out and no release step made anyone look. That is the paragraph above this one, proven. ⚠️ **This section is the only thing that will make anyone check**, so a new target added to the list belongs in the table above in the same change — with what it needs and what it is waiting for, so the next reader can settle it by reading two store pages.
 
 ## Post-release, one-time: retire the `www` app-links carve-out
 
