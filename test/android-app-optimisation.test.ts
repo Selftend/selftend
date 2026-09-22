@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
+import { gunzipSync } from "node:zlib";
 
 import { sourceFiles, stripComments } from "./source-scan";
 
@@ -126,6 +127,70 @@ describe("Android release builds run R8 (#1707)", () => {
     );
     expect(releaseWorkflow).toContain("SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}");
     expect(releaseWorkflow).toMatch(/SENTRY_DISABLE_AUTO_UPLOAD:.*secrets\.SENTRY_AUTH_TOKEN/);
+  });
+});
+
+// #2593 / #2673 - the tripwire for the deferred R8 optimisation swap.
+//
+// The prebuild template writes `getDefaultProguardFile("proguard-android.txt")`,
+// and THAT file ships `-dontoptimize`, so the optimisation pass never runs.
+// Expo SDK 58's template already swaps it for `proguard-android-optimize.txt`
+// (expo/expo#46852) and brings a fixed R8 alongside, so #2685 ruled the change
+// deferred rather than taken early: it arrives correct, for free, at that
+// upgrade.
+//
+// That ruling only holds if somebody NOTICES the upgrade. This asserts against
+// the real template the next prebuild will consume - not against our own source
+// - so it goes red on the Expo bump PR itself, before anyone runs a prebuild or
+// a build. When it fails, that is not a bug: it means SDK 58 has landed, the
+// swap is now upstream, and the deferred work on #2593 is live. Read #2593's
+// runbook and #2686's device checklist BEFORE shipping that upgrade, because
+// optimisation turns on inside it, entangled with RN 0.86->0.88, AGP 8.12->9.2
+// and repackaging-on-by-default.
+//
+// `android/` is gitignored and generated, so the template is the only readable
+// source of truth here. It ships as a tarball inside the `expo` package, which
+// `expo prebuild` reads directly (it only downloads on failure). No tar library
+// is a dependency, and this file's convention is dependency-free, so the
+// archive is walked by hand - it is a flat 512-byte-header format.
+describe("the Expo template still ships the un-optimised ProGuard file (#2593)", () => {
+  const TEMPLATE_ENTRY = "package/android/app/build.gradle";
+
+  /** Read one file out of a gzipped tar without a tar dependency. */
+  function readFromTarball(tarballPath: string, entryName: string): string {
+    const tar = gunzipSync(readFileSync(tarballPath));
+    for (let offset = 0; offset + 512 <= tar.length;) {
+      const name = tar.toString("utf8", offset, offset + 100).replace(/\0.*$/, "");
+      if (name === "") break; // two zero blocks terminate the archive
+      // Size is octal, NUL/space padded, at offset 124.
+      const size = parseInt(
+        tar.toString("utf8", offset + 124, offset + 136).replace(/[^0-7]/g, ""),
+        8,
+      );
+      const body = offset + 512;
+      if (name === entryName) return tar.toString("utf8", body, body + size);
+      offset = body + Math.ceil(size / 512) * 512;
+    }
+    throw new Error(`${entryName} not found in ${tarballPath}`);
+  }
+
+  const templateGradle = readFromTarball(require.resolve("expo/template.tgz"), TEMPLATE_ENTRY);
+
+  it("still writes the default proguard-android.txt, and writes it exactly once", () => {
+    // If this count is ever not 1, the config plugin #2682 specifies would have
+    // either no anchor or an ambiguous one - so the anchor is asserted, not the
+    // line number. #2593 cites line 122, which is this project's PREBUILT file
+    // (three lower, after two Sentry mods prepend); the template's is 119. That
+    // discrepancy is exactly why a line number must never be the anchor.
+    const matches = templateGradle.match(/getDefaultProguardFile\("proguard-android\.txt"\)/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("has NOT yet swapped to proguard-android-optimize.txt - when it has, #2593 is live", () => {
+    // ☠️ A failure here is a signal, not a defect. See the block comment above:
+    // the Expo SDK has caught up, optimisation is about to turn on by default,
+    // and the device verification on #2593 / #2686 is now required.
+    expect(templateGradle).not.toContain("proguard-android-optimize.txt");
   });
 });
 
