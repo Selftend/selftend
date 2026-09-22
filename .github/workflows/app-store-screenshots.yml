@@ -49,23 +49,45 @@ name: App Store screenshots
 #   - the breathing step waited on "Breathing exercises", a string that exists
 #     in NO locale file at all. Found by grepping every wait text against
 #     src/i18n/locales/en/ rather than trusting them.
-# Both are fixed now. That is the whole reason this file and the flow are kept
-# corrected while dormant: a stale flow is not inert, it is a trap that gets
-# re-derived - which is exactly how the dead `06-tools` screen reached the live
-# listing and passed App Review.
+# Both are fixed now, and this job is NO LONGER DORMANT - see the result below.
+# Correcting the flow while it could not run was still the right call: a stale
+# flow is not inert, it is a trap that gets re-derived - which is exactly how
+# the dead `06-tools` screen reached the live listing and passed App Review.
 #
-# ⚠️ The 0.9.0 listing was shot from the WEB build instead. That route is now
+# ✅ RESULT (2026-09-21): the job produces the full set on BOTH devices, at
+# Apple's exact sizes. Three fully green runs:
+#   35623729810  both devices  (fix/capture-guest-signin - the first both-green)
+#   35665756780  both devices
+#   35669305674  both devices
+# A green run IS the size check: the job verifies every PNG with `sips` and
+# fails on `md5` duplicates, so it cannot go green on almost-right images.
+# The two fix/capture-flakes commits ahead of that first green run harden the
+# iPad half against two flakes; they are not what made it work.
+#
+# So "repair or retire" (#2613) is answered: REPAIRED. And #547 is not what
+# this job was waiting on - the TLS diagnosis above was wrong.
+#
+# ⚠️ The 0.9.0 listing was shot from the WEB build instead. That route stays
 # disqualified (#2598): the module gate is iOS-only, so a web capture
-# photographs the very surfaces iOS does not have. The next set is captured by
-# hand from a local `simulator`-profile build.
+# photographs the very surfaces iOS does not have. But it is no longer the
+# alternative either - #2598's fallback of capturing BY HAND from a local
+# `simulator`-profile build is overtaken by this job, and #2630's "assumes a
+# Mac the project does not have" with it: the free `macos-26` runner is that
+# Mac, and this job touches no Apple credentials.
 #
-# Kept rather than deleted because the probe, the gates and the flow are the
-# expensive parts, and they are all correct. When the TLS question is answered
-# this should work as written.
+# ☠️ WHAT IT PHOTOGRAPHS is now the open problem, not whether it runs. The
+# account the flow signs into is thin and stale, so the captures read as an
+# empty app - "Nothing yet" five times on Home (#2648).
 #
-# Note `workflow_dispatch` only becomes available once this file reaches the
-# DEFAULT branch (main), which happens at the next release - not on merge to
-# dev. Until then there is no way to trigger it.
+# ⚠️ There is deliberately NO seeding step here, and adding one is not a
+# detail: the credential this job signs in with has been App Review's own
+# sign-in, and the repo's seed WIPES the target user's rows before inserting.
+# Map #2652 carries that decision. Do not add a seed step ahead of it.
+#
+# Note `workflow_dispatch` needs this file on the DEFAULT branch (main) before
+# it appears at all. It has been there since #549, so dispatch works today and
+# the branch to run is chosen in the dispatch form - which is how the runs
+# above were triggered from feature branches.
 on:
   workflow_dispatch:
     inputs:

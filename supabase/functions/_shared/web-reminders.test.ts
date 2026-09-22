@@ -215,22 +215,21 @@ describe("activityWindowsForTarget", () => {
     ]);
   });
 
-  it("holds a target out of the cron until the native build that routes its url is live (#2213)", () => {
+  it("holds nothing out of the cron: every configured target is sent (#2213, lifted #2698)", () => {
     // ☠️ CROSS-VERSION, and every other assertion in this file is blind to it:
     // this function deploys at merge, the phone that taps the push is on the
     // previous store release, and that client's allowlist gates the tap with no
-    // fallback. `/modules/dbt` is allowlisted by the client shipping WITH this
-    // function and by no earlier one, so a DBT push to a 0.17.0 phone is a
-    // dead tap with no switch on that phone to stop it. Named, not derived -
-    // the list is the delta between the shipped allowlist and this one.
-    // `general` (#2491) is the same shape one release later: its url is Home,
-    // `/`, allowlisted by the client shipping with this function and by no
-    // earlier one. Lifted by #2494 once that build is live on both stores.
-    expect([...HELD_OUT_TARGETS]).toEqual(["dbt", "general"]);
-    expect(TARGETS).not.toContain("dbt");
-    expect(TARGETS).not.toContain("general");
+    // fallback. That is why a new target lands on the hold-out list first.
+    // Both former members have now cleared it: `/modules/dbt` shipped in
+    // v0.18.0 and `/` in v0.21.0, and the App Store was live on 0.21.0 with
+    // Google Play on 0.23.0 when they were lifted (#2698, #2494).
+    expect([...HELD_OUT_TARGETS]).toEqual([]);
+    expect(TARGETS).toContain("dbt");
+    expect(TARGETS).toContain("general");
     // The two lists partition the configured set: a target in neither is a
     // reminder silently never sent, a target in both is the hold-out undone.
+    // ⚠️ Still asserted with the hold-out list empty - it is the assertion that
+    // catches the next target being added to `CONFIGURED_TARGETS` alone.
     expect([...TARGETS, ...HELD_OUT_TARGETS].sort()).toEqual([...CONFIGURED_TARGETS].sort());
     expect(TARGETS.filter((target) => HELD_OUT_TARGETS.includes(target))).toEqual([]);
     expect([...CONFIGURED_TARGETS].sort()).toEqual(Object.keys(TARGET_CONFIGS).sort());

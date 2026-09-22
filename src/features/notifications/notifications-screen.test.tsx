@@ -145,10 +145,15 @@ describe("NotificationsScreen", () => {
    * The one suggestion the product makes, made by placement alone (#2412,
    * ADR-0010): the general row is the FIRST row, always, statically - before every
    * tool row on every arrival - labelled with the app's own name, at 18:00, off.
-   * It ships held out (#2413 § 3.4), so the switch is disabled under the note the
-   * row test pins; the eyebrow that divides it from the eleven is #2492's.
+   * The eyebrow that divides it from the eleven is #2492's.
+   *
+   * ✅ It shipped held out (#2413 § 3.4) and was lifted on 2026-09-22 (#2698,
+   * #2494), so the switch is now live and there is no note. **Off, not disabled**
+   * is the assertion that matters here and it did not move: the suggestion is
+   * placement, never a default - ADR-0010 and the reminders guardrail both turn on
+   * the row being off until the person turns it on.
    */
-  it("renders the general row first, as Selftend at 18:00, off and held out (#2491)", () => {
+  it("renders the general row first, as Selftend at 18:00, off but switchable (#2491, lifted #2698)", () => {
     renderWithProviders(<NotificationsScreen />);
 
     const rows = screen.getAllByTestId(/^notification-row-[a-z]+$/);
@@ -157,9 +162,29 @@ describe("NotificationsScreen", () => {
 
     const general = screen.getByLabelText("Selftend");
     expect(general.props.accessibilityState.checked).toBe(false);
-    expect(general.props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
+    expect(general.props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId("notification-row-held-out-general")).toBeNull();
     expect(screen.getByText("6:00 PM")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ The guardrail the lift could have broken, asserted over the whole screen
+   * rather than one row: **no reminder is on by default** (AGENTS.md - streaks,
+   * quests and reminders are optional and non-punitive; ADR-0010 § "suggested by
+   * placement alone"). Emptying the hold-out list made two rows switchable that
+   * were previously wired off, and a default-on row would have been invisible in
+   * a per-row test that only looked at `general`.
+   */
+  it("leaves every one of the twelve rows off, and none of them disabled (#2698)", () => {
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(NOTIFICATION_TARGETS).toHaveLength(12);
+    for (const target of NOTIFICATION_TARGETS) {
+      const control = screen.getByLabelText(i18n.t(`notifications:${target.labelKey}`));
+      expect(control.props.accessibilityState.checked).toBe(false);
+      expect(control.props.accessibilityState.disabled).toBe(false);
+      expect(screen.queryByTestId(`notification-row-held-out-${target.key}`)).toBeNull();
+    }
   });
 
   /**

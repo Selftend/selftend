@@ -46,10 +46,20 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 The lift is one edit plus its tests, in one change:
 
 1. drop the target from `HELD_OUT_REMINDER_TARGETS` in `src/features/notifications/reminder-rollout.ts`;
-2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition);
-3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
+2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition). `test/check-in-route-compat.test.tsx` asserts the same partition from the app side, and `src/features/notifications/notification-target-row.test.tsx` drives the held-out row from a mocked predicate so that path keeps its coverage while the list is empty;
+3. ☠️ **commit it as `feat:`, never `chore:`** — `SECTION_KINDS` in the release-thread picker admits only `feat`/`fix`/`perf`, so a `chore:` lift renders no changelog bullet, gives the release-thread drafter no `#N` to join on, and the news vanishes permanently. A held-out change is not announced at the release that built it, because no true sentence exists yet ([#2621](https://github.com/Selftend/selftend/issues/2621)); **the lift is the release at which the sentence becomes true, and the only one that can carry it.** The PR description carries that sentence;
+4. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
 
-Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store; and **the general reminder** (`general`, [#2491](https://github.com/Selftend/selftend/issues/2491)), held out until the build carrying `/` in `ALLOWED_REMINDER_ROUTES` is live on both — its lift is [#2494](https://github.com/Selftend/selftend/issues/2494).
+**Today's list: empty.** ✅ Emptied on 2026-09-22 by [#2698](https://github.com/Selftend/selftend/issues/2698) — the first lift this list has ever had.
+
+| Target                                                                | Needed                                      | Shipped in          | Lifted                                                                |
+| --------------------------------------------------------------------- | ------------------------------------------- | ------------------- | --------------------------------------------------------------------- |
+| `dbt` ([#1980](https://github.com/Selftend/selftend/issues/1980))     | `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` | v0.18.0, 2026-09-09 | 2026-09-22                                                            |
+| `general` ([#2491](https://github.com/Selftend/selftend/issues/2491)) | `/` in `ALLOWED_REMINDER_ROUTES`            | v0.21.0, 2026-09-17 | 2026-09-22, [#2494](https://github.com/Selftend/selftend/issues/2494) |
+
+Both were lifted against the same reading of the stores: **App Store 0.21.0** (released 2026-09-17) and **Google Play 0.23.0** (updated 2026-09-18), with `eas.json`'s production submit profile on `releaseStatus: "completed"`, so there is no staged rollout to wait out.
+
+☠️ **Read the delay, not the outcome.** `dbt` sat 13 days past its own condition and `general` 5, because nothing in the repo goes red while a target stays held out and no release step made anyone look. That is the paragraph above this one, proven. ⚠️ **This section is the only thing that will make anyone check**, so a new target added to the list belongs in the table above in the same change — with what it needs and what it is waiting for, so the next reader can settle it by reading two store pages.
 
 ## Post-release, one-time: retire the `www` app-links carve-out
 
@@ -170,10 +180,35 @@ With R8 live, Play Console replaced the Feb-2027 threshold warning with a lower-
 
   Every one of the 424 removed entries is library chrome (`m3_*`, `design_bottom_sheet_*`, `chevron_*`, dynamic palette colours) — the same shape #2211 found. The asset check is a byte comparison on purpose: AGP replaces a stripped file resource with a `DummyContent` stub rather than deleting the table entry, so a resolving id proves nothing, and the smallest surviving asset is 1,925 B against a stub's ~100 B.
 
-- **R8 optimisation passes — not now, and the reason is not the flag.** The `-` on _Optimisation percentage_ is not a `-repackageclasses` question: the prebuild template writes `proguardFiles getDefaultProguardFile("proguard-android.txt")`, and that file ships **`-dontoptimize`**, so the optimisation pass genuinely never runs. Google now says to use `proguard-android-optimize.txt` instead, and [AGP 9.0 disallows the old file](https://developer.android.com/build/releases/agp-9-0-0-release-notes) specifically to stop accidental `-dontoptimize`. Two things stop this being a one-line change. `expo-build-properties` exposes only `extraProguardRules` and no way to swap the default file, so it needs a custom config plugin patching `app/build.gradle`; and more importantly **a green R8 build is not evidence the app works** — turning optimisation on for the first time on a React Native app risks reflection-dependent breakage that only appears at runtime, which no local `bundleRelease` can see. It needs a `preview` build on a device, so it is its own piece of work, tracked as [#2593](https://github.com/Selftend/selftend/issues/2593).
+- **R8 optimisation passes — deferred to the Expo SDK 58 upgrade, which brings the change itself.** The `-` on _Optimisation percentage_ is not a `-repackageclasses` question: the prebuild template writes `proguardFiles getDefaultProguardFile("proguard-android.txt")`, and that file ships **`-dontoptimize`**, so the optimisation pass does not run — confirmed from a shipped artefact, `isOptimizationsEnabled: false` in `v0.23.0`'s `r8.json`. ⚠️ **"The pass never runs" is too strong, though**, and an earlier revision of this section said it: full mode already performs string/switch rewriting, synthetic-lambda inlining, synthetic-only horizontal merging, unused-interface removal, loop unrolling and redundant-field-load elimination. What the swap _newly_ enables is general and class inlining, devirtualisation, enum unboxing, argument propagation (method-signature rewriting — the likeliest reflection breaker), app-class horizontal merging, vertical merging, outlining and access modification ([#2679](https://github.com/Selftend/selftend/issues/2679)).
+
+  `expo-build-properties` exposes only `extraProguardRules` and no way to swap the default file, so taking it early needs a custom config plugin; and **a green R8 build is not evidence the app works** — reflection-dependent breakage appears only at runtime, which no local `bundleRelease` can see. ☠️ **But the do-nothing path repairs itself, so this was ruled _not now_** ([#2685](https://github.com/Selftend/selftend/issues/2685)): `expo-template-bare-minimum@58.0.4` already swaps the file (expo/expo#46852) _and_ brings RN 0.88 → AGP 9.2.1 → R8 9.2.14, so the swap, the keep rules it needs and a fixed R8 all arrive together. ⚠️ **AGP 9.0 does not force it either** — it raises a hard build error with two documented ways to keep optimisation off (`android.r8.proguardAndroidTxt.disallowed=false`, or swap the file and re-add `-dontoptimize` through `extraProguardRules`); an earlier revision of this section implied the swap was unavoidable, and it is not.
+
+  **The trigger is therefore the SDK 58 upgrade, not a date.** What does _not_ arrive with it is the device verification: the runbook and the ranked surface list live on [#2593](https://github.com/Selftend/selftend/issues/2593) and [#2686](https://github.com/Selftend/selftend/issues/2686), and that upgrade must carry them. ☠️ Before any build ships with optimisation on, `@sentry/react-native` must be past the sentry-react-native#6691 fix (reported 8.25.0; pinned `~8.19.0` today) — R8 horizontal merging silently corrupts TTID there, and being silent, **no device checklist can catch it**.
+
 - **AGP 9.0 — void, not deferred.** The version comes from the Expo template, not this repo. Expo SDK 57 ships React Native 0.86, which pins AGP 8.12.0, and [expo/expo#49550](https://github.com/expo/expo/issues/49550) records the blocker: `expo-gradle-plugin` compiles against Kotlin 2.1.20, which cannot read Gradle 9.5+ metadata, while AGP 9.3+ requires Gradle ≥ 9.5. It arrives when the Expo SDK brings it, which is not a task.
 
-⚠️ **Two gaps left open rather than papered over.** No primary source says a `-` in Play's _Optimisation percentage_ means `-dontoptimize`; _Shrinking percentage_ also reads `-` although shrinking demonstrably works, and Play [documents](https://developer.android.com/topic/performance/vitals/code-optimization) those figures as coming from `r8.json` metadata emitted by recent AGP/R8 — so the dashes may be a **metrics-reporting artifact of the R8 version rather than a verdict on this configuration**, in which case neither change clears the card. And Play publishes no help page defining the bundle explorer's R8-configuration indicators. Both are reasons to re-read the card after the next production release rather than to predict it.
+#### Why both percentages read `-`, and how to check it locally in ten seconds
+
+An earlier revision of this section left this as an open gap, guessing the dashes "may be a metrics-reporting artifact of the R8 version". **The guess was right and the mechanism was wrong** ([#2681](https://github.com/Selftend/selftend/issues/2681), read out of the shipped `v0.23.0` AAB).
+
+AGP 8.12.0 bundles **R8 8.12.14**, which sits inside a stats-arithmetic overflow bug — `noOptimizationPercentage` reads `-65.72`, a 32-bit wrap of a true 100.00. R8 **discards its whole `stats` block** for versions it knows are affected, and Play reads `r8.json` only for "the latest patch of AGP 8.10 or higher", otherwise falling back to `mapping.txt`, which can estimate obfuscation and knows nothing about shrinking or optimisation. **That is both dashes.** Play still publishes no help page defining the bundle explorer's R8-configuration indicators.
+
+Every row on Play's card is readable locally, from any release AAB, with the command Google documents:
+
+```sh
+unzip -p <app>.aab BUNDLE-METADATA/com.android.tools/r8.json
+```
+
+| Field                                              | Reads today | Means                                                                                                      |
+| -------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `version`                                          | `8.12.14`   | Inside the overflow range → Play discards our metrics → both percentages show `-`.                         |
+| `options.isOptimizationsEnabled`                   | `false`     | The optimisation pass does not run.                                                                        |
+| `resourceOptimization.isOptimizedShrinkingEnabled` | `true`      | Confirms [#2522](https://github.com/Selftend/selftend/pull/2522) shipped, independently of any percentage. |
+
+⚠️ Only the **AAB** carries this; a `preview` APK has no `BUNDLE-METADATA/` at all. Release AAB artifacts have **14-day retention**, so grab one within a fortnight of a release.
+
+☠️ **The one state to watch for: `version` leaving the overflow range while `isOptimizationsEnabled` is still `false`.** That makes the card readable and reads **Optimisation 0%** against Play's per-category **25%** floor, on an app at ~20 MB of DEX — twice the 10 MB trigger. It should not happen, because the fixed R8 and the ProGuard swap arrive together with SDK 58; if it does, reopen [#2593](https://github.com/Selftend/selftend/issues/2593) immediately. This check replaces "ship to production and hope the card moves" — run it on any release AAB, no Play Console needed.
 
 ☠️ Two build-mechanics notes for whoever runs this next. A release build can end `BUILD FAILED` on `:app:produceReleaseBundleIdeListingFile` — an input-validation task that runs **after** `signReleaseBundle` — while the AAB, `mapping.txt` and `resources.txt` are all correctly written; check the artefacts before believing the verdict. And a Gradle daemon holds `android/sentry.properties` open, so `expo prebuild --clean` fails with `EBUSY` until the daemon is stopped.
 
@@ -327,3 +362,18 @@ It is deliberately **not a required check** — it reads a system a human can le
 1. Never squash the `dev→main` promotion PR, a `hotfix/*` PR, or a Weblate translation PR — merge commits only.
 2. The tag and GitHub Release are always created by the PAT (`RELEASE_PLEASE_TOKEN`), never `GITHUB_TOKEN` — `GITHUB_TOKEN`-authored events do not trigger `on: release` workflows, so deploys would silently not run.
 3. The maintainer may bypass the review requirement, never the required checks.
+4. `googleapis/release-please-action` is pinned to a full-length commit SHA, never a floating tag — held by `test/workflow-action-pin.test.ts`. It is the only action in the repo pinned this way, because it is the only one that can _succeed_ while changing whether invariant 2 holds; see [Why release-please is SHA-pinned](#why-release-please-is-sha-pinned).
+
+## Why release-please is SHA-pinned
+
+Every other action in this repository fails **loudly and locally** when it misbehaves: a broken `actions/checkout` or `cloudflare/wrangler-action` reddens its own job, and you find out immediately. `googleapis/release-please-action` is different — it can **succeed** while publishing a Release whose authorship silently decides whether `release.yml`, `release-thread.yml` and `back-merge.yml` run at all. A release that deploys nothing looks exactly like a healthy one from the release-please run. It is also the only action handed a long-lived, write-scoped PAT.
+
+A mutable major tag can be retagged by a third party with **no diff in this repository**, so the pin is a full-length SHA with the release in a trailing comment:
+
+```yaml
+uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+```
+
+The other actions stay on floating major tags on purpose — five are GitHub's own `actions/*`, and `supabase/setup-cli@v1` already pins the thing that actually matters (its `version:` input, held by `test/workflow-supabase-cli-pin.test.ts`).
+
+**Bump it through the Dependabot PR**, never by hand: `.github/dependabot.yml` watches `github-actions` weekly and exists precisely so this pin cannot go stale — a SHA pin with nothing watching it is worse than a floating tag. Dependabot rewrites the SHA and the trailing comment together; keep them in step. Note that Dependabot does **not** raise vulnerability alerts for SHA-pinned actions, which is an accepted trade here: the pin prevents a bad version from ever being run, rather than reporting it afterwards.
