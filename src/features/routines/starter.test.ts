@@ -19,14 +19,23 @@ describe("STARTER_CANDIDATE_TOOLS", () => {
     // DISTINCT list because it is a subset of connection. The third exclusion is
     // rollout (#2203): "Keep" is a WRITE, so a candidate the shipped native
     // client cannot read would compose a step that phone can never tick.
+    //
+    // ✅ That third exclusion is empty since #2713 — the shipped client reads the
+    // DBT ids, so the six are candidates again, exactly as `starter.ts` said they
+    // would be. Two exclusions remain, and the count moves 18 → 24.
     expect(STARTER_CANDIDATE_TOOLS).toEqual(
       DISTINCT_STEPPABLE_TOOLS.filter(
         (tool) => tool !== "habits" && !WITHHELD_STEP_TOOL_IDS.includes(tool),
       ),
     );
-    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(18);
+    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(24);
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("habits");
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("dropAnchor");
+    // ⚠️ Named, because the derived assertion above goes vacuous on the rollout
+    // clause the moment the withheld list is empty.
+    expect(STARTER_CANDIDATE_TOOLS).toEqual(
+      expect.arrayContaining(["muscleRelaxation", "wiseMind", "judgement", "script"]),
+    );
   });
 
   it("orders the everyday tools first, then the ACT exercises, then DBT last", () => {
