@@ -109,6 +109,10 @@ broadcasts are what it was written to refuse.
 - **The deep link is Home**, shipped held out until the native build that
   allowlists `/` is live on both stores (#2213's two-release path, as DBT). The
   row is visible, off, with the held-out note, from the first release.
+  _Dated note, 2026-09-22 (#2698): that condition is met — `/` shipped in
+  v0.21.0, which is the live App Store version — so the hold-out was lifted and
+  the row now takes an ordinary opt-in. The decision above is unchanged; only
+  the state it describes has moved on._
 - **Nothing is measured newly.** Enabling the general reminder writes
   `reminder_consent` through the same patch every target uses, so §8 of the
   engagement report counts it with no change; it gets no line of its own.
