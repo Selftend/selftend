@@ -31,6 +31,21 @@ What the gate does **not** touch, and must not:
 
 ⚠️ Note for whoever lifts this: iOS `preview` is gated too, so the modules cannot be exercised on an internal-distribution **iOS** device build. Android preview is unaffected. That is the clause most likely to want revisiting.
 
+### Lifting it
+
+**The bar is one user-test sitting per module, findings built** ([#2446](https://github.com/Selftend/selftend/issues/2446)). A gated module is live in the code and kept off the production surfaces until it clears that bar, and module work is frozen while gated except the return path. Until 2026-09-22 that sentence existed in exactly one place in the repository — a paragraph of [`brand-result.md`](../brand-result.md) § 3.3, a document about the brand search result, which is not where anyone touching a module reads. It is restated here, unchanged.
+
+☠️ **The bar is per module; this gate is not.** `shouldShowModules(appEnvName, isDev, platform)` takes **no module key**, so CBT, ACT and DBT become reachable together or not at all. #2446's per-module bar and [#2473](https://github.com/Selftend/selftend/issues/2473)'s "worked three times, once per module" cannot both be honoured by the mechanism that shipped. Whoever opens this gate decides which of the two gives way; nothing in the code decides it for them. (⚠️ Recorded, not resolved — [#2700](https://github.com/Selftend/selftend/issues/2700).)
+
+**The lift owes three public pages, in the same change.** `/cbt`, `/dbt` and `/act` are decided explainers — `brand-result.md` § 3.2 sources and titles, § 4 mechanism, § 5 head rows — bound to the change that makes their modules reachable, never shipped ahead of it. Each also gets its landing card's link to it (§ 7.5), anchored on the card's existing title.
+
+**Two tests will stop a lift that forgets them**, which is why the requirement is written here rather than only in a document or an issue:
+
+- `test/index-list.test.ts` § _the module explainers ↔ the module gate_ pins the two sides **equal**. Opening the gate without the pages is red; listing a page before the gate is equally red, because a public route file exists iff it is indexable ([`indexability.md`](../indexability.md) § 3) and a page for a module nobody can enter would make the sitemap lie.
+- `modules-section.test.tsx` carries the landing card's two-link assertion.
+
+⚠️ **The mechanism named in older documents does not exist.** [#2448](https://github.com/Selftend/selftend/issues/2448) decided a committed `LIVE_MODULES` list with an `isModuleLive(key)` predicate and an `EXPO_PUBLIC_SHOW_GATED_MODULES` override; none of it was built, and the owner instruction of 2026-09-17 replaced it with the platform-and-environment predicate above. A module does not "join a live list" — there is no list. Reading a document that says otherwise, believe this section and `src/lib/module-visibility.ts`.
+
 ## Expansion Rule
 
 Before a placeholder becomes real, add a module spec covering:
