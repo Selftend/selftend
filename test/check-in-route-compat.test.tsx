@@ -104,6 +104,11 @@ describe("the reminder edge function never flips to the new path (#732)", () => 
 // pinned in `supabase/functions/_shared/web-reminders.test.ts`. Here it is
 // asserted that a held-out target is still configured and still allowlisted, so
 // lifting it later is a one-line change with nothing left to wire.
+//
+// ✅ That list is empty as of #2698, so the partition below currently reads
+// `TARGETS === CONFIGURED_TARGETS`. It is kept, not simplified: it is what
+// fails when the next target is added to one list and not the other, which is
+// exactly the state the hold-out mechanism exists to make visible.
 describe("every reminder url the edge function mints is allowlisted by the client (#2213)", () => {
   it.each(CONFIGURED_TARGETS.map((target) => [target, TARGET_CONFIGS[target].url] as const))(
     "%s -> %s",

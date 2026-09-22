@@ -27,19 +27,23 @@
  * "Post-release: lift held-out reminder targets". The tests that pin this list
  * (`reminder-rollout.test.ts`, `web-reminders.test.ts`) are edited in the same
  * change, so the lift cannot happen by accident and cannot half-happen.
+ *
+ * ✅ **Empty since 2026-09-22 (#2698), the first lift this list has ever had.**
+ * `dbt` and `general` left together because both their conditions had come
+ * true: `/modules/dbt` shipped in v0.18.0 and `/` in v0.21.0, and the App Store
+ * was live on 0.21.0 while Google Play was live on 0.23.0. The two had sat past
+ * their own gates for 13 and 5 days, because nothing goes red while a target
+ * stays held out - see `docs/releasing.md`, which now says so in the section
+ * that owns this list.
+ *
+ * ⚠️ **Empty is the normal state, not a retired mechanism.** The two-step
+ * rollout is still how a new target ships: it lands here in the change that
+ * adds its url to `ALLOWED_REMINDER_ROUTES`, and leaves once that build is live
+ * on BOTH stores. The row's held-out rendering and its copy stay wired for
+ * exactly that reason, and `notification-target-row.test.ts` drives them from a
+ * mocked predicate so they keep their coverage while nothing is held out.
  */
-export const HELD_OUT_REMINDER_TARGETS = [
-  // DBT (#1980): `/modules/dbt` is allowlisted by the client that ships with
-  // this list and by no earlier one. Lift once the native build carrying
-  // `/modules/dbt` in ALLOWED_REMINDER_ROUTES is live on Google Play and the
-  // App Store.
-  "dbt",
-  // The general reminder (#2491, spec docs/reminders.md § 3.4): its deep link
-  // is Home, `/`, allowlisted by the client that ships with this list and by
-  // no earlier one. Lift (#2494) once the native build carrying `/` in
-  // ALLOWED_REMINDER_ROUTES is live on Google Play and the App Store.
-  "general",
-] as const;
+export const HELD_OUT_REMINDER_TARGETS = [] as const;
 
 /** Is `target` held out right now? A string predicate so both sides can ask without sharing a type. */
 export function isReminderTargetHeldOut(target: string): boolean {
