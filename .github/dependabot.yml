@@ -1,0 +1,24 @@
+# Dependabot, deliberately scoped to GitHub Actions ONLY (#2676).
+#
+# It exists to keep the SHA pin on googleapis/release-please-action current. A
+# SHA pin with nothing watching it is strictly worse than a floating tag: it
+# freezes the repo on a stale version *and* gives false confidence. So the pin
+# and this file are one decision, not two.
+#
+# npm is deliberately NOT here. Enabling Dependabot across an Expo/React Native
+# dependency tree raises AGENTS.md's dependency policy, the review burden on a
+# solo maintainer, and lockfile churn - a much larger question, ruled out of
+# scope on #2676 rather than decided in passing.
+#
+# What to expect, per dependabot-core's precision matching (its own behaviour,
+# not documented by GitHub): only tags of the SAME precision as the current pin
+# are considered. So the SHA pin above gets major AND minor bumps, with the
+# trailing `# vX.Y.Z` comment rewritten; the remaining `@v4`-style pins get
+# MAJOR bumps only, never minor or patch. Across eight actions this is a
+# handful of PRs a year, not a stream.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -352,3 +352,18 @@ It is deliberately **not a required check** — it reads a system a human can le
 1. Never squash the `dev→main` promotion PR, a `hotfix/*` PR, or a Weblate translation PR — merge commits only.
 2. The tag and GitHub Release are always created by the PAT (`RELEASE_PLEASE_TOKEN`), never `GITHUB_TOKEN` — `GITHUB_TOKEN`-authored events do not trigger `on: release` workflows, so deploys would silently not run.
 3. The maintainer may bypass the review requirement, never the required checks.
+4. `googleapis/release-please-action` is pinned to a full-length commit SHA, never a floating tag — held by `test/workflow-action-pin.test.ts`. It is the only action in the repo pinned this way, because it is the only one that can _succeed_ while changing whether invariant 2 holds; see [Why release-please is SHA-pinned](#why-release-please-is-sha-pinned).
+
+## Why release-please is SHA-pinned
+
+Every other action in this repository fails **loudly and locally** when it misbehaves: a broken `actions/checkout` or `cloudflare/wrangler-action` reddens its own job, and you find out immediately. `googleapis/release-please-action` is different — it can **succeed** while publishing a Release whose authorship silently decides whether `release.yml`, `release-thread.yml` and `back-merge.yml` run at all. A release that deploys nothing looks exactly like a healthy one from the release-please run. It is also the only action handed a long-lived, write-scoped PAT.
+
+A mutable major tag can be retagged by a third party with **no diff in this repository**, so the pin is a full-length SHA with the release in a trailing comment:
+
+```yaml
+uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+```
+
+The other actions stay on floating major tags on purpose — five are GitHub's own `actions/*`, and `supabase/setup-cli@v1` already pins the thing that actually matters (its `version:` input, held by `test/workflow-supabase-cli-pin.test.ts`).
+
+**Bump it through the Dependabot PR**, never by hand: `.github/dependabot.yml` watches `github-actions` weekly and exists precisely so this pin cannot go stale — a SHA pin with nothing watching it is worse than a floating tag. Dependabot rewrites the SHA and the trailing comment together; keep them in step. Note that Dependabot does **not** raise vulnerability alerts for SHA-pinned actions, which is an accepted trade here: the pin prevents a bad version from ever being run, rather than reporting it afterwards.
