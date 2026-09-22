@@ -6,6 +6,7 @@ import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 import { APP_STORE_CAPS } from "@/test/store-caps";
 import {
   APPLE_INFO_SURFACE,
+  APPLE_RELEASE_NOTES_SURFACE,
   PLAY_VERBATIM_SURFACE,
   STORE_LISTING_TEXT as STORE_LISTING_ENTRIES,
   storeListingText,
@@ -151,9 +152,15 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *   - `positioning.md` is the document the rules come from, so it necessarily
  *     quotes every banned phrasing in order to ban it. Same reason it is absent
  *     from `ALL_SURFACES`.
- *   - `app-store-review-information.md` is the reply ALREADY SENT to Apple for
- *     build 6, and its own line 84 forbids syncing it until the build under
- *     review carries the change.
+ *   - ☠️ `app-store-review-information.md` WAS here and is now SCANNED (#2602).
+ *     Its exemption rested on two clauses and both died: the file is not "the
+ *     reply already sent" — it is mostly a live draft of a private App Review
+ *     field that #2597 established is **editable at any time** — and the freeze
+ *     rule it cited has been re-scoped to *the version live on the App Store*,
+ *     which no longer forbids anything. The genuinely historical part of that
+ *     file records THAT a reply was sent, at what length and with what
+ *     attached; it never reproduces the reply text, so it survives the scan.
+ *     ✅ A regulator-facing file moved from exempt to guarded.
  *   - `app-store-recording-script.md` quotes the sign-in copy as it was when a
  *     video was recorded. Correcting the quote would make the script describe a
  *     recording that does not exist.
@@ -197,7 +204,6 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  */
 const PUBLISHED_RECORDS = [
   "docs/positioning.md",
-  "docs/app-store-review-information.md",
   "docs/app-store-recording-script.md",
   "docs/android-closed-testing.md",
   "docs/campaign/scripts/",
@@ -1106,7 +1112,6 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
 
     for (const record of [
       "docs/positioning.md",
-      "docs/app-store-review-information.md",
       "docs/app-store-recording-script.md",
       "docs/android-closed-testing.md",
       "docs/campaign/scripts/cbt.md",
@@ -1114,11 +1119,16 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       expect({ record, scanned: ids.has(record) }).toEqual({ record, scanned: false });
     }
 
-    // And each of those really does still contain the phrase - so the exclusion
-    // is load-bearing, not a leftover.
-    for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
-      expect(readFile(record).text).toMatch(/guided self-help/i);
-    }
+    // And that one really does still contain the phrase - so the exclusion is
+    // load-bearing, not a leftover. ☠️ `app-store-review-information.md` was the
+    // other half of this pair until #2602; it is SCANNED now, and this check
+    // going down to one file is the point rather than an erosion of it.
+    // `docs/campaign/scripts/cbt.md` keeps the assertion load-bearing alone.
+    expect(readFile("docs/campaign/scripts/cbt.md").text).toMatch(/guided self-help/i);
+
+    // ☠️ And the file that left is asserted to be scanned, so this exemption
+    // cannot quietly grow back.
+    expect({ scanned: ids.has("docs/app-store-review-information.md") }).toEqual({ scanned: true });
   });
 
   /**
@@ -1748,10 +1758,11 @@ describe("the store listings are in scope (#1760)", () => {
    * over a mutated listing is the only assertion here that would fail if
    * `corpusFor` stopped appending the store text.
    */
-  it("catches a banned phrase planted in either store surface", () => {
+  it("catches a banned phrase planted in any store surface", () => {
     const planted = storeListingText(
       JSON.stringify({ subtitle: "Calm, guided self-help tools" }),
       `## Verbatim, as saved on 2026-01-01\n\n> A guided self-help app.\n`,
+      `## Verbatim, as submitted\n\n> Now with guided self-help.\n`,
     );
 
     const caught = GUIDED_SELF_HELP.filter((rule) =>
@@ -1762,18 +1773,35 @@ describe("the store listings are in scope (#1760)", () => {
     expect(planted.map(({ surface }) => surface)).toEqual([
       APPLE_INFO_SURFACE,
       PLAY_VERBATIM_SURFACE,
+      APPLE_RELEASE_NOTES_SURFACE,
     ]);
   });
 
-  it("refuses to yield an empty corpus when the Play verbatim block moves", () => {
-    expect(() => storeListingText(`{"subtitle":"x"}`, "# no verbatim heading here\n")).toThrow(
+  /**
+   * ☠️ Both blockquote surfaces, not just Play. The release-notes file is the
+   * one whose text cannot be corrected after it ships (#2597), so a corpus that
+   * quietly empties there is worse than one that empties on Play.
+   */
+  it("refuses to yield an empty corpus when either verbatim block moves", () => {
+    const okNotes = `## Verbatim, as submitted\n\n> fine.\n`;
+    const okPlay = `## Verbatim, as saved on 2026-01-01\n\n> fine.\n`;
+
+    expect(() => storeListingText(`{"subtitle":"x"}`, "# no heading\n", okNotes)).toThrow(
       /Verbatim/,
     );
     expect(() =>
       storeListingText(
         `{"subtitle":"x"}`,
         "## Verbatim, as saved on 2026-01-01\n\nno quote lines\n",
+        okNotes,
       ),
+    ).toThrow(/Verbatim/);
+
+    expect(() => storeListingText(`{"subtitle":"x"}`, okPlay, "# no heading\n")).toThrow(
+      /Verbatim/,
+    );
+    expect(() =>
+      storeListingText(`{"subtitle":"x"}`, okPlay, "## Verbatim, as submitted\n\nno quotes\n"),
     ).toThrow(/Verbatim/);
   });
 });
@@ -1812,7 +1840,9 @@ describe("the store listings are in scope (#1760)", () => {
  *  1. **Capped fields are out by RULE, not by timing.** `subtitle` (30) and
  *     Play's short description (80) carry the short form — *"Private mental
  *     health tools."*, 28 characters, no method — because the frame sentence is
- *     174 and does not fit. A pin over them is red by design, and no fix
+ *     132 and does not fit. ⚠️ The number was 174 until #2582 removed beat two
+ *     (corrected by #2608); the CONCLUSION survives at 132, since 132 still
+ *     exceeds both 30 and 80. A pin over them is red by design, and no fix
  *     anywhere turns it green. ⚠️ #1790 was filed believing it was blocked
  *     until #1760 cleared `subtitle`; it never was. #1760's own decided
  *     replacement is that same method-free 28, so closing it changes nothing
@@ -1835,7 +1865,7 @@ describe("the store listings are in scope (#1760)", () => {
  */
 const SHORT_FIELD_EXCEPTION = "description";
 
-describe("the frame's second beat survives on the surfaces this repo ships (#1790)", () => {
+describe("the frame's second beat is GONE from the surfaces this repo ships (#1790, inverted by #2582)", () => {
   /**
    * The method as beat two names it, per locale.
    *
@@ -2306,10 +2336,40 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
    * Play transcript DOES carry the method today. It is out because of where a
    * future divergence would have to be fixed — in the Play Console, by the
    * owner — and not because it currently fails.
+   *
+   * ☠️ **It used to read the WHOLE FILE, and was green for the wrong reason**
+   * (#2606, fixed by #2610 item 9). `readFile("store/play-listing.md").text`
+   * matched `/CBT programme/i` against the *Known contradictions* table, which
+   * quotes a **retired** frame — so the assertion stayed green while the
+   * verbatim block itself said only "CBT tools", and merely tidying that table
+   * would have turned it red. It now reads the **verbatim block**, which is the
+   * only part of the file that is the listing.
    */
-  it("leaves the Play transcript out, though it carries the method today", () => {
+  it("leaves the Play transcript out, though the LISTING ITSELF carries the method today", () => {
     expect(FRAME_CARRIERS.some(({ id }) => id.includes("play-listing"))).toBe(false);
-    expect(METHOD.en.test(readFile("store/play-listing.md").text)).toBe(true);
+
+    const verbatim = STORE_LISTING_ENTRIES.find(
+      ({ surface }) => surface === PLAY_VERBATIM_SURFACE,
+    )?.text;
+    expect(verbatim).toBeDefined();
+    expect(METHOD.en.test(verbatim ?? "")).toBe(true);
+  });
+
+  /**
+   * Exclusion 3 (#2604). The release notes describe a **subtraction**, so they
+   * make no claim about what Selftend *is* — the only thing § 3 governs — and
+   * the modules appear there as the bare acronym, which this file's own
+   * `METHOD` note already rules is not naming the method.
+   *
+   * ☠️ **It asserts the exclusion and NOT the string, unlike its two siblings.**
+   * `apple-info.json`'s pins `METHOD.en === false` and Play's pins `true`;
+   * both are claims about copy that is already live and stable. This field is
+   * **version-scoped and replaced at every submission** (`store/apple-release-notes.md`
+   * says so), so pinning the method either way here would re-create exactly the
+   * rot the `docs/positioning.md` fact block below this one exists to catch.
+   */
+  it("leaves the App Store release notes out, and asserts nothing about their text", () => {
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-release-notes"))).toBe(false);
   });
 });
 
@@ -2561,5 +2621,129 @@ describe("docs/positioning.md's own facts, which nothing else can check", () => 
     const quoted = /^> \*\*(.+)\*\*$/m.exec(SHORT_FORM);
     expect({ found: Boolean(quoted) }).toEqual({ found: true });
     expect(quoted![1]).toBe(shortForm);
+  });
+
+  /**
+   * ☠️☠️ **THE FRAME SENTENCE, PINNED TO WHAT SHIPS** (#2619, from #2608).
+   *
+   * The short-form suite above has existed for a while; `### The frame
+   * sentence` had no equivalent, and it rotted exactly where you would expect.
+   * #2608 found the canonical **Bulgarian** sentence still carrying beat two
+   * while `bg/auth.json` had shipped without it for two days, plus two stated
+   * character counts reading **174** against a sentence that is **132** — one
+   * of them a live false constraint that inverted at the real length.
+   *
+   * ☠️ **A ban can never catch this.** `docs/positioning.md` is in
+   * `PUBLISHED_RECORDS` and must stay there: it is the document that quotes the
+   * banned words. But an **agreement** assertion is not a ban, and that is what
+   * this is — the document's quotation of a shipped string, pinned against that
+   * string, and its arithmetic pinned against the arithmetic.
+   *
+   * ⚠️ **PRESENCE OF THE OBJECT, NOT PHRASING.** Nothing here requires the
+   * sentence to be worded any particular way, or requires any sentence to
+   * exist. It requires that where the document *does* quote the frame sentence,
+   * the quotation matches what the app and the store actually carry.
+   */
+  const FRAME = section("### The frame sentence");
+  const SURFACES = section("### Which surfaces carry it");
+
+  /** One i18n value by `namespace:dotted.key`, from the same corpus the bans use. */
+  function i18n(locale: Locale, id: string): string {
+    const hit = LOCALE_STRINGS[locale].find(({ namespace, key }) => `${namespace}:${key}` === id);
+    if (!hit) throw new Error(`${locale} has no ${id}`);
+    return hit.text;
+  }
+
+  /** The three `auth` keys that carry the frame sentence, per § *Which surfaces carry it*. */
+  const FRAME_KEYS = [
+    "auth:landing.subtitle",
+    "auth:landingPage.heroSupport",
+    "auth:landingPage.metaDescription",
+  ];
+
+  it("parses both frame sections, rather than passing over an empty one", () => {
+    // The positive control, as every corpus in this file carries: a renamed
+    // heading or a reformatted section must fail rather than pass vacuously.
+    expect(FRAME.length).toBeGreaterThan(200);
+    expect(SURFACES).toContain("Bulgarian twins");
+    expect(FRAME_KEYS.length).toBe(3);
+  });
+
+  /**
+   * The English sentence, against the two places it is shipped verbatim: the
+   * App Store `description`'s first paragraph, and the three `auth` keys.
+   *
+   * ⚠️ Two of those keys carry the **brand-omitted** form — the page already
+   * prints "Selftend" above them — so the clause is what is matched, not the
+   * whole string. That is the form `docs/launch/play-listing/README.md` calls
+   * out for the feature graphic too.
+   */
+  it("quotes an English frame sentence that the store and the app both ship", () => {
+    const quoted = /^> \*\*(.+?)\*\*(.*)$/m.exec(FRAME);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+
+    const canonical = `${quoted![1]}${quoted![2]}`.replace(/\*\*/g, "").trim();
+
+    // The App Store description opens with it, byte for byte.
+    expect(APPLE_INFO.description.split("\n\n")[0]).toBe(canonical);
+
+    // And every frame-carrying `auth` key opens with it, in one of its two
+    // sanctioned forms.
+    const brandOmitted = canonical.replace(/^Selftend is a set of/, "A set of");
+    for (const id of FRAME_KEYS) {
+      const shipped = i18n("en", id);
+      expect({
+        id,
+        opens: shipped.startsWith(canonical) || shipped.startsWith(brandOmitted),
+      }).toEqual({ id, opens: true });
+    }
+  });
+
+  /**
+   * The Bulgarian twin — the one #2608 found divergent, and the reason this
+   * suite exists. `METHOD.bg` asserts over `FRAME_CARRIERS`, which are i18n
+   * values; nothing asserted that the *document's* copy of the sentence agreed
+   * with them.
+   */
+  it("quotes a Bulgarian frame sentence that the app ships", () => {
+    const quoted = /_(Набор от[^_]+?)_/.exec(SURFACES);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+
+    const canonical = quoted![1].replace(/\*\*/g, "").trim();
+    for (const id of FRAME_KEYS) {
+      const shipped = i18n("bg", id);
+      expect({ id, opens: shipped.startsWith(canonical) }).toEqual({ id, opens: true });
+    }
+  });
+
+  /**
+   * The arithmetic. ☠️ Both *live* claims are matched; a number inside a
+   * struck-and-quoted passage is history and is deliberately not pinned —
+   * #2608 kept the old "174 characters, up from 164" on the page as a record,
+   * and a guard that failed on it would be guarding the trail rather than the
+   * fact.
+   */
+  it("states the English frame sentence's real length wherever it claims one", () => {
+    const quoted = /^> \*\*(.+?)\*\*(.*)$/m.exec(FRAME);
+    const canonical = `${quoted![1]}${quoted![2]}`.replace(/\*\*/g, "").trim();
+
+    // ☠️ Both live phrasings, because the claim is made in two shapes and an
+    // earlier draft of this guard matched NEITHER - it searched only the frame
+    // section for `frame sentence is **N** characters` and found zero, which is
+    // a green test asserting nothing at all.
+    const CLAIM = /(?:frame )?sentence is \*{0,2}(\d+)\*{0,2} characters/g;
+    const stated = [FRAME, SHORT_FORM].flatMap((body) =>
+      [...body.matchAll(CLAIM)].map(([, n]) => Number(n)),
+    );
+
+    // Requiring at least one is the whole point: a reworded claim must fail
+    // here rather than silently stop being checked.
+    expect(stated.length).toBeGreaterThanOrEqual(2);
+    for (const n of stated) expect({ stated: n }).toEqual({ stated: canonical.length });
+
+    // ⚠️ The struck "174 characters, up from 164" is history that #2608
+    // deliberately kept on the page, and is NOT pinned - a guard that failed on
+    // it would be guarding the trail rather than the fact.
+    expect(FRAME).toContain("174 characters, up from 164");
   });
 });

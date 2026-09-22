@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
+import { useKeyboardInset } from "@/src/lib/use-keyboard-inset";
 import { useWebKeyboardInset } from "@/src/lib/use-web-keyboard-inset";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -79,6 +80,10 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
   // Web only: KeyboardAvoidingView is a plain View there, and a shrunk WINDOW
   // is no proxy for the on-screen keyboard.
   const keyboardInset = useWebKeyboardInset();
+  // The native counterpart, iOS only. Separate from the web inset above
+  // because they solve the same problem on platforms that expose it
+  // differently, and neither is ever non-zero on the other's platform.
+  const nativeKeyboardInset = useKeyboardInset();
 
   const setField = (field: keyof AttestationDraft) => (value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -167,8 +172,31 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
         className="flex-1"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
+        {/* ☠️ The keyboard's own height, padded onto the CONTENT container, and
+            it is load-bearing rather than belt-and-braces: the
+            KeyboardAvoidingView above measurably contributes nothing here.
+            Measured on the 2026-09-21 capture run (iPhone, 440x956 points) -
+            keyboard top edge at 611, `Continue` at 591-631 so its centre sat
+            exactly on that edge, and the card centred in the full 956 rather
+            than in the 611 above the keyboard. The card is only ~380 tall, so
+            it fits above the keyboard easily; it was simply laid out as though
+            the keyboard were not there (#2647).
+
+            With `grow` and `justify-center`, padding the content box is what
+            re-centres the card into the space that is actually visible. It is
+            also why this goes on the content container and not on the
+            ScrollView: padding the view would move the card without changing
+            what `justify-center` centres within.
+
+            ⚠️ iOS only - `useKeyboardInset` returns 0 elsewhere - so Android
+            keeps the `behavior="padding"` path and its edge-to-edge reasoning
+            untouched. That is a scoping decision, not a claim that Android is
+            fine; see the hook. */}
         <KeyboardAwareScrollView
           contentContainerClassName="grow items-center justify-center p-6"
+          contentContainerStyle={
+            nativeKeyboardInset > 0 ? { paddingBottom: nativeKeyboardInset } : undefined
+          }
           keyboardShouldPersistTaps="handled"
         >
           <Card className="w-full max-w-lg">
