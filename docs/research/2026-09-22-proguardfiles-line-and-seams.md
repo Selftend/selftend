@@ -154,7 +154,21 @@ The template says 119. This project's prebuilt file says 122, and the three extr
 
 119 + 1 + 2 = **122**. If `disableAutoUpload` were ever set, it becomes 123.
 
-That reconciles #2593's number without either source being wrong, and it makes the design point concretely: the offset moves when an unrelated plugin's options change. **A line number is never a valid anchor here.** Note also that Sentry's own mods fail _soft_ — `warnOnce` and return the unmodified contents — which is the failure mode this map is trying not to repeat.
+For the arithmetic to be exact, nothing else installed may insert a line above 119. That was checked exhaustively: `grep -rl withAppBuildGradle node_modules` returns **eight** files, and all of them are accounted for.
+
+| Caller                                                    | Effect on this project's `app/build.gradle`                                                                                                                                                                        | Shifts line 119? |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| `@sentry/react-native` `withSentryAndroidGradlePlugin.js` | prepends `apply plugin: "io.sentry.android.gradle"`                                                                                                                                                                | **yes, +1**      |
+| `@sentry/react-native` `withSentryAndroid.js`             | inserts `apply from: … sentry.gradle.kts` + blank line before `^android {`                                                                                                                                         | **yes, +2**      |
+| `@expo/config-plugins` `GoogleServices.js`                | active (`android.googleServicesFile` is set in `app.config.ts`), but the edit is `appBuildGradle + "\napply plugin: '…'"` — an **append at EOF**                                                                   | no               |
+| `@expo/config-plugins` `Package.js`, `Version.js`         | in-place substitution of `namespace` / `applicationId` / `versionCode` / `versionName`                                                                                                                             | no               |
+| `expo-localization` `withExpoLocalization.js`             | would add `resourceConfigurations += […]` inside `defaultConfig` (above 119), but the whole branch is gated on `supportedLocales`, which `app.config.ts` does not pass — the plugin is registered as a bare string | no (inactive)    |
+| `expo-build-properties` `android.js`                      | precompiled-headers mod, gated on `android.usePrecompiledHeaders` / `EXPO_USE_ANDROID_PRECOMPILED_HEADERS=1`, neither set                                                                                          | no (inactive)    |
+| `@expo/config-plugins` `index.js`                         | re-export                                                                                                                                                                                                          | n/a              |
+
+So 122 is exact today and is the sum of one third-party plugin's two prepends. That reconciles #2593's number without either source being wrong, and it makes the design point concretely: the offset moves when an unrelated plugin's options change — enabling `supportedLocales`, or Sentry's `disableAutoUpload`, each moves it again. **A line number is never a valid anchor here.** Note also that Sentry's own mods fail _soft_ — `warnOnce` and return the unmodified contents — which is the failure mode this map is trying not to repeat.
+
+One incidental result of that sweep: `GoogleServices.js` is a **third** first-party precedent for the append-at-EOF shape that seam 1 relies on, alongside `EasBuild.js` and Sentry's `apply from:` — and it is the purest example, a bare string concatenation with no anchor at all.
 
 ## Finding 5 — enumerated seams, ranked
 
