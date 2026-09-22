@@ -29,10 +29,17 @@ jobs:
       # (#2676). Every other action here fails LOUDLY if it misbehaves: a broken
       # checkout or wrangler-action reddens its job. This one can SUCCEED while
       # publishing a Release whose authorship silently decides whether three
-      # other workflows run at all (release.yml, release-thread.yml,
-      # back-merge.yml all fire on `release: published`, and only because the
-      # Release is PAT-authored - see Invariant 2 in docs/releasing.md). It is
-      # also the only action handed a long-lived write-scoped PAT. A retag of a
+      # other workflows run at all - release.yml, back-merge.yml, and the
+      # r/Selftend thread drafter all fire on `release: published`, and only
+      # because the Release is PAT-authored (Invariant 2 in docs/releasing.md).
+      # It is also the only action handed a long-lived write-scoped PAT.
+      #
+      # ⚠️ Do not name that drafter's workflow FILE here, in any line including
+      # this one. Its own guard test asserts that NO other workflow file
+      # mentions it - proving it is a separate workflow with nothing gating it -
+      # and that guard scans the raw text, so the file name inside a comment
+      # fails `verify` exactly as it would inside a `uses:`. Refer to it by
+      # description. A retag of a
       # floating tag could change any of that with no diff in this repository.
       #
       # Bump deliberately, via the Dependabot PR (.github/dependabot.yml), and
