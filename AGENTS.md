@@ -101,6 +101,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - When pricing or platform policy is mentioned, link to official sources where possible and record the date checked.
 - If a decision is uncertain, mark it as an assumption or open question instead of hiding the uncertainty.
 - After each meaningful product, infrastructure, or process change, update any human-facing doc whose content the change affects - setup, commands, deployment, store submission, environment variables, safety/legal boundaries, blockers, or expected user inputs. If a change affects setup commands or contributor-visible defaults, update `README.md` in the same change.
+- Withholding a built change from every user - adding an entry to `HELD_OUT_REMINDER_TARGETS` or `WITHHELD_STEP_TOOL_IDS` - means adding its row to the register in `docs/releasing.md` § _Post-release: lift held-out changes_, **in the same change**. `test/hold-out-register.test.ts` fails otherwise. This is a pointer rather than a rule to remember: across 32 releases the repo lifted a hold-out zero times, and the most expensive one was documented nowhere at all.
 - Per-PR review gates live in `.github/pull_request_template.md`.
 
 ## Architecture rule
