@@ -676,8 +676,14 @@ Three squares and the project axis put a task on a date that already existed rat
 - A fresh signup baseline, mid-October 2026 at the earliest (§ 3).
 - The frame surfaces applied ([#1823](https://github.com/Selftend/selftend/issues/1823)) and **a release** carrying them (square 3).
 - The seven Reddit drafts rewritten — [#1901](https://github.com/Selftend/selftend/issues/1901).
-- For the first Apple campaign only: the App Store subtitle — [#1760](https://github.com/Selftend/selftend/issues/1760).
-- **The indexability release** ([indexability.md](indexability.md)) **lands before the fresh baseline is read, or in an interval between windows — never inside one** ([#2289](https://github.com/Selftend/selftend/issues/2289)). A readable site is a step change in the standing background § 3 subtracts, and Google's crawl lag is weeks; the same timing logic Gate C1 applies to a launch day, said once about a product release. In practice: ship in September and let the crawl settle before the mid-October baseline.
+- ✅ **For the first Apple campaign only: the App Store subtitle** — [#1760](https://github.com/Selftend/selftend/issues/1760), **met**. The published listing carries `Private mental health tools.` in the US, GB and BG storefronts, and the retired compound appears nowhere on the product page (read from `apps.apple.com`, not from the editable App Store Connect record, 2026-09-22). This prerequisite is no longer outstanding.
+- ✅ **The indexability release** ([indexability.md](indexability.md)) **lands before the fresh baseline is read, or in an interval between windows — never inside one** ([#2289](https://github.com/Selftend/selftend/issues/2289)). A readable site is a step change in the standing background § 3 subtracts, and Google's crawl lag is weeks; the same timing logic Gate C1 applies to a launch day, said once about a product release. In practice: ship in September and let the crawl settle before the mid-October baseline.
+
+  **Shipped `v0.21.0`, tagged 2026-09-17**, with `v0.22.0` and `v0.23.0` following on 2026-09-18 ([#2472](https://github.com/Selftend/selftend/issues/2472)). ✅ **The timing rule was satisfied**: the first 8-week worked-channel window does not open until **2026-10-15**, so the release landed in an interval between windows _and_ ahead of the mid-October baseline — both limbs, not one. ⏳ **The crawl is settling now**, which is the point of the interval; the baseline read is the next thing that touches this.
+
+  ⚠️ **What this does and does not license.** The background § 3 subtracts has moved **once**, deliberately, and the plan's numbers from 2026-09-17 onward sit on the new level — so a pre-release and a post-release arrivals figure are not comparable, and the mid-October baseline is the first reading taken wholly on the new background. ☠️ **The same rule still binds the next such release**: the span **2026-10-15 to 2026-12-10** is an open window, and nothing that changes the standing background may ship inside it.
+
+  Verified on production 2026-09-22 rather than assumed: `/meditation` and `/habits` answer `200`; `sitemap.xml` lists all ten public routes; and every one of those routes serves all ten footer links **in its HTML**, so the internal linking is not a client-render artefact.
 
 ### Open questions and assumptions, stated as such
 
