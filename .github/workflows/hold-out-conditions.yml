@@ -1,0 +1,72 @@
+name: Hold-out conditions
+
+# Fails when a change this repo is deliberately withholding from every user has
+# had its own stated condition come true.
+#
+# WHY THIS EXISTS (#2717, decided on #2701, found by #2621). A hold-out is built,
+# shipped in the binary and withheld until "the native build that understands it
+# is live on both stores". Across 32 releases this repo lifted one exactly ZERO
+# times - and on 2026-09-22 all three then-live entries turned out to have met
+# their conditions days earlier: `dbt` and the six DBT step tool ids by 13 days,
+# `general` by 5. docs/releasing.md had predicted it in its own words: "Nothing
+# lifts it automatically, and nothing goes red while it stays held out - which is
+# exactly how a hold-out outlives its reason." This job is the thing that goes red.
+#
+# NOT A REQUIRED CHECK, on purpose - the same rule store-metadata-drift.yml
+# states for itself. Whether a build is live is a fact about two store listings,
+# which a human can legitimately change and which `verify` has no way to know. A
+# red run here means "a hold-out's condition is now true", which is a question
+# for a person, not a verdict on a diff. The invariant that IS a merge gate -
+# every held-out entry has a row in the register at all - lives in
+# test/hold-out-register.test.ts and runs in `verify` on every PR.
+#
+# NOT A SCHEDULE THAT CONTACTS ANYONE. ADR-0004 refuses contact triggered by a
+# person's non-use, and #2621 §5 names the trap exactly: "a queue of written
+# copy, each entry waiting on a trigger, with a mechanism to fire them." This
+# holds no copy, addresses nobody and arrives nowhere. It colours a check.
+#
+# NO CREDENTIALS. Both reads are public - Apple's iTunes lookup endpoint and the
+# Play listing page. Nothing for control-tower to inventory, and no secret that
+# can expire and leave the alarm quietly dead.
+#
+# GREEN AND EMPTY IS THE NORMAL STATE. The register holds nothing today, so this
+# job exits 0 having checked nothing. What keeps that from meaning "the parser is
+# broken" is scripts/lib/hold-outs.test.js, which proves the same parser - and
+# both store readers - against fixtures that DO contain hold-outs.
+
+on:
+  schedule:
+    - cron: "41 6 * * 1" # 06:41 UTC Mondays, off store-metadata-drift's 06:23
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hold-out-conditions
+  cancel-in-progress: false
+
+jobs:
+  conditions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No `npm ci`: the script imports one CommonJS module from scripts/lib and
+      # uses the runtime's own `fetch`. Installing the app's dependencies to read
+      # two web pages would be minutes of nothing.
+      - name: Check every held-out change against the live stores
+        run: node scripts/check-hold-out-conditions.js
+
+      - name: Say what a red run means
+        if: failure()
+        run: |
+          echo "::notice::A hold-out's own condition is now true, or the alarm could not read a store."
+          echo "::notice::Exit 1 = ready to lift. Exit 2 = this job is blind and needs repairing."
+          echo "::notice::See docs/releasing.md, 'Post-release: lift held-out changes'."
