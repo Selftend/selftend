@@ -307,17 +307,43 @@ jobs:
               .maestro/app-store-screenshots.yaml
           }
 
+          # ☠️ THREE ATTEMPTS, NOT TWO, AND THE THIRD IS NOT PADDING.
+          #
+          # The app's first screen only renders once `signInAnonymously` has
+          # returned, so a slow or dropped call to Supabase does not surface as
+          # a network error - it surfaces as the age gate never appearing, and
+          # then as `age-gate-day is visible... FAILED` ninety seconds later,
+          # which reads like a broken selector.
+          #
+          # ⚠️ Measured on the iPad of run 35658173440: attempt 1 cleared that
+          # gate and got all the way to Home, and attempt 2 - immediately after
+          # a simulator restart - failed on it with nothing else in the log. The
+          # flow and the selector were both fine; the restart simply landed in a
+          # worse moment. A run that has already spent twenty minutes building
+          # should not be thrown away on that.
+          #
+          # In-flow recovery was the first instinct and is not available: it
+          # needs `optional:` on `extendedWaitUntil`, which documents only
+          # `visible` and `timeout`, and an unknown property makes Maestro
+          # reject the whole file before a single command runs.
+          attempt_with_restart() {
+            echo "::warning::Maestro attempt $(( $1 - 1 )) failed. Restarting the simulator and retrying."
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+            run_flow "$1"
+          }
+
           if run_flow 1; then
             exit 0
           fi
 
-          echo "::warning::Maestro attempt 1 failed. Restarting the simulator and retrying once."
-          xcrun simctl shutdown "$UDID" || true
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID" -b
-          xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          if attempt_with_restart 2; then
+            exit 0
+          fi
 
-          run_flow 2
+          attempt_with_restart 3
 
       # `takeScreenshot` paths are documented as relative to Maestro's workspace
       # directory, not to the job's working directory - so depending on how the
