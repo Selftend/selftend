@@ -112,6 +112,17 @@ cross-project dependency, or touches a credential — file a control-tower issue
 you have it checked out. Canonical rule:
 https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 
+## Hold-out rule
+
+Withholding something from everyone on purpose — a reminder target whose deep link the shipped
+native client cannot route, a tool id it would throw on — means **adding its row to the hold-out
+table in `docs/releasing.md` § _Post-release: lift held-out entries_ in the same change**, with the
+release it ships in and the condition that lifts it. `test/holdout-table.test.ts` enforces it in
+`verify`, in both directions, so this is a pointer rather than a rule nobody reads. A weekly alarm
+then reddens once the condition is met. Nothing lifts a hold-out automatically — that stays a
+person's call — and `dbt`, `general` and the six DBT step tools each outlived their own condition
+by 5 to 13 days before these guards existed.
+
 ## Git safety rule
 
 - Agents may stage, commit, and push on feature branches, and open PRs, without asking - including in autonomous loops (policy changed 2026-07-14).

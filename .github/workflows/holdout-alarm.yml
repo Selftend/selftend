@@ -1,0 +1,69 @@
+name: Hold-out alarm
+
+# Goes red when something Selftend withholds from everyone has met its own
+# condition and nobody has lifted it.
+#
+# WHY THIS EXISTS (#2717, decided on #2701). Two constants withhold things on
+# purpose - HELD_OUT_REMINDER_TARGETS and WITHHELD_STEP_TOOL_IDS - because the
+# shipped native client is older than the database and the web client. Each
+# entry carries a condition that a later release meets. Nothing lifts one
+# automatically, and until 2026-09-22 nothing went red while one sat past its
+# condition. Three did: `dbt` by 13 days, the six DBT step tools by 13, and
+# `general` by 5, across 32 releases in which neither list had ever been
+# emptied. docs/releasing.md had predicted it in its own words - "Nothing lifts
+# it automatically, and nothing goes red while it stays held out - which is
+# exactly how a hold-out outlives its reason." This job is the thing that
+# complains.
+#
+# IT LIFTS NOTHING. A lift is a judgement about a shipped client and needs a
+# person: the code edit, the tests, and for a step tool id a migration widening
+# the database CHECK. This only asks the question.
+#
+# NO NEW CREDENTIALS. Both reads are public and keyless - Apple's iTunes lookup
+# endpoint and the public Play listing page. Nothing here is new for
+# control-tower to inventory.
+#
+# NOT A REQUIRED CHECK, on purpose, and modelled on store-metadata-drift.yml
+# where this repo's rule for remote reads is written: it reads remote systems
+# that a human can legitimately change, so it is a weekly alarm rather than a
+# merge gate - a red run means "this looks liftable", which is a question, not a
+# verdict. The half that IS a merge gate - every held-out entry appears in the
+# register in docs/releasing.md, in both directions - lives in
+# test/holdout-table.test.ts and runs in `verify` on every PR.
+#
+# ⛔ WHY THIS IS NOT THE FORBIDDEN SCHEDULE. ADR-0004 refuses contact triggered
+# by a person's non-use, and #2621 §5 names the trap as "a queue of written
+# copy, each entry waiting on a trigger, with a mechanism to fire them". This is
+# none of those: it holds no copy, it addresses nobody, it arrives nowhere, and
+# it reaches no user. It turns a check red in a repository, for a maintainer who
+# is already looking at the repository.
+
+on:
+  schedule:
+    - cron: "41 6 * * 1" # 06:41 UTC Mondays, after the store drift job
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: holdout-alarm
+  cancel-in-progress: false
+
+jobs:
+  alarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No `npm ci`. The script imports nothing but node builtins, on purpose:
+      # an install step is the thing that broke store-metadata-drift.yml for
+      # three weeks (#1798), and this job has no reason to need one.
+      - name: Check held-out entries against the live store versions
+        run: node scripts/check-holdout-versions.mjs docs/releasing.md
