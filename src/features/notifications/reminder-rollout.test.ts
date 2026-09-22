@@ -16,30 +16,45 @@ import { stripCommentsAndStrings } from "@/test/source-scan";
  * changes by accident.
  */
 describe("HELD_OUT_REMINDER_TARGETS (#2260)", () => {
-  it("holds DBT and the general reminder out until the native builds that route /modules/dbt and / are live on both stores", () => {
-    // Named, not derived - the list is the delta between the shipped native
-    // allowlist and this one, and nothing in the repo can compute that.
-    // `general` (#2491): its deep link is Home, `/`, allowlisted by the client
-    // shipping with this list and by no earlier one; lifted by #2494.
-    expect([...HELD_OUT_REMINDER_TARGETS]).toEqual(["dbt", "general"]);
+  it("is empty: nothing is held out, and every configured reminder is deliverable (#2698)", () => {
+    // ☠️ The FIRST lift this list has ever had (#2698, 2026-09-22). `dbt` and
+    // `general` left together once both their own conditions were true -
+    // `/modules/dbt` shipped in v0.18.0, `/` in v0.21.0, and the App Store was
+    // live on 0.21.0 with Google Play on 0.23.0. Named, not derived: the list is
+    // the delta between the shipped native allowlist and this one, and nothing
+    // in the repo can compute that, so emptiness is asserted rather than assumed.
+    expect([...HELD_OUT_REMINDER_TARGETS]).toEqual([]);
   });
 
   it("names only targets the registry knows, so a typo cannot hold out nothing", () => {
+    // ⚠️ Vacuous while the list is empty, and that is the point of the assertion
+    // above: it pins the emptiness this loop depends on, so a target added here
+    // without a registry key still fails rather than passing silently.
     const known = NOTIFICATION_TARGETS.map((target) => target.key);
     for (const target of HELD_OUT_REMINDER_TARGETS) {
       expect(known).toContain(target);
     }
   });
 
-  it("answers the predicate from the list, for members and non-members", () => {
-    for (const target of HELD_OUT_REMINDER_TARGETS) {
-      expect(isReminderTargetHeldOut(target)).toBe(true);
-    }
+  it("answers the predicate false for every configured target, and for a name that is not one", () => {
+    // The whole registry, not a sample: with the list empty, "no target is held
+    // out" is the claim, and the only honest way to make it is to ask about each.
     for (const target of NOTIFICATION_TARGETS) {
-      if ((HELD_OUT_REMINDER_TARGETS as readonly string[]).includes(target.key)) continue;
       expect(isReminderTargetHeldOut(target.key)).toBe(false);
     }
     expect(isReminderTargetHeldOut("not-a-target")).toBe(false);
+  });
+
+  it("still answers true for a member, so an empty list has not made the predicate a constant", () => {
+    // ☠️ The positive control, and the reason it exists: with nothing held out,
+    // every assertion above passes equally well against `() => false`. This one
+    // reads the source rather than the export - the predicate must still be a
+    // membership test over the list, so the next target lands held out rather
+    // than shipping straight to the cron.
+    const source = stripCommentsAndStrings(
+      readFileSync(join(__dirname, "reminder-rollout.ts"), "utf8"),
+    );
+    expect(source).toMatch(/HELD_OUT_REMINDER_TARGETS[^;]*\.includes\(\s*target\s*\)/);
   });
 });
 

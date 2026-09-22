@@ -315,6 +315,17 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // move costs no additional re-gate - it rides the same one. A pass that wants to move
 // policy strings should check `origin/main` first, and should expect this window to be
 // gone the moment it carries `2026-09-18-programme-retention`.
+//
+// ☠️ Amended 2026-09-22 (#2718): "nobody has been shown it" is no longer true, and
+// the window it opens is now conditional. Twenty production rows accepted
+// `2026-09-18-programme-retention` on 2026-09-21 - written by closed-testing builds,
+// which ship against the production backend by design (docs/releasing.md). The #2217
+// high-water trigger holds those rows where they are, so an in-place edit never
+// re-prompts that cohort: they keep a consent record pointing at wording that no
+// longer exists. #2707 ruled on what follows, keyed to the tiering in #2684 - edit in
+// place when the correction leaves their consent valid, and bump to a fresh version
+// instead when it does not. The window is real; it is no longer unconditional, and
+// the condition is whether the cohort's consent survives the edit.
 const pinnedPolicyRelease = {
   version: "2026-09-18-programme-retention",
   englishDigest: "20a015a41b02a167cda7a3dbb3fc822e74c9e7cf988b942e56ab3c25031ea72c",
