@@ -135,6 +135,29 @@ jobs:
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
       EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
       EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      # ☠️ WITHOUT THIS THE SIMULATOR REPORTS INTO PRODUCTION SENTRY AS A USER,
+      # and for weeks it did (#2726). src/lib/sentry.ts reads
+      # `EXPO_PUBLIC_APP_ENV ?? "production"`, and this job set the DSN but never
+      # the environment - so every hang this runner produced landed in the
+      # production issue stream. Five App Hang issues arrived in 24 hours on
+      # 2026-09-21/22, all of them this one iPad simulator, one of them "fully
+      # blocked for 11.2-12.0 seconds" (an asset catalog paging in on first touch
+      # of a text field, on a cold VM). A fresh simulator per run means a fresh
+      # random user id per run, so they inflate "users impacted" too: SELFTEND-7
+      # reads 10 users and an unknown share of them are this job.
+      #
+      # The DSN's own comment says events "are told apart by environment"; this
+      # job simply told it nothing.
+      #
+      # ⚠️ NEVER SET THIS TO `development`. The same variable feeds
+      # src/lib/env.ts's `appEnvName`, which src/lib/module-visibility.ts gates
+      # the three modules on - `MODULE_VISIBLE_APP_ENVS = ["development"]`. That
+      # value here would put CBT, DBT and ACT into the App Store screenshots,
+      # publishing gated modules as pixels. The index-list guard from #2715 runs
+      # in `verify` and CANNOT see a workflow env var, so nothing would go red.
+      # Any other value hides them, exactly as the unset default did.
+      # test/capture-sentry-environment.test.ts holds both halves.
+      EXPO_PUBLIC_APP_ENV: capture
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       SENTRY_DISABLE_AUTO_UPLOAD: "true"
       BUNDLE_ID: org.vasilyoshev.selftend
