@@ -48,13 +48,29 @@
 -- must never produce is refusing a legitimate acceptance:
 --
 --   * old is NULL           -> a first acceptance. Always allowed.
---   * new is NULL           -> clearing the record, which is how a re-gate is
---                              staged deliberately (docs/design/1980-before).
---                              Allowed; it is not a false claim about consent.
+--   * new is NULL           -> clearing the record. Allowed; it is not a
+--                              false claim about consent.
 --   * either is unrankable  -> no date prefix, so no ordering exists. Allowed,
 --                              which is also what lets a row holding a legacy
 --                              or hand-edited value heal on the next accept.
 --   * same date prefix      -> not a downgrade. Allowed.
+--
+-- ☠️ Amended 2026-09-22 (#2718). The NULL case above used to cite
+-- docs/design/1980-before as "how a re-gate is staged deliberately". The citation
+-- was wrong in both directions: that document sets this column FORWARD, to the
+-- current version, to SUPPRESS an unwanted gate - locally, on a seeded demo
+-- account, as an incidental capture workaround. Not a staged re-gate, not a
+-- cohort, not production. Nothing in this repository has ever cleared this column
+-- in any environment; the only thing that exists is a capability test
+-- (test/integration/policy-version-monotonic.integration.test.ts). #2707 then
+-- ruled clearing OUT for cohort use: it would be the first deliberate break of
+-- the "nothing ever writes this column back to null" invariant that
+-- docs/age-floor.md and docs/dpia-minors-assessment.md both lean on (#2227), and
+-- the one account it would have reached sits on the under-floor deletion path.
+--
+-- ⚠️ None of that changes the behaviour below, which is correct as written: a
+-- clear must still pass. Refusing one would be the guard inventing a consent
+-- record, which is the one thing it must never do.
 --
 -- Nothing raises an exception. A stale client that meets its own gate must be
 -- able to submit it and get into the app; making its write fail would leave the
