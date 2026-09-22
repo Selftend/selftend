@@ -1,0 +1,50 @@
+-- Drop public.record_days(integer) (#2459; slice 2 of the removal spec on #2435,
+-- map #2431).
+--
+-- === Why it existed =================================================================
+-- "Looking back" drew one inert mark per civil day the viewer had any record on,
+-- over an all-time axis anchored at the first one (#1904). That could not come from
+-- the per-tool list hooks - they cap at 250 rows, so early history would have drawn
+-- FALSE ABSENCE on the one screen whose whole job was to state the record
+-- truthfully. So the screen spent its single ADR-0001 RPC budget here, on READING
+-- the record rather than on stating anything about it.
+--
+-- === Why it goes ====================================================================
+-- The screen left the product on 2026-09-15 (#2431, #2455): the route, the panel
+-- row and every call site went together, and Home now carries every tool's figures
+-- through `home_tool_stats` (20260913000000). Nothing calls this function. What
+-- remains in `src/` are comments explaining its absence, not callers.
+--
+-- ⚠️ This lands LAST, and the ordering is the point. There is no OTA channel for
+-- the native builds, so until the Play release carrying #2455 was `Published` an
+-- Android 0.19.0 phone in the wild still rendered the band and still called this
+-- RPC - dropping it earlier would have turned every such phone's Looking back into
+-- its error card. Play submission 117 (2026-09-18) published 0.23.0 at 100%, and
+-- #2458 closed on 2026-09-22 once the listing text followed. The App Store's
+-- 0.15.0 predates the function and was never affected.
+--
+-- === Where the census stays readable ================================================
+-- The "names its own day" span rule - a mark sits on the day the record ITSELF
+-- names, which is why the ACT tables and nine CBT tables were excluded for want of
+-- a captured offset and NOT for want of completeness - is written out in full in
+-- the two applied migrations that declared this function, and those are immutable:
+--
+--   * 20260907000000_record_days.sql   - the original, and the ten-source census
+--   * 20260910000000_dbt_module.sql    - redeclared at sixteen sources with DBT
+--
+-- Read either one before concluding the rule is lost. Nothing here replaces it,
+-- because there is no consumer left whose correctness it protected.
+--
+-- === What is deliberately NOT touched ===============================================
+-- `occurrence_day_key`, every captured-offset column on the dated tables, and
+-- `home_tool_stats` all stay live: the client's day-key helper
+-- (src/lib/occurrence-time.ts) and Home's stat lines read them. This drop is the
+-- function alone.
+--
+-- The three grants die with the function, so no REVOKE is needed - precedent is
+-- 20260731110000_program_widget_day_key.sql, which dropped the old
+-- `program_widget_task_status` signature the same way when `occurrence_day_key`
+-- arrived. This declares no exportable column and does not touch
+-- `export_user_data`.
+
+drop function if exists public.record_days(integer);
