@@ -31,6 +31,16 @@ import { setPlatformOS } from "@/test/modal-marker-mock";
  * computed animationType, and the visibility gate.
  */
 
+// The safe-area insets the wrapper pads its escape row by (#2646). Mutable so
+// a test can put the iPad's real 24pt top inset in front of it; everything
+// else in this file runs on the zeroes the default provider reports.
+let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+jest.mock("react-native-safe-area-context", () => ({
+  ...jest.requireActual("react-native-safe-area-context"),
+  useSafeAreaInsets: () => mockSafeAreaInsets,
+}));
+
 jest.mock("@/src/lib/accessibility", () => ({
   // Spread the real module: the wrapper also reads
   // DEFAULT_INTERACTIVE_HIT_SLOP from here for the escape row, and a mock that
@@ -294,6 +304,55 @@ describe("PressShieldModal's pinned escape row", () => {
     );
 
     expect(screen.getAllByTestId("modal-escape")).toHaveLength(1);
+  });
+
+  // ☠️ #2646. The row used to wear `SafeAreaView`, which is position-aware on
+  // native and measures ZERO inside a `Modal` - so the Escape rendered under
+  // the status bar. Measured on the iPad 13-inch (1032x1376 points) from run
+  // 35585648361, onboarding wizard, clean install: the status bar clock at
+  // y 7-24 and the battery at x 978-1006, against "Skip for now" at y 14-34,
+  // x 928-1012. Overlapping on BOTH axes, with the row starting at y 0 where
+  // the iPad's top inset is 24.
+  //
+  // Not cosmetic: the status bar owns that region, so the touch goes to system
+  // UI. On the wizard this row is the only escape besides the CTA, and Maestro
+  // reported its tap COMPLETED while the wizard stayed up.
+  describe("clears the status bar (#2646)", () => {
+    /** The iPad 13-inch's top inset, the case that produced the defect. */
+    const IPAD_TOP_INSET = 24;
+
+    function escapeRowStyle() {
+      return screen.getByTestId("modal-escape-row").props.style;
+    }
+
+    afterEach(() => {
+      mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+    });
+
+    it("pads the row down by the top inset", () => {
+      setPlatformOS("ios");
+      mockSafeAreaInsets = { top: IPAD_TOP_INSET, right: 0, bottom: 0, left: 0 };
+      render(
+        <PressShieldModal escapeLabel="Skip for now" onEscape={noop} visible>
+          <Text>content</Text>
+        </PressShieldModal>,
+      );
+
+      // The mocked provider reports the iPad's inset; anything that reads 0
+      // here is the defect back again.
+      expect(escapeRowStyle()).toMatchObject({ paddingTop: IPAD_TOP_INSET });
+    });
+
+    it("pads the horizontal insets too, for a landscape notch", () => {
+      setPlatformOS("ios");
+      render(
+        <PressShieldModal onEscape={noop} visible>
+          <Text>content</Text>
+        </PressShieldModal>,
+      );
+
+      expect(escapeRowStyle()).toMatchObject({ paddingLeft: 0, paddingRight: 0 });
+    });
   });
 
   it("names the Escape with a bare 'Close'", () => {
