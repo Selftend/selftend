@@ -2,6 +2,8 @@
 
 **Last verified against Play Console: 2026-09-20** — ☠️ **Visit A deleted both tablet screenshot tiers, sixteen images, and sent them for review.** That is the only change that visit made: the short description, the full description, the feature graphic and the promo video were opened, read and **left alone**. Why, and what the set now is, are in § _The screenshot set_ below.
 
+📌 **The listing's promo video has its own record: [`play-promo-video.md`](play-promo-video.md).** It is the first tile in the media carousel, ahead of screenshot `01`, and it was read second by second on 2026-09-21 ([#2626](https://github.com/Selftend/selftend/issues/2626)). ☠️ **Its standing verdict is re-cut or pull, not keep** — it photographs a Home the app no longer renders — and it is a **Visit B** decision, not an urgent pull.
+
 ⚠️ **The _text_ of this listing was last verified on 2026-09-09** and is unchanged since — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
 
 | #   | Sent  | Change                                                                                          | Status    |
