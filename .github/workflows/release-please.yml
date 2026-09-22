@@ -25,7 +25,20 @@ jobs:
     name: Release please
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      # SHA-pinned, not a floating tag - the only action in this repo that is
+      # (#2676). Every other action here fails LOUDLY if it misbehaves: a broken
+      # checkout or wrangler-action reddens its job. This one can SUCCEED while
+      # publishing a Release whose authorship silently decides whether three
+      # other workflows run at all (release.yml, release-thread.yml,
+      # back-merge.yml all fire on `release: published`, and only because the
+      # Release is PAT-authored - see Invariant 2 in docs/releasing.md). It is
+      # also the only action handed a long-lived write-scoped PAT. A retag of a
+      # floating tag could change any of that with no diff in this repository.
+      #
+      # Bump deliberately, via the Dependabot PR (.github/dependabot.yml), and
+      # keep the trailing comment in step with the SHA - Dependabot rewrites
+      # both. test/workflow-action-pin.test.ts holds this pin.
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           # PAT, not GITHUB_TOKEN: the org locks Actions from creating PRs, and a PAT
