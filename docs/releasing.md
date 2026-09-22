@@ -37,29 +37,53 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 **Never squash the promotion PR.** Squashing collapses the per-PR Conventional Commits into one commit and loses the version/CHANGELOG signal. release-please traverses `main`'s full commit graph, so the squash commits carried in by the merge commit are parsed individually; the merge commit's own subject does not need to be conventional. To keep the wrong button unavailable, the repo allows only the two merge methods that are actually used: squash (dev PRs, release PR) and merge commit (promotion and hotfix PRs) — rebase merge is disabled.
 
-## Post-release: lift held-out reminder targets
+## Post-release: lift held-out changes
 
-**A reminder target can be held out of the cron, and only a person lifts it.** `src/features/notifications/reminder-rollout.ts` holds `HELD_OUT_REMINDER_TARGETS` — targets whose deep link the SHIPPED native client cannot route yet ([#2213](https://github.com/Selftend/selftend/issues/2213)). While a target is on that list the edge function mints nothing for it, and its row on the reminders screen is switched off under a "not ready yet" note ([#2260](https://github.com/Selftend/selftend/issues/2260)). (#2260 also suppressed the post-save reminder offer for a held-out target; that offer has since been removed for every target — ADR-0008.) Nothing lifts it automatically, and nothing goes red while it stays held out — which is exactly how a hold-out outlives its reason.
+**A change can be built, shipped in the binary, and withheld from every user until something outside this repository comes true — and only a person lifts it.** That condition is always the same shape: _the native build that understands it is live on both stores_. Two constants carry hold-outs today:
 
-**Check this list after every release that carried a new reminder target, once the build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the store listings, not the merge, are what says the client is out there.
+| Constant                    | Where                                            | While an entry is on it                                                                                                                                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HELD_OUT_REMINDER_TARGETS` | `src/features/notifications/reminder-rollout.ts` | The edge function mints nothing for that target, and its row on the reminders screen is switched off under a "not ready yet" note ([#2213](https://github.com/Selftend/selftend/issues/2213), [#2260](https://github.com/Selftend/selftend/issues/2260)).                                   |
+| `WITHHELD_STEP_TOOL_IDS`    | `src/features/routines/step-tool-rollout.ts`     | A routine step cannot be WRITTEN with that tool id — the editor's picker drops it, the starter cannot compose it, `addStep` throws, and a database `CHECK` refuses it ([#2203](https://github.com/Selftend/selftend/issues/2203)). Reads stay permissive, so an existing row still renders. |
 
-The lift is one edit plus its tests, in one change:
+☠️ **Nothing lifts either automatically, and nothing goes red while an entry stays held out — which is exactly how a hold-out outlives its reason.** That sentence stood in this section, unamended, while all three then-live entries sat past their own conditions: `dbt` and the six DBT step tool ids by **13 days**, `general` by **5**. It is kept, because it is the motive for both guards below.
 
-1. drop the target from `HELD_OUT_REMINDER_TARGETS` in `src/features/notifications/reminder-rollout.ts`;
-2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition). `test/check-in-route-compat.test.tsx` asserts the same partition from the app side, and `src/features/notifications/notification-target-row.test.tsx` drives the held-out row from a mocked predicate so that path keeps its coverage while the list is empty;
-3. ☠️ **commit it as `feat:`, never `chore:`** — `SECTION_KINDS` in the release-thread picker admits only `feat`/`fix`/`perf`, so a `chore:` lift renders no changelog bullet, gives the release-thread drafter no `#N` to join on, and the news vanishes permanently. A held-out change is not announced at the release that built it, because no true sentence exists yet ([#2621](https://github.com/Selftend/selftend/issues/2621)); **the lift is the release at which the sentence becomes true, and the only one that can carry it.** The PR description carries that sentence;
-4. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
+**Check after every release that carried a new hold-out, once that build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the **store listings**, not the merge, are what says the client is out there.
 
-**Today's list: empty.** ✅ Emptied on 2026-09-22 by [#2698](https://github.com/Selftend/selftend/issues/2698) — the first lift this list has ever had.
+### The register
 
-| Target                                                                | Needed                                      | Shipped in          | Lifted                                                                |
-| --------------------------------------------------------------------- | ------------------------------------------- | ------------------- | --------------------------------------------------------------------- |
-| `dbt` ([#1980](https://github.com/Selftend/selftend/issues/1980))     | `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` | v0.18.0, 2026-09-09 | 2026-09-22                                                            |
-| `general` ([#2491](https://github.com/Selftend/selftend/issues/2491)) | `/` in `ALLOWED_REMINDER_ROUTES`            | v0.21.0, 2026-09-17 | 2026-09-22, [#2494](https://github.com/Selftend/selftend/issues/2494) |
+⚠️ **Adding an entry to either constant means adding its row here, in the same change.** `test/hold-out-register.test.ts` fails otherwise — the column order and the `—` in _Lifted_ are load-bearing, and `scripts/check-hold-out-conditions.js` reads the same rows.
 
-Both were lifted against the same reading of the stores: **App Store 0.21.0** (released 2026-09-17) and **Google Play 0.23.0** (updated 2026-09-18), with `eas.json`'s production submit profile on `releaseStatus: "completed"`, so there is no staged rollout to wait out.
+| Constant                    | Entry                                                                                    | Shipped in          | Lifts when                                                                    | Lifted                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `HELD_OUT_REMINDER_TARGETS` | `dbt`                                                                                    | v0.18.0, 2026-09-09 | `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on both stores            | 2026-09-22, [#2698](https://github.com/Selftend/selftend/issues/2698) |
+| `HELD_OUT_REMINDER_TARGETS` | `general`                                                                                | v0.21.0, 2026-09-17 | `/` in `ALLOWED_REMINDER_ROUTES` is live on both stores                       | 2026-09-22, [#2494](https://github.com/Selftend/selftend/issues/2494) |
+| `WITHHELD_STEP_TOOL_IDS`    | `muscleRelaxation`, `wiseMind`, `judgement`, `emotionRecord`, `oppositeAction`, `script` | v0.18.0, 2026-09-09 | the build carrying `/modules/dbt/*` has rolled out past review on both stores | 2026-09-22, [#2713](https://github.com/Selftend/selftend/issues/2713) |
 
-☠️ **Read the delay, not the outcome.** `dbt` sat 13 days past its own condition and `general` 5, because nothing in the repo goes red while a target stays held out and no release step made anyone look. That is the paragraph above this one, proven. ⚠️ **This section is the only thing that will make anyone check**, so a new target added to the list belongs in the table above in the same change — with what it needs and what it is waiting for, so the next reader can settle it by reading two store pages.
+✅ **Nothing is held out today.** All three rows lifted on 2026-09-22 against one reading of the stores — **App Store 0.21.0** (released 2026-09-17) and **Google Play 0.23.0** (updated 2026-09-18), with `eas.json`'s production submit profile on `releaseStatus: "completed"`, so there was no staged rollout to wait out. Before that day the register had been lifted **zero times in 32 releases**.
+
+### What watches it
+
+Two guards, because the two ways a hold-out fails are not the same fact ([#2701](https://github.com/Selftend/selftend/issues/2701)):
+
+- **`test/hold-out-register.test.ts`, in `verify`** — every entry in either constant has a row above marked `—`, and every row marked `—` names entries that are really still in their constant. Purely local: no network, no issue state, no clock. This is the guard for _invisible_ — `WITHHELD_STEP_TOOL_IDS` appeared in no document at all, so nobody could have found it to check it.
+- **`.github/workflows/hold-out-conditions.yml`, weekly** — reads the two live store versions and goes red when a row marked `—` shipped in a version at or below both. This is the guard for _unchecked_, and it cannot be a merge gate: whether a condition is met is a fact about two store listings, which `verify` has no way to know. It is an alarm for the reason `store-metadata-drift.yml`'s header already gives — _"a red run here means 'the two copies disagree', which is a question, not a verdict."_ It needs no credential.
+
+⛔ **Neither is a schedule that contacts anyone.** [ADR-0004](adr/0004-retention-by-return-not-engagement.md) refuses contact triggered by a person's non-use, and [#2621](https://github.com/Selftend/selftend/issues/2621) § 5 names the trap exactly: _"a queue of written copy, each entry waiting on a trigger, with a mechanism to fire them."_ These hold no copy, address nobody and arrive nowhere.
+
+☠️ **Refused, deliberately: binding an entry to an open tracking issue.** It was the obvious idea ([#2629](https://github.com/Selftend/selftend/issues/2629)) and the record kills it — `general` had an open, correctly-labelled issue and still overran by 5 days, so the guard would have been **green throughout the failure it was written for**.
+
+### The lift
+
+One edit plus its tests, in one change:
+
+1. drop the entry from its constant;
+2. update the tests that name it — for a reminder target: `reminder-rollout.test.ts`, `web-reminders.test.ts` (the partition), `check-in-route-compat.test.tsx` (the same partition, app-side), and `notification-target-row.test.tsx`, which drives the held-out row from a mocked predicate so that path keeps its coverage while the list is empty. For a step tool id: `step-tool-rollout.test.ts`, `repository.test.ts`, `routine-editor-screen.test.tsx`, `starter.test.ts` — **and a NEW migration widening `routine_steps_tool_id_allowlisted`**, never an edit to an applied one;
+3. move its _Lifted_ cell in the register from `—` to the date and the issue;
+4. ☠️ **commit it as `feat:`, never `chore:`** — `SECTION_KINDS` in the release-thread picker admits only `feat`/`fix`/`perf`, so a `chore:` lift renders no changelog bullet, gives the release-thread drafter no `#N` to join on, and the news vanishes permanently. A held-out change is not announced at the release that built it, because no true sentence exists yet ([#2621](https://github.com/Selftend/selftend/issues/2621)); **the lift is the release at which the sentence becomes true, and the only one that can carry it.** The PR description carries that sentence;
+5. merge — the release pipeline redeploys the edge function (`supabase functions deploy`) and applies the migration, and the clients pick the same lists up from the same files.
+
+⚠️ **Emptying a constant is the normal state, not the retirement of the mechanism.** The two-step rollout is still how the next target or tool id ships: it lands held out in the change that adds its route or its id, and leaves once that build is live on both stores.
 
 ## Post-release, one-time: retire the `www` app-links carve-out
 
