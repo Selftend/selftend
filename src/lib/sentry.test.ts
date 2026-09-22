@@ -1,6 +1,7 @@
 import {
   scrubBreadcrumb,
   isReportableError,
+  isSpoofedDeviceEvent,
   normalizeError,
   scrubEvent,
   shouldEnableSentry,
@@ -57,6 +58,45 @@ describe("scrubEvent", () => {
     };
     expect(scrubbed.contexts?.device?.name).toBeUndefined();
     expect(scrubbed.contexts?.device?.model).toBe("Pixel 8");
+  });
+});
+
+describe("isSpoofedDeviceEvent", () => {
+  // The fingerprint as it actually arrives, taken from SELFTEND-B and -G (#2577).
+  function farmEvent() {
+    return {
+      contexts: {
+        device: { model: "OnePlus8Pro", family: "OnePlus8Pro", screen_width_pixels: 288 },
+        os: { name: "Android", version: "11", build: "QKR1.191246.002" },
+      },
+    };
+  }
+
+  it("matches when both halves of the key match", () => {
+    expect(isSpoofedDeviceEvent(farmEvent())).toBe(true);
+  });
+
+  // ☠️ The reason the key is a pair rather than the model alone. If this test ever goes
+  // green with the build removed from the key, a real OnePlus 8 Pro owner has gone silent.
+  it("spares a genuine OnePlus 8 Pro on a real build", () => {
+    const event = farmEvent();
+    event.contexts.os.build = "RKQ1.201022.002";
+
+    expect(isSpoofedDeviceEvent(event)).toBe(false);
+  });
+
+  it("spares another device that somehow reports the same build", () => {
+    const event = farmEvent();
+    event.contexts.device.model = "Pixel 8";
+
+    expect(isSpoofedDeviceEvent(event)).toBe(false);
+  });
+
+  it("cannot match when the device or os context is absent (web)", () => {
+    expect(isSpoofedDeviceEvent({})).toBe(false);
+    expect(isSpoofedDeviceEvent({ contexts: {} })).toBe(false);
+    expect(isSpoofedDeviceEvent({ contexts: { os: { build: "QKR1.191246.002" } } })).toBe(false);
+    expect(isSpoofedDeviceEvent({ contexts: { device: { model: "OnePlus8Pro" } } })).toBe(false);
   });
 });
 
@@ -267,6 +307,65 @@ describe("normalizeError", () => {
     expect(normalizeError(undefined).message).toBe("Non-Error thrown: undefined");
     expect(normalizeError(null).message).toBe("Non-Error thrown: null");
     expect(normalizeError(42).message).toBe("Non-Error thrown: 42");
+  });
+});
+
+// The predicate above is pure and easy to get right; what actually silences the farm is
+// it being wired into `beforeSend`. This exercises the callback Sentry.init was really
+// handed, so deleting the screen from initSentry fails here rather than passing quietly.
+describe("initSentry's beforeSend", () => {
+  const ORIGINAL_ENV = { ...process.env };
+  const globals = globalThis as unknown as { __DEV__: boolean };
+
+  function loadBeforeSend() {
+    process.env.EXPO_PUBLIC_SENTRY_DSN = "https://x@o0.ingest.sentry.io/0";
+    globals.__DEV__ = false;
+    jest.resetModules();
+
+    const sentry = require("@/src/lib/sentry") as typeof import("@/src/lib/sentry");
+    const client = require("@sentry/react-native") as { init: jest.Mock };
+    sentry.initSentry();
+
+    const [options] = client.init.mock.calls.at(-1) as [
+      { beforeSend: (event: unknown) => unknown },
+    ];
+    return options.beforeSend;
+  }
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+    globals.__DEV__ = true;
+    jest.resetModules();
+  });
+
+  it("drops a farm event instead of sending it", () => {
+    const beforeSend = loadBeforeSend();
+
+    const dropped = beforeSend({
+      contexts: {
+        device: { model: "OnePlus8Pro" },
+        os: { build: "QKR1.191246.002" },
+      },
+      user: { id: "cf40a6db-6542-4cc4-b9af-0340117637ee" },
+    });
+
+    expect(dropped).toBeNull();
+  });
+
+  it("still sends and scrubs an ordinary event", () => {
+    const beforeSend = loadBeforeSend();
+
+    const sent = beforeSend({
+      contexts: {
+        device: { model: "Pixel 8", name: "Vasil's Pixel" },
+        os: { build: "RKQ1.201022.002" },
+      },
+      user: { id: "uuid-1", email: "person@example.com" },
+    }) as { contexts: { device: { name?: string } }; user: { email?: string } };
+
+    expect(sent).not.toBeNull();
+    expect(sent.contexts.device.name).toBeUndefined();
+    expect(sent.user.email).toBeUndefined();
   });
 });
 

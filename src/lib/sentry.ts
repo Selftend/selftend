@@ -78,6 +78,53 @@ export function scrubBreadcrumb<
   return breadcrumb;
 }
 
+/**
+ * Device fingerprints whose events are discarded on sight (#2577).
+ *
+ * ⚠️ This is the only drop in this file that is NOT about privacy. Everything above
+ * scrubs a field out of an event that still gets sent; this throws the event away whole,
+ * and it does it for traffic triage - the sender is an emulator farm, not a person.
+ * ADR-0013 records the decision, and is where to look when someone asks why a device
+ * never reports.
+ *
+ * ☠️ BOTH halves must match, and that is the entire point. `device.model` on its own
+ * would silence a genuine OnePlus 8 Pro owner; `os.build` is the narrow half. The farm's
+ * profile is impossible on the handset it claims to be - 288x448 at density 0.6625
+ * against a physical 1440x3168, `processor_count` 2 against 8, `x86_64` listed ahead of
+ * `arm64-v8a`, a battery frozen at exactly 85% and 35 C on every event - but none of that
+ * is in the key, because a key made of eight coincidences breaks the first time the farm
+ * rotates one of them.
+ *
+ * Traffic triage belongs in a Sentry inbound filter rather than here, and that is where
+ * #2577 first ruled it should go. It cannot: Sentry has no inbound filter keyed on tags
+ * or device context, and closed both requests for one as "not planned" on 2026-06-04
+ * (getsentry/sentry#22874, getsentry/sentry#29813). Hence a code-side drop, whose cost is
+ * that it reaches only builds shipped after it - this repo has no OTA channel, so the
+ * already-installed base keeps reporting the farm forever.
+ */
+const SPOOFED_DEVICE_FINGERPRINTS: readonly { osBuild: string; deviceModel: string }[] = [
+  { osBuild: "QKR1.191246.002", deviceModel: "OnePlus8Pro" },
+];
+
+type ScreenableEvent = {
+  contexts?: { device?: { model?: unknown }; os?: { build?: unknown } };
+};
+
+/**
+ * True when the event carries a known spoofed fingerprint and must not be sent.
+ *
+ * A missing `os` or `device` context - web, or any platform that attaches neither - can
+ * never match, because `undefined` is not one of the strings above.
+ */
+export function isSpoofedDeviceEvent<T extends ScreenableEvent>(event: T): boolean {
+  const osBuild = event.contexts?.os?.build;
+  const deviceModel = event.contexts?.device?.model;
+
+  return SPOOFED_DEVICE_FINGERPRINTS.some(
+    (fingerprint) => osBuild === fingerprint.osBuild && deviceModel === fingerprint.deviceModel,
+  );
+}
+
 export function initSentry(): void {
   if (!isEnabled()) {
     return;
@@ -87,7 +134,12 @@ export function initSentry(): void {
     dsn: sentryDsn,
     environment: sentryEnvironment,
     sendDefaultPii: false,
-    beforeSend: (event) => scrubEvent(event as ScrubbableEvent) as typeof event,
+    // The screen runs before the scrubbers: a farm event is discarded whole, so there
+    // is nothing left on it worth scrubbing.
+    beforeSend: (event) => {
+      if (isSpoofedDeviceEvent(event as ScreenableEvent)) return null;
+      return scrubEvent(event as ScrubbableEvent) as typeof event;
+    },
     beforeBreadcrumb: (breadcrumb) =>
       scrubBreadcrumb(breadcrumb as { category?: string; message?: string }),
   });
