@@ -45,14 +45,16 @@ captured before [#1627](https://github.com/Selftend/selftend/issues/1627) and
 this repository can fix that; only a fresh capture can. **Re-read the words in
 the mockups by eye whenever app copy moves**, because nothing else will.
 
-Retaken 2026-09-06 from **staging** (`https://staging.selftend.org`), which was
+Retaken 2026-09-06 from **staging** — then at `https://staging.selftend.org`, a host
+retired on 2026-09-23 ([#2319](https://github.com/Selftend/selftend/issues/2319)); staging
+now serves at `https://selftend-staging.vasil-yoshev.workers.dev`. It was
 already serving the current British spellings while production still lagged —
 so check that the build you capture from carries the copy you want, rather than
 assuming the newest deploy does:
 
 ```
-curl -s https://staging.selftend.org/ | grep -o '/_expo/static/js/web/[^"]*\.js'
-curl -s "https://staging.selftend.org/<that path>" | grep -c 'Cognitive Behavioural Therapy'
+curl -s https://selftend-staging.vasil-yoshev.workers.dev/ | grep -o '/_expo/static/js/web/[^"]*\.js'
+curl -s "https://selftend-staging.vasil-yoshev.workers.dev/<that path>" | grep -c 'Cognitive Behavioural Therapy'
 ```
 
 Capture recipe: browser viewport 390×844 at DPR 1, screenshot the viewport (not
