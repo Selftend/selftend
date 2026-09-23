@@ -1,0 +1,82 @@
+name: Policy version drift
+
+# Goes red when a production consent record holds a `policy_version_accepted`
+# that `main` does not ship - i.e. a cohort has accepted policy text that has
+# never publicly released.
+#
+# WHY THIS EXISTS (#2737, ruled on #2706). Twenty production rows accepted
+# `2026-09-18-programme-retention` on 2026-09-21, a version that existed only on
+# `dev`. Closed-testing builds ship against the PRODUCTION backend by design, so
+# testers keep their real accounts (docs/releasing.md), and #2706 ruled that
+# arrangement stays: the rows are benign on their own, because hasAcceptedPolicy
+# treats a newer stored version as satisfied, so nobody is walled out.
+#
+# What was missing is anything that NOTICES. #2707 decided what to do when a
+# cohort sits on an unreleased version - edit the text in place when their
+# consent survives the correction, bump to a fresh version when it does not,
+# keyed to #2684's tiering - and that rule can only be applied by somebody who
+# KNOWS the cohort exists. Those twenty rows were found by accident, while
+# grilling something else entirely.
+#
+# IT REFUSES NOTHING. #2706 explicitly rejected making the consent write fail:
+# the monotonic trigger (20260911000000_policy_version_monotonic.sql) fails open
+# on purpose, because a refused consent write leaves somebody staring at a
+# full-screen wall with no way past. This job only asks the question.
+#
+# NOT A REQUIRED CHECK, on purpose - the rule store-metadata-drift.yml states for
+# itself. It reads a remote system that legitimately changes, so a red run means
+# "a cohort is ahead of main", which is a question for a person, not a verdict on
+# a diff.
+#
+# NO NEW CREDENTIAL. Reuses the read-only `analytics_digest_ro` role and
+# ANALYTICS_DIGEST_DB_URL, already inventoried on control-tower#137. Nothing new
+# for the inventory, and no secret that can expire and leave this quietly dead.
+#
+# NO PERSONAL DATA. The query returns DISTINCT VERSION STRINGS - no rows, no user
+# ids, no per-person counts. This reads a consent table, so that select list is a
+# privacy boundary rather than a preference, and test/policy-version-drift.test.ts
+# asserts it cannot widen.
+#
+# NOT A SCHEDULE THAT CONTACTS ANYONE. ADR-0004 refuses contact triggered by a
+# person's non-use, and #2621 §5 names the trap as "a queue of written copy, each
+# entry waiting on a trigger, with a mechanism to fire them". This holds no copy,
+# addresses nobody and arrives nowhere. It colours a check.
+#
+# IT RUNS FROM `main`, AND THAT IS LOAD-BEARING. GitHub runs scheduled workflows
+# from the default branch, which docs/releasing.md keeps as `main` for exactly
+# this class of reason - so the `policyVersion` this job reads out of its own
+# checkout already IS what shipped. There is no second source of truth to keep in
+# step. Do not "fix" this by hardcoding a version here.
+
+on:
+  schedule:
+    - cron: "53 6 * * 1" # 06:53 UTC Mondays, after the other two weekly alarms
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: policy-version-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No `npm ci`. The script imports only node builtins and shells out to
+      # `psql`, which the ubuntu-latest image already carries. An install step is
+      # what broke store-metadata-drift.yml for three weeks (#1798), and this job
+      # has no reason to need one.
+      - name: Check production against the shipped policy version
+        env:
+          ANALYTICS_DIGEST_DB_URL: ${{ secrets.ANALYTICS_DIGEST_DB_URL }}
+        run: node scripts/check-policy-version-drift.mjs
