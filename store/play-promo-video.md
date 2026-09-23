@@ -128,19 +128,42 @@ all 37 seconds. No extractor, no download, no playback.
 
 ## Standing verdict
 
-**Re-cut or pull — not keep.** Finding 1 alone decides it: the screen the video spends most of
-its time on no longer exists in the product, and it plays **before** the first screenshot.
+☠️ **RULED 2026-09-23 ON [#2626](https://github.com/Selftend/selftend/issues/2626): KEEP IT.**
+This section previously read _"Re-cut or pull - not keep."_ That verdict was written before the
+question was put to the owner, and it is **superseded**. Recorded rather than deleted, because a
+verdict that flipped is worth more than one that appears never to have been in doubt.
 
-⚠️ **Not an urgent pull.** [#2618](https://github.com/Selftend/selftend/issues/2618) ruled the
-Play work into two Console visits and put the video in **Visit B** — the everything visit, when
-the recapture exists. Visit A was deletions only and deliberately left the video alone. There is
-no evidence it carries a banned string, and pulling a listing's only video on suspicion is a
-larger act than the evidence supports.
+**The video stays on the listing.** The re-cut rides the **next campaign run** - not a date, and
+not "when someone gets to it".
 
-📌 **Whoever opens Visit B decides it, on the Console, and updates this file the same day** —
-`store/play-listing.md`'s _live first, file second_ rule governs this file too. If the video is
-pulled, this record stays and says so; the point of the account is that the change is diffable.
+⭐ **Why keep, when [#2041](https://github.com/Selftend/selftend/issues/2041) says stale pixels
+want new captures.** #2041's precedent is narrower than it looks. It was about a **guardrail
+violation** rendered as pixels - a feature graphic carrying _"Your CBT program"_ and
+_"Start program"_, copy `docs/positioning.md` bans, unfixable by editing because the words were an
+image. **This video contains no violation**: no banned compound, no `TOOLS ·` or `MODULES ·`
+breadcrumb, no dead Tools hub, and the closing line _"Free. Open source. No ads, subscriptions, or
+paywalls."_ sits squarely inside the guardrails.
 
-⚠️ **The remaining open question is step 2 of #2626 and it is an owner call**, because both
-surviving options need the owner: a re-cut needs the machine that holds `capture-lib.js`, and a
-pull is a Console act.
+What is stale here is **cosmetic** - Home's headers read _"Your tools"_ and _"Guided programmes"_
+where the app now reads _"Favourites"_ and _"Tools"_, plus a visible `Aug 18, 2026`. ⚠️ **A
+visitor cannot know a header was renamed.** Pulling the listing's only moving asset - its first
+tile, before screenshot `01` - to fix an invisible defect trades a real loss for no gain.
+
+⛔ **Pull now** was rejected. The consistency argument with
+[#2618](https://github.com/Selftend/selftend/issues/2618) is genuine, but that ruling removed
+frames from a set that **kept working without them**; this removes the asset entirely. And the
+surfaces shown are **replaced, not dead** - nothing in the video points at a screen that no longer
+exists.
+
+⛔ **Re-cut now** was rejected as unavailable rather than wrong: `capture-lib.js` lives on the
+owner's machine outside the repo (`docs/campaign/capture/shoot.js:10`), so it is an owner session
+with no agent path, competing with the App Store capture work that is on the critical path.
+
+⚠️ **The unchecked body copy above is accepted knowingly.** This record does **not** claim the
+video has been fully read - only that every rule the storyboard method could reach came back
+clean.
+
+📌 **Whoever opens Visit B may still overturn this on the Console**, and updates this file the
+same day - `store/play-listing.md`'s _live first, file second_ rule governs this file too. If the
+video is ever pulled, this record stays and says so; the point of the account is that the change
+is diffable.
