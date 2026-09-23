@@ -48,11 +48,41 @@ then polish: crossfades between grounds, the bed swell under the brand card, tap
 and taste-trims on the beat boundaries. Captures are pre-transcoded to H.264 in
 `captures/shared/mp4/` because Premiere does not read WebM.
 
+## What is published
+
+Read from the public channel 2026-09-22 and confirmed through YouTube's keyless oEmbed endpoint
+(`https://www.youtube.com/oembed?url=...&format=json` - no API key, no download). Ruled on
+[#2703](https://github.com/Selftend/selftend/issues/2703).
+
+| Video                                     | Id            | Length | Where it lives                                                                                  |
+| ----------------------------------------- | ------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| Selftend — The quiet minute (Google Play) | `_Dz9sawqGY4` | 0:36   | The Play listing's promo video - [`store/play-promo-video.md`](../../store/play-promo-video.md) |
+| Selftend — The quiet minute               | `fZxEclk3EHU` | 0:36   | The channel only; embedded nowhere                                                              |
+
+☠️ **The channel's public library is exactly these two.** The **eight walkthroughs went Private on
+2026-09-06**, after the owner declined a re-record ([`marketing-plan.md`](../marketing-plan.md)
+§ 7). ⛔ **Their ids are deliberately not recorded here** - they are visible only to the channel
+owner, so a table including them could never be completed from outside, and a half-filled table is
+the thing that rots. Their absence is a decision, not an omission.
+
+⚠️ **The `~29s` this index used to claim matched neither published cut.** Both are **0:36** - the
+Play variant and the plain trailer are the same length, so the _"+ Reddit cut"_ phrasing implied a
+second duration that does not exist on the channel. Two readings survive and neither is settled:
+the 29s cut was never published, or the script's estimate never tracked the final edit. The
+scripts below are the record of a recording already made, so they are **not** rewritten to match.
+
+⛔ **Nothing checks any of this.** No scheduled job reads the channel - the honest empty column
+[#2618](https://github.com/Selftend/selftend/issues/2618) gave the screenshot set and
+[#2693](https://github.com/Selftend/selftend/pull/2693) gave the promo video. The public library is
+two videos on a channel demoted in September ([#2100](https://github.com/Selftend/selftend/issues/2100)),
+and a weekly job for that would imply more assurance than it gives. The oEmbed call above is how a
+future sweep should read it, by hand.
+
 ## Scripts index
 
 | File                                        | Video                                               | Storyboard                                              |
 | ------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------- |
-| `scripts/trailer.md`                        | "The quiet minute" promo (~29s + Reddit cut)        | [#625](https://github.com/Selftend/selftend/issues/625) |
+| `scripts/trailer.md`                        | "The quiet minute" promo (**0:36 as published**)    | [#625](https://github.com/Selftend/selftend/issues/625) |
 | `scripts/getting-started.md`                | Getting started (~2.5–3 min)                        | [#626](https://github.com/Selftend/selftend/issues/626) |
 | `scripts/mood-journal-gratitude.md`         | Mood, journal & gratitude (~3 min)                  | [#627](https://github.com/Selftend/selftend/issues/627) |
 | `scripts/breathing-grounding-meditation.md` | Breathing, grounding & meditation (~3 min)          | [#628](https://github.com/Selftend/selftend/issues/628) |
