@@ -11,9 +11,32 @@ The minimum age for using Selftend, per country.
 > controls.
 
 > [!WARNING]
-> **One surface still says 18 and over, and it is not in this repository.** The
-> Google Play target-audience declaration reads "18 and over" (last edited
-> 2026-05-08) and moves to 13-15 / 16-17 in the owner's rollout pass,
+> **Two surfaces still say 18 and over, and neither is under this
+> repository's control.** Both are Google Play values, and they are not
+> interchangeable:
+>
+> 1. The **target-audience declaration** reads "18 and over" (last edited
+>    2026-05-08). Private to the Console — nobody outside it reads this field.
+> 2. ☠️ The **public full description** ends its penultimate paragraph with
+>    _"Available in English and Bulgarian. Selftend is for adults (18+)."_ Read
+>    off the live listing 2026-09-22. **This is the one a visitor actually
+>    sees**, and it is the one this warning used to omit
+>    ([#2705](https://github.com/Selftend/selftend/issues/2705)).
+>
+> ⚠️ Counting one where there are two is how the description slipped past the
+> teen-access effort: #1771's acceptance criteria say _"target audience is the
+> only declaration that actually changes"_, which is true of _declarations_ and
+> leaves the description untouched. Run #1771 as written and the audience moves
+> to 13-15 / 16-17 while the public page still says adults only — a listing
+> contradicting itself in the opposite direction. The replacement sentence is
+> not yet decided; #2705 holds that choice, and `docs/positioning.md` governs
+> it because it is copy saying what Selftend _is_.
+>
+> The mirror in `store/play-listing.md` carries the 18+ line **on purpose**
+> — that file reproduces live store values and must never move ahead of the
+> Console. It is a record of the defect, not an instance of it.
+>
+> Both move in the owner's rollout pass,
 > [#1771](https://github.com/Selftend/selftend/issues/1771) — same day as the
 > release that publishes this text, per §7's fixed order: owner legal review,
 > then release and publish together, then the Play Console pass. Until that day
