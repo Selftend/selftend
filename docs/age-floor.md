@@ -32,7 +32,7 @@ The minimum age for using Selftend, per country.
 > not yet decided; #2705 holds that choice, and `docs/positioning.md` governs
 > it because it is copy saying what Selftend _is_.
 >
-> The mirror at `store/play-listing.md:106` carries the 18+ line **on purpose**
+> The mirror in `store/play-listing.md` carries the 18+ line **on purpose**
 > — that file reproduces live store values and must never move ahead of the
 > Console. It is a record of the defect, not an instance of it.
 >
