@@ -235,3 +235,50 @@ describe("the rows checked in this pass", () => {
     }
   });
 });
+
+/**
+ * ☠️ The 18-and-over warning undercounted for two weeks, and the undercount is
+ * what let the defect through. It said **one** surface still says 18 and over
+ * and named the Play target-audience declaration - a field nobody outside the
+ * Console reads. The surface it omitted is the **public full description**,
+ * which is the one a visitor actually sees
+ * ([#2705](https://github.com/Selftend/selftend/issues/2705)).
+ *
+ * That omission is not cosmetic: #1771's acceptance criteria say "target
+ * audience is the only declaration that actually changes", which is true of
+ * declarations and leaves the description alone. Run #1771 against a warning
+ * that names one surface and the listing ends up contradicting itself in the
+ * opposite direction.
+ *
+ * ⚠️ Keyed on the two surfaces being named, not on the count word. "Two" is
+ * the kind of token a later edit changes without changing what follows it,
+ * and a guard that only reads the number would pass over a warning that had
+ * quietly dropped one of them again.
+ */
+describe("the 18-and-over warning names every surface that still says it", () => {
+  const warning = readFileSync(resolve(ROOT, "docs/age-floor.md"), "utf8")
+    .split("\n")
+    .filter((line) => line.trimStart().startsWith(">"))
+    .join("\n");
+
+  it("names the private target-audience declaration", () => {
+    expect(warning).toMatch(/target-audience declaration/i);
+  });
+
+  /**
+   * The one that was missing. A visitor reads this; nobody outside the Console
+   * reads the declaration above.
+   */
+  it("names the public full description", () => {
+    expect(warning).toMatch(/full description/i);
+  });
+
+  /**
+   * And says where the decision about the replacement sentence lives, so a
+   * reader who finds the defect is not left to invent a fix for copy that
+   * `docs/positioning.md` governs.
+   */
+  it("points at the issue holding the replacement decision", () => {
+    expect(warning).toContain("/issues/2705");
+  });
+});
