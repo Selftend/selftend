@@ -20,8 +20,53 @@ trust.
 
 > [!NOTE]
 > This is the assessment, not the sign-off. The owner's legal review
-> ([#1771](https://github.com/Selftend/selftend/issues/1771), spec §5) reads it
-> alongside the published text before either goes live.
+> ([#1771](https://github.com/Selftend/selftend/issues/1771), spec §5) was
+> designed to read it alongside the published text **before either goes live**.
+> ⚠️ That is not the order in which it happened — see the ordering record
+> immediately below, which corrects this sentence rather than replacing it.
+
+## Ordering: the teen-floor text published ahead of the §5 review
+
+**Recorded 2026-09-24.** Spec [#227](https://github.com/Selftend/selftend/issues/227)
+§5 set the order as _review → publish_, on the reasoning that no unreviewed legal
+text is ever live. It ran the other way. The teen-floor text — the per-country
+floor table and catch-all in terms, the privacy text including the teen summary,
+the FAQ parents section, the Art. 9 consent wording, and the age-gate and
+under-floor exit copy — **went live in v0.18.0 on 2026-09-09** under
+`policyVersion` `2026-09-04-teen-floor`, and every person who has opened the app
+since has been re-gated onto it and accepted it. The §5 owner legal review
+([#1771](https://github.com/Selftend/selftend/issues/1771)) had not been done at
+that point and, as of this paragraph's date, **has still not been done**.
+
+This paragraph is written before the review rather than after it, and that is
+deliberate. Art. 5(2) accountability is about being able to show what happened
+and when — **including when the process did not run as designed** — and the
+publication fact is already true and complete on its own. Waiting for the review
+would delay the record of a slip behind the thing the slip was about, which is
+the failure mode the requirement exists to prevent. The review's own output is a
+separate dated findings doc, still owed
+([#2708](https://github.com/Selftend/selftend/issues/2708)), and this section
+gains a line pointing at it when it lands.
+
+**What the slip changed, and what it did not.** It did not change what the text
+says or who was admitted: the floors, the gate and the exit are as this
+assessment describes them throughout, and no claim elsewhere in this document
+depends on the review having happened. What it changed is the **remedy available
+to the review**, which [#2684](https://github.com/Selftend/selftend/issues/2684)
+settled on 2026-09-22 once the ordering was known. The review is now an audit
+with a severity-tiered remedy whose boundary is consent validity, not
+inconvenience: a finding that the text misdescribes the product or that a floor
+admits someone the law does not makes the consent already collected **defective**,
+and re-collecting it is the remedy rather than a cost to be weighed against it.
+Findings that are accurate but incomplete, or matters of wording, ride the next
+release.
+
+⚠️ **The window is still open as this is written.** `main` carries
+`2026-09-04-teen-floor`; `dev` carries an unreleased bump to
+`2026-09-18-programme-retention`. The next release therefore re-gates everyone
+anyway, so a correction folded in before it is cut costs nothing extra at any
+severity. That is why #2684 attached a deadline of _before the next release_ to
+a review it had otherwise classified as an audit.
 
 ## Why this exists, and what it replaces
 
