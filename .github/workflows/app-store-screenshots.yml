@@ -75,14 +75,21 @@ name: App Store screenshots
 # Mac the project does not have" with it: the free `macos-26` runner is that
 # Mac, and this job touches no Apple credentials.
 #
-# ☠️ WHAT IT PHOTOGRAPHS is now the open problem, not whether it runs. The
-# account the flow signs into is thin and stale, so the captures read as an
-# empty app - "Nothing yet" five times on Home (#2648).
+# ✅ WHAT IT PHOTOGRAPHS is decided (#2730, map #2652). Until then the flow
+# signed into App Review's own PRODUCTION account, which was thin and stale -
+# "Nothing yet" five times on Home (#2648) - and no seed could be added,
+# because the repo's seed WIPES the target user's rows first.
 #
-# ⚠️ There is deliberately NO seeding step here, and adding one is not a
-# detail: the credential this job signs in with has been App Review's own
-# sign-in, and the repo's seed WIPES the target user's rows before inserting.
-# Map #2652 carries that decision. Do not add a seed step ahead of it.
+# Now the job builds against STAGING and signs into a dedicated staging
+# capture account, and the `seed` job below fills that account with
+# `scripts/seed-demo-data.mjs`'s fabricated dataset on EVERY run - not on a
+# dispatch input, because the dataset's 89-day window ends "today" and is only
+# true on the day something makes it so. `DEMO_ACCOUNT_*` still means App
+# Review's production account; this job no longer reads it.
+#
+# ☠️ The seed runs ONCE, in its own job, and both devices wait for it. Inside
+# the matrix it would run twice at the same moment, each wiping the rows the
+# other was inserting.
 #
 # Note `workflow_dispatch` needs this file on the DEFAULT branch (main) before
 # it appears at all. It has been there since #549, so dispatch works today and
@@ -100,15 +107,97 @@ permissions:
   contents: read
 
 jobs:
+  # Fills the staging capture account before either device photographs it.
+  #
+  # ☠️ `environment: capture`, NEVER `staging` or `production`. Both of those
+  # also carry deploy credentials (Cloudflare API token, a database password
+  # for the project they deploy) that a seeding job has no business near.
+  # `capture` holds exactly four secrets: STAGING_PROJECT_ID and
+  # STAGING_DB_PASSWORD (copies of staging's - rotate both copies together) and
+  # CAPTURE_ACCOUNT_EMAIL / CAPTURE_ACCOUNT_PASSWORD.
+  #
+  # The script refuses any target that is not local or
+  # https://<STAGING_PROJECT_ID>.supabase.co, and refuses production by name
+  # (scripts/seed-demo-target.mjs, test/seed-demo-target.test.ts). It creates
+  # or updates the capture account pre-confirmed through the admin API - never
+  # public signup, which would send an email - and never echoes the password.
+  seed:
+    name: Seed the staging capture account
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: capture
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+      SEED_ACCOUNT_EMAIL: ${{ secrets.CAPTURE_ACCOUNT_EMAIL }}
+      SEED_ACCOUNT_PASSWORD: ${{ secrets.CAPTURE_ACCOUNT_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check the capture environment is provisioned
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD STAGING_PROJECT_ID SEED_ACCOUNT_EMAIL SEED_ACCOUNT_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty. The capture environment needs all four secrets (#2729)."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      # The mechanism staging.yml already proves: the access token plus the
+      # staging database password. A wrong password or ref fails here, before
+      # anything is written.
+      - name: Link the staging project
+        run: supabase link --project-ref "$STAGING_PROJECT_ID"
+
+      - name: Seed the capture account
+        run: |
+          # The legacy service_role key first (what supabase-js expects), the new
+          # secret key as the fallback. Masked before anything can print it.
+          key="$(curl -fsS \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$STAGING_PROJECT_ID/api-keys?reveal=true" \
+            | jq -r '(map(select(.name == "service_role")) + map(select(.type == "secret")))[0].api_key // empty')"
+          if [ -z "$key" ]; then
+            echo "::error::No service-role or secret key came back for the staging project."
+            exit 1
+          fi
+          echo "::add-mask::$key"
+          SEED_SUPABASE_URL="https://$STAGING_PROJECT_ID.supabase.co" \
+            SEED_SERVICE_ROLE_KEY="$key" \
+            node scripts/seed-demo-data.mjs
+
   capture:
     name: ${{ matrix.label }}
+    needs: seed
     runs-on: macos-26
     timeout-minutes: 75
-    # Deliberately NOT `environment: production`. Everything this job needs -
-    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
-    # environment would additionally hand it the production deploy
-    # credentials (Cloudflare API token, production database password),
-    # which a simulator job has no business being near.
+    # `capture`, for the same reason as the seed job: it needs the capture
+    # account to sign into and the staging project to build against, and
+    # nothing that deploys. ☠️ Never `production` - that would hand a simulator
+    # job the production deploy credentials. The environment's own VARIABLES
+    # EXPO_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY (staging's, both public) take
+    # precedence over the repo-level production ones in `vars.` below, which is
+    # what points the build at staging; the first check below proves it did.
+    environment: capture
 
     strategy:
       fail-fast: false
@@ -162,10 +251,13 @@ jobs:
       SENTRY_DISABLE_AUTO_UPLOAD: "true"
       BUNDLE_ID: org.vasilyoshev.selftend
       ARTIFACT_DIR: build-artifacts
-      # The staged demo account (#514). Never a real account: these images are
-      # published publicly and the app holds private mental-health writing.
-      MAESTRO_DEMO_EMAIL: ${{ secrets.DEMO_ACCOUNT_EMAIL }}
-      MAESTRO_DEMO_PASSWORD: ${{ secrets.DEMO_ACCOUNT_PASSWORD }}
+      # The staging capture account the seed job just filled (#2730). Never a
+      # real account: these images are published publicly and the app holds
+      # private mental-health writing. Not DEMO_ACCOUNT_*, which is App
+      # Review's production account and is none of this job's business.
+      MAESTRO_DEMO_EMAIL: ${{ secrets.CAPTURE_ACCOUNT_EMAIL }}
+      MAESTRO_DEMO_PASSWORD: ${{ secrets.CAPTURE_ACCOUNT_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
 
     steps:
       - name: Check out repository
@@ -193,6 +285,15 @@ jobs:
             fi
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
+
+          # ☠️ The seed wrote to STAGING. A build pointed anywhere else would sign
+          # into a different project and photograph whatever is there - or, if the
+          # capture environment's variables were ever deleted, fall back to the
+          # repo-level PRODUCTION values without a word. So it has to match.
+          if [ "$EXPO_PUBLIC_SUPABASE_URL" != "https://$STAGING_PROJECT_ID.supabase.co" ]; then
+            echo "::error::EXPO_PUBLIC_SUPABASE_URL is not the staging project the seed wrote to. Set the capture environment's EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY variables to staging's."
+            exit 1
+          fi
 
       - name: Cache node_modules
         id: cache-node-modules
@@ -563,8 +664,8 @@ jobs:
             echo
             echo "Target size: **${{ matrix.expect_width }} x ${{ matrix.expect_height }}**"
             echo
-            echo "Captured with the staged demo account, never a real one - these"
-            echo "images go on a public listing and the app holds private writing."
+            echo "Captured with the seeded STAGING capture account, never a real one -"
+            echo "these images go on a public listing and the app holds private writing."
             echo
             echo "Review them before uploading. Apple rejects screenshots that"
             echo "misrepresent the app, and overlay text (if any is added later) is"
