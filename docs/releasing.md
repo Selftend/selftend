@@ -369,6 +369,25 @@ CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shippe
 
 The in-app surfaces the gate covers are listed in [`modules/tools.md`](modules/tools.md); the data layer, export and deletion are deliberately untouched.
 
+## Re-seed the App Review account (owner, before an iOS submission)
+
+App Store Connect's Sign-In Information points App Review at a **production** account (`APP_REVIEW_USER_ID`; [app-store-review-information.md § _Item 4_](app-store-review-information.md#item-4--setting-up-and-accessing-the-main-features)) that the demo seed fills. The dataset ends on the day it runs, so it goes stale: re-seed it **before every iOS submission**, and whenever `app-review-account-staleness.yml` is red.
+
+☠️ **A person runs this, never CI.** The seed deletes that account's rows before it inserts. `scripts/seed-demo-target.mjs` refuses production unless it is given **both** explicit arguments below, and refuses outright when `CI` or `GITHUB_ACTIONS` is set; `test/seed-demo-target.test.ts` fails if either flag ever appears in a workflow file ([#2731](https://github.com/Selftend/selftend/issues/2731), ruled on [#2668](https://github.com/Selftend/selftend/issues/2668)).
+
+```sh
+# The production service_role key, never printed:
+export SEED_SERVICE_ROLE_KEY="$(npx supabase projects api-keys --project-ref isniauimshuomfqrikzo -o json \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).find(k=>k.name==="service_role").api_key))')"
+
+SEED_SUPABASE_URL=https://isniauimshuomfqrikzo.supabase.co \
+  node scripts/seed-demo-data.mjs \
+  --production-ref=isniauimshuomfqrikzo \
+  --reviewer-user-id="$(gh variable get APP_REVIEW_USER_ID -R Selftend/selftend)"
+```
+
+It prints `Seeded the App Review account <id> (PRODUCTION):` and the row counts. The account itself is never created, re-passworded or changed by the seed — it must already exist, and the seed checks that it does.
+
 ## Store metadata drift
 
 Selftend's Apple **age-rating declaration** is mirrored in the repository at [`store/apple-advisory.json`](../store/apple-advisory.json), and `store-metadata-drift.yml` pulls the live values from App Store Connect every Monday and fails if they no longer match.

@@ -7,9 +7,13 @@
  * "A guard that is a comment is not a guard" (#2662): these fixtures are the guard.
  * The refusal was also seen red against the real script (see the PR), not assumed.
  */
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import {
   PRODUCTION_PROJECT_REF,
   SeedTargetRefused,
+  parseSeedArgs,
   resolveSeedTarget,
   upsertSeedUser,
 } from "../scripts/seed-demo-target.mjs";
@@ -67,6 +71,64 @@ describe("resolveSeedTarget - what is refused", () => {
     refused(undefined, STAGING);
     refused("", STAGING);
     refused("127.0.0.1:54321", STAGING);
+  });
+});
+
+describe("resolveSeedTarget - the owner-only production path (#2731)", () => {
+  const prodUrl = `https://${PRODUCTION_PROJECT_REF}.supabase.co`;
+  const reviewer = "4a047c3b-8024-4df3-abfe-d8c95462cc10";
+  const both = { "production-ref": PRODUCTION_PROJECT_REF, "reviewer-user-id": reviewer };
+  const resolve = (args: Record<string, string>, env: Record<string, string> = {}) =>
+    resolveSeedTarget({ url: prodUrl, stagingProjectId: STAGING, args, env });
+
+  it("accepts production only with BOTH explicit arguments, outside CI", () => {
+    expect(resolve(both)).toEqual({
+      kind: "production",
+      url: prodUrl,
+      ref: PRODUCTION_PROJECT_REF,
+      userId: reviewer,
+    });
+  });
+
+  it("refuses production with either argument missing", () => {
+    expect(() => resolve({})).toThrow(SeedTargetRefused);
+    expect(() => resolve({ "production-ref": PRODUCTION_PROJECT_REF })).toThrow(SeedTargetRefused);
+    expect(() => resolve({ "reviewer-user-id": reviewer })).toThrow(SeedTargetRefused);
+  });
+
+  it("refuses production in CI even with both arguments", () => {
+    expect(() => resolve(both, { CI: "true" })).toThrow(/CI/);
+    expect(() => resolve(both, { GITHUB_ACTIONS: "true" })).toThrow(/CI/);
+  });
+
+  it("refuses a wrong ref or a malformed user id", () => {
+    expect(() => resolve({ ...both, "production-ref": STAGING })).toThrow(SeedTargetRefused);
+    expect(() => resolve({ ...both, "reviewer-user-id": "demo@selftend.org" })).toThrow(
+      SeedTargetRefused,
+    );
+  });
+
+  it("does not let the production flags ride along to another target", () => {
+    expect(() =>
+      resolveSeedTarget({ url: stagingUrl, stagingProjectId: STAGING, args: both, env: {} }),
+    ).toThrow(/only apply to production/);
+  });
+
+  it("parses --name=value and --name value, and defaults nothing", () => {
+    expect(
+      parseSeedArgs(["--production-ref=abc", "--reviewer-user-id", "u-1", "positional"]),
+    ).toEqual({ "production-ref": "abc", "reviewer-user-id": "u-1" });
+    expect(parseSeedArgs([])).toEqual({});
+  });
+
+  it("appears in no workflow file - production is never an automated target", () => {
+    const dir = join(__dirname, "../.github/workflows");
+    const offenders = readdirSync(dir)
+      .filter((file) => /\.ya?ml$/.test(file))
+      .filter((file) =>
+        /--production-ref|--reviewer-user-id/.test(readFileSync(join(dir, file), "utf8")),
+      );
+    expect(offenders).toEqual([]);
   });
 });
 

@@ -17,7 +17,7 @@ Two things were changed at send time, both recorded here so the next submission 
 - **Item 1 was rewritten against the footage.** The draft claimed a journal entry, a timed breathing session, both permission prompts, the crisis screen and sign-in as the demo account — none are in the recording. What went out describes only what is on screen. (The same correction landed independently in #1042.)
 - **The device placeholders were filled from the device's own crash report**: `iPhone (iPhone18,3)`, iOS `26.6`. The model identifier was used rather than a marketing name, which could not be confirmed — an unambiguous identifier beats a wrong product name in a statement to Apple.
 
-Before sending, Sign-In Information was switched to **`demo@selftend.org`** (owner-only; it needs a password typed into a field), which is what makes item 4's "populated home screen" claim true.
+Before sending, Sign-In Information was switched to **`demo@selftend.org`** (owner-only; it needs a password typed into a field), on the belief that this made item 4's "populated home screen" claim true. ☠️ **It did not stay true**: that account's data went stale and read _"Nothing yet"_ five times on Home at every later submission ([#2668](https://github.com/Selftend/selftend/issues/2668)). It was **retired from the review role on 2026-09-25** ([#2731](https://github.com/Selftend/selftend/issues/2731)); § _Item 4_ below names the account that replaced it and the alarm that keeps the claim true.
 
 **The Notes field was also updated** — 3,049 characters, the block below plus the Guideline 4.8 / Sign in with Apple section the previous Notes carried. Apple's letter asks for this information in Notes "for future submissions", so it is now there independently of this reply.
 
@@ -92,9 +92,15 @@ The rule this section used to carry read: _"this document must not be updated to
 
 ## Item 4 — Setting up and accessing the main features
 
-**An account is required**, and credentials are supplied in the Sign-In Information fields. The reviewer account is **`demo@selftend.org`**, verified working on 2026-08-14: email confirmed, onboarding already completed, accepted policy version byte-identical to `policyVersion` in `src/features/policies/policy-content.ts`, so no consent wall and no onboarding wizard can fire. App lock is device-local and defaults off. The account is pre-seeded — 19 mood logs, 5 journal entries, 6 gratitude entries, 3 thought records — so the app opens on a populated home screen rather than an empty shell.
+**An account is required**, and credentials are supplied in the Sign-In Information fields. Since **2026-09-25** the reviewer account is **`vasil.yoshev+appreview@gmail.com`** ([#2731](https://github.com/Selftend/selftend/issues/2731)), a production account created pre-confirmed through the admin API (no signup, so no email was sent). Its credentials are the repository secrets `DEMO_ACCOUNT_EMAIL` / `DEMO_ACCOUNT_PASSWORD`, and its auth user id is the repository variable `APP_REVIEW_USER_ID`.
 
-⚠️ **`demo@selftend.org` is a staged, SQL-created account and is not a deliverable mailbox.** Nothing may send it mail — no password reset, no resend-confirmation, no recovery. The supplied password is verified working, so nothing should need to.
+**Populated by the tracked seed, and kept that way by an alarm**, not by a one-off fill:
+
+- It carries `scripts/seed-demo-data.mjs`'s fabricated dataset — ~3 months across the tools, ten favourites, four routines — ending on the day it was seeded, plus the account shell the app's gates check: age attestation, accepted `policyVersion`, onboarding done. So no age gate, consent wall or onboarding wizard fires, and Home opens populated. App lock is device-local and defaults off.
+- ☠️ **The dataset goes stale by itself** — its window ends on the day it runs. `app-review-account-staleness.yml` reads the account's newest check-in every Monday through the read-only digest role and **fails when it is older than 14 days** (or absent). The fix is the owner's re-seed, [releasing.md § _Re-seed the App Review account_](releasing.md#re-seed-the-app-review-account-owner-before-an-ios-submission); **re-seed before every iOS submission regardless**.
+- Verified 2026-09-25 right after the first seed: email confirmed, `age_floor_met` true (GB), policy accepted, onboarding completed, 10 favourites, newest check-in 0 days old.
+
+⚠️ The address is a **deliverable** plus-tagged Gmail mailbox, chosen so that a reviewer tapping "forgot password" cannot bounce and damage the sender reputation. `demo@selftend.org` — non-deliverable, SQL-created — is retired from the review role and must still never be sent mail.
 
 Sign-in also offers **Sign in with Apple** and **Google Sign-In**; either creates a fresh account.
 
