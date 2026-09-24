@@ -41,13 +41,17 @@ export function useAmbientLane({ active, soundId, volume }: AmbientLaneOptions):
       void lane.stop();
       return;
     }
-    const bed = ambientSoundLookup[soundId];
-    // ☠️ Guarded on the asset being an actual NUMBER, not on `!== null`. A stored id is
-    // free text and the lookup is a plain object, so `"constructor"` is a hit whose
-    // `asset` is `undefined` - which `!== null` lets straight through to `play()`.
+    // ☠️ An OWN-property lookup. A stored id is free text and the lookup is a plain
+    // object, so `"constructor"` would otherwise be a hit whose `asset` is inherited
+    // junk. The asset is then checked for presence, NOT for being a number: on web,
+    // `require()` of an audio file is the served URL string, and a `typeof … ===
+    // "number"` guard here silenced every web bed from v0.21.0 until 2026-09-25.
     // `nominalSeconds` rides along for the web loop window (`docs/sound.md` §3.1.6);
     // every catalogue row that has an asset has one.
-    if (typeof bed?.asset === "number") void lane.play(bed.asset, volume, true, bed.nominalSeconds);
+    const bed = Object.prototype.hasOwnProperty.call(ambientSoundLookup, soundId)
+      ? ambientSoundLookup[soundId]
+      : undefined;
+    if (bed?.asset != null) void lane.play(bed.asset, volume, true, bed.nominalSeconds);
     else void lane.stop();
     // Volume changes are handled in the volume effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
