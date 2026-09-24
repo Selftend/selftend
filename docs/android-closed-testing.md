@@ -47,7 +47,7 @@ Google currently lists a one-time developer registration fee of `US$25`. Verify 
 
 Current status: the Google Play developer account and Selftend app record exist, required Play policy forms are completed, and the first production AAB has been uploaded. Next work is service-account setup for repeatable uploads, store-asset polish, and real-device closed-test verification.
 
-Launch audience: the app policy text moved to a **per-country floor of 13 or higher** on 2026-09-04 ([#1767](https://github.com/Selftend/selftend/issues/1767), [age-floor.md](age-floor.md)). Play Console still declares **18 and over** — that declaration is edited in the owner's rollout pass ([#1771](https://github.com/Selftend/selftend/issues/1771)), on the same day as the release that publishes the text, and adds the 13-15 and 16-17 groups. The values recorded below are the live Play state until then; do not edit them here ahead of the Console.
+Launch audience: the app policy text moved to a **per-country floor of 13 or higher** on 2026-09-04 ([#1767](https://github.com/Selftend/selftend/issues/1767), [age-floor.md](age-floor.md)). Play Console declared **18 and over** until **2026-09-24**, when the rollout pass ([#1771](https://github.com/Selftend/selftend/issues/1771)) added the 13-15 and 16-17 groups and sent them for review as submission 120. The text itself shipped earlier, in v0.18.0 on 2026-09-09. What Play said during that change is in [§ Teen audience change, 2026-09-24](#teen-audience-change-2026-09-24).
 
 Required owner inputs:
 
@@ -72,7 +72,7 @@ Completed for the current Play app:
 
 - Health apps declaration in Play Console
 - Data safety form for closed testing
-- Target audience declared in Play Console (live value: 18 and over; moves to 13-15 / 16-17 in [#1771](https://github.com/Selftend/selftend/issues/1771))
+- Target audience declared in Play Console (13-15, 16-17, 18 and over, sent for review 2026-09-24 on [#1771](https://github.com/Selftend/selftend/issues/1771); 18 and over only before that)
 - app access instructions for account-required testing
 - first production AAB upload
 
@@ -85,7 +85,49 @@ Before widening testing:
 - verify reminders are optional, local, and off by default
 - verify the resolved Android prebuild config does not request camera or microphone/audio permissions
 - verify no ads, social feeds, or AI mental-health coach features were added (note: the Sentry SDK is present as an approved Phase 2 exception per `docs/analytics.md`; it is classified essential/Art. 6(1)(f) and disabled without `EXPO_PUBLIC_SENTRY_DSN`)
-- confirm the Play Console target audience matches the published floor and the app is not marked as child-directed (both halves change together in [#1771](https://github.com/Selftend/selftend/issues/1771); a mismatch in either direction is a policy problem)
+- confirm the Play Console target audience matches the published floor and the app is not marked as child-directed (both halves moved together on [#1771](https://github.com/Selftend/selftend/issues/1771), 2026-09-24; a mismatch in either direction is a policy problem)
+
+## Teen audience change, 2026-09-24
+
+Recorded during the Console sitting itself, because nothing in Play keeps a record of what a form said while you filled it in ([#2691](https://github.com/Selftend/selftend/issues/2691)). The three changes went as one submission, **120**, sent **2026-09-24 17:31** and `In review` when last read. The listing-text detail is in [store/play-listing.md](../store/play-listing.md).
+
+### Target audience and content
+
+- **Before:** only _18 and over_ ticked; the sub-option _"Restrict users that Google has determined to be minors from my app (optional)"_ unticked.
+- Ticking **13-15** next to 18 and over showed a red inline error, _"Choose consecutive age groups"_, until **16-17** was ticked too. The restrict-minors sub-option **disappears** as soon as any under-18 group is ticked.
+- With 13-15, 16-17 and 18 and over ticked, a **Policy requirements summary** appeared under the checkboxes, verbatim:
+
+  > Depending on the countries where your app is available, some or all of the users in your target audience may be considered children. You must comply with the Families policy whenever your app is being used by a child.
+  >
+  > This includes:
+  >
+  > - Making sure that any content in your app that could be seen by children is appropriate for them
+  > - Only displaying ads that are appropriate for children, whenever your app is being used by a child
+  > - Only displaying ads that are from Google Play certified ad networks , or ads served by you, whenever your app is being used by a child. This includes ads for your own apps, or from partnerships with other brands
+  > - Making sure that your app (including all APIs, SDKs and ads) complies with all applicable laws and regulations relating to children, such as the US Children's Online Privacy Protection Act COPPA, and the EU General Data Protection Regulation GDPR
+  >
+  > You can either make your entire app compliant, or implement a neutral age screen and comply with the policy when the user is a child.
+
+- ⭐ **No newly required field, no interstitial, and no forced declaration.** _Next_ went straight from step 1 (Target age) to step 5 (Summary), and steps 2 _App details_, 3 _Ads_ and 4 _Store presence_ were never asked. The summary read _"The target age group for your app is: 13-15, 16-17, 18 and over"_. After _Save_, **App content → Need attention stayed empty**: no Families declaration and no ads declaration. The Publishing overview described the change as _"Update Target audience and content information. Target age is 13 and older."_
+- **Store-listing review:** the audience change did not force one on its own. The listing went for review anyway, because the description edit rode in the same submission.
+- ⚠️ The Families-policy text above applies whenever the app "is being used by a child". Selftend's neutral age screen admits nobody under the per-country floor ([age-floor.md](age-floor.md)), and the app has no ads or ad SDKs, so the ads clauses have nothing to apply to. The content and legal clauses are what the §5 review (completed 2026-09-24 with no Tier-1 findings; its record is PR [#2745](https://github.com/Selftend/selftend/pull/2745)) covered.
+
+### Content rating (IARC re-take)
+
+- **Before:** certificate `0090706e-7b48-86a6-8280-3f6bf70c423c`, submitted 2026-05-07, category _All other app types_: ClassInd All ages, ESRB Everyone, PEGI 3, USK All ages, IARC Generic 3+, Google Play Russia 3+, South Korea 3+, no content descriptors.
+- _Start new questionnaire_ asks again for the contact email, the category and a fresh tick of _"I agree to the Terms of Use as outlined by the International Age Rating Coalition (IARC)"_ (approved by the owner at the sitting).
+- The _All other app types_ questionnaire has **sixteen questions** in five groups: _Downloaded app_ (a gate question, then violence/blood, scary content, sexuality, gambling, offensive language, drugs/alcohol/tobacco, crude humour), _User content sharing_, _Online content_, _Promotion or sale of age-restricted products or activities_, and _Miscellaneous_ (precise location sharing, digital purchases, cash rewards/NFTs, browser or search engine, news or educational).
+- ☠️ **There is no self-harm or suicide question.** The whole questionnaire's text was searched and none exists, so #1771's "read the live self-harm/suicide question text" had no text to read. There is no separate social-media question either. The closest is _"Does the app natively allow users to interact or exchange content with other users through voice communication, text or sharing images or audio?"_, answered **No**.
+- ⚠️ **One owner ruling.** _"Does the app contain any reference to or use of drugs, alcohol or tobacco?"_: the app's copy mentions alcohol, drugs and nicotine only as health information (DBT's PLEASE "Substances" line, the sleep diary's notes hint, ACT's "urge to drink" example). _Yes_ opens _"Please select all that the app includes: Illegal or recreational drugs / Fantasy drugs / Medical drugs / Alcohol / Tobacco"_. It was **answered No by owner decision**, the same position the May certificate took before DBT existed.
+- All sixteen were answered **No**. **The result did not change**: ClassInd All ages, ESRB Everyone, PEGI 3, USK All ages, IARC Generic 3+, Russia 3+, South Korea 3+, no descriptors. Saved 2026-09-24 17:29. The new certificate ID shows `-` until the review completes.
+
+### Data safety
+
+Not edited. On 2026-09-24 the public page lists **Health info · Optional** (App functionality, Personalization) and **Other user-generated content · Optional** (same purposes) among the collected types, plus _No data shared with third parties_. So journal entries are declared under both. Nothing in the audience change asked for data safety to be re-confirmed.
+
+### Age Suitability URL and the "new social media questions"
+
+Neither exists anywhere in Play Console (checked Store settings, Content ratings and App content). Both belong to the age-rating form in **App Store Connect**, not Play.
 
 ## Build commands
 

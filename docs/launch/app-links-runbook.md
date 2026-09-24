@@ -73,9 +73,9 @@ only about links arriving from _outside_ the app.
   serving origin ([indexability.md](../indexability.md) § 6.1, live since
   2026-09-11): a zone-level Cloudflare rule answers every `www` URL with a 301
   to the apex, and Apple refuses an association file served with a redirect,
-  so once that rule's temporary `/.well-known/` carve-out is retired (see
-  _Retiring the `www` carve-out_ below) a `www` claim cannot verify at all —
-  #2298 dropped the claim ahead of that. A link typed or shared as `www` is
+  so a `www` claim cannot verify at all — #2298 dropped the claim, and the
+  rule's temporary `/.well-known/` carve-out was retired on 2026-09-24 (see
+  _The `www` carve-out, retired_ below). A link typed or shared as `www` is
   not lost: Safari follows the 301 and the apex **web** app completes
   `/auth-callback`; the native handoff only ever covers apex links, which is
   all email produces, since Supabase's SiteURL has no `www`. Android is
@@ -137,35 +137,23 @@ curl -s -o /dev/null -w '%{num_redirects}\n' \
   https://selftend.org/.well-known/apple-app-site-association
 #    -> 0
 
-# 4. The www host is not claimed. While the carve-out below stands it still
-#    answers 200 application/json; once retired, 301 to the apex. Either is
-#    fine for the app - only the apex is claimed.
-curl -s -o /dev/null -w '%{http_code} %{content_type}\n' \
+# 4. The www host is not claimed, and redirects like every other www URL.
+curl -s -o /dev/null -w '%{http_code}\n' \
   https://www.selftend.org/.well-known/apple-app-site-association
-#    -> 200 application/json (carve-out standing) | 301 (retired)
+#    -> 301
 ```
 
-## Retiring the `www` carve-out (one-time owner step, after the release that drops the claim)
+## The `www` carve-out, retired
 
 The zone's `www` → apex redirect rule ([deployment.md](../deployment.md) § _Cloudflare zone
-settings_) carries a clause, `and not starts_with(http.request.uri.path,
-"/.well-known/")`, that keeps the association file answering 200 on `www` for
-as long as an installed build still claims `applinks:www.selftend.org`. The
-clause is retired **once a build without the `www` entitlement is the current
-App Store version** (the first native release carrying #2298):
+settings_) used to carry a clause, `and not starts_with(http.request.uri.path,
+"/.well-known/")`, that kept the association file answering 200 on `www` while
+an installed build could still claim `applinks:www.selftend.org`. It came off
+on **2026-09-24** (#2298), once v0.21.0 — apex-only, as every build from
+v0.20.0 is — was the current App Store version. The expression is now
+`http.host eq "www.selftend.org"`, and check 4 above reads `301`.
 
-1. Cloudflare → Rules → Overview → the rule "www to apex" → edit the expression
-   to `http.host eq "www.selftend.org"` → Deploy.
-2. Verify: `curl -sI https://www.selftend.org/.well-known/apple-app-site-association`
-   → `301` with `location: https://selftend.org/.well-known/apple-app-site-association`;
-   the apex checks 1-3 above still pass.
-3. Record the date in the redirect-rule row of [deployment.md](../deployment.md) § _Cloudflare
-   zone settings_, delete the carve-out paragraph under that table, and update
-   the rule's expression in control-tower
-   [#132](https://github.com/vasilyoshev/control-tower/issues/132) (the
-   architecture rule: a public-URL rule changed).
-
-A build still carrying the old entitlement loses nothing meanwhile: a tapped
+A device still on v0.19.0 or earlier loses nothing: a tapped
 `www` link opens Safari, follows the 301, and the apex web app completes
 `/auth-callback` as it does today.
 
