@@ -1,6 +1,6 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-24** — the teen-access pass ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)), **submission 120**, sent 17:31, `In review`. Three changes in one submission: the full description lost _"Selftend is for adults (18+)."_ (1,960 → 1,930 characters), the target audience gained **13-15** and **16-17**, and the content-rating questionnaire was re-taken with an unchanged result. The block below carries the new text; the public page keeps the 18+ sentence until that row reads `Published`.
+**Last verified against Play Console: 2026-09-24** — the teen-access pass ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)), **submission 120**, sent 17:31, ✅ `Published` the same day. Three changes in one submission: the full description lost _"Selftend is for adults (18+)."_ (1,960 → 1,930 characters), the target audience gained **13-15** and **16-17**, and the content-rating questionnaire was re-taken with an unchanged result. The block below carries the new text, and the public page matched it on 2026-09-24 (no 18+ sentence).
 
 **The visit before it, 2026-09-22** — the full description lost the progress-view clause ([#2458](https://github.com/Selftend/selftend/issues/2458)), submission 119, ✅ `Published` by 2026-09-24.
 
@@ -21,7 +21,7 @@ And the three most recent visits, read off _Submission activity_ on **2026-09-24
 
 | #       | Sent              | Change                                                                                                                                                                                                                            | Status       |
 | ------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **120** | 2026-09-24, 17:31 | Store listing + App content — the 18+ sentence removed, target audience 13-15 / 16-17 / 18+, IARC re-taken ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)) | In review    |
+| **120** | 2026-09-24, 17:31 | Store listing + App content — the 18+ sentence removed, target audience 13-15 / 16-17 / 18+, IARC re-taken ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)) | ✅ Published |
 | **119** | 2026-09-22, 12:18 | Store listing — full description, the progress-view clause removed ([#2458](https://github.com/Selftend/selftend/issues/2458))                                                                                                    | ✅ Published |
 | **118** | 2026-09-20, 19:25 | Store listing — **7-inch and 10-inch tablet screenshots deleted**, both tiers emptied ([#2616](https://github.com/Selftend/selftend/issues/2616))                                                                                 | ✅ Published |
 

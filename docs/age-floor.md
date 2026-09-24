@@ -24,8 +24,8 @@ The minimum age for using Selftend, per country.
 >    audience field carries the answer. `store/play-listing.md` mirrors the
 >    new text.
 >
-> Until submission 120 reads `Published`, the public page still shows the old
-> sentence. The order #1771 fixed (review, then release, then the Console
+> Submission 120 was `Published` the same day, and the public page no longer
+> carries the sentence. The order #1771 fixed (review, then release, then the Console
 > pass) did not hold: the text shipped in v0.18.0 on 2026-09-09, and the §5
 > review and the Console pass followed on 2026-09-24. What Play showed during
 > the change is in [android-closed-testing.md](android-closed-testing.md)

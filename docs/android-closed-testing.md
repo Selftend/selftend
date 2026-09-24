@@ -89,7 +89,7 @@ Before widening testing:
 
 ## Teen audience change, 2026-09-24
 
-Recorded during the Console sitting itself, because nothing in Play keeps a record of what a form said while you filled it in ([#2691](https://github.com/Selftend/selftend/issues/2691)). The three changes went as one submission, **120**, sent **2026-09-24 17:31** and `In review` when last read. The listing-text detail is in [store/play-listing.md](../store/play-listing.md).
+Recorded during the Console sitting itself, because nothing in Play keeps a record of what a form said while you filled it in ([#2691](https://github.com/Selftend/selftend/issues/2691)). The three changes went as one submission, **120**, sent **2026-09-24 17:31** and `Published` the same day. The listing-text detail is in [store/play-listing.md](../store/play-listing.md).
 
 ### Target audience and content
 
