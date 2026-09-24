@@ -38,15 +38,21 @@ since has been re-gated onto it and accepted it. The §5 owner legal review
 ([#1771](https://github.com/Selftend/selftend/issues/1771)) had not been done at
 that point and, as of this paragraph's date, **has still not been done**.
 
+✅ **The review has since been done — 2026-09-24, no Tier-1 findings.** Its
+output is [teen-access-section5-review.md](teen-access-section5-review.md),
+the dated findings doc [#2684](https://github.com/Selftend/selftend/issues/2684)
+commissioned. Two Tier-3 wording candidates ride the next release; nothing
+found invalidates consent already given, so no re-gate is owed.
+
 This paragraph is written before the review rather than after it, and that is
 deliberate. Art. 5(2) accountability is about being able to show what happened
 and when — **including when the process did not run as designed** — and the
 publication fact is already true and complete on its own. Waiting for the review
 would delay the record of a slip behind the thing the slip was about, which is
 the failure mode the requirement exists to prevent. The review's own output is a
-separate dated findings doc, still owed
-([#2708](https://github.com/Selftend/selftend/issues/2708)), and this section
-gains a line pointing at it when it lands.
+separate dated findings doc — ✅ **now written**, as
+[teen-access-section5-review.md](teen-access-section5-review.md)
+([#2708](https://github.com/Selftend/selftend/issues/2708)).
 
 **What the slip changed, and what it did not.** It did not change what the text
 says or who was admitted: the floors, the gate and the exit are as this
