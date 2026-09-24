@@ -8,10 +8,16 @@ the trailer takes the best seconds in the edit.
 
 Mechanics live in the proven Drive harness (`scripts/capture-lib.js`, `capture.js` from #511):
 1080x1920 viewport with the innerWidth-540 shim, cursor overlay, human-paced clicks.
-Reset the demo account (`scripts/reset-demo.sql` via Management API) before every full run.
-⚠️ Check before first run: the reset seed predates ACT/habit-history needs — extend it so
-history views (MJ-LOOKBACK, HA-HISTORY, CB-HISTORY) have weeks of coherent fictional data,
-including **a visibly missed habit day** (HA-HISTORY's storyboard centrepiece).
+⚠️ **There is no `scripts/reset-demo.sql`, and there never was** ([#2614](https://github.com/Selftend/selftend/issues/2614)) —
+this line used to tell you to run it, and to extend it. The fictional dataset is
+`scripts/seed-demo-data.mjs`: it wipes and re-fills one account deterministically, with its 89-day
+window ending on the day it runs. It writes to a local stack (`npm run db:seed:demo`) or to the
+**staging capture account**, which the App Store capture job re-seeds on every run
+([#2730](https://github.com/Selftend/selftend/issues/2730)); it refuses any other target, production
+above all. Re-seed right before a full run. ⚠️ Check first that the history views
+(MJ-LOOKBACK, HA-HISTORY, CB-HISTORY) have what their storyboards need — **a visibly missed habit
+day** is HA-HISTORY's centrepiece — and change the seed's content only as its own reviewed decision
+([#2659](https://github.com/Selftend/selftend/issues/2659) adopted the dataset as-is).
 
 Every shot: verify no [#616-flagged strings](https://github.com/Selftend/selftend/issues/617)
 in frame before keeping the take (notably the CBT learn-page copy).
