@@ -73,7 +73,7 @@ import {
   ACT_BAND_START_HOUR,
   createBand,
 } from "./seed-demo-band.mjs";
-import { resolveSeedTarget, upsertSeedUser } from "./seed-demo-target.mjs";
+import { parseSeedArgs, resolveSeedTarget, upsertSeedUser } from "./seed-demo-target.mjs";
 import { DAYS, FUTURE_MARGIN_MS, createWindow } from "./seed-demo-window.mjs";
 
 const LOCAL_SERVICE_ROLE_KEY =
@@ -87,10 +87,14 @@ const LOCAL_DEMO_USER_ID = "00000000-0000-0000-0000-000000000003";
 const target = resolveSeedTarget({
   url: process.env.SEED_SUPABASE_URL ?? process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321",
   stagingProjectId: process.env.STAGING_PROJECT_ID,
+  // Only the owner's production path reads these; see seed-demo-target.mjs.
+  args: parseSeedArgs(process.argv.slice(2)),
+  env: process.env,
 });
 const isLocal = target.kind === "local";
 const serviceRoleKey = isLocal ? LOCAL_SERVICE_ROLE_KEY : process.env.SEED_SERVICE_ROLE_KEY;
-if (!serviceRoleKey) throw new Error("SEED_SERVICE_ROLE_KEY is required for a staging target.");
+if (!serviceRoleKey)
+  throw new Error(`SEED_SERVICE_ROLE_KEY is required for a ${target.kind} target.`);
 
 // Read the live policy version so the consent gate never fires for the demo
 // account regardless of when this script runs.
@@ -211,13 +215,27 @@ const admin = createClient(target.url, serviceRoleKey, {
 });
 
 // Every row below is written for this id, and it is known before the first wipe.
+// ☠️ Production: the App Review account's id, exactly as the owner passed it, and
+// only once it is confirmed to be a real login. Nothing here creates, updates or
+// re-passwords a production account - that stays a deliberate owner action.
+async function existingProductionUser(userId) {
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error || !data?.user) throw new Error(`No production account with id ${userId}.`);
+  return data.user.id;
+}
 const DEMO_USER_ID = isLocal
   ? LOCAL_DEMO_USER_ID
-  : await upsertSeedUser(admin.auth.admin, {
-      email: process.env.SEED_ACCOUNT_EMAIL,
-      password: process.env.SEED_ACCOUNT_PASSWORD,
-    });
-const accountLabel = isLocal ? "demo@test.local" : `the staging capture account (${target.ref})`;
+  : target.kind === "production"
+    ? await existingProductionUser(target.userId)
+    : await upsertSeedUser(admin.auth.admin, {
+        email: process.env.SEED_ACCOUNT_EMAIL,
+        password: process.env.SEED_ACCOUNT_PASSWORD,
+      });
+const accountLabel = isLocal
+  ? "demo@test.local"
+  : target.kind === "production"
+    ? `the App Review account ${DEMO_USER_ID} (PRODUCTION)`
+    : `the staging capture account (${target.ref})`;
 
 async function wipe(table) {
   const { error } = await admin.from(table).delete().eq("user_id", DEMO_USER_ID);
@@ -305,10 +323,11 @@ const counts = {};
   counts.user_preferences = 1;
 }
 
-// ------------------------------------------- the staging account's shell (#2730)
+// ------------------------------- the remote accounts' shell (#2730, #2731)
 // Locally `supabase/seed.sql` gives demo the parts of an account that are not
 // data: an age attestation, a language, CBT onboarding done, accepted policy and
-// health-data consent. The staging capture account has no seed.sql, so without
+// health-data consent. The staging capture account and the production App Review
+// account have no seed.sql, so without
 // these it would be a brand-new account that reached the app never having been
 // asked its age - and the age gate, which exempts only accounts older than
 // `AGE_GATE_INTRODUCED_AT`, would stop the capture flow a second time AFTER
