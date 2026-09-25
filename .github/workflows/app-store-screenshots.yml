@@ -623,7 +623,7 @@ jobs:
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-store-screenshots-${{ matrix.slug }}-${{ github.run_number }}
           path: screenshots/
@@ -632,7 +632,7 @@ jobs:
 
       - name: Upload diagnostic captures
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: diagnostics-${{ matrix.slug }}-${{ github.run_number }}
           path: diagnostics/
@@ -646,7 +646,7 @@ jobs:
       # would have explained the failure was silently dropped.
       - name: Upload Maestro debug output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maestro-debug-${{ matrix.slug }}-${{ github.run_number }}
           path: maestro-debug/
