@@ -1,5 +1,8 @@
-# Cloudflare Workers static-assets deploy — STAGING → staging.selftend.org
-# (Netlify-exit spec §4c). web-deploy.yml selects this config when called with
+# Cloudflare Workers static-assets deploy — STAGING → selftend-staging.vasil-yoshev.workers.dev
+# (Netlify-exit spec §4c; the custom domain staging.selftend.org came off on
+# 2026-09-23, #2319 — the Worker serves on its own workers.dev hostname now, and
+# there is deliberately no [[routes]] block here, so nothing in the deploy path
+# hardcodes a host). web-deploy.yml selects this config when called with
 # environment=staging; the guard job in staging.yml asserts the name below is
 # the staging Worker (never "selftend") before any deploy runs.
 name = "selftend-staging"

@@ -10,6 +10,7 @@ import {
   getNotificationTarget,
   type NotificationTargetKey,
 } from "@/src/features/notifications/registry";
+import { isReminderTargetHeldOut } from "@/src/features/notifications/reminder-rollout";
 import type { ReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import type { ReminderChannelStatus, ReminderScheduleResult } from "@/src/lib/notifications";
@@ -34,6 +35,29 @@ jest.mock("@/src/stores/toast-store", () => ({
     selector({ showToast: mockShowToast }),
 }));
 
+/**
+ * ☠️ **The hold-out list is empty (#2698), so the row's held-out rendering has
+ * no real target to reach it with.** Mocking the predicate is what keeps that
+ * path covered rather than quietly dying the day the last target was lifted -
+ * the row must still refuse an opt-in it cannot honour when the NEXT target
+ * lands held out, and the two-step rollout says there will be one.
+ *
+ * ⚠️ This makes the row's tests say nothing about WHICH targets are held out.
+ * That claim has one home and it is `reminder-rollout.test.ts`, which asserts
+ * the list is empty; splitting the two is deliberate, so neither test can pass
+ * by borrowing the other's fact.
+ */
+jest.mock("@/src/features/notifications/reminder-rollout", () => ({
+  isReminderTargetHeldOut: jest.fn(() => false),
+}));
+
+const mockIsHeldOut = jest.mocked(isReminderTargetHeldOut);
+
+/** Pretend `key` is the one target currently held out, for the length of a test. */
+function holdOut(key: NotificationTargetKey) {
+  mockIsHeldOut.mockImplementation((target: string) => target === key);
+}
+
 const mockUseUpdatePreferences = jest.mocked(useUpdateUserPreferences);
 const mockMutateAsync = jest.fn();
 const mockEnsure = jest.fn<Promise<ReminderScheduleResult>, []>();
@@ -45,6 +69,9 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // `clearAllMocks` clears calls, not implementations, so `holdOut()` would leak
+  // into every later test in the file. Back to "nothing is held out" each time.
+  mockIsHeldOut.mockImplementation(() => false);
   mockMutateAsync.mockResolvedValue(undefined);
   mockEnsure.mockResolvedValue({ enabled: true });
   mockUseUpdatePreferences.mockReturnValue({
@@ -366,8 +393,10 @@ describe("NotificationTargetRow - a held-out target (#2260)", () => {
   });
 
   it("shows the row switched off and disabled, under the hold-out note, while the cron holds it out", async () => {
-    // DBT is on the real list today. The cron sends nothing for it, so the row
-    // must not take an opt-in it would then confirm and never honour.
+    // The cron sends nothing for a held-out target, so the row must not take an
+    // opt-in it would then confirm and never honour. DBT was the real case until
+    // #2698; it stands in here for whichever target lands held out next.
+    holdOut("dbt");
     renderRow({ targetKey: "dbt" });
 
     expect(screen.getByTestId("notification-row-held-out-dbt")).toBeTruthy();
@@ -385,8 +414,10 @@ describe("NotificationTargetRow - a held-out target (#2260)", () => {
   });
 
   it("shows the general reminder's row the same way: Selftend, off, disabled, under the note (#2491)", async () => {
-    // The general reminder ships held out (#2413 § 3.4): its deep link is Home, `/`,
-    // which no shipped native build allowlists yet. Same shape as DBT's row today.
+    // The general reminder shipped held out (#2413 § 3.4) until #2698, and it is
+    // the one target with no tool behind it - worth keeping as a second case,
+    // because its row is built from the registry differently from a tool's.
+    holdOut("general");
     renderRow({ targetKey: "general" });
 
     expect(screen.getByTestId("notification-row-held-out-general")).toBeTruthy();
@@ -410,6 +441,29 @@ describe("NotificationTargetRow - a held-out target (#2260)", () => {
     expect(screen.queryByText(NOTE)).toBeNull();
     expect(screen.getByLabelText("Sleep").props.accessibilityState.disabled).toBe(false);
   });
+
+  /**
+   * ✅ The lift, from the row's side (#2698, #2494). The predicate is mocked to
+   * its real answer - false for everything, because the list is empty - and the
+   * two targets that spent longest held out are asked to behave like any other.
+   * A partial lift, where the list is emptied but a row stays wired off, fails here.
+   */
+  it.each([
+    ["general", "Selftend"],
+    ["dbt", "DBT"],
+  ] as const)(
+    "%s is no longer held out: no note, switch live, and it takes an opt-in",
+    async (targetKey, label) => {
+      renderRow({ targetKey });
+
+      expect(screen.queryByTestId(`notification-row-held-out-${targetKey}`)).toBeNull();
+      expect(screen.queryByText(NOTE)).toBeNull();
+      expect(screen.getByLabelText(label).props.accessibilityState.disabled).toBe(false);
+
+      fireEvent(screen.getByLabelText(label), "checkedChange", true);
+      await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+    },
+  );
 });
 
 const LONGEST_BG_LABEL = "Дневник на благодарността";

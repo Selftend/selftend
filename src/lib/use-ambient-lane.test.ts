@@ -89,6 +89,22 @@ describe("useAmbientLane", () => {
     expect(mockLane.stop).toHaveBeenCalledTimes(2);
   });
 
+  it("plays a bed whose asset is a URL string, which is what `require()` gives on web", () => {
+    // ☠️ Metro's web export turns `require("…/rain.m4a")` into the served path, not a
+    // registry number (checked in the production bundle, 2026-09-25). A guard on
+    // `typeof asset === "number"` therefore skipped every bed on web, silently, and
+    // the rest of this file never saw it because jest-expo hands back numbers.
+    const row = ambientSoundLookup.rain as { asset: unknown };
+    const original = row.asset;
+    row.asset = "/assets/assets/sounds/breathing/rain.0123456789abcdef.m4a";
+    try {
+      renderHook(() => useAmbientLane({ active: true, soundId: "rain", volume: 0.4 }));
+      expect(mockLane.play).toHaveBeenCalledWith(row.asset, 0.4, true, rain.nominalSeconds);
+    } finally {
+      row.asset = original;
+    }
+  });
+
   it("takes a volume change live, without restarting playback", () => {
     const { rerender } = renderHook(
       ({ volume }: { volume: number }) => useAmbientLane({ active: true, soundId: "rain", volume }),

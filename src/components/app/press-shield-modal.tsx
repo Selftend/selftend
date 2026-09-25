@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View, type ModalProps } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -104,11 +104,37 @@ export function PressShieldModal(props: PressShieldModalProps) {
   // discriminated union drops the correlation between `surface` and
   // `onEscape`, and this narrowing is exactly what makes a missing Escape a
   // type error rather than a runtime `undefined`.
+  // ☠️☠️ `useSafeAreaInsets`, NOT `SafeAreaView` - inside a `Modal` the
+  // component form measures ZERO and the row lands under the status bar.
+  //
+  // Measured on the iPad 13-inch (1032x1376 points) from the Maestro hierarchy
+  // of run 35585648361, onboarding wizard on a clean install:
+  //
+  //   - status bar clock at y 7-24, battery indicator at x 978-1006
+  //   - "Skip for now" at **y 14-34, x 928-1012**
+  //
+  // ⚠️ **Overlapping on both axes** - the battery glyph is drawn on the words,
+  // and the row starts at y 0, so the top inset applied was 0 where the iPad's
+  // is 24. `SafeAreaView` from this library is position-aware on native: it
+  // measures where it actually sits, and a `Modal` renders in its own native
+  // view hierarchy whose safe area does not resolve the way the app window's
+  // does. `useSafeAreaInsets` reads the provider through React context, which
+  // crosses the modal boundary because it is the same React tree.
+  //
+  // ☠️ This is not cosmetic. The status bar owns that region, so a touch
+  // there goes to system UI: on the wizard the row is the ONLY escape other
+  // than the CTA, and Maestro reported its tap as COMPLETED while the wizard
+  // stayed up - a control that looks pressable and cannot be pressed. A target
+  // no pointer can reach fails 2.5.5 whatever its measured size (#2646).
+  const insets = useSafeAreaInsets();
   const escapeRow =
     props.surface === "sheet" ? null : (
-      <SafeAreaView edges={["top", "left", "right"]}>
+      <View
+        style={{ paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}
+        testID="modal-escape-row"
+      >
         <ModalEscape label={props.escapeLabel} onPress={props.onEscape} />
-      </SafeAreaView>
+      </View>
     );
 
   // `surface`, `onEscape` and `escapeLabel` are destructured only to keep

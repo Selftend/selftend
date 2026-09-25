@@ -1,5 +1,6 @@
 import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-strings";
 import {
+  APPLE_RELEASE_NOTES_SURFACE,
   PLAY_VERBATIM_SURFACE,
   STORE_LISTING_TEXT,
   storeListingText,
@@ -311,11 +312,12 @@ describe("product copy states the record instead of advertising restraint", () =
       expect(verbatim?.text).toContain("What's inside:");
     });
 
-    it("catches the #711 sentence shape planted in either store surface", () => {
+    it("catches the #711 sentence shape planted in any store surface", () => {
       const planted = asLocaleStrings(
         storeListingText(
           JSON.stringify({ promoText: "Missing a day is never punished." }),
           "## Verbatim, as saved on 2026-01-01\n\n> No penalty for a missed day.\n",
+          "## Verbatim, as submitted\n\n> There is no penalty for missing a day.\n",
         ),
       );
       const rules = RESTRAINT_CLAIMS.filter(({ locale }) => locale === "en");
@@ -328,7 +330,11 @@ describe("product copy states the record instead of advertising restraint", () =
         )
         .map(({ namespace }) => namespace);
 
-      expect(caught).toEqual(["store/apple-info.json", PLAY_VERBATIM_SURFACE]);
+      expect(caught).toEqual([
+        "store/apple-info.json",
+        PLAY_VERBATIM_SURFACE,
+        APPLE_RELEASE_NOTES_SURFACE,
+      ]);
     });
 
     it("every store exemption still matches a live listing phrase, so it dies with the phrase", () => {

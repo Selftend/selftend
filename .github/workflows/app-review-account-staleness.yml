@@ -1,0 +1,85 @@
+name: App Review account staleness
+
+# Fails when the App Review account's newest check-in is older than
+# MAX_AGE_DAYS (#2731, ruled on #2668).
+#
+# WHY THIS EXISTS: App Store Connect's Sign-In Information points App Review at
+# a production account that the demo seed fills, and
+# docs/app-store-review-information.md promises Apple that it signs into a
+# POPULATED app. The seed's 89-day window ends on the day it runs, so a
+# populated account goes stale by itself: the account this replaced read
+# "Nothing yet" five times on Home and "last logged Jul 31" for seven weeks, at
+# every submission, and nothing noticed. This is the thing that notices.
+#
+# The fix when it is red is the owner's re-seed, in docs/releasing.md
+# § "Re-seed the App Review account". ☠️ NEVER from here: the seed deletes
+# before it inserts, and scripts/seed-demo-target.mjs refuses production in CI
+# by design. This job only READS.
+#
+# NO NEW CREDENTIAL. It reuses the monthly digest's read-only role through
+# ANALYTICS_DIGEST_DB_URL (`analytics_digest_ro`, inventoried on
+# control-tower #137) - never SUPABASE_DB_URL, which can write. It reads one
+# aggregate (a single timestamp) about one fabricated account, and prints
+# nothing about anyone else.
+#
+# ⛔ NOT a user-facing schedule, by the argument that cleared the hold-out
+# alarm: it holds no copy, addresses nobody, arrives nowhere, and reaches no
+# user. It reddens a check in this repository. NOT a required check either: it
+# reads a remote system a human legitimately changes, so, like
+# store-metadata-drift.yml, it is a weekly alarm rather than a merge gate.
+#
+# APP_REVIEW_USER_ID is a repository VARIABLE (not a secret: an id is not a
+# credential) holding the account's auth user id.
+
+on:
+  schedule:
+    - cron: "29 6 * * 1" # 06:29 UTC Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-review-account-staleness
+  cancel-in-progress: false
+
+jobs:
+  staleness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ANALYTICS_DIGEST_DB_URL: ${{ secrets.ANALYTICS_DIGEST_DB_URL }}
+      APP_REVIEW_USER_ID: ${{ vars.APP_REVIEW_USER_ID }}
+      MAX_AGE_DAYS: "14"
+
+    steps:
+      - name: Check the App Review account's newest check-in
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ANALYTICS_DIGEST_DB_URL:-}" ]; then
+            echo "::error::ANALYTICS_DIGEST_DB_URL is not set - see analytics-digest.yml's header."
+            exit 1
+          fi
+          if ! [[ "${APP_REVIEW_USER_ID:-}" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+            echo "::error::The APP_REVIEW_USER_ID repository variable is unset or not a user id."
+            exit 1
+          fi
+
+          # Whole days since the newest logged check-in; -1 when there is none.
+          age="$(psql "$ANALYTICS_DIGEST_DB_URL" -v ON_ERROR_STOP=1 -At -v uid="$APP_REVIEW_USER_ID" <<'SQL'
+          select coalesce(floor(extract(epoch from now() - max(logged_at)) / 86400)::int, -1)
+          from public.mood_logs_data
+          where user_id = :'uid';
+          SQL
+          )"
+
+          if [ "$age" -lt 0 ]; then
+            echo "::error::The App Review account has NO check-ins at all. App Review would sign into an empty app. Re-seed it (docs/releasing.md)."
+            exit 1
+          fi
+          if [ "$age" -gt "$MAX_AGE_DAYS" ]; then
+            echo "::error::The App Review account's newest check-in is $age days old (limit $MAX_AGE_DAYS). Home reads as stale to a reviewer. Re-seed it (docs/releasing.md)."
+            exit 1
+          fi
+          echo "The App Review account's newest check-in is $age day(s) old (limit $MAX_AGE_DAYS)."

@@ -10,16 +10,30 @@ The minimum age for using Selftend, per country.
 > checkbox. The 18-and-over posture is gone from every surface this repository
 > controls.
 
-> [!WARNING]
-> **One surface still says 18 and over, and it is not in this repository.** The
-> Google Play target-audience declaration reads "18 and over" (last edited
-> 2026-05-08) and moves to 13-15 / 16-17 in the owner's rollout pass,
-> [#1771](https://github.com/Selftend/selftend/issues/1771) — same day as the
-> release that publishes this text, per §7's fixed order: owner legal review,
-> then release and publish together, then the Play Console pass. Until that day
-> the store record and the app disagree, which is why the order is not a
-> preference. `store/play-listing.md` and `docs/app-store-review-information.md`
-> reproduce live store values and are updated by that pass, not by this file.
+> [!NOTE]
+> **The two Google Play surfaces that said 18 and over were both changed on
+> 2026-09-24** ([#1771](https://github.com/Selftend/selftend/issues/1771),
+> [#2705](https://github.com/Selftend/selftend/issues/2705)), in one
+> submission (120), sent for Google's review that day:
+>
+> 1. The **target-audience declaration** now reads 13-15, 16-17 and 18 and
+>    over (it had read "18 and over" since 2026-05-08).
+> 2. The **public full description** lost _"Selftend is for adults (18+)."_
+>    and was not given a replacement number: the floor is 13 or the country's
+>    higher floor, so any single number would be wrong somewhere, and the
+>    audience field carries the answer. `store/play-listing.md` mirrors the
+>    new text.
+>
+> Submission 120 was `Published` the same day, and the public page no longer
+> carries the sentence. The order #1771 fixed (review, then release, then the Console
+> pass) did not hold: the text shipped in v0.18.0 on 2026-09-09, and the §5
+> review and the Console pass followed on 2026-09-24. What Play showed during
+> the change is in [android-closed-testing.md](android-closed-testing.md)
+> § _Teen audience change, 2026-09-24_. `docs/app-store-review-information.md`
+> was never part of that pass
+> ([#2602](https://github.com/Selftend/selftend/issues/2602)). Its audience
+> sentence is a private App Review field and was corrected to this floor on
+> 2026-09-20.
 
 Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Selftend/selftend/issues/227) §2**, the settled
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the

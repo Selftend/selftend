@@ -47,24 +47,28 @@ describe("step tool rollout", () => {
     );
   });
 
-  it("withholds the six DBT ids the shipped client has no route, predicate or label for", () => {
-    // Named rather than derived: this list is the delta between the shipped
-    // release's vocabulary and this one, and a derived assertion would follow
-    // the mistake instead of catching it.
-    expect([...WITHHELD_STEP_TOOL_IDS].sort()).toEqual([
-      "emotionRecord",
-      "judgement",
-      "muscleRelaxation",
-      "oppositeAction",
-      "script",
-      "wiseMind",
-    ]);
+  it("withholds nothing: every steppable id is writable (#2713)", () => {
+    // ✅ The lift. Named rather than derived, for the reason the old assertion
+    // named the six: this list is the delta between the shipped release's
+    // vocabulary and this one, and nothing in the repo can compute it.
+    expect([...WITHHELD_STEP_TOOL_IDS]).toEqual([]);
+    expect([...WRITABLE_STEP_TOOL_IDS]).toEqual([...STEPPABLE_TOOL_IDS]);
   });
 
-  it("refuses a withheld id as a step input while still accepting every writable one", () => {
-    for (const toolId of WITHHELD_STEP_TOOL_IDS) {
-      expect(isWritableStepToolId(toolId)).toBe(false);
-      expect(routineStepInputSchema.safeParse({ toolId, position: 0 }).success).toBe(false);
+  it("accepts the six formerly withheld DBT ids as step inputs, and every other writable one", () => {
+    // The six BY NAME, not via the constant - an assertion derived from
+    // `WITHHELD_STEP_TOOL_IDS` would follow a regression that re-withheld them
+    // instead of catching it, which is the mistake the old test avoided too.
+    for (const toolId of [
+      "muscleRelaxation",
+      "wiseMind",
+      "judgement",
+      "emotionRecord",
+      "oppositeAction",
+      "script",
+    ]) {
+      expect(isWritableStepToolId(toolId)).toBe(true);
+      expect(routineStepInputSchema.safeParse({ toolId, position: 0 }).success).toBe(true);
     }
     for (const toolId of WRITABLE_STEP_TOOL_IDS) {
       expect(isWritableStepToolId(toolId)).toBe(true);
@@ -74,22 +78,40 @@ describe("step tool rollout", () => {
     expect(isWritableStepToolId("worry")).toBe(false);
   });
 
-  it("offers no withheld tool in the editor's add-step picker", () => {
-    const offered = OFFERABLE_STEP_TOOL_GROUPS.flatMap((group) => group.tools);
-    expect(offered.filter((toolId) => WITHHELD_STEP_TOOL_IDS.includes(toolId))).toEqual([]);
-    expect([...offered].sort()).toEqual([...WRITABLE_STEP_TOOL_IDS].sort());
-    // A group emptied by rollout is dropped whole - no header over no chips.
-    expect(OFFERABLE_STEP_TOOL_GROUPS.map((group) => group.key)).not.toContain("dbt");
-    expect(OFFERABLE_STEP_TOOL_GROUPS.every((group) => group.tools.length > 0)).toBe(true);
+  it("still subtracts the withheld list, so an empty list has not deleted the guard", () => {
+    // ☠️ The positive control, and the reason it exists: with nothing withheld,
+    // every assertion above passes equally well against a predicate that is just
+    // `isSteppableToolId` - the whole rollout guard could be deleted and this
+    // suite would stay green, leaving the next admitted id writable on day one.
+    // Text, because there is no value left to observe it through.
+    const source = readFileSync(join(__dirname, "step-tool-rollout.ts"), "utf8");
+    expect(source).toMatch(/WITHHELD_STEP_TOOL_IDS[^;]*\.includes\(\s*value\s*\)/);
+    expect(source).toMatch(/WITHHELD_STEP_TOOL_IDS[^;]*\.includes\(\s*tool\s*\)/);
   });
 
-  it("composes no withheld tool into the starter routine", () => {
-    // The starter's one-tap "Keep" is a write like any other, and the offer
-    // fires for people whose records are exactly the ones a starter composes
-    // from - so an unfiltered candidate list is a second door to the same row.
-    expect(
-      STARTER_CANDIDATE_TOOLS.filter((toolId) => WITHHELD_STEP_TOOL_IDS.includes(toolId)),
-    ).toEqual([]);
+  it("offers the DBT group in the editor's add-step picker, now that nothing is withheld", () => {
+    const offered = OFFERABLE_STEP_TOOL_GROUPS.flatMap((group) => group.tools);
+    expect([...offered].sort()).toEqual([...WRITABLE_STEP_TOOL_IDS].sort());
+    // ✅ The group the rollout used to empty is back, whole.
+    expect(OFFERABLE_STEP_TOOL_GROUPS.map((group) => group.key)).toContain("dbt");
+    expect(OFFERABLE_STEP_TOOL_GROUPS.every((group) => group.tools.length > 0)).toBe(true);
+    // ⚠️ This is the ROLLOUT filter only. The iOS module gate is a second and
+    // deliberately separate filter (`buildOfferableStepToolGroups`), asserted
+    // further down: lifting the rollout did not open the picker on a build that
+    // hides modules, and must not.
+  });
+
+  it("composes the DBT tools into the starter routine, last, as its order always said it would", () => {
+    // `starter.ts` wrote this outcome down in advance - the six "return here the
+    // moment WITHHELD_STEP_TOOL_IDS empties; nothing else about the order
+    // changes" - landing after every ACT exercise, so the self-limiting property
+    // the order was chosen for only tightens.
+    expect(STARTER_CANDIDATE_TOOLS).toContain("wiseMind");
+    expect(STARTER_CANDIDATE_TOOLS.indexOf("wiseMind")).toBeGreaterThan(
+      STARTER_CANDIDATE_TOOLS.indexOf("committedAction"),
+    );
+    // `habits` is excluded for its own reason, unrelated to rollout.
+    expect(STARTER_CANDIDATE_TOOLS).not.toContain("habits");
   });
 });
 

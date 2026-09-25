@@ -37,23 +37,53 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 **Never squash the promotion PR.** Squashing collapses the per-PR Conventional Commits into one commit and loses the version/CHANGELOG signal. release-please traverses `main`'s full commit graph, so the squash commits carried in by the merge commit are parsed individually; the merge commit's own subject does not need to be conventional. To keep the wrong button unavailable, the repo allows only the two merge methods that are actually used: squash (dev PRs, release PR) and merge commit (promotion and hotfix PRs) — rebase merge is disabled.
 
-## Post-release: lift held-out reminder targets
+## Post-release: lift held-out changes
 
-**A reminder target can be held out of the cron, and only a person lifts it.** `src/features/notifications/reminder-rollout.ts` holds `HELD_OUT_REMINDER_TARGETS` — targets whose deep link the SHIPPED native client cannot route yet ([#2213](https://github.com/Selftend/selftend/issues/2213)). While a target is on that list the edge function mints nothing for it, and its row on the reminders screen is switched off under a "not ready yet" note ([#2260](https://github.com/Selftend/selftend/issues/2260)). (#2260 also suppressed the post-save reminder offer for a held-out target; that offer has since been removed for every target — ADR-0008.) Nothing lifts it automatically, and nothing goes red while it stays held out — which is exactly how a hold-out outlives its reason.
+**A change can be built, shipped in the binary, and withheld from every user until something outside this repository comes true — and only a person lifts it.** That condition is always the same shape: _the native build that understands it is live on both stores_. Two constants carry hold-outs today:
 
-**Check this list after every release that carried a new reminder target, once the build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the store listings, not the merge, are what says the client is out there.
+| Constant                    | Where                                            | While an entry is on it                                                                                                                                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HELD_OUT_REMINDER_TARGETS` | `src/features/notifications/reminder-rollout.ts` | The edge function mints nothing for that target, and its row on the reminders screen is switched off under a "not ready yet" note ([#2213](https://github.com/Selftend/selftend/issues/2213), [#2260](https://github.com/Selftend/selftend/issues/2260)).                                   |
+| `WITHHELD_STEP_TOOL_IDS`    | `src/features/routines/step-tool-rollout.ts`     | A routine step cannot be WRITTEN with that tool id — the editor's picker drops it, the starter cannot compose it, `addStep` throws, and a database `CHECK` refuses it ([#2203](https://github.com/Selftend/selftend/issues/2203)). Reads stay permissive, so an existing row still renders. |
 
-The lift is one edit plus its tests, in one change:
+☠️ **Nothing lifts either automatically, and nothing goes red while an entry stays held out — which is exactly how a hold-out outlives its reason.** That sentence stood in this section, unamended, while all three then-live entries sat past their own conditions: `dbt` and the six DBT step tool ids by **13 days**, `general` by **5**. It is kept, because it is the motive for both guards below.
 
-1. drop the target from `HELD_OUT_REMINDER_TARGETS` in `src/features/notifications/reminder-rollout.ts`;
-2. update `src/features/notifications/reminder-rollout.test.ts` (it names the list) and `supabase/functions/_shared/web-reminders.test.ts` (it pins the hold-out and the partition);
-3. merge — the release pipeline redeploys the edge function (`supabase functions deploy`), and the clients pick the same list up from the same file.
+**Check after every release that carried a new hold-out, once that build is live on BOTH stores.** Android is Play review; iOS needs the manual App Store Connect promotion described in [How iOS reaches users](#how-ios-reaches-users), and until that promotion happens iOS users stay on the old client indefinitely — so the **store listings**, not the merge, are what says the client is out there.
 
-Today's list: **DBT**, held out until the build carrying `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on Google Play and the App Store; and **the general reminder** (`general`, [#2491](https://github.com/Selftend/selftend/issues/2491)), held out until the build carrying `/` in `ALLOWED_REMINDER_ROUTES` is live on both — its lift is [#2494](https://github.com/Selftend/selftend/issues/2494).
+### The register
 
-## Post-release, one-time: retire the `www` app-links carve-out
+⚠️ **Adding an entry to either constant means adding its row here, in the same change.** `test/hold-out-register.test.ts` fails otherwise — the column order and the `—` in _Lifted_ are load-bearing, and `scripts/check-hold-out-conditions.js` reads the same rows.
 
-The first native release carrying [#2298](https://github.com/Selftend/selftend/issues/2298) ships an iOS entitlement that claims `applinks:selftend.org` only. **Once that build is the current App Store version** (a person promotes it in App Store Connect, per [How iOS reaches users](#how-ios-reaches-users)), the Cloudflare redirect rule's `/.well-known/` carve-out has nothing left to serve: follow [launch/app-links-runbook.md](launch/app-links-runbook.md) § _Retiring the `www` carve-out_ - edit the rule, verify the 301, date the row in [deployment.md](deployment.md), update control-tower #132 - then delete this section.
+| Constant                    | Entry                                                                                    | Shipped in          | Lifts when                                                                    | Lifted                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `HELD_OUT_REMINDER_TARGETS` | `dbt`                                                                                    | v0.18.0, 2026-09-09 | `/modules/dbt` in `ALLOWED_REMINDER_ROUTES` is live on both stores            | 2026-09-22, [#2698](https://github.com/Selftend/selftend/issues/2698) |
+| `HELD_OUT_REMINDER_TARGETS` | `general`                                                                                | v0.21.0, 2026-09-17 | `/` in `ALLOWED_REMINDER_ROUTES` is live on both stores                       | 2026-09-22, [#2494](https://github.com/Selftend/selftend/issues/2494) |
+| `WITHHELD_STEP_TOOL_IDS`    | `muscleRelaxation`, `wiseMind`, `judgement`, `emotionRecord`, `oppositeAction`, `script` | v0.18.0, 2026-09-09 | the build carrying `/modules/dbt/*` has rolled out past review on both stores | 2026-09-22, [#2713](https://github.com/Selftend/selftend/issues/2713) |
+
+✅ **Nothing is held out today.** All three rows lifted on 2026-09-22 against one reading of the stores — **App Store 0.21.0** (released 2026-09-17) and **Google Play 0.23.0** (updated 2026-09-18), with `eas.json`'s production submit profile on `releaseStatus: "completed"`, so there was no staged rollout to wait out. Before that day the register had been lifted **zero times in 32 releases**.
+
+### What watches it
+
+Two guards, because the two ways a hold-out fails are not the same fact ([#2701](https://github.com/Selftend/selftend/issues/2701)):
+
+- **`test/hold-out-register.test.ts`, in `verify`** — every entry in either constant has a row above marked `—`, and every row marked `—` names entries that are really still in their constant. Purely local: no network, no issue state, no clock. This is the guard for _invisible_ — `WITHHELD_STEP_TOOL_IDS` appeared in no document at all, so nobody could have found it to check it.
+- **`.github/workflows/hold-out-conditions.yml`, weekly** — reads the two live store versions and goes red when a row marked `—` shipped in a version at or below both. This is the guard for _unchecked_, and it cannot be a merge gate: whether a condition is met is a fact about two store listings, which `verify` has no way to know. It is an alarm for the reason `store-metadata-drift.yml`'s header already gives — _"a red run here means 'the two copies disagree', which is a question, not a verdict."_ It needs no credential.
+
+⛔ **Neither is a schedule that contacts anyone.** [ADR-0004](adr/0004-retention-by-return-not-engagement.md) refuses contact triggered by a person's non-use, and [#2621](https://github.com/Selftend/selftend/issues/2621) § 5 names the trap exactly: _"a queue of written copy, each entry waiting on a trigger, with a mechanism to fire them."_ These hold no copy, address nobody and arrive nowhere.
+
+☠️ **Refused, deliberately: binding an entry to an open tracking issue.** It was the obvious idea ([#2629](https://github.com/Selftend/selftend/issues/2629)) and the record kills it — `general` had an open, correctly-labelled issue and still overran by 5 days, so the guard would have been **green throughout the failure it was written for**.
+
+### The lift
+
+One edit plus its tests, in one change:
+
+1. drop the entry from its constant;
+2. update the tests that name it — for a reminder target: `reminder-rollout.test.ts`, `web-reminders.test.ts` (the partition), `check-in-route-compat.test.tsx` (the same partition, app-side), and `notification-target-row.test.tsx`, which drives the held-out row from a mocked predicate so that path keeps its coverage while the list is empty. For a step tool id: `step-tool-rollout.test.ts`, `repository.test.ts`, `routine-editor-screen.test.tsx`, `starter.test.ts` — **and a NEW migration widening `routine_steps_tool_id_allowlisted`**, never an edit to an applied one;
+3. move its _Lifted_ cell in the register from `—` to the date and the issue;
+4. ☠️ **commit it as `feat:`, never `chore:`** — `SECTION_KINDS` in the release-thread picker admits only `feat`/`fix`/`perf`, so a `chore:` lift renders no changelog bullet, gives the release-thread drafter no `#N` to join on, and the news vanishes permanently. A held-out change is not announced at the release that built it, because no true sentence exists yet ([#2621](https://github.com/Selftend/selftend/issues/2621)); **the lift is the release at which the sentence becomes true, and the only one that can carry it.** The PR description carries that sentence;
+5. merge — the release pipeline redeploys the edge function (`supabase functions deploy`) and applies the migration, and the clients pick the same lists up from the same files.
+
+⚠️ **Emptying a constant is the normal state, not the retirement of the mechanism.** The two-step rollout is still how the next target or tool id ships: it lands held out in the change that adds its route or its id, and leaves once that build is live on both stores.
 
 ## Posting the r/Selftend thread (by hand)
 
@@ -65,9 +95,9 @@ The routine, per open `reddit-draft` issue:
 2. **Read every line, then delete, swap or rewrite in the composer.** The highlights are commit messages: capitalised, they read as instructions ("Match arbitrary opacity in the wash gate") until a person rewrites them, and the lead is structurally the least newsworthy line because the picker walks scopes alphabetically - the issue numbers the picks so swapping the lead is one edit. The frame sentence and the supporting line are pinned to `docs/positioning.md` by a merge-gated test; the picks are not gated by anything, so the reader in front of them is the only gate they have. The spares under the thread are lines CI would not pick on its own; promote one only after reading it.
 3. **Select the "App update" flair.** No link parameter sets it.
 4. **Submit.**
-5. **Close the issue.**
+5. **Record the permalink, then close the issue.** Paste the thread's URL as a comment before closing, and close as **Completed**. A thread you decided not to post is closed as **Not planned**, and needs no comment.
 
-What the issue's state means: **open = not yet posted**, **closed = done**. The open count is the backlog. **Closing an issue unposted is a first-class outcome**, not a failure: the drafter files roughly 150 a year ([#1880](https://github.com/Selftend/selftend/issues/1880)'s measurement over the release cadence) and a meaningful share of them - patch releases with one fix, promotions whose eight picks are all plumbing - are rightly closed without a post. A closed issue is never re-drafted, so never reopen one for a thread that is live on Reddit; a re-run of the workflow against a closed tag does nothing, by design.
+What the issue's state means: **open = not yet posted**, **closed = done**. The open count is the backlog. The close **reason** carries the rest: **Completed = posted**, and the permalink is a comment on the issue; **Not planned = closed unposted**. That is deliberate, not a habit — it is the only record the project keeps that a thread ever reached the sub, and `gh issue list --label reddit-draft --state all --json number,stateReason` reads the whole history in one call. It matters because **you cannot correct copy you cannot find** ([#2632](https://github.com/Selftend/selftend/issues/2632)): a posted thread is the one surface carrying text that exists nowhere in this repository, and [#2624](https://github.com/Selftend/selftend/issues/2624) exists because a line in the v0.18.0 thread had to be chased by hand through r/Selftend. Nothing checks that the permalink was recorded, and nothing should — a `Completed` issue with no comment on it is plainly unfinished to the next person who opens it. **Closing an issue unposted is a first-class outcome**, not a failure: the drafter files roughly 150 a year ([#1880](https://github.com/Selftend/selftend/issues/1880)'s measurement over the release cadence) and a meaningful share of them - patch releases with one fix, promotions whose eight picks are all plumbing - are rightly closed without a post. A closed issue is never re-drafted, so never reopen one for a thread that is live on Reddit; a re-run of the workflow against a closed tag does nothing, by design.
 
 **Release threads have no after-life** ([#1942](https://github.com/Selftend/selftend/issues/1942)): never pin or highlight one. With one author and one post type every post scores the same, so the feed's first row is already the newest thread; a highlight would only duplicate that row while being the one thing that can fall behind it.
 
@@ -133,6 +163,10 @@ The fix belongs in the layer that deploys ahead of every client. `supabase/migra
 
 **What it still costs.** A guard cannot make the shipped client stop asking. Someone who accepts on web and then opens a phone still on the old build meets that build's consent gate on **every cold start** until the phone updates — where before they met it once per channel alternation and corrupted the record doing so. That trade is deliberate: the re-prompt is an annoyance that heals with the update, a consent record that says the wrong thing does not heal at all. Weigh it before bumping `policyVersion` in a release that also ships a native build.
 
+☠️ **Before you edit policy text, check whether a cohort is already on an unreleased version.** Closed-testing builds ship against the **production** backend by design, so a `policyVersion` that exists only on `dev` can be accepted by real people: **twenty production rows accepted `2026-09-18-programme-retention` on 2026-09-21**, before it had publicly released ([#2706](https://github.com/Selftend/selftend/issues/2706)). Those rows are benign in themselves — `hasAcceptedPolicy` treats a newer stored version as satisfied, so nobody is walled out — but they change what an edit costs. [#2707](https://github.com/Selftend/selftend/issues/2707)'s rule governs it: **edit the text in place when the correction leaves their consent valid, and bump to a fresh version when it does not**, keyed to [#2684](https://github.com/Selftend/selftend/issues/2684)'s tiering. ⚠️ **The window in which an unreleased version is free to edit is not unconditional**, and reasoning as though it were is the trap that ticket exists to mark.
+
+**[`policy-version-drift.yml`](../.github/workflows/policy-version-drift.yml) reddens weekly** when production holds a `policy_version_accepted` ranking above what `main` ships, so the cohort is found deliberately rather than by accident — which is how these twenty were found. ⛔ It **refuses nothing**: the monotonic trigger fails open on purpose, and [#2706](https://github.com/Selftend/selftend/issues/2706) rejected making a consent write fail. A red run is the prompt to apply #2707's rule, not a blocked release. Its comparison lives in `scripts/check-policy-version-drift.mjs` and is unit-tested in `verify`; ⚠️ its query returns **distinct version strings only**, and that select list is a privacy boundary a test holds.
+
 ### Android app optimisation (R8)
 
 Release builds run R8 with code minification and resource shrinking since [#1707](https://github.com/Selftend/selftend/issues/1707). Before that, Expo's default applied and every release shipped unminified — Play Console flagged 0.17.0 as "App optimisation is below our threshold. Obfuscation (1%). Fix by Feb 2027." What was checked, all on 2026-09-03, against primary sources:
@@ -170,10 +204,35 @@ With R8 live, Play Console replaced the Feb-2027 threshold warning with a lower-
 
   Every one of the 424 removed entries is library chrome (`m3_*`, `design_bottom_sheet_*`, `chevron_*`, dynamic palette colours) — the same shape #2211 found. The asset check is a byte comparison on purpose: AGP replaces a stripped file resource with a `DummyContent` stub rather than deleting the table entry, so a resolving id proves nothing, and the smallest surviving asset is 1,925 B against a stub's ~100 B.
 
-- **R8 optimisation passes — not now, and the reason is not the flag.** The `-` on _Optimisation percentage_ is not a `-repackageclasses` question: the prebuild template writes `proguardFiles getDefaultProguardFile("proguard-android.txt")`, and that file ships **`-dontoptimize`**, so the optimisation pass genuinely never runs. Google now says to use `proguard-android-optimize.txt` instead, and [AGP 9.0 disallows the old file](https://developer.android.com/build/releases/agp-9-0-0-release-notes) specifically to stop accidental `-dontoptimize`. Two things stop this being a one-line change. `expo-build-properties` exposes only `extraProguardRules` and no way to swap the default file, so it needs a custom config plugin patching `app/build.gradle`; and more importantly **a green R8 build is not evidence the app works** — turning optimisation on for the first time on a React Native app risks reflection-dependent breakage that only appears at runtime, which no local `bundleRelease` can see. It needs a `preview` build on a device, so it is its own piece of work.
+- **R8 optimisation passes — deferred to the Expo SDK 58 upgrade, which brings the change itself.** The `-` on _Optimisation percentage_ is not a `-repackageclasses` question: the prebuild template writes `proguardFiles getDefaultProguardFile("proguard-android.txt")`, and that file ships **`-dontoptimize`**, so the optimisation pass does not run — confirmed from a shipped artefact, `isOptimizationsEnabled: false` in `v0.23.0`'s `r8.json`. ⚠️ **"The pass never runs" is too strong, though**, and an earlier revision of this section said it: full mode already performs string/switch rewriting, synthetic-lambda inlining, synthetic-only horizontal merging, unused-interface removal, loop unrolling and redundant-field-load elimination. What the swap _newly_ enables is general and class inlining, devirtualisation, enum unboxing, argument propagation (method-signature rewriting — the likeliest reflection breaker), app-class horizontal merging, vertical merging, outlining and access modification ([#2679](https://github.com/Selftend/selftend/issues/2679)).
+
+  `expo-build-properties` exposes only `extraProguardRules` and no way to swap the default file, so taking it early needs a custom config plugin; and **a green R8 build is not evidence the app works** — reflection-dependent breakage appears only at runtime, which no local `bundleRelease` can see. ☠️ **But the do-nothing path repairs itself, so this was ruled _not now_** ([#2685](https://github.com/Selftend/selftend/issues/2685)): `expo-template-bare-minimum@58.0.4` already swaps the file (expo/expo#46852) _and_ brings RN 0.88 → AGP 9.2.1 → R8 9.2.14, so the swap, the keep rules it needs and a fixed R8 all arrive together. ⚠️ **AGP 9.0 does not force it either** — it raises a hard build error with two documented ways to keep optimisation off (`android.r8.proguardAndroidTxt.disallowed=false`, or swap the file and re-add `-dontoptimize` through `extraProguardRules`); an earlier revision of this section implied the swap was unavoidable, and it is not.
+
+  **The trigger is therefore the SDK 58 upgrade, not a date.** What does _not_ arrive with it is the device verification: the runbook and the ranked surface list live on [#2593](https://github.com/Selftend/selftend/issues/2593) and [#2686](https://github.com/Selftend/selftend/issues/2686), and that upgrade must carry them. ☠️ Before any build ships with optimisation on, `@sentry/react-native` must be past the sentry-react-native#6691 fix (reported 8.25.0; pinned `~8.19.0` today) — R8 horizontal merging silently corrupts TTID there, and being silent, **no device checklist can catch it**.
+
 - **AGP 9.0 — void, not deferred.** The version comes from the Expo template, not this repo. Expo SDK 57 ships React Native 0.86, which pins AGP 8.12.0, and [expo/expo#49550](https://github.com/expo/expo/issues/49550) records the blocker: `expo-gradle-plugin` compiles against Kotlin 2.1.20, which cannot read Gradle 9.5+ metadata, while AGP 9.3+ requires Gradle ≥ 9.5. It arrives when the Expo SDK brings it, which is not a task.
 
-⚠️ **Two gaps left open rather than papered over.** No primary source says a `-` in Play's _Optimisation percentage_ means `-dontoptimize`; _Shrinking percentage_ also reads `-` although shrinking demonstrably works, and Play [documents](https://developer.android.com/topic/performance/vitals/code-optimization) those figures as coming from `r8.json` metadata emitted by recent AGP/R8 — so the dashes may be a **metrics-reporting artifact of the R8 version rather than a verdict on this configuration**, in which case neither change clears the card. And Play publishes no help page defining the bundle explorer's R8-configuration indicators. Both are reasons to re-read the card after the next production release rather than to predict it.
+#### Why both percentages read `-`, and how to check it locally in ten seconds
+
+An earlier revision of this section left this as an open gap, guessing the dashes "may be a metrics-reporting artifact of the R8 version". **The guess was right and the mechanism was wrong** ([#2681](https://github.com/Selftend/selftend/issues/2681), read out of the shipped `v0.23.0` AAB).
+
+AGP 8.12.0 bundles **R8 8.12.14**, which sits inside a stats-arithmetic overflow bug — `noOptimizationPercentage` reads `-65.72`, a 32-bit wrap of a true 100.00. R8 **discards its whole `stats` block** for versions it knows are affected, and Play reads `r8.json` only for "the latest patch of AGP 8.10 or higher", otherwise falling back to `mapping.txt`, which can estimate obfuscation and knows nothing about shrinking or optimisation. **That is both dashes.** Play still publishes no help page defining the bundle explorer's R8-configuration indicators.
+
+Every row on Play's card is readable locally, from any release AAB, with the command Google documents:
+
+```sh
+unzip -p <app>.aab BUNDLE-METADATA/com.android.tools/r8.json
+```
+
+| Field                                              | Reads today | Means                                                                                                      |
+| -------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `version`                                          | `8.12.14`   | Inside the overflow range → Play discards our metrics → both percentages show `-`.                         |
+| `options.isOptimizationsEnabled`                   | `false`     | The optimisation pass does not run.                                                                        |
+| `resourceOptimization.isOptimizedShrinkingEnabled` | `true`      | Confirms [#2522](https://github.com/Selftend/selftend/pull/2522) shipped, independently of any percentage. |
+
+⚠️ Only the **AAB** carries this; a `preview` APK has no `BUNDLE-METADATA/` at all. Release AAB artifacts have **14-day retention**, so grab one within a fortnight of a release.
+
+☠️ **The one state to watch for: `version` leaving the overflow range while `isOptimizationsEnabled` is still `false`.** That makes the card readable and reads **Optimisation 0%** against Play's per-category **25%** floor, on an app at ~20 MB of DEX — twice the 10 MB trigger. It should not happen, because the fixed R8 and the ProGuard swap arrive together with SDK 58; if it does, reopen [#2593](https://github.com/Selftend/selftend/issues/2593) immediately. This check replaces "ship to production and hope the card moves" — run it on any release AAB, no Play Console needed.
 
 ☠️ Two build-mechanics notes for whoever runs this next. A release build can end `BUILD FAILED` on `:app:produceReleaseBundleIdeListingFile` — an input-validation task that runs **after** `signReleaseBundle` — while the AAB, `mapping.txt` and `resources.txt` are all correctly written; check the artefacts before believing the verdict. And a Gradle daemon holds `android/sentry.properties` open, so `expo prebuild --clean` fails with `EBUSY` until the daemon is stopped.
 
@@ -288,6 +347,9 @@ For a production emergency where `dev` carries unrelated unreleased work, use th
 CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shipped **labelled beta** on Android and web (`modulesAreVisible` / `modulesAreBeta`, `src/lib/module-visibility.ts`). Owner instruction. Because the gate is iOS-only, **Android and web releases are unaffected** apart from the beta mark; everything below is iOS.
 
 1. **The App Store screenshot job cannot capture its CBT image.** [`.maestro/app-store-screenshots.yaml`](../.maestro/app-store-screenshots.yaml) runs against `appId: org.vasilyoshev.selftend` — the **production** bundle id, not the `.dev` variant — and line 161 deep-links `${APP_LINK}modules/cbt` to capture the `02-cbt` listing image. That link now redirects to Home, so the job either captures Home twice or fails its wait. Decide before the next listing refresh: point the job at a dev build (it then photographs "Selftend Dev" branding, which must not be published), or drop the CBT image from the App Store set. **The Play screenshot set is unaffected** — Android still shows the modules.
+
+   ✅ **Decided and done, 2026-09-20.** [#2598](https://github.com/Selftend/selftend/issues/2598) **dropped the CBT image** — neither option above, because the set was cut to five per device and `cbt`, `act` and `tools` all left it. The flow and the workflow gate are corrected to those five ([#2610](https://github.com/Selftend/selftend/issues/2610) item 16), and the sign-in frame moved to `diagnostics/` so guideline 2.3.3 cannot be breached by accident. ☠️ **Two hangs were found, not one**: the CBT deep-link above, and a wait on _"Breathing exercises"_ — a string in no locale file. ⚠️ **The Play sentence is true about modules and misleading about the set**: [#2616](https://github.com/Selftend/selftend/issues/2616) found 24 stale captures there, one publishing a banned string, and both tablet tiers have since been deleted. ⚠️ **This whole section still owes a rewrite** — that is item 21, after the submission.
+
 2. **The App Store listing will overstate what iOS delivers — from the first build that carries the gate, and not before.** ☠️ **Do not "fix" the listing early; checked in App Store Connect on 2026-09-18 and the correct action was to change nothing.** The gate is on `dev`; `main` is at 0.21.0, so the approved build (0.21.0 (18)) predates it and **still contains all three modules**. Every claim on the live page is true of the binary about to ship, and editing it now would make the listing wrong for that version.
 
    What becomes false at the first gated iOS build, in descending order of risk:
@@ -307,6 +369,25 @@ CBT, ACT and DBT are hidden on **iOS** production and preview builds, and shippe
 
 The in-app surfaces the gate covers are listed in [`modules/tools.md`](modules/tools.md); the data layer, export and deletion are deliberately untouched.
 
+## Re-seed the App Review account (owner, before an iOS submission)
+
+App Store Connect's Sign-In Information points App Review at a **production** account (`APP_REVIEW_USER_ID`; [app-store-review-information.md § _Item 4_](app-store-review-information.md#item-4--setting-up-and-accessing-the-main-features)) that the demo seed fills. The dataset ends on the day it runs, so it goes stale: re-seed it **before every iOS submission**, and whenever `app-review-account-staleness.yml` is red.
+
+☠️ **A person runs this, never CI.** The seed deletes that account's rows before it inserts. `scripts/seed-demo-target.mjs` refuses production unless it is given **both** explicit arguments below, and refuses outright when `CI` or `GITHUB_ACTIONS` is set; `test/seed-demo-target.test.ts` fails if either flag ever appears in a workflow file ([#2731](https://github.com/Selftend/selftend/issues/2731), ruled on [#2668](https://github.com/Selftend/selftend/issues/2668)).
+
+```sh
+# The production service_role key, never printed:
+export SEED_SERVICE_ROLE_KEY="$(npx supabase projects api-keys --project-ref isniauimshuomfqrikzo -o json \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).find(k=>k.name==="service_role").api_key))')"
+
+SEED_SUPABASE_URL=https://isniauimshuomfqrikzo.supabase.co \
+  node scripts/seed-demo-data.mjs \
+  --production-ref=isniauimshuomfqrikzo \
+  --reviewer-user-id="$(gh variable get APP_REVIEW_USER_ID -R Selftend/selftend)"
+```
+
+It prints `Seeded the App Review account <id> (PRODUCTION):` and the row counts. The account itself is never created, re-passworded or changed by the seed — it must already exist, and the seed checks that it does.
+
 ## Store metadata drift
 
 Selftend's Apple **age-rating declaration** is mirrored in the repository at [`store/apple-advisory.json`](../store/apple-advisory.json), and `store-metadata-drift.yml` pulls the live values from App Store Connect every Monday and fails if they no longer match.
@@ -322,5 +403,20 @@ It is deliberately **not a required check** — it reads a system a human can le
 ## Invariants
 
 1. Never squash the `dev→main` promotion PR, a `hotfix/*` PR, or a Weblate translation PR — merge commits only.
-2. The tag and GitHub Release are always created by the PAT (`RELEASE_PLEASE_TOKEN`), never `GITHUB_TOKEN` — `GITHUB_TOKEN`-authored events do not trigger `on: release` workflows, so deploys would silently not run.
+2. The tag and GitHub Release are always created by the PAT (`RELEASE_PLEASE_TOKEN`), never `GITHUB_TOKEN` — `GITHUB_TOKEN`-authored events do not trigger `on: release` workflows, so deploys would silently not run. **Held by `test/release-token-invariant.test.ts`** since [#2728](https://github.com/Selftend/selftend/issues/2728), which fails the PR that would break it rather than the release that already did. ⚠️ It reads the release-publishing step **with comments stripped** — that step's own comment says _"PAT, not `GITHUB_TOKEN`"_, so a raw scan would go red on a correct file. ⛔ A **GitHub platform change** to `release`-event suppression stays uncovered on purpose ([#2677](https://github.com/Selftend/selftend/issues/2677)): [#2665](https://github.com/Selftend/selftend/issues/2665) established suppression is a blanket rule with a closed exception list, so a change there arrives announced rather than silently.
 3. The maintainer may bypass the review requirement, never the required checks.
+4. `googleapis/release-please-action` is pinned to a full-length commit SHA, never a floating tag — held by `test/workflow-action-pin.test.ts`. It is the only action in the repo pinned this way, because it is the only one that can _succeed_ while changing whether invariant 2 holds; see [Why release-please is SHA-pinned](#why-release-please-is-sha-pinned).
+
+## Why release-please is SHA-pinned
+
+Every other action in this repository fails **loudly and locally** when it misbehaves: a broken `actions/checkout` or `cloudflare/wrangler-action` reddens its own job, and you find out immediately. `googleapis/release-please-action` is different — it can **succeed** while publishing a Release whose authorship silently decides whether `release.yml`, `release-thread.yml` and `back-merge.yml` run at all. A release that deploys nothing looks exactly like a healthy one from the release-please run. It is also the only action handed a long-lived, write-scoped PAT.
+
+A mutable major tag can be retagged by a third party with **no diff in this repository**, so the pin is a full-length SHA with the release in a trailing comment:
+
+```yaml
+uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+```
+
+The other actions stay on floating major tags on purpose — five are GitHub's own `actions/*`, and `supabase/setup-cli@v1` already pins the thing that actually matters (its `version:` input, held by `test/workflow-supabase-cli-pin.test.ts`).
+
+**Bump it through the Dependabot PR**, never by hand: `.github/dependabot.yml` watches `github-actions` weekly and exists precisely so this pin cannot go stale — a SHA pin with nothing watching it is worse than a floating tag. Dependabot rewrites the SHA and the trailing comment together; keep them in step. Note that Dependabot does **not** raise vulnerability alerts for SHA-pinned actions, which is an accepted trade here: the pin prevents a bad version from ever being run, rather than reporting it afterwards.

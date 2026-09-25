@@ -45,18 +45,22 @@ import type { SteppableToolId } from "@/src/features/routines/derive";
  *    {@link WITHHELD_STEP_TOOL_IDS} **and** add it to the database allowlist
  *    in a new migration. `step-tool-rollout.test.ts` fails when those two
  *    disagree, so neither half can ship alone.
+ *
+ * ✅ **Empty since 2026-09-22 (#2713), the first time step 2 has ever been
+ * taken.** The six DBT tools (#1980) sat here from v0.18.0, withheld from
+ * writing until the native build carrying `/modules/dbt/*` had rolled out past
+ * review - which it had, in that very release. They were lifted 13 days later,
+ * once someone looked: the App Store was live on 0.21.0 and Google Play on
+ * 0.23.0, both well past v0.18.0. `20260922000000_routine_step_tool_allowlist_dbt.sql`
+ * is the matching half.
+ *
+ * ⚠️ **Empty is the normal state, not a retired mechanism.** The read/write split
+ * above is unchanged and the next admitted id still lands here first. Nothing
+ * in the repo goes red while an id sits here past its own condition, which is
+ * how these six outlived theirs - see `docs/releasing.md` for where a hold-out
+ * is recorded so that someone does look.
  */
-export const WITHHELD_STEP_TOOL_IDS: readonly SteppableToolId[] = [
-  // The six DBT tools (#1980). Admitted to the read vocabulary by that delta;
-  // withheld from writing until the native build carrying `/modules/dbt/*`
-  // has rolled out past review.
-  "muscleRelaxation",
-  "wiseMind",
-  "judgement",
-  "emotionRecord",
-  "oppositeAction",
-  "script",
-];
+export const WITHHELD_STEP_TOOL_IDS: readonly SteppableToolId[] = [];
 
 /**
  * The steppable ids a routine step may carry today: every steppable tool that

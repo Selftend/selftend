@@ -94,7 +94,7 @@
 
 ### 3.3 Conversion pixels, tracking SDKs, attribution SDKs, and the Play Install Referrer API
 
-**Refused at their price, which is unchanged and real.** The shipped privacy policy promises none of these in **nine** places, and `src/features/policies/policy-content.test.ts` pins that text to `policyVersion` as one tuple. ☠️ **There is no free window**: `policyVersion` is `2026-09-04-teen-floor` and v0.18.0 ships it, so any such addition re-gates every existing user today.
+**Refused at their price, which is unchanged and real.** The shipped privacy policy promises none of these in **nine** places, and `src/features/policies/policy-content.test.ts` pins that text to `policyVersion` as one tuple. ☠️ **There is no free window**: `policyVersion` is `2026-09-04-teen-floor` and v0.18.0 ships it, so any such addition re-gates every existing user today. ⚠️ **Amended 2026-09-18 ([#2554](https://github.com/Selftend/selftend/issues/2554)):** `dev` now carries an unreleased `2026-09-18-programme-retention`, so until it releases a policy-text change folds into that one pending re-gate instead of buying its own. **The refusal above does not soften.** The re-gate was never the whole price here - the nine promises still have to be amended, and § 3.2 refuses the Install Referrer API on grounds price cannot reopen. The window closes at the next dev→main release.
 
 ☠️ **The Install Referrer API is refused on both grounds now.** It exists precisely to deliver `utm_source` back _into the installed app_, where it would land on a row — so § 3.2 refuses it independently of price, and it cannot be reopened by finding a cheaper implementation.
 

@@ -4,7 +4,7 @@ For [Task: capture Selftend's recording](https://github.com/Selftend/selftend/is
 
 Apple's Guideline 2.1 letter asks for **a screen recording captured on a physical device**. This is the tap-by-tap script for it. It is written to be followed by someone who has never used the app, because that is who is holding the phone — **the person recording is not the person who wrote the app**, and nothing here should need a judgement call.
 
-Companion to [`app-store-review-information.md`](./app-store-review-information.md), which holds the seven written answers. ⚠️ That document deliberately describes **build 6** and must not be resynced to `dev`; the same is true of this one. Both describe the binary under review.
+Companion to [`app-store-review-information.md`](./app-store-review-information.md), which holds the seven written answers. ☠️ **That document no longer describes build 6** — [#2602](https://github.com/Selftend/selftend/issues/2602) re-scoped it to _the version live on the App Store_ (today 0.21.0) and caught it up. ⚠️ **This file's own freeze still stands, for a different reason**: it describes a **recording that exists**, and correcting its quotes would make it describe a video nobody has. Both still refuse to be resynced to `dev`; only one of them is still about build 6.
 
 ---
 

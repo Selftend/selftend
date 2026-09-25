@@ -29,8 +29,21 @@ const ROOT = path.resolve(__dirname, "..");
 const README = fs.readFileSync(path.join(ROOT, "store", "README.md"), "utf8");
 const TEST_DIR = path.join(ROOT, "test");
 
-/** The two files `test/store-listing-text.ts` reads for its importers. */
-const VIA_STORE_LISTING_TEXT = new Set(["apple-info.json", "play-listing.md"]);
+/**
+ * The files `test/store-listing-text.ts` reads for its importers.
+ *
+ * ⚠️ **Hand-maintained, and it has to be.** The scan below reads test sources,
+ * not the extractor's, so a file the extractor starts reading is invisible here
+ * until it is named — and the failure is quiet in the wrong direction: the
+ * README row would be told no suite reads the file, which is the #2218 defect
+ * this suite exists to prevent. Add to this set in the same change that adds a
+ * source to the extractor.
+ */
+const VIA_STORE_LISTING_TEXT = new Set([
+  "apple-info.json",
+  "play-listing.md",
+  "apple-release-notes.md",
+]);
 
 /** The store files each top-level test suite reads, by basename. */
 function storeFilesReadBy(testFile: string): Set<string> {

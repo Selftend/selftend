@@ -1,5 +1,4 @@
-// Seed the LOCAL demo account (demo@test.local) with ~3 months of realistic
-// data across the eight tools, the CBT module, the ACT module and the routines
+// Seed the demo account with ~3 months of realistic data across the eight tools, the CBT module, the ACT module and the routines
 // built from both, so redesigned surfaces can be reviewed with real density:
 // paging, heatmap depth, distribution spread, week history, and every technique,
 // status and category variant rendered at least once.
@@ -7,13 +6,29 @@
 // EVERY WORD OF THE CONTENT BELOW IS FABRICATED. It describes one invented
 // person consistently — that is what makes the screens readable — but no real
 // person, employer, event or relationship is recorded here, and nothing in it is
-// clinical material. It is also local-only and never reaches public media: the
-// store and marketing pipelines all run against the production demo account.
+// clinical material.
 //
-// Usage:  node scripts/seed-demo-data.mjs
+// ☠️ IT DOES REACH PUBLIC MEDIA. Since #2730 the App Store capture job seeds the
+// STAGING capture account with this dataset on every run and photographs it, so
+// every word below can end up on a store listing. (Until then this header said the
+// opposite - that the seed was local-only and the store pipelines all ran against
+// the production demo account. The second half was true, and it was the problem:
+// the capture job photographed App Review's production account. Map #2652.)
 //
-// - Local Supabase only (hardcoded local dev keys, same as test/integration/
-//   helpers.ts). Never points at staging or prod.
+// Usage:
+//   node scripts/seed-demo-data.mjs          # local stack, demo@test.local
+//   SEED_SUPABASE_URL=https://<ref>.supabase.co SEED_SERVICE_ROLE_KEY=… //   STAGING_PROJECT_ID=<ref> SEED_ACCOUNT_EMAIL=… SEED_ACCOUNT_PASSWORD=… //     node scripts/seed-demo-data.mjs        # staging, the capture account
+//
+// - ☠️ TWO TARGETS, AND ONLY TWO. A local stack (the hardcoded local dev keys, as in
+//   test/integration/helpers.ts), or the one project `STAGING_PROJECT_ID` names.
+//   Anything else - production above all - is refused before a client exists
+//   (`seed-demo-target.mjs`, proved in `test/seed-demo-target.test.ts`). Never
+//   loosen that to "anything with a service-role key": this script's first act is
+//   `delete`.
+// - On staging the account is CREATED OR UPDATED from `SEED_ACCOUNT_EMAIL` /
+//   `SEED_ACCOUNT_PASSWORD`, pre-confirmed through the admin API - never through
+//   public signup, which would send a confirmation email. The password is never
+//   echoed. Locally the account is `supabase/seed.sql`'s fixed demo user.
 // - Re-runnable: wipes the demo user's rows in the seeded tables first, then
 //   inserts a deterministic dataset (seeded PRNG), so re-seeding after a
 //   `supabase db reset` reproduces the same picture.
@@ -58,14 +73,28 @@ import {
   ACT_BAND_START_HOUR,
   createBand,
 } from "./seed-demo-band.mjs";
+import { parseSeedArgs, resolveSeedTarget, upsertSeedUser } from "./seed-demo-target.mjs";
 import { DAYS, FUTURE_MARGIN_MS, createWindow } from "./seed-demo-window.mjs";
 
-const LOCAL_SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 const LOCAL_SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-// Must match supabase/seed.sql (the `demo` seed user).
-const DEMO_USER_ID = "00000000-0000-0000-0000-000000000003";
+// Must match supabase/seed.sql (the `demo` seed user). Local only - on staging the
+// id is whatever the capture account's is, resolved below.
+const LOCAL_DEMO_USER_ID = "00000000-0000-0000-0000-000000000003";
+
+// Resolved BEFORE any client exists, so a refused target never gets as far as one.
+const target = resolveSeedTarget({
+  url: process.env.SEED_SUPABASE_URL ?? process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321",
+  stagingProjectId: process.env.STAGING_PROJECT_ID,
+  // Only the owner's production path reads these; see seed-demo-target.mjs.
+  args: parseSeedArgs(process.argv.slice(2)),
+  env: process.env,
+});
+const isLocal = target.kind === "local";
+const serviceRoleKey = isLocal ? LOCAL_SERVICE_ROLE_KEY : process.env.SEED_SERVICE_ROLE_KEY;
+if (!serviceRoleKey)
+  throw new Error(`SEED_SERVICE_ROLE_KEY is required for a ${target.kind} target.`);
 
 // Read the live policy version so the consent gate never fires for the demo
 // account regardless of when this script runs.
@@ -181,9 +210,32 @@ function capturedDayKey(instant, offsetMinutes) {
     : new Date(new Date(instant).getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
 }
 
-const admin = createClient(LOCAL_SUPABASE_URL, LOCAL_SERVICE_ROLE_KEY, {
+const admin = createClient(target.url, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
+
+// Every row below is written for this id, and it is known before the first wipe.
+// ☠️ Production: the App Review account's id, exactly as the owner passed it, and
+// only once it is confirmed to be a real login. Nothing here creates, updates or
+// re-passwords a production account - that stays a deliberate owner action.
+async function existingProductionUser(userId) {
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error || !data?.user) throw new Error(`No production account with id ${userId}.`);
+  return data.user.id;
+}
+const DEMO_USER_ID = isLocal
+  ? LOCAL_DEMO_USER_ID
+  : target.kind === "production"
+    ? await existingProductionUser(target.userId)
+    : await upsertSeedUser(admin.auth.admin, {
+        email: process.env.SEED_ACCOUNT_EMAIL,
+        password: process.env.SEED_ACCOUNT_PASSWORD,
+      });
+const accountLabel = isLocal
+  ? "demo@test.local"
+  : target.kind === "production"
+    ? `the App Review account ${DEMO_USER_ID} (PRODUCTION)`
+    : `the staging capture account (${target.ref})`;
 
 async function wipe(table) {
   const { error } = await admin.from(table).delete().eq("user_id", DEMO_USER_ID);
@@ -269,6 +321,38 @@ const counts = {};
   );
   if (error) throw new Error(`user_preferences: ${error.message}`);
   counts.user_preferences = 1;
+}
+
+// ------------------------------- the remote accounts' shell (#2730, #2731)
+// Locally `supabase/seed.sql` gives demo the parts of an account that are not
+// data: an age attestation, a language, CBT onboarding done, accepted policy and
+// health-data consent. The staging capture account and the production App Review
+// account have no seed.sql, so without
+// these it would be a brand-new account that reached the app never having been
+// asked its age - and the age gate, which exempts only accounts older than
+// `AGE_GATE_INTRODUCED_AT`, would stop the capture flow a second time AFTER
+// sign-in, where it does not expect one. Same values as seed.sql's demo row.
+//
+// ⚠️ seed.sql's armed CBT reminder is deliberately NOT mirrored: on staging it
+// would be a real reminder target on an account nobody reads, and the reminder
+// read-back that expects it is local-only for exactly that reason.
+if (!isLocal) {
+  const now = new Date().toISOString();
+  const { error } = await admin.from("user_preferences").upsert(
+    {
+      user_id: DEMO_USER_ID,
+      language: "en",
+      cbt_onboarding_completed: true,
+      privacy_policy_accepted_at: now,
+      terms_accepted_at: now,
+      health_data_consent_at: now,
+      age_floor_met: true,
+      age_attested_country: "GB",
+      age_attested_at: now,
+    },
+    { onConflict: "user_id" },
+  );
+  if (error) throw new Error(`user_preferences (staging shell): ${error.message}`);
 }
 
 // ------------------------------------------------------------------ Favourites
@@ -5728,11 +5812,16 @@ const SEEDED_ROUTINES = [
     }
   };
   await expectFavorites(DEMO_USER_ID, DEMO_FAVORITES, "demo");
-  await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
-  // alice is the account whose Home must show the EMPTY Favourites line: once demo
-  // and bob carry favourites she is the only account left on which that state, and
-  // the star's first press, are reviewable at all.
-  await expectFavorites(ALICE_USER_ID, [], "alice");
+  // bob and alice exist only where `supabase/seed.sql` ran - a local stack. On
+  // staging there is nobody to check, and a guard that failed every staging run
+  // would be deleted rather than kept.
+  if (isLocal) {
+    await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
+    // alice is the account whose Home must show the EMPTY Favourites line: once demo
+    // and bob carry favourites she is the only account left on which that state, and
+    // the star's first press, are reviewable at all.
+    await expectFavorites(ALICE_USER_ID, [], "alice");
+  }
 
   // Whether every seeded key is a real catalogue item is asserted in
   // `test/seed-favorites.test.ts`, not here, and deliberately so. It is a fact about
@@ -5765,10 +5854,15 @@ const SEEDED_ROUTINES = [
 // only ever an absence — so seeding it costs a surface and buys nothing, and
 // alice is deliberately the never-asked account rather than the declined one.
 {
+  // alice and bob are `supabase/seed.sql` users, so they are checked locally only.
   const ACCOUNTS = [
     ["demo", DEMO_USER_ID],
-    ["alice", "00000000-0000-0000-0000-000000000001"],
-    ["bob", "00000000-0000-0000-0000-000000000002"],
+    ...(isLocal
+      ? [
+          ["alice", "00000000-0000-0000-0000-000000000001"],
+          ["bob", "00000000-0000-0000-0000-000000000002"],
+        ]
+      : []),
   ];
   // Every reminder switch on `user_preferences` - the eleven per-tool ones and
   // the general one. Listed rather than globbed: a new target's column has to
@@ -5827,41 +5921,47 @@ const SEEDED_ROUTINES = [
     }
   }
 
-  // Demo specifically: consented, with the CBT target armed. Restated here rather
-  // than left to the invariant above, because "no contradiction" is also true of
-  // an account with consent off and nothing armed — which is what demo used to be
-  // one line away from, and which shows the reviewer no armed reminder row at all.
-  const { data: demoPreferences, error: demoError } = await admin
-    .from("user_preferences")
-    .select("reminder_consent,cbt_reminders_enabled,cbt_reminder_hour,cbt_reminder_timezone")
-    .eq("user_id", DEMO_USER_ID)
-    .maybeSingle();
-  if (demoError) throw new Error(`demo consent read-back: ${demoError.message}`);
-  if (!demoPreferences.reminder_consent || !demoPreferences.cbt_reminders_enabled) {
-    throw new Error(
-      `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
-        `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
-        "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
-        "the Reminders screen is twelve off toggles and an armed row is never rendered without " +
-        "a reviewer arming one by hand.",
-    );
-  }
-  // The time and the zone, asserted rather than merely selected. The point of
-  // keeping this target armed is that a reviewer sees a REAL armed row — a time
-  // and a named zone, not just a toggle in the on position — and a null zone
-  // would leave the sender guessing where the account lives. 20:00 also has to
-  // stay clear of the routine reminder at 08:00, so the two read as two
-  // decisions rather than one copied twice.
-  if (
-    demoPreferences.cbt_reminder_hour !== 20 ||
-    demoPreferences.cbt_reminder_timezone !== "Europe/Sofia"
-  ) {
-    throw new Error(
-      `Demo's armed CBT reminder came back at hour ${demoPreferences.cbt_reminder_hour} in ` +
-        `timezone ${demoPreferences.cbt_reminder_timezone}, not 20:00 Europe/Sofia. ` +
-        "`supabase/seed.sql` writes both, `supabase/README.md` quotes them, and the seeded " +
-        "routine reminder at 08:00 is placed to sit clear of this one.",
-    );
+  // ⚠️ LOCAL ONLY: the armed CBT reminder is `supabase/seed.sql`'s, and this script
+  // never writes it. The staging capture account has no seed.sql, so the check
+  // below has nothing to find there - and arming a reminder on it just so the check
+  // passes would be a reminder nobody asked for.
+  if (isLocal) {
+    // Demo specifically: consented, with the CBT target armed. Restated here rather
+    // than left to the invariant above, because "no contradiction" is also true of
+    // an account with consent off and nothing armed — which is what demo used to be
+    // one line away from, and which shows the reviewer no armed reminder row at all.
+    const { data: demoPreferences, error: demoError } = await admin
+      .from("user_preferences")
+      .select("reminder_consent,cbt_reminders_enabled,cbt_reminder_hour,cbt_reminder_timezone")
+      .eq("user_id", DEMO_USER_ID)
+      .maybeSingle();
+    if (demoError) throw new Error(`demo consent read-back: ${demoError.message}`);
+    if (!demoPreferences.reminder_consent || !demoPreferences.cbt_reminders_enabled) {
+      throw new Error(
+        `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
+          `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
+          "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
+          "the Reminders screen is twelve off toggles and an armed row is never rendered without " +
+          "a reviewer arming one by hand.",
+      );
+    }
+    // The time and the zone, asserted rather than merely selected. The point of
+    // keeping this target armed is that a reviewer sees a REAL armed row — a time
+    // and a named zone, not just a toggle in the on position — and a null zone
+    // would leave the sender guessing where the account lives. 20:00 also has to
+    // stay clear of the routine reminder at 08:00, so the two read as two
+    // decisions rather than one copied twice.
+    if (
+      demoPreferences.cbt_reminder_hour !== 20 ||
+      demoPreferences.cbt_reminder_timezone !== "Europe/Sofia"
+    ) {
+      throw new Error(
+        `Demo's armed CBT reminder came back at hour ${demoPreferences.cbt_reminder_hour} in ` +
+          `timezone ${demoPreferences.cbt_reminder_timezone}, not 20:00 Europe/Sofia. ` +
+          "`supabase/seed.sql` writes both, `supabase/README.md` quotes them, and the seeded " +
+          "routine reminder at 08:00 is placed to sit clear of this one.",
+      );
+    }
   }
 }
 
@@ -5883,5 +5983,5 @@ if (wipedButEmpty.length > 0) {
   );
 }
 
-console.log("Seeded demo@test.local:");
+console.log(`Seeded ${accountLabel}:`);
 for (const [table, n] of Object.entries(counts)) console.log(`  ${table}: ${n}`);

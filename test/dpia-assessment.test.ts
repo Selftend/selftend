@@ -206,6 +206,59 @@ describe("the no-minor-flag record", () => {
   });
 });
 
+/**
+ * Art. 5(2) accountability is about showing what happened and when - including
+ * when the process did not run as designed. Spec #227 §5 ordered the owner
+ * legal review ahead of publication; the teen-floor text went live first, and
+ * the record of that is the one part of this document that **cannot be
+ * reconstructed afterwards**. Every other claim here can be re-derived from the
+ * code and the schema. This one is a fact about a date that has passed.
+ *
+ * ☠️ So it is pinned. The failure mode is not someone deleting it on purpose -
+ * it is a tidy-up folding an awkward paragraph into a neighbouring section, and
+ * the resulting document reading perfectly well while no longer disclosing the
+ * slip. Keyed on the dates and identifiers, per this file's standing rule,
+ * because those are what a regulator would check and what a rewrite has no
+ * reason to touch.
+ */
+describe("the ordering record", () => {
+  const body = section(assessment, /^## Ordering:/);
+
+  it("has a section of its own", () => {
+    expect(body).not.toBe("");
+  });
+
+  /**
+   * The two facts that make it a record rather than an apology: when the text
+   * went live, and which `policyVersion` people accepted when it did. Without
+   * the version identifier there is no way to tell which consent rows are the
+   * ones collected against unreviewed text.
+   */
+  it("carries the publication date and the version that published", () => {
+    expect(body).toContain("2026-09-09");
+    expect(body).toContain("2026-09-04-teen-floor");
+  });
+
+  /**
+   * The review it ran ahead of (#1771) and the ruling that re-scoped it once
+   * the ordering was known (#2684). A record that names neither leaves the
+   * reader no way to find out what was done about it.
+   */
+  it.each(["1771", "2684"])("points at issue #%s", (issue) => {
+    expect(body).toContain(`/issues/${issue}`);
+  });
+
+  /**
+   * ⚠️ The findings doc is still owed (#2708). This asserts the pointer, not
+   * the doc - when the review lands and the doc is written, this section gains
+   * a line to it and that link is checked like any other by the
+   * cross-document suite below.
+   */
+  it("says the review's own output is still outstanding", () => {
+    expect(body).toContain("/issues/2708");
+  });
+});
+
 describe("the documents it supersedes and is reached from", () => {
   it("is linked from the GDPR posture's Art. 35 section", () => {
     const body = section(gdprPosture, /Data Protection Impact Assessment/i);

@@ -21,20 +21,80 @@ name: App Store screenshots
 # The resolution check at the end is the point of the whole job. Silently
 # producing almost-right images would be discovered at submission time, which is
 # the worst moment to find out.
-# STATUS: this workflow does NOT currently produce usable screenshots, and the
-# reason is not in this file. The app cannot complete a TLS handshake to
-# Supabase from inside the simulator on these runners - see the probe step
-# below and issue #547. Every flow-level fault has been fixed and the capture
-# reaches the sign-in submit; it stops there because the request never leaves
-# the app. The 0.9.0 listing was shot from the web build instead.
+# STATUS: ☠️ **THE TLS DIAGNOSIS WAS WRONG, and it cost this job two months of
+# being written off as unbounded infrastructure work.** Dispatched 2026-09-21
+# against a corrected flow, the run built, booted, installed and drove the app,
+# and the probe reported the host reaching Supabase at `http=401 tls=0` - a
+# healthy, reachable endpoint. ⚠️ The in-simulator half of that same probe
+# reports `NSPOSIXErrorDomain code=2`: there is no `curl` inside the simulator
+# runtime, so it has never measured anything in either direction.
 #
-# Kept rather than deleted because the probe, the gates and the flow are the
-# expensive parts, and they are all correct. When the TLS question is answered
-# this should work as written.
+# What actually stopped every run was THREE stale steps in the flow, none of
+# them networking:
+#   1. step 4 deep-linked `modules/cbt` and waited on "Cognitive Behavioural
+#      Therapy", which a gated iOS build can never render;
+#   2. the breathing step waited on "Breathing exercises", a string in NO
+#      locale file;
+#   3. ☠️ the flow predated the age-and-country gate (#1764), which stands in
+#      front of sign-in on every cleared launch - so the run waited 60s for
+#      `sign-in-email`, which was never going to appear. The Maestro debug
+#      artifact's failure screenshot shows that gate.
+# All three are fixed (#2610 item 16 and its follow-up).
 #
-# Note `workflow_dispatch` only becomes available once this file reaches the
-# DEFAULT branch (main), which happens at the next release - not on merge to
-# dev. Until then there is no way to trigger it.
+# ☠️ "Every flow-level fault has been fixed" stood here and was WRONG (#2598,
+# corrected #2610 item 16). TWO hangs sat behind the TLS one, so fixing #547
+# alone would not have produced a set:
+#   - step 4 deep-linked `modules/cbt` and waited on "Cognitive Behavioural
+#     Therapy", which a gated iOS build can never render;
+#   - the breathing step waited on "Breathing exercises", a string that exists
+#     in NO locale file at all. Found by grepping every wait text against
+#     src/i18n/locales/en/ rather than trusting them.
+# Both are fixed now, and this job is NO LONGER DORMANT - see the result below.
+# Correcting the flow while it could not run was still the right call: a stale
+# flow is not inert, it is a trap that gets re-derived - which is exactly how
+# the dead `06-tools` screen reached the live listing and passed App Review.
+#
+# ✅ RESULT (2026-09-21): the job produces the full set on BOTH devices, at
+# Apple's exact sizes. Three fully green runs:
+#   35623729810  both devices  (fix/capture-guest-signin - the first both-green)
+#   35665756780  both devices
+#   35669305674  both devices
+# A green run IS the size check: the job verifies every PNG with `sips` and
+# fails on `md5` duplicates, so it cannot go green on almost-right images.
+# The two fix/capture-flakes commits ahead of that first green run harden the
+# iPad half against two flakes; they are not what made it work.
+#
+# So "repair or retire" (#2613) is answered: REPAIRED. And #547 is not what
+# this job was waiting on - the TLS diagnosis above was wrong.
+#
+# ⚠️ The 0.9.0 listing was shot from the WEB build instead. That route stays
+# disqualified (#2598): the module gate is iOS-only, so a web capture
+# photographs the very surfaces iOS does not have. But it is no longer the
+# alternative either - #2598's fallback of capturing BY HAND from a local
+# `simulator`-profile build is overtaken by this job, and #2630's "assumes a
+# Mac the project does not have" with it: the free `macos-26` runner is that
+# Mac, and this job touches no Apple credentials.
+#
+# ✅ WHAT IT PHOTOGRAPHS is decided (#2730, map #2652). Until then the flow
+# signed into App Review's own PRODUCTION account, which was thin and stale -
+# "Nothing yet" five times on Home (#2648) - and no seed could be added,
+# because the repo's seed WIPES the target user's rows first.
+#
+# Now the job builds against STAGING and signs into a dedicated staging
+# capture account, and the `seed` job below fills that account with
+# `scripts/seed-demo-data.mjs`'s fabricated dataset on EVERY run - not on a
+# dispatch input, because the dataset's 89-day window ends "today" and is only
+# true on the day something makes it so. `DEMO_ACCOUNT_*` still means App
+# Review's production account; this job no longer reads it.
+#
+# ☠️ The seed runs ONCE, in its own job, and both devices wait for it. Inside
+# the matrix it would run twice at the same moment, each wiping the rows the
+# other was inserting.
+#
+# Note `workflow_dispatch` needs this file on the DEFAULT branch (main) before
+# it appears at all. It has been there since #549, so dispatch works today and
+# the branch to run is chosen in the dispatch form - which is how the runs
+# above were triggered from feature branches.
 on:
   workflow_dispatch:
     inputs:
@@ -47,15 +107,97 @@ permissions:
   contents: read
 
 jobs:
+  # Fills the staging capture account before either device photographs it.
+  #
+  # ☠️ `environment: capture`, NEVER `staging` or `production`. Both of those
+  # also carry deploy credentials (Cloudflare API token, a database password
+  # for the project they deploy) that a seeding job has no business near.
+  # `capture` holds exactly four secrets: STAGING_PROJECT_ID and
+  # STAGING_DB_PASSWORD (copies of staging's - rotate both copies together) and
+  # CAPTURE_ACCOUNT_EMAIL / CAPTURE_ACCOUNT_PASSWORD.
+  #
+  # The script refuses any target that is not local or
+  # https://<STAGING_PROJECT_ID>.supabase.co, and refuses production by name
+  # (scripts/seed-demo-target.mjs, test/seed-demo-target.test.ts). It creates
+  # or updates the capture account pre-confirmed through the admin API - never
+  # public signup, which would send an email - and never echoes the password.
+  seed:
+    name: Seed the staging capture account
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: capture
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+      SEED_ACCOUNT_EMAIL: ${{ secrets.CAPTURE_ACCOUNT_EMAIL }}
+      SEED_ACCOUNT_PASSWORD: ${{ secrets.CAPTURE_ACCOUNT_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check the capture environment is provisioned
+        run: |
+          missing=0
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD STAGING_PROJECT_ID SEED_ACCOUNT_EMAIL SEED_ACCOUNT_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty. The capture environment needs all four secrets (#2729)."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      # The mechanism staging.yml already proves: the access token plus the
+      # staging database password. A wrong password or ref fails here, before
+      # anything is written.
+      - name: Link the staging project
+        run: supabase link --project-ref "$STAGING_PROJECT_ID"
+
+      - name: Seed the capture account
+        run: |
+          # The legacy service_role key first (what supabase-js expects), the new
+          # secret key as the fallback. Masked before anything can print it.
+          key="$(curl -fsS \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$STAGING_PROJECT_ID/api-keys?reveal=true" \
+            | jq -r '(map(select(.name == "service_role")) + map(select(.type == "secret")))[0].api_key // empty')"
+          if [ -z "$key" ]; then
+            echo "::error::No service-role or secret key came back for the staging project."
+            exit 1
+          fi
+          echo "::add-mask::$key"
+          SEED_SUPABASE_URL="https://$STAGING_PROJECT_ID.supabase.co" \
+            SEED_SERVICE_ROLE_KEY="$key" \
+            node scripts/seed-demo-data.mjs
+
   capture:
     name: ${{ matrix.label }}
+    needs: seed
     runs-on: macos-26
     timeout-minutes: 75
-    # Deliberately NOT `environment: production`. Everything this job needs -
-    # EXPO_TOKEN and the EXPO_PUBLIC_* values - is repo-level. Naming the
-    # environment would additionally hand it the production deploy
-    # credentials (Cloudflare API token, production database password),
-    # which a simulator job has no business being near.
+    # `capture`, for the same reason as the seed job: it needs the capture
+    # account to sign into and the staging project to build against, and
+    # nothing that deploys. ☠️ Never `production` - that would hand a simulator
+    # job the production deploy credentials. The environment's own VARIABLES
+    # EXPO_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY (staging's, both public) take
+    # precedence over the repo-level production ones in `vars.` below, which is
+    # what points the build at staging; the first check below proves it did.
+    environment: capture
 
     strategy:
       fail-fast: false
@@ -82,14 +224,40 @@ jobs:
       EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
       EXPO_PUBLIC_GITHUB_REPO_URL: ${{ vars.EXPO_PUBLIC_GITHUB_REPO_URL }}
       EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+      # ☠️ WITHOUT THIS THE SIMULATOR REPORTS INTO PRODUCTION SENTRY AS A USER,
+      # and for weeks it did (#2726). src/lib/sentry.ts reads
+      # `EXPO_PUBLIC_APP_ENV ?? "production"`, and this job set the DSN but never
+      # the environment - so every hang this runner produced landed in the
+      # production issue stream. Five App Hang issues arrived in 24 hours on
+      # 2026-09-21/22, all of them this one iPad simulator, one of them "fully
+      # blocked for 11.2-12.0 seconds" (an asset catalog paging in on first touch
+      # of a text field, on a cold VM). A fresh simulator per run means a fresh
+      # random user id per run, so they inflate "users impacted" too: SELFTEND-7
+      # reads 10 users and an unknown share of them are this job.
+      #
+      # The DSN's own comment says events "are told apart by environment"; this
+      # job simply told it nothing.
+      #
+      # ⚠️ NEVER SET THIS TO `development`. The same variable feeds
+      # src/lib/env.ts's `appEnvName`, which src/lib/module-visibility.ts gates
+      # the three modules on - `MODULE_VISIBLE_APP_ENVS = ["development"]`. That
+      # value here would put CBT, DBT and ACT into the App Store screenshots,
+      # publishing gated modules as pixels. The index-list guard from #2715 runs
+      # in `verify` and CANNOT see a workflow env var, so nothing would go red.
+      # Any other value hides them, exactly as the unset default did.
+      # test/capture-sentry-environment.test.ts holds both halves.
+      EXPO_PUBLIC_APP_ENV: capture
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       SENTRY_DISABLE_AUTO_UPLOAD: "true"
       BUNDLE_ID: org.vasilyoshev.selftend
       ARTIFACT_DIR: build-artifacts
-      # The staged demo account (#514). Never a real account: these images are
-      # published publicly and the app holds private mental-health writing.
-      MAESTRO_DEMO_EMAIL: ${{ secrets.DEMO_ACCOUNT_EMAIL }}
-      MAESTRO_DEMO_PASSWORD: ${{ secrets.DEMO_ACCOUNT_PASSWORD }}
+      # The staging capture account the seed job just filled (#2730). Never a
+      # real account: these images are published publicly and the app holds
+      # private mental-health writing. Not DEMO_ACCOUNT_*, which is App
+      # Review's production account and is none of this job's business.
+      MAESTRO_DEMO_EMAIL: ${{ secrets.CAPTURE_ACCOUNT_EMAIL }}
+      MAESTRO_DEMO_PASSWORD: ${{ secrets.CAPTURE_ACCOUNT_PASSWORD }}
+      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
 
     steps:
       - name: Check out repository
@@ -118,6 +286,15 @@ jobs:
           done
           if [ "$missing" -ne 0 ]; then exit 1; fi
 
+          # ☠️ The seed wrote to STAGING. A build pointed anywhere else would sign
+          # into a different project and photograph whatever is there - or, if the
+          # capture environment's variables were ever deleted, fall back to the
+          # repo-level PRODUCTION values without a word. So it has to match.
+          if [ "$EXPO_PUBLIC_SUPABASE_URL" != "https://$STAGING_PROJECT_ID.supabase.co" ]; then
+            echo "::error::EXPO_PUBLIC_SUPABASE_URL is not the staging project the seed wrote to. Set the capture environment's EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY variables to staging's."
+            exit 1
+          fi
+
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
@@ -129,9 +306,40 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      # ☠️ The installer exits 0 even when it installed nothing, so this step
+      # checks its own work. Measured on run 35618755971: the download took a
+      # 504 from the CDN, the script printed "Downloaded zip archive is corrupt"
+      # and returned success anyway. The job then carried on for twenty minutes,
+      # built the app, booted the simulator, and died in the drive step with
+      # `maestro: command not found` - after which the verify step reported
+      # ⚠️ **"screenshots/01-home.png is missing - the capture flow did not reach
+      # that screen"**, which is a true sentence about an entirely innocent
+      # flow. A transient CDN error must not read as a capture failure.
+      #
+      # Retried once rather than failed outright, because a 504 is exactly the
+      # kind of thing that succeeds on a second ask - and this job is a
+      # forty-five minute round trip.
       - name: Install Maestro
         run: |
-          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          install_maestro() {
+            curl -fsSL "https://get.maestro.mobile.dev" | bash
+          }
+
+          install_maestro || true
+          export PATH="$HOME/.maestro/bin:$PATH"
+
+          if ! maestro --version >/dev/null 2>&1; then
+            echo "::warning::Maestro did not install on the first attempt. Retrying once."
+            sleep 15
+            install_maestro || true
+          fi
+
+          if ! maestro --version >/dev/null 2>&1; then
+            echo "::error::Maestro failed to install - the download is unavailable or corrupt. This is an installer/CDN failure, NOT a capture failure."
+            exit 1
+          fi
+
+          maestro --version
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
       - name: Build for the simulator
@@ -245,22 +453,76 @@ jobs:
               .maestro/app-store-screenshots.yaml
           }
 
+          # ☠️ THREE ATTEMPTS, NOT TWO, AND THE THIRD IS NOT PADDING.
+          #
+          # The app's first screen only renders once `signInAnonymously` has
+          # returned, so a slow or dropped call to Supabase does not surface as
+          # a network error - it surfaces as the age gate never appearing, and
+          # then as `age-gate-day is visible... FAILED` ninety seconds later,
+          # which reads like a broken selector.
+          #
+          # ⚠️ Measured on the iPad of run 35658173440: attempt 1 cleared that
+          # gate and got all the way to Home, and attempt 2 - immediately after
+          # a simulator restart - failed on it with nothing else in the log. The
+          # flow and the selector were both fine; the restart simply landed in a
+          # worse moment. A run that has already spent twenty minutes building
+          # should not be thrown away on that.
+          #
+          # In-flow recovery was the first instinct and is not available: it
+          # needs `optional:` on `extendedWaitUntil`, which documents only
+          # `visible` and `timeout`, and an unknown property makes Maestro
+          # reject the whole file before a single command runs.
+          attempt_with_restart() {
+            echo "::warning::Maestro attempt $(( $1 - 1 )) failed. Restarting the simulator and retrying."
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+            run_flow "$1"
+          }
+
           if run_flow 1; then
             exit 0
           fi
 
-          echo "::warning::Maestro attempt 1 failed. Restarting the simulator and retrying once."
-          xcrun simctl shutdown "$UDID" || true
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID" -b
-          xcrun simctl status_bar "$UDID" override --time "09:41" --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          if attempt_with_restart 2; then
+            exit 0
+          fi
 
-          run_flow 2
+          attempt_with_restart 3
 
       # `takeScreenshot` paths are documented as relative to Maestro's workspace
       # directory, not to the job's working directory - so depending on how the
       # workspace is inferred, the PNGs can land in `.maestro/screenshots/`
       # rather than `./screenshots/`. Rather than bet on which, gather them.
+      #
+      # ☠️☠️ MATCH ON THE DIRECTORY, NOT JUST THE FILENAME. This search used to
+      # be `-name '0[0-9]-*.png'` across the whole checkout, and that was wrong
+      # twice over - measured on the 2026-09-21 run, whose uploaded artifact
+      # contains every file named below:
+      #
+      #   1. **It swept the repository's own images in.** 67 tracked PNGs match
+      #      `0[0-9]-*.png` - design records under `docs/design/`, campaign
+      #      captures, web landing shots - and every one of them is the wrong
+      #      pixel size. The size gate below would have failed on all 67, so
+      #      ⚠️ **this job could never have passed, however perfect the
+      #      capture.** That is a second false blocker sitting behind the flow's
+      #      own, and it would have been read as "the captures are wrong".
+      #
+      #   2. ☠️ **It swept the SIGN-IN FRAME into the publishable set.**
+      #      `diagnostics/00-sign-in.png` matches the pattern, and the skip
+      #      below only excluded `./screenshots/*` - so the login screenshot was
+      #      copied into `screenshots/` and uploaded as part of the App Store
+      #      artifact. The flow file claimed this was impossible by
+      #      construction; it was not. Guideline 2.3.3 names login pages
+      #      explicitly, and #2598 chose structure over discipline precisely so
+      #      this could not happen. Now it cannot: `diagnostics/` is not a
+      #      `screenshots/` directory, so the path match excludes it outright.
+      #
+      # There is no directory named exactly `screenshots` anywhere in the repo
+      # (checked), so `*/screenshots/` matches Maestro's output and nothing
+      # else. `store/play-screenshots/` does not match - the path component has
+      # to be `screenshots` exactly.
       - name: Gather the captured screenshots
         if: always()
         run: |
@@ -271,7 +533,7 @@ jobs:
             esac
             echo "found $found"
             cp -f "$found" "screenshots/$(basename "$found")"
-          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -name '0[0-9]-*.png' -print)
+          done < <(find . \( -path ./node_modules -o -path "./$ARTIFACT_DIR" \) -prune -o -path '*/screenshots/0[0-9]-*.png' -print)
           ls -la screenshots/ || true
 
           # Diagnostic captures are gathered separately and never enter
@@ -299,14 +561,26 @@ jobs:
           EXPECT_H: ${{ matrix.expect_height }}
         run: |
           # Keep in step with .maestro/app-store-screenshots.yaml.
+          #
+          # The decided publishable set, five per device (#2598). What left, and
+          # why, so nobody re-derives the old list:
+          #   - 00-sign-in  -> diagnostics/, NOT published: guideline 2.3.3 names
+          #                    login pages explicitly. Outside this pattern by
+          #                    construction, so it cannot reach these gates.
+          #   - 02-cbt      -> dropped. The modules are gated on iOS, so a gated
+          #                    build can never render that screen.
+          #   - 06-tools    -> dropped. It photographed the Tools hub, which has
+          #                    been `<Redirect href="/" />` since #2114 - a screen
+          #                    no build on any platform can open. It was published
+          #                    anyway, and passed App Review.
+          #   - 03-mood     -> renamed 02-check-in, the label the app has used
+          #                    since #1968.
           required=(
-            00-sign-in
             01-home
-            02-cbt
-            03-mood
-            04-journal
-            05-breathing
-            06-tools
+            02-check-in
+            03-journal
+            04-breathing
+            05-gratitude
           )
 
           bad=0
@@ -390,8 +664,8 @@ jobs:
             echo
             echo "Target size: **${{ matrix.expect_width }} x ${{ matrix.expect_height }}**"
             echo
-            echo "Captured with the staged demo account, never a real one - these"
-            echo "images go on a public listing and the app holds private writing."
+            echo "Captured with the seeded STAGING capture account, never a real one -"
+            echo "these images go on a public listing and the app holds private writing."
             echo
             echo "Review them before uploading. Apple rejects screenshots that"
             echo "misrepresent the app, and overlay text (if any is added later) is"

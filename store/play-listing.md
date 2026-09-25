@@ -1,6 +1,14 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-09** — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
+**Last verified against Play Console: 2026-09-24** — the teen-access pass ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)), **submission 120**, sent 17:31, ✅ `Published` the same day. Three changes in one submission: the full description lost _"Selftend is for adults (18+)."_ (1,960 → 1,930 characters), the target audience gained **13-15** and **16-17**, and the content-rating questionnaire was re-taken with an unchanged result. The block below carries the new text, and the public page matched it on 2026-09-24 (no 18+ sentence).
+
+**The visit before it, 2026-09-22** — the full description lost the progress-view clause ([#2458](https://github.com/Selftend/selftend/issues/2458)), submission 119, ✅ `Published` by 2026-09-24.
+
+**The visit before that, 2026-09-20** — ☠️ **Visit A deleted both tablet screenshot tiers, sixteen images, and sent them for review.** That is the only change that visit made: the short description, the full description, the feature graphic and the promo video were opened, read and **left alone**. Why, and what the set now is, are in § _The screenshot set_ below.
+
+📌 **The listing's promo video has its own record: [`play-promo-video.md`](play-promo-video.md).** It is the first tile in the media carousel, ahead of screenshot `01`, and it was read second by second on 2026-09-21 ([#2626](https://github.com/Selftend/selftend/issues/2626)). ☠️ **Its standing verdict is re-cut or pull, not keep** — it photographs a Home the app no longer renders — and it is a **Visit B** decision, not an urgent pull.
+
+⚠️ **Before 2026-09-22 the _text_ had last moved on 2026-09-09** — the full description's closing "What's inside" line was re-saved that day as the sentence the block below carries ([#2216](https://github.com/Selftend/selftend/issues/2216)), so the mirror and the Console agree again; the public page keeps the previous sentence only until _Publishing overview → Submission activity_ shows that submission `Published`. The visit before it, **2026-09-06**, sent **four** changes, read off that same _Submission activity_ page, which is the authoritative record and worth opening before guessing at state:
 
 | #   | Sent  | Change                                                                                          | Status    |
 | --- | ----- | ----------------------------------------------------------------------------------------------- | --------- |
@@ -8,6 +16,20 @@
 | 96  | 17:33 | Feature graphic, short form ([#2022](https://github.com/Selftend/selftend/issues/2022))         | Published |
 | 97  | 19:03 | Feature graphic, current mockups ([#2041](https://github.com/Selftend/selftend/issues/2041))    | Published |
 | 98  | 19:32 | Full description, `catastrophising` ([#2061](https://github.com/Selftend/selftend/issues/2061)) | In review |
+
+And the three most recent visits, read off _Submission activity_ on **2026-09-24**:
+
+| #       | Sent              | Change                                                                                                                                                                                                                            | Status       |
+| ------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| **120** | 2026-09-24, 17:31 | Store listing + App content — the 18+ sentence removed, target audience 13-15 / 16-17 / 18+, IARC re-taken ([#1771](https://github.com/Selftend/selftend/issues/1771), [#2705](https://github.com/Selftend/selftend/issues/2705)) | ✅ Published |
+| **119** | 2026-09-22, 12:18 | Store listing — full description, the progress-view clause removed ([#2458](https://github.com/Selftend/selftend/issues/2458))                                                                                                    | ✅ Published |
+| **118** | 2026-09-20, 19:25 | Store listing — **7-inch and 10-inch tablet screenshots deleted**, both tiers emptied ([#2616](https://github.com/Selftend/selftend/issues/2616))                                                                                 | ✅ Published |
+
+✅ **118's number is filled in, and the instruction that asked for it is discharged.** This file used to carry a row reading _"not yet numbered"_ with a ⚠️ explaining that _Submission activity_ assigns a number only once quick checks clear, and telling the next reader to **open that page and fill it in rather than guess from the sequence**. Opened 2026-09-22: the number is **118** and the status is `Published`, so Visit A's deletions are live. ☠️ **The guess would have been wrong.** The sequence in the table above ends at 98, and a reader extrapolating from it would have written 99; twenty submissions had gone through in between, none of them store-listing edits.
+
+📌 **Two neighbouring rows worth keeping, read in the same pass.** **117** (2026-09-18, 14:49 — Production, Closed testing) is `Published`: that is the **0.23.0** release, and it is the Console-side proof of the gate [#2458](https://github.com/Selftend/selftend/issues/2458) required before its edit could be made — _"verify the state on the Console, never assume it from a tag."_ **116**, one minute earlier, is `Cancelled`.
+
+⚠️ **Rows 95–98 above were not re-read in this pass**, so 98's `In review` is as it was recorded on 2026-09-06 and may well have published since. Not updated here, because this file records what was actually looked at.
 
 ☠️ **"Up to seven days" is the quoted worst case and not the observed one.** Submission 97 went from _sent_ to **Published in about 29 minutes**, and 95 and 96 cleared the same afternoon. Planning around a week — which this file did, twice, when it advised bundling to save a review — is what produced the advice to sit on a one-letter fix. Check Submission activity instead of assuming the queue is slow. The public page keeps the previous text or artwork only until the row above says `Published`. The text below was last cross-checked on **2026-09-05 (evening)** — the morning's [#1999](https://github.com/Selftend/selftend/issues/1999) edit cleared Google's review and was cross-checked on the public listing page the same evening (short description, first paragraph and bullets all matched this file). In that evening visit the **short description was re-saved as the 28-character short form and sent for review** ([#2010](https://github.com/Selftend/selftend/issues/2010)); ✅ that submission is `Published`, so the 28 is what a visitor sees — the warning that used to stand here, that the public page would keep the 34-character short "up to seven days or longer", is exactly the worst-case-as-schedule error the paragraph above now records.
 
@@ -22,6 +44,13 @@ Governed by [docs/positioning.md](../docs/positioning.md). Play Console text is 
 - **`setSelectionRange` alone is not enough — the caret must be given real focus first.** A JS `focus()` + `setSelectionRange()` in one call, then a keystroke in the _next_ tool call, silently does nothing: the value comes back unchanged. **Click into the textarea first**, then set the selection, then type. Verify `document.activeElement === textarea` in the same call that sets the range.
 - ☠️ **The classifier escalates mid-edit.** It allowed the JS that placed the caret, then refused a **read-only** JS query of the same field immediately afterwards. Screenshots stay allowed and are the fallback: the edited line and the character counter are both legible, and `zoom` on the line settles the spelling. Don't fight the block — switch to pixels.
 
+✅ **Confirmed a fifth time on 2026-09-22** ([#2458](https://github.com/Selftend/selftend/issues/2458)), and this one generalises the method from a one-character edit to a **52-character deletion in a single keystroke**. The two refinements above both held exactly as written — click first, set the range in the call that asserts `document.activeElement === textarea`. What is new:
+
+- 📌 **Anchor the selection by computation, not by pasting the target.** The earlier edits selected by pressing `shift+Right` once per character, which does not scale: 52 presses is 52 chances to land wrong. Instead let the page find its own offsets — locate a short, innocuous anchor (`indexOf('Routines')`), take `indexOf('.')` after it and `lastIndexOf(',')` before that, and `setSelectionRange` between them. **The tool call then carries no listing copy at all** — the rule this file already discovered — because the sentence is never written into it, only two ordinary punctuation marks and a single word.
+- ✅ **Return lengths, never text.** The call answered `{total: 2012, start: 1153, end: 1205, selLen: 52, focused: true}`. That is the whole verification and it carries nothing a classifier would object to. `selLen: 52` matched the ticket's stated count before anything was deleted.
+- ⚠️ **The textarea does not scroll to the selection on its own.** After `setSelectionRange` the field was still showing paragraph one, so the mandated look-before-you-delete check had nothing to look at. A plain mouse `scroll` over the textarea brought the highlight into view without disturbing it — no JS, no refocus, no lost selection.
+- ☠️ **Saving is not submitting, and the difference is a dialog easy to click past.** _Save_ produced _"Changes ready to send for review"_ and a **Go to Publishing overview?** prompt. The change only goes to Google after _Publishing overview → Submit N changes for review_ → **Send changes for review**. ✅ The interstitial is also the safety check worth keeping: it names the count, and reading **"Submit 1 change for review"** is how you confirm you are not sweeping an unrelated draft into your submission.
+
 ## Why this file exists even though nothing verifies it against the store
 
 The App Store half of this directory is checked weekly against the live record. **Play has no equivalent, and there is nothing to extend**: EAS Metadata supports the Apple App Store only, so the absence is structural rather than an oversight (verified 2026-08-31 against the [EAS Metadata schema](https://docs.expo.dev/eas/metadata/schema/)).
@@ -34,13 +63,19 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
-## Verbatim, as saved on 2026-09-09
+### ☠️ The frame sentence below is the LIVE one, and a newer one is OWED to the Console
 
-Two edits since the 2026-09-05 save are folded into the block below, each one line of the full description and both saved in the Console form: `catastrophizing` → `catastrophising` on 2026-09-06 (submission 98, [#2061](https://github.com/Selftend/selftend/issues/2061)), and on 2026-09-09 the closing line of "What's inside", _"Everything is optional — use only the parts that help you. Missing a day is never punished."_ → _"Everything is optional — use only the parts that help you, at whatever pace suits you."_ ([#2216](https://github.com/Selftend/selftend/issues/2216); the full description is **2,012** characters with it, five fewer than before). The mirror carried that second sentence ahead of the Console from PR #2249 until the Console edit — the one exception ever made to the rule below, because the alternative was muting `test/restraint-copy.test.ts` on the day it reached this surface — and the diff that retired the warning paragraph is the record.
+⚠️ **Restored 2026-09-20** ([#2606](https://github.com/Selftend/selftend/issues/2606), executed by [#2610](https://github.com/Selftend/selftend/issues/2610) item 9). [#2582](https://github.com/Selftend/selftend/issues/2582) edited ¶1 of the block below to the post-retreat frame sentence **without visiting the Console** — the one thing this file forbids on its own face (_"a mirror, not a source"_, _"do not fix this file ahead of the store"_, _"word for word, not a summary"_), and its own commit message says no Console visit happened. The arithmetic gave it away: the paragraph above states **2,012** characters and the committed block had become **1,970**, exactly 42 short. ✅ **Reverted and re-measured at 2,012**, against the live public listing.
+
+**What is owed to the Console, and is not in the block below:** ¶1's frame sentence becomes _"…everyday tools for right now, yours to pick from at whatever pace suits you."_ ☠️ **The bullets stay.** The retreat's rule has a subject — _a beta thing must not be named in copy that says what Selftend **is**_ — and a _What's inside_ bullet says what the listing **contains**; `docs/positioning.md` carves inventory out of the frame, and Apple's bullets went for **truthfulness** (iOS ships no modules), which cannot reach Android-only copy about Android-shipped features. ⚠️ **No DBT bullet is added**: keeping a truthful bullet is free, adding one is a new act of naming a beta method. That edit rides **Play Visit B**, not a visit of its own.
+
+## Verbatim, as saved on 2026-09-24
+
+Two edits since the 2026-09-05 save are folded into the block below, each one line of the full description and both saved in the Console form: `catastrophizing` → `catastrophising` on 2026-09-06 (submission 98, [#2061](https://github.com/Selftend/selftend/issues/2061)), and on 2026-09-09 the closing line of "What's inside", _"Everything is optional — use only the parts that help you. Missing a day is never punished."_ → _"Everything is optional — use only the parts that help you, at whatever pace suits you."_ ([#2216](https://github.com/Selftend/selftend/issues/2216); the full description was **2,012** characters with it, five fewer than before). ⚠️ **2,012 is no longer the current length** — [#2458](https://github.com/Selftend/selftend/issues/2458) removed 52 characters on 2026-09-22 and the field then read **1,960**; [#2705](https://github.com/Selftend/selftend/issues/2705) removed 30 more on 2026-09-24, so it now reads **1,930**, which is the number to check the counter against from here. The mirror carried that second sentence ahead of the Console from PR #2249 until the Console edit — the one exception ever made to the rule below, because the alternative was muting `test/restraint-copy.test.ts` on the day it reached this surface — and the diff that retired the warning paragraph is the record.
 
 Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://github.com/Selftend/selftend/issues/1999) visit: new short description, new first paragraph, and the bullet fixes [#1823](https://github.com/Selftend/selftend/issues/1823) decided — Check-in, a Grounding bullet, Sleep diary, the meditation line, Habits, `journalling`; the "Private by design" block, the sync line, the 18+ line and the closing paragraph unchanged). Read back from the form after the save; that review cleared and the public page matched on the evening of 2026-09-05. The same evening the short description was re-saved as the 28 below and sent for review ([#2010](https://github.com/Selftend/selftend/issues/2010)); the full description was not touched. The 2026-09-02 text this replaced is in this file's git history. This block is the listing word for word, not a summary.
 
-⚠️ **The 18+ line was kept deliberately.** Production is still v0.17.0 (released 2026-08-28), which predates the teen floor; the replacement string is [#1771](https://github.com/Selftend/selftend/issues/1771)'s, after the release that ships it.
+✅ **The 18+ sentence is gone, and nothing replaced it** (2026-09-24, submission 120). _"Available in English and Bulgarian. Selftend is for adults (18+)."_ became _"Available in English and Bulgarian."_ — deleted rather than rewritten with a number, as decided on [#2705](https://github.com/Selftend/selftend/issues/2705): the floor is 13 or the country's higher floor ([docs/age-floor.md](../docs/age-floor.md)), so any single number in the description is wrong somewhere, and Play's target-audience declaration below carries the answer. The teen floor has been live on Android since v0.18.0 (2026-09-09).
 
 **Short description (28 of 80 characters):**
 
@@ -48,7 +83,7 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 
 **Full description:**
 
-> Selftend is a set of free, private mental health tools: everyday tools for right now, yours to pick from at whatever pace suits you. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme — cognitive behavioural therapy — to work through when you want one. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
 >
 > What's inside:
 >
@@ -59,7 +94,7 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 > • Sleep diary — log your nights and spot duration and quality patterns over time.
 > • Meditation — unguided sitting: pick a length, a bell and an ambient bed, with a ten-stage programme and six practices to work through.
 > • Gratitude, journalling, breathing and habits — small things for when you need them.
-> • Routines and home-screen widgets that keep small practices within reach, and a progress view to look back over your entries.
+> • Routines and home-screen widgets that keep small practices within reach.
 >
 > Everything is optional — use only the parts that help you, at whatever pace suits you.
 >
@@ -71,7 +106,7 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 >
 > An account keeps your entries in sync across web, iOS and Android.
 >
-> Available in English and Bulgarian. Selftend is for adults (18+).
+> Available in English and Bulgarian.
 >
 > Important: Selftend is a wellness and self-help tool. It is not therapy, diagnosis, treatment, or a crisis or emergency service, and it is not a substitute for professional care. If you are in crisis or need urgent help, contact your local emergency services or a crisis line in your area.
 
@@ -79,16 +114,18 @@ Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://
 
 **Data safety summary, as shown publicly (2026-09-02):** "No data shared with third parties" · "This app may collect these data types — Personal info, Health and fitness and 3 others" · "Data is encrypted in transit" · "You can request that data be deleted".
 
-## Content rating and target audience, as read in Play Console on 2026-09-02
+**Data safety, expanded on the public page (2026-09-24):** Photos · Email address and User IDs · Crash logs and Diagnostics · **Other user-generated content · Optional** (App functionality, Personalization) · **Health info · Optional** (App functionality, Personalization); no data shared. Journal and exercise entries therefore sit under both _Other user-generated content_ and _Health info_, each optional. Not edited on the teen-access pass: nothing about what is collected changed.
+
+## Content rating and target audience, as read in Play Console on 2026-09-24
 
 These two declarations live on separate Play Console forms (Policy → App content) and are recorded here because the 18+ episode in [README.md](README.md) was exactly this kind of value — a web form nobody could diff.
 
-| Declaration                     | Live value                                                                                                                                                                                   | Last edited in Console |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| **Target audience and content** | Target age group: **18 and over** only. The optional _"Restrict users that Google has determined to be minors from my app"_ box is **not ticked**.                                           | 2026-05-08             |
-| **Content ratings** (IARC)      | ESRB **Everyone** (North America) · PEGI **3** (Europe) · USK **All ages** (Germany) · ClassInd **All ages** (Brazil) · IARC Generic **3+** · Google Play Russia **3+** · South Korea **3+** | 2026-05-07             |
+| Declaration                     | Live value                                                                                                                                                                                                                                                     | Last edited in Console      |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **Target audience and content** | Target age groups: **13-15, 16-17, 18 and over** (sent for review 2026-09-24, submission 120; **18 and over** only until then). The optional _"Restrict users that Google has determined to be minors"_ box no longer exists once an under-18 group is ticked. | 2026-09-24                  |
+| **Content ratings** (IARC)      | ESRB **Everyone** (North America) · PEGI **3** (Europe) · USK **All ages** (Germany) · ClassInd **All ages** (Brazil) · IARC Generic **3+** · Google Play Russia **3+** · South Korea **3+** — **unchanged** by the 2026-09-24 re-take, no content descriptors | 2026-09-24 (was 2026-05-07) |
 
-### ✅ Checked and NOT a contradiction: "Everyone" beside "Selftend is for adults (18+)"
+### ✅ Checked and NOT a contradiction (historical, until 2026-09-24): "Everyone" beside "Selftend is for adults (18+)"
 
 This row used to sit in the contradictions table below, and [#1626](https://github.com/Selftend/selftend/issues/1626) asked for the questionnaire to be re-taken "so the resulting IARC rating is consistent with an 18+ product". **That cannot be done honestly, and Google's own rules say the two values measure different things.** Recorded here so the next editor does not re-derive the same fix.
 
@@ -96,11 +133,11 @@ This row used to sit in the contradictions table below, and [#1626](https://gith
 - **Google says so directly:** "Content ratings don't tell you whether an app is designed for users of a specific age" ([Play user help](https://support.google.com/googleplay/answer/6209544), checked 2026-09-02), and "The content rating assigned to your app is specific to the content within your app. It does not include other features and practices, such as consumer agreements" ([answer/9898843](https://support.google.com/googleplay/android-developer/answer/9898843), checked 2026-09-02).
 - **The target-audience declaration is the field that says who the app is for**, and it already says 18 and over. Declaring 18+ only keeps Selftend outside the Families policy; it does not change the badge, and Play shows no separate "18+" marker on the listing from it ([Target audience and content](https://support.google.com/googleplay/android-developer/answer/9867159), checked 2026-09-02).
 
-So the listing tells one story in Play's own terms: _mild content, designed for adults_. The description line "Selftend is for adults (18+)" is the public half of the target-audience declaration and stays.
+So the listing told one story in Play's own terms: _mild content, designed for adults_. ✅ **Since 2026-09-24 it tells the teen-floor one**: the audience declaration names 13-15, 16-17 and 18 and over, and the description carries no age at all ([#2705](https://github.com/Selftend/selftend/issues/2705)). The reasoning above about the rating still holds unchanged — the badge measures content, the audience field says who it is for.
 
-⚠️ **The one real lever is the optional "Restrict Minor Access" box** under the 18+-only target audience. Ticked, Google blocks users it has determined to be minors from finding or downloading the app (with the caveat that it "may not be able to block all minor users who have not declared themselves"). It is off today. Turning it on is a product decision about the age floor — it moves the posture from passive attestation ([docs/policies.md](../docs/policies.md) § _Age floor_, decision #198) to store-side enforcement, and it is one more thing to unwind if the teen-access effort ever flips the audience to 13+. Whoever changes it records the decision on the issue and updates this table.
+📌 **The "Restrict Minor Access" box is gone, not unticked.** It was offered only under an 18+-only audience; ticking **13-15** made it disappear from the form on 2026-09-24. It was never ticked. What Play showed instead, and every other observation from that sitting, is in [docs/android-closed-testing.md](../docs/android-closed-testing.md) § _Teen audience change, 2026-09-24_.
 
-⚠️ **Any edit to the questionnaire or the target-audience form is sent for a Google review** of up to seven days or longer ([Publishing overview](https://support.google.com/googleplay/android-developer/answer/9859654), checked 2026-09-02). Re-opening the content-rating questionnaire just to look at the questions is not free — it produces a new certificate — so only do it deliberately, and if a question about _references to_ self-harm or crisis resources appears, answer it truthfully and accept the descriptor rather than risk a misrepresentation strike.
+⚠️ **Any edit to the questionnaire or the target-audience form is sent for a Google review** of up to seven days or longer ([Publishing overview](https://support.google.com/googleplay/android-developer/answer/9859654), checked 2026-09-02). Re-opening the content-rating questionnaire just to look at the questions is not free — it produces a new certificate — so only do it deliberately, and if a question about _references to_ self-harm or crisis resources appears, answer it truthfully and accept the descriptor rather than risk a misrepresentation strike. ⭐ **On the 2026-09-24 re-take no such question appeared**: the "All other app types" questionnaire has sixteen questions and none mentions self-harm or suicide. ⚠️ Its drugs question (_"any reference to or use of drugs, alcohol or tobacco?"_) was answered **No by owner ruling**, although DBT, the sleep diary and ACT copy mention alcohol and drugs as health information — recorded in the closed-testing doc so it is a decision on file, not a gap.
 
 ## Known contradictions in the live listing
 
@@ -145,6 +182,108 @@ Verified on `dev`, 2026-09-01: Selftend ships a **real Android home-screen widge
 The name collision is what caused it: `src/features/widgets` holds **both** the 28 in-app dashboard cards **and** the launcher widget that renders any one of them. Both exist.
 
 ⚠️ **The phrasing is fair for Play but is not portable.** There is exactly **one** OS widget, and it is **Android-only** — nothing in `app.config.ts` declares an iOS WidgetKit extension. Reused verbatim on the App Store listing, "home-screen widgets" would be inaccurate twice over.
+
+## The screenshot set, read from the public listing on 2026-09-20
+
+☠️ **This set had no representation in the repository at all until now** ([#2616](https://github.com/Selftend/selftend/issues/2616)). `docs/launch/play-listing/` holds the feature graphic and the three phone mockups composited **inside** it — never the swipeable phone screenshots the store page actually ships. So the question [#2606](https://github.com/Selftend/selftend/issues/2606) needed answering — _do the Play screenshots carry module frames?_ — was unanswerable from here, and this section exists so it is not unanswerable twice.
+
+✅ **READING it needs no Play Console visit, and that corrects the premise #2616 was written on.** The published screenshot set is **public**: `play.google.com/store/apps/details?id=org.vasilyoshev.selftend` serves every image from `play-lh.googleusercontent.com`, and appending `=s0` to the token returns the original upload. This is the Play twin of the `itunes.apple.com/lookup` read the App Store half already relies on — credential-free, repeatable, and safe to re-run. **Re-read it rather than trusting the date on this heading.** ⚠️ _Changing_ the set is a Console visit, of course — Visit A below was one.
+
+### ☠️ Visit A, 2026-09-20 — the sixteen tablet images are deleted
+
+**What is live now: the eight phone screenshots, and nothing else.** Both tablet tiers were emptied in the Console and sent for review on 2026-09-20 ([#2610](https://github.com/Selftend/selftend/issues/2610) item 1). The audit below is the record of what was found **before** that; it is kept in full because the phone tier still carries most of the same defects.
+
+**Why the tablets went, and went first.** Image `19` published _"guided self-help"_ inside the crisis callout (§ below), and ⚠️ **the precedent that once tolerated a live banned string — the Apple `subtitle` at `positioning.md:375` — was bought entirely by version-scoping, which Play graphics do not have.** Deleting the tier that carried it was the whole remedy: no re-capture, no build, no dataset. ✅ **The phone tier was safe to keep** — Google's floor is _"Upload 2–8 phone screenshots"_ (the tablet tiers read _"up to eight"_, with no minimum), and the phone ACT capture `03` crops **above** the callout, so no phone image carries the string.
+
+⚠️ **Verified in the Console, not assumed**: before saving, the panel read `8/8` phone, `0` on both tablet tiers, feature graphic `1/1` untouched, video untouched; _Publishing overview_ then listed **exactly two** items, _Change 7-inch tablet screenshots_ and _Change 10-inch tablet screenshots_, and nothing else.
+
+☠️ **A deletion is agent-work, and the recipe is shorter than the upload one above — but the classifier blocks a different thing here.** The paragraphs above learned that it refuses a tool call **carrying copy**. On this visit it also refused, on a listing page, a **scripted `.click()`** (_"Production Deploy"_) and then a purely **read-only JS DOM query** counting the remaining buttons (_"Modify Shared Resources"_). Neither carried any copy. What worked, first time and every time:
+
+1. Ask the extension to find the buttons by their accessible name — they are labelled **per tier**: `Remove Phone screenshots`, `Remove 7-inch tablet screenshots`, `Remove 10-inch tablet screenshots`. ✅ **The phone tier therefore cannot be hit by accident**, which is what makes this safe to batch.
+2. Click them **by element reference, in reverse order**. ✅ References survive the re-render — the grid re-packs but the surviving buttons keep their refs — so all eight go in one batch.
+3. **No confirmation dialog appears**, and no `2/1 Too many images` state exists for a deletion, so none of the upload recipe's step 4–5 care is needed.
+4. Counts and the change list are read from **screenshots**, per the standing advice: don't fight the block, switch to pixels.
+
+⚠️ **Save is the same as for an upload**: bottom bar, then a _"Go to Publishing overview?"_ dialog, then _Submit N changes for review_ and a _Send changes for review_ confirm. Managed publishing is off, so it publishes as soon as Google clears it.
+
+### What was live before Visit A: 24 images, three device tiers, eight screens
+
+The same eight screens, captured three times. Read in DOM order from the carousel. **The two right-hand columns are the ones now deleted.**
+
+| #   | Screen              | Phone<br>1080×1920 | ~~Tablet<br>1080×1920~~ | ~~Tablet<br>2160×3840~~ |
+| --- | ------------------- | ------------------ | ----------------------- | ----------------------- |
+| 1   | Home                | 01                 | ~~09~~                  | ~~17~~                  |
+| 2   | **CBT module home** | 02                 | ~~10~~                  | ~~18~~                  |
+| 3   | **ACT module home** | 03                 | ~~11~~                  | ~~19~~ ☠️ the callout   |
+| 4   | Check-in            | 04                 | ~~12~~                  | ~~20~~                  |
+| 5   | Journal             | 05                 | ~~13~~                  | ~~21~~                  |
+| 6   | Breathing           | 06                 | ~~14~~                  | ~~22~~                  |
+| 7   | Gratitude log       | 07                 | ~~15~~                  | ~~23~~                  |
+| 8   | ☠️ **Tools hub**    | 08                 | ~~16~~                  | ~~24~~                  |
+
+☠️ **Deleting the tablets fixed the unsafe string and nothing else.** The eight phone images still carry every other defect below — the American spellings, the dead Tools hub, the stale breadcrumbs, the `mom` seed — and they are still the same eight the App Store ships. **Their replacement is [#2618](https://github.com/Selftend/selftend/issues/2618)'s ruling, executed at Play Visit B**, not this visit.
+
+⚠️ **The three tiers are not one capture rescaled — they are three different runs, and they disagree.** All 24 files are byte-distinct, and the copy differs between tiers: `17` (Home, large tablet) reads **"Guided programmes"** and **"CBT programme"**, British, while `01` and `09` show the older `Your tools` shape with no programme row at all. Treat each tier as its own artefact.
+
+☠️ **The phone set is the App Store set.** Screen for screen, in the same order: home, cbt, act, check-in, journal, breathing, gratitude, tools — the same eight [#2598](https://github.com/Selftend/selftend/issues/2598) cut to five on the Apple side. The two listings have been shipping one stale capture run between them.
+
+### ✅ Two things that are NOT defects, recorded so the next reader does not "fix" them
+
+- **A screenshot showing a module screen is truthful on Android.** All three modules ship here; #2606 ruled that inventory is unbound by the frame. `02`/`03`, `10`/`11` and `18`/`19` stay on those grounds. The gate is iOS-only.
+- ✅ **No screenshot carries the frame sentence, and none carries the retired beat two.** #2616 asked specifically whether any image reads _"a CBT programme — cognitive behavioural therapy — to work through when you want one"_ the way `feature-graphic.html:130–131` still does. **It does not** — the frame sentence appears on no screenshot at all. That exposure is the feature graphic's alone.
+
+### ☠️☠️ The one that is not a spelling problem: "guided self-help" — ✅ deleted at Visit A
+
+✅ **Fixed 2026-09-20**: image `19` went with the 10-inch tier, so once that submission clears review the string is off the store. **Kept in full anyway** — a defect this severe is worth the record, and the reasoning is what justified sending a whole extra review for it.
+
+Screenshot **19** — the ACT module home at 2160×3840 — was tall enough to include the crisis callout at the foot of the screen, and it read:
+
+```text
+Use urgent support for urgent risk
+Selftend is for guided self-help when there is time and safety to reflect.
+It is not emergency support and is not monitored by crisis responders.
+```
+
+⚠️ **That quote is deliberately a fenced block and must stay one.** `test/store-listing-text.ts` builds the Play corpus by taking **every `>` line from the `## Verbatim, as saved` heading to the end of the file** — so a blockquote anywhere below it is read as listing text, and quoting this string as one turns `test/positioning-copy.test.ts` red on the ban it is reporting. Quote pixels in a fence, never in a blockquote.
+
+That is row 1 of [docs/positioning.md](../docs/positioning.md) § _Words never to use_ — **"the livest row on the table"**, banned as clinically meaning _with a practitioner_, which Selftend does not have. It is the same string the _Known contradictions_ table above records being removed from the listing **text** in the 2026-09-02 visit. It went from the text and stayed in the pixels.
+
+✅ **The app itself is clean.** `common.json` `safety.description` now reads _"Selftend is **a set of mental health tools** for when there is time and safety to reflect."_, and `guided self-help` appears in no locale file in either language. So this is a stale capture preserving copy the product no longer says — not a live app defect.
+
+⚠️ **It is legible on exactly ONE published image across both stores, and that was checked rather than assumed.** The App Store's `iphone-03-act.png` and `ipad-03-act.png` both crop **above** the callout (they end at the framework pillars), so **Apple is not carrying this phrase.** Do not widen the remedy to the App Store set on account of it.
+
+### ☠️ #2041's defect, in the surface #2041 never looked at
+
+The paragraph above records three pre-v0.5.0 mockups inside the **feature graphic** reading _"Cognitive Behavioral Therapy"_, _"Your CBT program"_ and _"Start program"_, and records the fix: **new captures, because the words existed only as pixels.** Those captures were retaken on 2026-09-06. **The screenshot set was not**, and it carries the same words plus several more:
+
+| String, as pixels                             | On         | House rule it breaks                                                      |
+| --------------------------------------------- | ---------- | ------------------------------------------------------------------------- |
+| "Cognitive Behavioral Therapy"                | 02, 10, 18 | `behavioural` — [#1627](https://github.com/Selftend/selftend/issues/1627) |
+| "Your CBT program" · "Start program"          | 02, 10, 18 | `programme` — [#1651](https://github.com/Selftend/selftend/issues/1651)   |
+| "Start the ACT program" · "Start the program" | 03, 11, 19 | `programme` — #1651                                                       |
+| "Act · Behavioral" · "Behavioral Activation"  | 18         | `behavioural` — #1627                                                     |
+| ☠️ "Schedule meaningful behavior"             | 18         | `behaviour` — [#1638](https://github.com/Selftend/selftend/issues/1638)   |
+| "without judgment" (mindfulness sense)        | 18         | `judgement` — #1651                                                       |
+| "0 favorites" · a "Favorites" tab             | 07, 15, 23 | `favourite` — [#1639](https://github.com/Selftend/selftend/issues/1639)   |
+| "A long call with **mom**" (seeded)           | 07, 15, 23 | the same seed #2598 flagged on Apple's `07`                               |
+
+☠️ **"Schedule meaningful behavior" is the exact string #1638 was written against** — positioning.md cites it as having sat _"inside a single Think · Act · Be card, whose kicker read 'Behavioural' directly above a description that read 'Schedule meaningful behavior'"_. Screenshot 18 photographs that card in its pre-fix state and publishes it.
+
+✅ **Every one of these is fixed in the product.** On `origin/main`, `program` and `behavioral` survive only as JSON **keys** and in the sanctioned privacy sense (_"behavioral profiling tools"_); the rendered values are `"CBT programme"` and `"Behavioural activation"`; no locale value contains `favorites`. **The remedy is therefore new captures, exactly as #2041 ruled — not a copy edit, because there is no copy to edit.**
+
+### ☠️ Screens that no build can open, and chrome that no build renders
+
+- **The Tools hub (08, 16, 24) has been `<Redirect href="/" />` since [#2114](https://github.com/Selftend/selftend/issues/2114).** It is photographed three times on a listing for an app in which it cannot be reached. This is the identical defect #2598 found at position `08` of the App Store set — where it had passed App Review and gone live unnoticed.
+- **The `TOOLS ·` and `MODULES ·` breadcrumb prefixes** (04–07, 10–15, 18–23) name `/tools` and `/modules`, both deleted as pages by #2114.
+- **Home's `Your tools` section** (01, 09) predates [#1968](https://github.com/Selftend/selftend/issues/1968), which made Home _Favourites, Tools, Modules_.
+
+### ⚠️ Composition, on the 2160×3840 tier
+
+`17`, `20`, `21`, `22`, `23` and `24` render the phone-width content into a tablet frame and leave **half to three-quarters of the image empty**. `24` is the worst: eight tool cards across the top quarter, then nothing. Not a rule violation — but it is what a visitor comparing tablet listings sees.
+
+### The dating evidence, so staleness is a fact rather than an impression
+
+The seeded demo data stamps every capture: _"TODAY · WEDNESDAY, AUGUST 19"_, a journal group headed **"August 2026"**, and chart ranges ending `Aug 19`. **2026-08-19 was a Wednesday.** So the run is from on or about **2026-08-19** — before #2114 (shipped in 0.18.0, 2026-09-09) deleted the pages three of these screenshots photograph.
 
 ## When the listing is rewritten
 

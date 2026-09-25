@@ -442,6 +442,10 @@ describe("routines repository", () => {
     // guard is also proved against an id that can never be writable - a
     // caller reaching this function with a value TypeScript did not vouch for
     // (a row round-tripped from the database, say) must not reach the insert.
+    //
+    // ✅ That day is 2026-09-22 (#2713): the loop now runs zero times and this
+    // assertion is the whole test. It was written for exactly this moment, so
+    // nothing here is weakened - the choke point is still proved to refuse.
     await expect(
       addStep("user-1", "r-1", "weeklyReview" as unknown as SteppableToolId, 0),
     ).rejects.toThrow(/not writable/i);

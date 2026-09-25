@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { shouldShowModules } from "@/src/lib/module-visibility";
 import { SITE_ORIGIN, canonicalUrl } from "@/src/lib/site";
 
 import { sourceFiles } from "./source-scan";
@@ -80,6 +81,66 @@ describe("the index list ↔ the route tree", () => {
     for (const file of publicRouteFiles) {
       expect(file.split("/")).toHaveLength(2);
     }
+  });
+});
+
+/**
+ * ☠️ **The three module explainers ship with the gate that makes their modules
+ * reachable - never before it, never after it** (#2715, decided on #2700;
+ * `docs/brand-result.md` § 3.3, § 7.5, § 12 items 5-6).
+ *
+ * `/cbt`, `/dbt` and `/act` are fully decided pages (§ 3.2 sources and titles,
+ * § 4 mechanism, § 5 head rows) that did not ship with `/meditation` and
+ * `/habits` because the modules are gated. [#2473](https://github.com/Selftend/selftend/issues/2473)
+ * has carried that requirement as an issue, kept alive by a `blocked_by` edge
+ * that has rotted **twice** - re-wired #2448 → #2452, and #2452 closed too.
+ * The reason is structural: every candidate is a decision ticket, and decision
+ * tickets close as soon as they decide. The gate is an EVENT, and no issue
+ * represents an event. Three documents have also failed to reach the person who
+ * would open the gate - `brand-result.md` § 3.3, plus a § _Production
+ * readiness_ and a readiness ADR that were specified and never written. So the
+ * requirement is asserted here, where it can go red.
+ *
+ * ☠️ **An equality, not an implication, because § 3.3 forbids BOTH directions:**
+ *
+ * - gate open, pages missing → three decided pages are silently lost;
+ * - pages listed early → a public route file exists iff it is indexable
+ *   (`docs/indexability.md` § 3 - there is no third state such as "listed but
+ *   hidden"), so the page would answer the not-found screen on production and
+ *   **the sitemap would lie**. And a public page describing a module nobody can
+ *   enter "fails the motive test as a set - its only reason to exist ahead of
+ *   the module would be to be found."
+ *
+ * An implication would catch the first and stay vacuously green forever.
+ *
+ * ⚠️ The gate is asked the one question that decides it: can a person on an iOS
+ * **production** build reach a module? Android and web have shown the three all
+ * along, labelled beta, so "are modules visible" has no single answer - and the
+ * pages are bound to the surface where a module is currently unreachable.
+ *
+ * ⚠️ The landing-card half of § 7.5 is already guarded by the two-link
+ * assertion in `modules-section.test.tsx`; nothing is duplicated here.
+ */
+describe("the module explainers ↔ the module gate", () => {
+  const MODULE_EXPLAINERS = ["/cbt", "/dbt", "/act"];
+
+  it("lists all three explainers exactly when iOS production can reach a module", () => {
+    const gateOpen = shouldShowModules("production", false, "ios");
+    const listed = MODULE_EXPLAINERS.filter((route) => INDEX_LIST.includes(route));
+
+    // Both sides are stated, so a failure says which way round it went rather
+    // than just "false !== true".
+    expect(listed).toEqual(gateOpen ? MODULE_EXPLAINERS : []);
+  });
+
+  it("asks a gate that still reads the platform and the environment", () => {
+    // ☠️ The positive control. The assertion above is `[] === []` today, and
+    // would stay green if `shouldShowModules` were replaced by `() => false` -
+    // at which point the gate could open by another route with nothing red. So
+    // the predicate is proved to still discriminate.
+    expect(shouldShowModules("production", false, "ios")).toBe(false);
+    expect(shouldShowModules("development", false, "ios")).toBe(true);
+    expect(shouldShowModules("production", false, "android")).toBe(true);
   });
 });
 

@@ -80,6 +80,20 @@ jest.mock("@/src/lib/notifications", () => ({
   getReminderTimeZone: jest.fn(() => "Europe/Sofia"),
 }));
 
+/**
+ * The six DBT step tools, by name rather than through `WITHHELD_STEP_TOOL_IDS`
+ * — that constant is empty since #2713, so deriving the list from it would make
+ * the picker assertions below vacuous exactly when they matter most.
+ */
+const DBT_STEP_TOOL_IDS = [
+  "muscleRelaxation",
+  "wiseMind",
+  "judgement",
+  "emotionRecord",
+  "oppositeAction",
+  "script",
+] as const;
+
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
@@ -316,30 +330,35 @@ describe("RoutineEditorScreen", () => {
     expect(screen.getByText("Mindfulness")).toBeTruthy();
     expect(screen.getByText("CBT")).toBeTruthy();
     expect(screen.getByText("ACT")).toBeTruthy();
+    expect(screen.getByText("DBT")).toBeTruthy();
     // "Habits" is both the group header and its only chip's label.
     expect(screen.getAllByText("Habits").length).toBeGreaterThanOrEqual(2);
 
     // ☠️ Pinned to the group list itself, so a seventh group cannot ship
-    // with no header while the four hand-written assertions above still
-    // pass. The count is derived; the names are spot checks.
+    // with no header while the hand-written assertions above still pass. The
+    // count is derived; the names are spot checks.
     expect(STEP_TOOL_GROUPS).toHaveLength(6);
-    expect(OFFERABLE_STEP_TOOL_GROUPS).toHaveLength(5);
+    // ✅ Six offerable, not five, since #2713 emptied the rollout hold-out: the
+    // DBT group is no longer dropped for having no writable tools left.
+    expect(OFFERABLE_STEP_TOOL_GROUPS).toHaveLength(6);
   });
 
-  it("offers no chip for a tool withheld from writing (#2203)", () => {
-    // ☠️ DBT is in the read vocabulary but not the write one until the native
-    // rollout catches up: a step the shipped client cannot read can never be
+  it("offers a chip for every DBT tool now that the rollout hold-out is lifted (#2203, #2713)", () => {
+    // ☠️ DBT was in the read vocabulary but not the write one until the native
+    // rollout caught up: a step the shipped client cannot read can never be
     // ticked there, never lets its routine complete, and throws from the
-    // globally mounted FAB's "Do next step". So the picker must not compose
-    // one - the whole DBT group is absent, header included, rather than shown
-    // disabled.
+    // globally mounted FAB's "Do next step". That build - v0.18.0 - is live on
+    // both stores, so the six are writable and the group is offered whole.
     renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
 
-    expect(screen.queryByText("DBT")).toBeNull();
-    for (const toolId of WITHHELD_STEP_TOOL_IDS) {
+    expect(screen.getByText("DBT")).toBeTruthy();
+    for (const toolId of DBT_STEP_TOOL_IDS) {
       const label = enRoutines.tools[toolId as keyof typeof enRoutines.tools];
-      expect(screen.queryByLabelText(`Add ${label}`)).toBeNull();
+      expect(screen.getByLabelText(`Add ${label}`)).toBeTruthy();
     }
+    // ⚠️ And the guard has not been deleted, only emptied: nothing withheld
+    // means nothing suppressed, which is the state the constant now asserts.
+    expect([...WITHHELD_STEP_TOOL_IDS]).toEqual([]);
   });
 
   it("adds a newly admitted ACT tool as a step and saves it like any other", async () => {
