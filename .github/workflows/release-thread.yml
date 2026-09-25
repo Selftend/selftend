@@ -60,7 +60,7 @@ jobs:
       # was started from. Checking out an OLD tag on a dispatch would look for
       # a drafter that did not exist yet.
       - name: Check out the drafter
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
