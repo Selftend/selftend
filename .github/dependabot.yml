@@ -20,5 +20,10 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    # Everyday changes land on dev; main only takes the promotion, hotfix and
+    # release-please PRs (docs/releasing.md). Without this Dependabot opens
+    # against the default branch, main - which is what happened to its first
+    # five PRs (#2753-#2757, retargeted by hand on 2026-09-26).
+    target-branch: "dev"
     schedule:
       interval: "weekly"
