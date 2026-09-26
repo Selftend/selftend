@@ -32,6 +32,13 @@ import { render, type Rendered, type Skipped } from "../scripts/release-thread/r
 const REPO_ROOT = path.resolve(__dirname, "..");
 const FILER = path.join(REPO_ROOT, "scripts", "release-thread", "filer.mjs");
 
+/**
+ * A skipped render, built by hand. Since the thread became a link post
+ * (2026-09-26) the renderer never produces one - every release is postable -
+ * but the filer keeps its skip branch, so it stays covered.
+ */
+const SKIPPED: Skipped = { tag: "v0.4.2", version: "0.4.2", postable: false };
+
 function rendered(tag: string): Rendered | Skipped {
   const release = corpus.releases.find((r) => r.tag_name === tag);
   if (!release) throw new Error(`${tag} is not in the corpus`);
@@ -76,8 +83,7 @@ describe("decide", () => {
   const v17 = postable("v0.17.0");
 
   it("skips a release with nothing picked, before looking at any issue", () => {
-    const skipped = rendered("v0.4.2");
-    expect(skipped.postable).toBe(false);
+    const skipped = SKIPPED;
     expect(decide(skipped, [issue({ title: v17.issue.title, state: "OPEN" })])).toEqual({
       action: "skip",
       reason: "nothing-picked",
@@ -122,20 +128,20 @@ describe("decide", () => {
     expect(decide(v17, nearMiss)).toEqual({ action: "create" });
   });
 
-  it("over the corpus with no issues yet: 22 creates, 4 skips, never anything else", () => {
+  it("over the corpus with no issues yet: every release is a create - a link post never skips", () => {
     const outcomes = corpus.releases.map((release) => ({
       tag: release.tag_name,
       outcome: decide(render(draft(release)), []),
     }));
     const skipped = outcomes.filter((o) => o.outcome.action === "skip").map((o) => o.tag);
-    expect(skipped).toEqual(["v0.2.1", "v0.3.2", "v0.4.1", "v0.4.2"]);
-    expect(outcomes.filter((o) => o.outcome.action === "create")).toHaveLength(22);
+    expect(skipped).toEqual([]);
+    expect(outcomes.filter((o) => o.outcome.action === "create")).toHaveLength(26);
   });
 });
 
 describe("summaryOf: the one-line trace on the run (#1878 decision 6)", () => {
   it("says nothing was picked, in the words the ticket fixed", () => {
-    expect(summaryOf(rendered("v0.4.2"), { action: "skip", reason: "nothing-picked" })).toBe(
+    expect(summaryOf(SKIPPED, { action: "skip", reason: "nothing-picked" })).toBe(
       "nothing picked, no post for v0.4.2",
     );
   });
@@ -163,7 +169,7 @@ describe("file: what it asks gh to do", () => {
 
   it("makes no gh call at all when nothing was picked", () => {
     const { gh, calls } = fakeGh();
-    const outcome = file(rendered("v0.4.2"), gh);
+    const outcome = file(SKIPPED, gh);
     expect(outcome).toEqual({ action: "skip", reason: "nothing-picked" });
     expect(calls).toEqual([]);
   });
@@ -273,7 +279,7 @@ describe("the command line", () => {
 
   it("on nothing picked: exit 0, the trace on stdout and in the step summary, no gh", () => {
     const renderedPath = path.join(dir, "rendered.json");
-    fs.writeFileSync(renderedPath, JSON.stringify(rendered("v0.4.2")));
+    fs.writeFileSync(renderedPath, JSON.stringify(SKIPPED));
     const summary = path.join(dir, "summary.md");
     const output = path.join(dir, "output.txt");
     // PATH is emptied so that a real `gh`, if the filer reached for one, would
