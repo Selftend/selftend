@@ -62,7 +62,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Build the exact release tag when called from the orchestrator -
           # reproducible and immune to the branch advancing mid-build.

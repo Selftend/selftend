@@ -103,7 +103,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Build the exact release tag when called from the orchestrator -
           # reproducible and immune to the branch advancing mid-build.
@@ -199,7 +199,7 @@ jobs:
           npm exec --yes eas-cli -- build --platform android --profile production --local --non-interactive
 
       - name: Upload Android App Bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: selftend-android-aab-${{ github.run_number }}
           path: build-artifacts/*.aab

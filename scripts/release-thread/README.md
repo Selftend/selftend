@@ -17,11 +17,13 @@ a value looks wrong, the argument belongs on that ticket.
    parse and pick, so that every line the drafter shows is safe to paste into
    r/Selftend unchanged. Seven steps rewrite the markup; the eighth sends a line
    a machine must not touch to a human as a spare.
-3. **`renderer.mjs`** (#1950) - the tiers to the three things the owner is
-   handed: the thread (title and body), the prefilled r/Selftend submit link,
-   and the body of the GitHub issue that carries both. The frame sentence and
-   the rotated supporting line are constants pinned to `docs/positioning.md`
-   by test.
+3. **`renderer.mjs`** (#1950) - ⭐ **since 2026-09-26 a LINK post, by owner
+   decision**: the post is titled `Selftend <version>` and links to the tag's
+   GitHub Release (what Discord's `#changelog` shows). The renderer hands the
+   owner the title, the release URL, a prefilled `type=LINK` submit link, and
+   the issue body carrying them. There is no body and no picked text, so steps
+   1 and 2 above now only supply the tag and version; every release is
+   postable.
 4. **`filer.mjs`** (#1951) - the renderer's output to exactly one GitHub issue
    per release (`reddit-draft` + `ready-for-human`, the tag in the title), or
    to a one-line trace on the run and no issue. The workflow

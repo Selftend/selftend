@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
@@ -101,7 +101,7 @@ jobs:
         run: npm run build:android:development:local -- --non-interactive
 
       - name: Upload development APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: selftend-android-dev-apk-${{ github.run_number }}
           path: local-builds/android/*.apk
