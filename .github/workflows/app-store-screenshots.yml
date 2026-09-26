@@ -8,6 +8,11 @@ name: App Store screenshots
 # as iPhone**. Dropping iPad support would avoid that, but it is a product
 # decision rather than a shortcut, so it is not assumed here.
 #
+# ✅ Confirmed, not assumed (#2692, 2026-09-25): with the 13-inch iPad set
+# emptied on the 0.24.0 version, App Store Connect refused "Add for Review"
+# with "You must upload a screenshot for 13-inch iPad displays." So this job's
+# iPad set is what ships, as #2658 decided for that outcome.
+#
 #   iPhone 6.9"  1320 x 2868   iPhone 16 Pro Max class
 #   iPad 13"     2064 x 2752   iPad Pro 13-inch class
 #
@@ -135,7 +140,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check the capture environment is provisioned
         run: |
@@ -149,7 +154,7 @@ jobs:
           if [ "$missing" -ne 0 ]; then exit 1; fi
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.23.1
           cache: npm
@@ -261,10 +266,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.23.1
           cache: npm
@@ -623,7 +628,7 @@ jobs:
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-store-screenshots-${{ matrix.slug }}-${{ github.run_number }}
           path: screenshots/
@@ -632,7 +637,7 @@ jobs:
 
       - name: Upload diagnostic captures
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: diagnostics-${{ matrix.slug }}-${{ github.run_number }}
           path: diagnostics/
@@ -646,7 +651,7 @@ jobs:
       # would have explained the failure was silently dropped.
       - name: Upload Maestro debug output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maestro-debug-${{ matrix.slug }}-${{ github.run_number }}
           path: maestro-debug/

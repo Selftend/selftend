@@ -1,6 +1,6 @@
 # App Store release notes ("What's New in this Version")
 
-**Decided for: v0.23.0 · Written: 2026-09-20 · Status: NOT YET SUBMITTED.**
+**Decided for: v0.23.0 · Written: 2026-09-20 · Status: ENTERED on the 0.24.0 version in App Store Connect on 2026-09-25, not yet submitted.** The App Store skipped 0.22.0 and 0.23.0 (live stayed at 0.21.0), so 0.24.0 is the first gated build to reach review and this text rides it unchanged, by owner decision: 0.24.0's other iOS-visible changes are fixes and the one-time policy re-acceptance, and the rule below says nothing is added to make the subtraction read smaller.
 
 Decided on [#2604](https://github.com/Selftend/selftend/issues/2604). This file is where the text lives so the copy gates can read it **before** it is typed into App Store Connect — it is not a mirror of a live value, and until the submission exists there is no live value to mirror.
 
