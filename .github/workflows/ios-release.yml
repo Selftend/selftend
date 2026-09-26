@@ -273,7 +273,7 @@ jobs:
             --output "$IOS_OUTPUT_PATH"
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: selftend-ios-ipa-${{ github.run_number }}
           path: build-artifacts/*.ipa
