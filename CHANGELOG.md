@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.24.0](https://github.com/Selftend/selftend/compare/v0.23.0...v0.24.0) (2026-09-25)
+
+
+### Features
+
+* **capture:** the capture job seeds a staging account itself, behind an allowlist that fails closed ([#2730](https://github.com/Selftend/selftend/issues/2730)) ([#2749](https://github.com/Selftend/selftend/issues/2749)) ([b1d49d5](https://github.com/Selftend/selftend/commit/b1d49d5da796df0ffc49a56cb9c88d522df07d10))
+* **db:** drop record_days ([#2459](https://github.com/Selftend/selftend/issues/2459)) ([#2720](https://github.com/Selftend/selftend/issues/2720)) ([8248142](https://github.com/Selftend/selftend/commit/8248142102fe1f3b114178c21f188bfcc1fe06e8))
+* **modules:** the module gate and the three explainer pages fail together, and the readiness bar moves to where the lifter reads ([#2716](https://github.com/Selftend/selftend/issues/2716)) ([122aa51](https://github.com/Selftend/selftend/commit/122aa51fba808775d120c3511e3ff8dfea49b8aa))
+* **policies:** redden when production holds a policyVersion that main does not ship ([#2737](https://github.com/Selftend/selftend/issues/2737)) ([#2739](https://github.com/Selftend/selftend/issues/2739)) ([9d2ee48](https://github.com/Selftend/selftend/commit/9d2ee480478eeb6666e6eeeb6bb217541b02b0e6))
+* **privacy:** §8 names what a programme leaves behind, in en and bg ([#2554](https://github.com/Selftend/selftend/issues/2554)) ([#2611](https://github.com/Selftend/selftend/issues/2611)) ([625868e](https://github.com/Selftend/selftend/commit/625868e7a248c605262d26a58399c98118655552))
+* **releasing:** one hold-out register, a merge gate that makes a hold-out findable, and a weekly alarm when its condition comes true ([#2717](https://github.com/Selftend/selftend/issues/2717)) ([5be1270](https://github.com/Selftend/selftend/commit/5be12707261360ebadc10344faaf088288c0fb29))
+* **reminders:** the general and DBT reminders start arriving - the hold-out list is empty for the first time ([#2698](https://github.com/Selftend/selftend/issues/2698)) ([7b64e96](https://github.com/Selftend/selftend/commit/7b64e96b61c5628bf7d8c82b79cc761040fcd839))
+* **review:** the App Review account gets an owner-only production seed and a weekly staleness alarm ([#2731](https://github.com/Selftend/selftend/issues/2731)) ([#2750](https://github.com/Selftend/selftend/issues/2750)) ([3069fa7](https://github.com/Selftend/selftend/commit/3069fa7a980d47170eb31d5ee4fb42c15a9c3a87))
+* **routines:** the six DBT tools become routine steps - the write hold-out is lifted ([#2713](https://github.com/Selftend/selftend/issues/2713)) ([7bc7ca8](https://github.com/Selftend/selftend/commit/7bc7ca8a3ca6e4f9684f9d68719f6abf44e9869a))
+* **store:** the App Store release notes get a file, a corpus join and a README row ([#2604](https://github.com/Selftend/selftend/issues/2604)) ([#2634](https://github.com/Selftend/selftend/issues/2634)) ([5413345](https://github.com/Selftend/selftend/commit/54133457b15bc8bb5a389fd4e7a3f9584306bcde))
+* **store:** the Play feature graphic loses beat two, and its README stops citing a retired clause ([#2610](https://github.com/Selftend/selftend/issues/2610) item 10) ([#2637](https://github.com/Selftend/selftend/issues/2637)) ([52a9f27](https://github.com/Selftend/selftend/commit/52a9f27b9eef03ddde026b5b8de6b9d02b93f0d0))
+
+
+### Bug Fixes
+
+* **a11y:** the modal Escape rendered under the status bar, because SafeAreaView measures zero in a Modal ([#2650](https://github.com/Selftend/selftend/issues/2650)) ([3a83b54](https://github.com/Selftend/selftend/commit/3a83b546fd19348e41d4eebe447eb51f633e5c05))
+* **auth:** the age gate's Continue sat under the keyboard, because nothing padded for it ([#2649](https://github.com/Selftend/selftend/issues/2649)) ([6531c8f](https://github.com/Selftend/selftend/commit/6531c8ffa9257df889435af05e875c2cbfad7dfe))
+* **ci:** recover from the two flakes that have cost the iPad half its runs ([#2651](https://github.com/Selftend/selftend/issues/2651)) ([2270d58](https://github.com/Selftend/selftend/commit/2270d58f1ed777f567a3b08e24cc27c1aabe75a2))
+* **ci:** the App Store capture job stops reporting into production Sentry as a user ([#2726](https://github.com/Selftend/selftend/issues/2726)) ([#2727](https://github.com/Selftend/selftend/issues/2727)) ([f0f551c](https://github.com/Selftend/selftend/commit/f0f551c5816057cef88b84a0c3c80c8593a41034))
+* **ci:** the capture flow reaches sign-in by deep link, and the phone's age gate actually submits ([#2645](https://github.com/Selftend/selftend/issues/2645)) ([adf7bd7](https://github.com/Selftend/selftend/commit/adf7bd73659bed097a51435d5ab4e1728703bc3a))
+* **ci:** the capture job's flake fixes land, and its header stops saying it cannot capture ([#2704](https://github.com/Selftend/selftend/issues/2704)) ([6007a55](https://github.com/Selftend/selftend/commit/6007a55ee0931c1e03bcf88c7ed30b7f726c946e))
+* **ci:** the dormant screenshot flow is corrected to the decided five ([#2610](https://github.com/Selftend/selftend/issues/2610) item 16) ([#2642](https://github.com/Selftend/selftend/issues/2642)) ([a3ab320](https://github.com/Selftend/selftend/commit/a3ab320dd4614fedbd47ceca429df3e631de7ada))
+* **ci:** the screenshot flow predated the age gate, and that was the real blocker ([#2610](https://github.com/Selftend/selftend/issues/2610) item 16 follow-up) ([#2644](https://github.com/Selftend/selftend/issues/2644)) ([ba8bfc0](https://github.com/Selftend/selftend/commit/ba8bfc0ae1f39795846eefb282ced473f4e25208))
+* **sentry:** screen the spoofed device farm in beforeSend, because Sentry cannot filter it inbound ([#2577](https://github.com/Selftend/selftend/issues/2577)) ([#2612](https://github.com/Selftend/selftend/issues/2612)) ([8dcfbd5](https://github.com/Selftend/selftend/commit/8dcfbd56b77f4e0e84370301b6af766b067306fb))
+* **sound:** the web bed plays again - require() of an audio file is a URL string on web ([#2509](https://github.com/Selftend/selftend/issues/2509)) ([#2748](https://github.com/Selftend/selftend/issues/2748)) ([a42a724](https://github.com/Selftend/selftend/commit/a42a72422ea71c5c8dc63e2c3fe90bbabfc46327))
+
 ## [0.23.0](https://github.com/Selftend/selftend/compare/v0.22.0...v0.23.0) (2026-09-18)
 
 

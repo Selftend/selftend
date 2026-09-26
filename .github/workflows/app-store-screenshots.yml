@@ -8,6 +8,11 @@ name: App Store screenshots
 # as iPhone**. Dropping iPad support would avoid that, but it is a product
 # decision rather than a shortcut, so it is not assumed here.
 #
+# ✅ Confirmed, not assumed (#2692, 2026-09-25): with the 13-inch iPad set
+# emptied on the 0.24.0 version, App Store Connect refused "Add for Review"
+# with "You must upload a screenshot for 13-inch iPad displays." So this job's
+# iPad set is what ships, as #2658 decided for that outcome.
+#
 #   iPhone 6.9"  1320 x 2868   iPhone 16 Pro Max class
 #   iPad 13"     2064 x 2752   iPad Pro 13-inch class
 #
