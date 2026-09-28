@@ -29,7 +29,11 @@
 import fs from "fs";
 import path from "path";
 
-import { LEAD_SILENCE_LIMIT_MS, report } from "../scripts/audio/postprocess.mjs";
+import {
+  BELL_TAIL_SILENCE_MIN_MS,
+  LEAD_SILENCE_LIMIT_MS,
+  report,
+} from "../scripts/audio/postprocess.mjs";
 import { OUTPUT_SAMPLE_RATE, outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const VOICE = outputSpecFor("guide_inhale");
@@ -137,17 +141,42 @@ describe("leading silence is gated", () => {
   });
 });
 
-describe("trailing silence is measured but never gated", () => {
+/**
+ * ⚠️ DELIBERATE REWRITE of "trailing silence is measured but never gated"
+ * (#2767). The old rule protected tails from being trimmed — a bell's whole
+ * character is a tail — and that half still holds: nothing here fails a tail for
+ * being long. What it missed is that a tail must also LAND: `meditation-bell`
+ * shipped ending 12.4 ms below the floor — a hard cut with a click ~24 dB above
+ * the decayed ring around it — and the old rule called that PASS. The two
+ * passing cases below are the old describe's cases, assertions unchanged.
+ */
+describe("trailing silence is gated from below, bells only (#2767)", () => {
   it("passes a bell that decays into silence, which is what a bell is", () => {
-    // ☠️ #1139 fixes the bell as a long smooth decay "fading continuously to
-    // silence". Gating the tail the way the head is gated would fail the two clips
-    // whose entire character is a tail, for having one.
     expect(report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 640 }))).toBe(true);
   });
 
   it("still prints the tail, so a texture that quietly ends early is visible", () => {
     report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 640 }));
     expect(lines.some((line) => line.includes("640"))).toBe(true);
+  });
+
+  it("fails the 12.4 ms the truncated bell actually shipped with", () => {
+    expect(report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 12.4 }))).toBe(false);
+    expect(lines.filter((line) => line.includes("FAIL:"))).toHaveLength(1);
+    expect(lines.some((line) => line.includes("12.4"))).toBe(true);
+  });
+
+  it("does not run on beds, whose tail is a loop point rather than a landing", () => {
+    expect(report("rain", result(BED, { leadMs: 0, tailMs: 0 }))).toBe(true);
+    expect(lines.join("\n")).not.toContain("ends with");
+  });
+
+  it("sits between the truncated bell and the smallest good tail, so no real file straddles it", () => {
+    // Bracketed by measurement (#2767): the truncated bell's 12.4 ms below, the
+    // faded bell's 795 ms and the temple block's 858.6 ms above. A limit outside
+    // this range either waves the defect through or fails a shipped-good file.
+    expect(BELL_TAIL_SILENCE_MIN_MS).toBeGreaterThan(12.4);
+    expect(BELL_TAIL_SILENCE_MIN_MS).toBeLessThan(795);
   });
 });
 
@@ -166,7 +195,9 @@ describe("the remedy is a hint, not a second failure", () => {
   it("offers no seed remedy to a sound effect, which cannot be re-drawn", () => {
     // ☠️ Sound Effects has no seed. Telling someone to re-render a bed with a
     // different one names a path that does not exist.
-    report("meditation-bell", result(BELL, { leadMs: 12, tailMs: 0 }));
+    // ⚠️ tailMs 640, not 0: since #2767 a bell with no trailing silence fails the
+    // tail gate too, and this case is about the lead hint alone.
+    report("meditation-bell", result(BELL, { leadMs: 12, tailMs: 640 }));
     const hint = lines.find((line) => line.startsWith("   next:"));
     expect(hint ?? "").not.toMatch(/seed/i);
   });
@@ -212,7 +243,9 @@ describe("leading silence is gated on the master too (#2508)", () => {
   });
 
   it("does not run on bells either, for the same reason", () => {
-    expect(report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 0 }))).toBe(true);
+    // ⚠️ tailMs 640, not 0: since #2767 a bell with no trailing silence fails the
+    // tail gate, and this case is about the master-lead gate's scoping alone.
+    expect(report("meditation-bell", result(BELL, { leadMs: 0, tailMs: 640 }))).toBe(true);
     expect(lines.join("\n")).not.toContain("master    lead");
   });
 
