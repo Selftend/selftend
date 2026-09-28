@@ -676,6 +676,10 @@ export default function BreathingSessionScreen() {
             ) : null}
           </View>
 
+          <Button disabled={!selectedCycles} onPress={handleStart}>
+            <Text>{t("breathing.start")}</Text>
+          </Button>
+
           <View className="gap-3 border-y border-border py-5">
             <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               {t("breathing.setup.eachCycle")}
@@ -726,10 +730,6 @@ export default function BreathingSessionScreen() {
               last
             />
           </View>
-
-          <Button disabled={!selectedCycles} onPress={handleStart}>
-            <Text>{t("breathing.start")}</Text>
-          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>
