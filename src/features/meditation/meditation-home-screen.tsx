@@ -395,6 +395,23 @@ export default function MeditationHomeScreen() {
                 ) : null}
               </View>
 
+              {/* `lg`, so the screen's primary action clears the 44dp touch
+                  floor on a phone - the default button is 40dp tall. The rows
+                  below ARE the setup; Begin hands both choices to the sitting
+                  screen (#786), which owns the clock from there. */}
+              <Button
+                size="lg"
+                onPress={() =>
+                  pushWithOrigin({
+                    pathname: "/tools/meditation/session",
+                    params: { duration: String(durationMinutes), bell: bellKey },
+                  })
+                }
+                className="self-start px-8"
+              >
+                <Text>{t("module.home.begin")}</Text>
+              </Button>
+
               {/* Per-minute again (#930, reversing #785's six chips): drag for
                   distance, the steppers for precision. A stored preference of
                   any whole minute is directly expressible, so the old
@@ -500,22 +517,6 @@ export default function MeditationHomeScreen() {
                   />
                 </View>
               ) : null}
-              {/* `lg`, so the screen's primary action clears the 44dp touch
-                  floor on a phone - the default button is 40dp tall. The rows
-                  above ARE the setup; Begin hands both choices to the sitting
-                  screen (#786), which owns the clock from there. */}
-              <Button
-                size="lg"
-                onPress={() =>
-                  pushWithOrigin({
-                    pathname: "/tools/meditation/session",
-                    params: { duration: String(durationMinutes), bell: bellKey },
-                  })
-                }
-                className="self-start px-8"
-              >
-                <Text>{t("module.home.begin")}</Text>
-              </Button>
             </Section>
 
             <Section title={t("module.home.practiceLabel")} className="gap-0">
