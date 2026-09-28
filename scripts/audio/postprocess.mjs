@@ -83,11 +83,29 @@ const DBTP_EPSILON = 0.1;
  * also has to catch the 25.06 ms start_time #1138 measured on MP3, which is #1210's
  * "confirm ffmpeg strips the encoder delay" case.
  *
- * ⚠️ The TAIL is measured and printed but never gated. A bell is a long smooth
- * decay "fading continuously to silence" by #1139's own brief — gating its tail
- * would fail the two clips whose entire character is a tail, for having one.
+ * ⚠️ The TAIL is measured on every run and, for BELLS ONLY, gated from BELOW
+ * (#2767). The old rule here — "gating the tail would fail the two clips whose
+ * entire character is a tail, for having one" — protected tails from being
+ * trimmed, and that half still stands: nothing gates a tail for being long. What
+ * it missed is that a tail must also LAND. `meditation-bell` shipped with 12.4 ms
+ * below the floor at its end — the render's hard cut left a click ~24 dB above
+ * the decayed ring around it — and this gate would have refused it. Beds and
+ * textures stay ungated at the tail: beds loop and textures end under a voice cue,
+ * so neither has a "must reach silence" contract.
  */
 export const LEAD_SILENCE_LIMIT_MS = 1.0;
+
+/**
+ * How much TRAILING silence a finished BELL must carry, in milliseconds — the
+ * floor is `SILENCE_FLOOR_DBFS`, the instrument is the same `edgeSilence` that
+ * measures the lead (#2767).
+ *
+ * Bracketed by measurement, not feel: the truncated `meditation-bell` measured
+ * **12.4 ms** (fails 20x), while the two good tails measure **795 ms** (the
+ * faded bell) and **858.6 ms** (`interval-temple-block`) — both pass with >3x
+ * margin, so a re-encode cannot flake across this line.
+ */
+export const BELL_TAIL_SILENCE_MIN_MS = 250;
 
 /**
  * Seam-gate thresholds, on the five beds only (#1137). Both are set from
@@ -959,6 +977,19 @@ export function report(clipId, result) {
             "or re-render this cue with a different seed (TTS_CANDIDATE_SEEDS)."
         : "this take cannot be re-drawn in matching style — trim the head of the master " +
             "before re-running, or choose another candidate.",
+    );
+  }
+
+  // ☠️ Bells only, and gated from BELOW (#2767): a bell's brief is a decay
+  // "fading continuously to silence", so the finished file must actually get
+  // there — a tail that runs into the file's end is a cut, and a cut at the end
+  // of a ring is a click. The measurement is the same `edges` the lead rule
+  // reads, so "not measured is not passed" is already enforced above.
+  if (spec.klass === "bells" && edges && edges.tailMs < BELL_TAIL_SILENCE_MIN_MS) {
+    failures.push(
+      `ends with ${edges.tailMs.toFixed(1)} ms below ${SILENCE_FLOOR_DBFS} dBFS ` +
+        `(bells need >= ${BELL_TAIL_SILENCE_MIN_MS} ms): the decay never lands, so the ` +
+        "file ends in a cut. Fade the master's tail to silence before re-running (#2766).",
     );
   }
 
