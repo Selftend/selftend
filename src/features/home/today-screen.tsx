@@ -33,6 +33,11 @@ function firstWord(value: string) {
  * `<h1>` on react-native-web, and this screen already has one (the greeting). Three
  * sibling `h2`s under it is the whole heading structure.
  *
+ * Visually it is the 11px uppercase group label (Surface 3), not a 24px title: the
+ * rows below carry the content, and a heading that shouts over them reads as a panel
+ * head on a list that no longer has panels. The semantics stay level-2 — the size is
+ * presentation, the level is structure.
+ *
  * The heading renders whatever the body does — including nothing. That is what lets
  * Favourites show its heading alone while its query is pending, and it is what makes
  * "the Modules heading is always there" a structural fact rather than a branch.
@@ -47,8 +52,11 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <View testID={testID} className="gap-3.5">
-      <Text variant="h2" className="text-2xl font-bold tracking-tight">
+    <View testID={testID} className="gap-1.5">
+      <Text
+        variant="h2"
+        className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground"
+      >
         {title}
       </Text>
       {children}
@@ -90,7 +98,8 @@ function Section({
  * on it for 90 s inside a 75-minute job. None of those has a compile-time guard.
  *
  * No window-width read and no breakpoint (the test pins the import's absence): the `wide`
- * flag existed for header actions that no longer exist, and the card row wraps on its own.
+ * flag existed for header actions that no longer exist, and the hairline rows are one
+ * per line at every width, so there is nothing left for a breakpoint to decide.
  */
 export default function HomeScreen() {
   const { t, i18n } = useTranslation("navigation");
@@ -134,7 +143,7 @@ export default function HomeScreen() {
             names it rather than testing a constant (#720). */}
         {t("today.eyebrow", { date: dateLabel })}
       </Text>
-      <Text variant="h1" className="mt-2.5 text-[32px] font-extrabold leading-[1.1] tracking-tight">
+      <Text variant="h1" className="mt-2.5 text-[32px] font-bold leading-[1.1] tracking-tight">
         {greetingLine}
       </Text>
     </View>
