@@ -56,7 +56,7 @@ jobs:
           fi
 
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Supabase CLI
         # Pinned, not `latest`: `latest` makes the action resolve the release
@@ -95,7 +95,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Supabase CLI
         # Pinned, not `latest` - see the migrate-staging job for why (#264).
@@ -131,7 +131,7 @@ jobs:
         # No ref: the triggering event's SHA - the same commit the migrate job
         # runs and deploy-web-staging builds, so the guard checks the configs
         # that will actually deploy.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Fail unless the wrangler configs target the right Workers
         run: |

@@ -104,17 +104,17 @@ The rule this section used to carry read: _"this document must not be updated to
 
 Sign-in also offers **Sign in with Apple** and **Google Sign-In**; either creates a fresh account.
 
-| Feature           | How to reach it                                                                                                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The eight tools   | Home's **Tools** section, or each tool's own entry in the sidebar — **Check-in**, Journal, Breathing, Meditation, Grounding, Gratitude log, Sleep, Habit tracking. Each opens the tool and shows its own history |
-| CBT / ACT modules | **CBT** and **ACT** in the sidebar (and **DBT** beside them)                                                                                                                                                     |
-| Home dashboard    | Landing screen after sign-in; widgets are added and reordered by the user                                                                                                                                        |
-| Routines          | **Routines** in the navigation                                                                                                                                                                                   |
-| Reminders         | Settings → Reminders, or the **Reminders** screen in the sidebar. Enabling one raises the iOS permission prompt                                                                                                  |
-| Profile picture   | Settings → profile picture, which raises the photo-library permission prompt                                                                                                                                     |
-| Crisis guidance   | Linked from the signed-out sign-in screen's footer — reachable **before** sign-in — and, once signed in, from **Support**, from **Legal**, and from a crisis bar carried on the module exercise screens          |
-| Data export       | Settings → Account → export data                                                                                                                                                                                 |
-| Account deletion  | Settings → Account → delete account. Also documented at <https://selftend.org/account-deletion>                                                                                                                  |
+| Feature           | How to reach it                                                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The eight tools   | Home's **Tools** section, or each tool's own entry in the sidebar — **Check-in**, Journal, Breathing, Meditation, Grounding, Gratitude log, Sleep, Habit tracking. Each opens the tool and shows its own history                            |
+| CBT / ACT modules | **CBT** and **ACT** in the sidebar (and **DBT** beside them)                                                                                                                                                                                |
+| Home dashboard    | Landing screen after sign-in; widgets are added and reordered by the user                                                                                                                                                                   |
+| Routines          | **Routines** in the navigation                                                                                                                                                                                                              |
+| Reminders         | Settings → Reminders, or the **Reminders** screen in the sidebar. Enabling one raises the iOS permission prompt                                                                                                                             |
+| Profile picture   | Settings → profile picture, which raises the photo-library permission prompt                                                                                                                                                                |
+| Crisis guidance   | Linked from the signed-out sign-in screen's footer — reachable **before** sign-in — and, once signed in, from **Support** and from **Legal**. (Builds before the iOS module gate also carried a crisis bar on the module exercise screens.) |
+| Data export       | Settings → Account → export data                                                                                                                                                                                                            |
+| Account deletion  | Settings → Account → delete account. Also documented at <https://selftend.org/account-deletion>                                                                                                                                             |
 
 ## Item 5 — External services
 
@@ -166,6 +166,8 @@ The app contains **no protected third-party material**. All content is written b
 
 ## Paste block — App Store Connect **Notes** field
 
+⚠️ **The two module sentences in this block changed on 2026-09-25**, typed into the **0.24.0** version's Notes in App Store Connect — the first gated build to reach review, so the "wait for the gated submission" rule above is discharged for these two. _WHAT IT CONTAINS_ drops the three modules and the 28-widget dashboard (Home has been favourites since #1955) and says the modules are not in this iOS version; _CRISIS GUIDANCE_ drops the module crisis bar. ✅ Read back from the saved version the same day: both sentences as above, with no module reference left in the field.
+
 Replaces the current Notes content, which covers only part of this. Device values are filled in. Credentials go in the Sign-In Information fields, never here.
 
 **3,274 characters** as written — ⚠️ **re-measured 2026-09-20**, twice in one day: 2,498 → 2,789 after the catch-up ([#2602](https://github.com/Selftend/selftend/issues/2602)), then → 3,274 when the **Guideline 4.8 section was absorbed** from the live field. **Re-measure whenever this block is edited**, because this is the doc's live product and the number is the only thing that catches a silent drift in it.
@@ -206,10 +208,10 @@ AUDIENCE
 People aged 13 and older, or their country's higher floor - 14, 15 or 16 across much of Europe. The floor is asked before the app opens and is never below 13. There is no minor flag and no parental-consent path: the protections are universal, so teen-grade defaults apply to everyone.
 
 WHAT IT CONTAINS
-Eight tools (Check-in, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking), three usable modules of educational CBT, ACT and DBT exercises, user-built routines, and a home dashboard the user assembles from 28 widgets. Everything is fully functional.
+Eight tools (Check-in, journal, breathing, gratitude log, grounding, meditation, sleep, habit tracking), user-built routines, and a home screen of the tools the user stars as favourites. Everything is fully functional. The CBT, ACT and DBT modules are not included in this iOS version.
 
 CRISIS GUIDANCE
-Kept separate from the self-help features and reachable before sign-in, from the sign-in screen footer, and afterwards from Support, from Legal and from a crisis bar on the module exercise screens. It points to external emergency services and to the Find A Helpline directory, and states that the app is not monitored.
+Kept separate from the self-help features and reachable before sign-in, from the sign-in screen footer, and afterwards from Support and from Legal. It points to external emergency services and to the Find A Helpline directory, and states that the app is not monitored.
 
 NOTIFICATIONS
 Twelve reminder targets - one general, eleven per tool - every one off by default. Nothing is sent unless the user enables a reminder, which is what raises the iOS notification prompt.

@@ -10,7 +10,6 @@ import { NotoSans_500Medium } from "@expo-google-fonts/noto-sans/500Medium";
 import { NotoSans_600SemiBold } from "@expo-google-fonts/noto-sans/600SemiBold";
 import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
 import { NotoSans_800ExtraBold } from "@expo-google-fonts/noto-sans/800ExtraBold";
-import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
 // Per-family subpath, never the "@expo/vector-icons" barrel (see AGENTS.md).
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ThemeProvider } from "expo-router";
@@ -71,7 +70,6 @@ export default Sentry.wrap(function RootLayout() {
     NotoSans_600SemiBold,
     NotoSans_700Bold,
     NotoSans_800ExtraBold,
-    Nunito_800ExtraBold,
     // The icon font too (#2293). In the static export this hook runs in Node,
     // where it registers each font synchronously; a font registered there
     // renders in the file and its @font-face rides along in the document
