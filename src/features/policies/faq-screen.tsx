@@ -181,8 +181,10 @@ export function FaqScreen() {
               letter supplies none, so it holds the heading alone.
 
               ☠️ Hand-styled deliberately, and only because it is NOT a `Text`
-              variant: `h1`/`h2` route to the display face, so `variant="h2"` here
-              would render Nunito ExtraBold at 30px and take over the page.
+              variant: `variant="h2"` renders 30px bold here and would take
+              over the page. (The display-face half of this warning retired
+              with Nunito - h1/h2 are Noto Sans 700 now - but the size half
+              still holds.)
             */}
             <View className="gap-1">
               <Text

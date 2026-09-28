@@ -4,15 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { Platform, Text as RNText, type Role, type TextStyle } from "react-native";
 
+// One face only. The Nunito display face (h1–h2 and hero numerals, plus the
+// font-display opt-in class) left with the Surface 3 redesign: headings are
+// Noto Sans 700, and weight alone is what separates them from body text.
 const FONT_FAMILY = {
   regular: "NotoSans_400Regular",
   medium: "NotoSans_500Medium",
   semibold: "NotoSans_600SemiBold",
   bold: "NotoSans_700Bold",
   extrabold: "NotoSans_800ExtraBold",
-  // The display face: h1–h2 and hero numerals only (opt in elsewhere with the
-  // font-display class). h3 and below, body, and UI text stay Noto Sans.
-  display: "Nunito_800ExtraBold",
 } as const;
 
 const textVariants = cva(
@@ -27,11 +27,11 @@ const textVariants = cva(
       variant: {
         default: "",
         h1: cn(
-          "text-4xl font-extrabold tracking-tight",
+          "text-4xl font-bold tracking-tight",
           Platform.select({ web: "scroll-m-20 text-balance" }),
         ),
         h2: cn(
-          "text-3xl font-extrabold tracking-tight",
+          "text-3xl font-bold tracking-tight",
           Platform.select({ web: "scroll-m-20 first:mt-0" }),
         ),
         h3: cn("text-2xl font-semibold tracking-tight", Platform.select({ web: "scroll-m-20" })),
@@ -76,13 +76,9 @@ const ARIA_LEVEL: Partial<Record<TextVariant, string>> = {
 
 const TextClassContext = React.createContext<string | undefined>(undefined);
 
-function resolveFontFamily(classes: string, variant: TextVariant): string | undefined {
+function resolveFontFamily(classes: string): string | undefined {
   if (classes.includes("font-mono")) {
     return undefined;
-  }
-
-  if (classes.includes("font-display") || variant === "h1" || variant === "h2") {
-    return FONT_FAMILY.display;
   }
 
   if (classes.includes("font-extrabold")) {
@@ -104,12 +100,9 @@ function resolveFontFamily(classes: string, variant: TextVariant): string | unde
   return FONT_FAMILY.regular;
 }
 
-export function getTextFontStyle(
-  classNames: (string | undefined)[],
-  variant: TextVariant = "default",
-): TextStyle | undefined {
+export function getTextFontStyle(classNames: (string | undefined)[]): TextStyle | undefined {
   const classes = classNames.filter(Boolean).join(" ");
-  const fontFamily = resolveFontFamily(classes, variant);
+  const fontFamily = resolveFontFamily(classes);
 
   if (!fontFamily) {
     return undefined;
@@ -144,7 +137,7 @@ function Text({
       className={cn(variantClassName, tintColor, textClass, className)}
       role={ROLE[resolvedVariant]}
       aria-level={ARIA_LEVEL[resolvedVariant]}
-      style={[getTextFontStyle([variantClassName, textClass, className], resolvedVariant), style]}
+      style={[getTextFontStyle([variantClassName, textClass, className]), style]}
       {...props}
     />
   );

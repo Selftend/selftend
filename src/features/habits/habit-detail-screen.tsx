@@ -259,11 +259,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
                 Side by side from `sm`, where the width is actually there. */}
             <View className="gap-4 sm:flex-row sm:items-start">
               <View className="gap-1 sm:flex-1">
-                <Text
-                  role="heading"
-                  aria-level={1}
-                  className="font-display text-2xl font-bold tracking-tight"
-                >
+                <Text role="heading" aria-level={1} className="text-2xl font-bold tracking-tight">
                   {habit.name}
                 </Text>
                 {/* Schedule, kind and start date are three short facts, not
