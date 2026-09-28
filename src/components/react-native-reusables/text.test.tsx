@@ -4,26 +4,22 @@ import { renderWithProviders } from "@/test/render-with-providers";
 import { getTextFontStyle, Text } from "./text";
 
 describe("getTextFontStyle", () => {
-  it("maps the h1 and h2 variants to the Nunito display face", () => {
-    expect(getTextFontStyle(["text-4xl font-extrabold tracking-tight"], "h1")).toEqual({
-      fontFamily: "Nunito_800ExtraBold",
+  it("maps the h1 and h2 variant classes to Noto Sans 700", () => {
+    // The Nunito display face is gone (Surface 3 redesign): the variants carry
+    // font-bold, and the class ladder alone decides the family.
+    expect(getTextFontStyle(["text-4xl font-bold tracking-tight"])).toEqual({
+      fontFamily: "NotoSans_700Bold",
     });
-    expect(getTextFontStyle(["text-3xl font-extrabold tracking-tight"], "h2")).toEqual({
-      fontFamily: "Nunito_800ExtraBold",
-    });
-  });
-
-  it("maps the font-display marker class to the Nunito display face", () => {
-    expect(getTextFontStyle(["font-display text-[40px] font-extrabold"])).toEqual({
-      fontFamily: "Nunito_800ExtraBold",
+    expect(getTextFontStyle(["text-3xl font-bold tracking-tight"])).toEqual({
+      fontFamily: "NotoSans_700Bold",
     });
   });
 
   it("keeps h3-and-below and body text on Noto Sans", () => {
-    expect(getTextFontStyle(["text-2xl font-semibold tracking-tight"], "h3")).toEqual({
+    expect(getTextFontStyle(["text-2xl font-semibold tracking-tight"])).toEqual({
       fontFamily: "NotoSans_600SemiBold",
     });
-    expect(getTextFontStyle(["text-xl font-semibold tracking-tight"], "h4")).toEqual({
+    expect(getTextFontStyle(["text-xl font-semibold tracking-tight"])).toEqual({
       fontFamily: "NotoSans_600SemiBold",
     });
     expect(getTextFontStyle([undefined])).toEqual({ fontFamily: "NotoSans_400Regular" });
@@ -38,7 +34,7 @@ describe("getTextFontStyle", () => {
 });
 
 describe("Text", () => {
-  it("applies the display face to h1 and h2 but not h3", () => {
+  it("renders every heading level in Noto Sans, weighted not re-faced", () => {
     renderWithProviders(
       <>
         <Text variant="h1">Heading one</Text>
@@ -46,13 +42,13 @@ describe("Text", () => {
         <Text variant="h3">Heading three</Text>
       </>,
     );
-    expect(screen.getByText("Heading one")).toHaveStyle({ fontFamily: "Nunito_800ExtraBold" });
-    expect(screen.getByText("Heading two")).toHaveStyle({ fontFamily: "Nunito_800ExtraBold" });
+    expect(screen.getByText("Heading one")).toHaveStyle({ fontFamily: "NotoSans_700Bold" });
+    expect(screen.getByText("Heading two")).toHaveStyle({ fontFamily: "NotoSans_700Bold" });
     expect(screen.getByText("Heading three")).toHaveStyle({ fontFamily: "NotoSans_600SemiBold" });
   });
 
-  it("applies the display face to font-display hero numerals", () => {
-    renderWithProviders(<Text className="font-display text-[40px] font-extrabold">4.2</Text>);
-    expect(screen.getByText("4.2")).toHaveStyle({ fontFamily: "Nunito_800ExtraBold" });
+  it("keeps hero numerals on the weight their classes name", () => {
+    renderWithProviders(<Text className="text-[40px] font-extrabold">4.2</Text>);
+    expect(screen.getByText("4.2")).toHaveStyle({ fontFamily: "NotoSans_800ExtraBold" });
   });
 });
