@@ -34,7 +34,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - UI primitives: @rn-primitives, installed per component — currently avatar, checkbox, label, popover, portal, slot, switch. The rest of the suite is not a dependency; add the specific package you need rather than assuming it is there.
 - Styling utilities: class-variance-authority, clsx, tailwind-merge, tailwindcss-animate
 - Icons: @expo/vector-icons, always imported by per-family subpath, never the `@expo/vector-icons` barrel — the barrel top-level-requires all 15 families, pulling ~1.6 MB of glyphmaps and ~4 MB of fonts for families the app never renders. MaterialIcons is the app's icon set and goes through the `Icon` wrapper in `src/components/react-native-reusables/icon.tsx`, which handles NativeWind sizing/colour and hides icons from the accessibility tree by default. Ionicons is used directly, only for platform brand marks (social sign-in buttons, app-store badges).
-- Fonts: @expo-google-fonts/noto-sans for body text, @expo-google-fonts/nunito (`Nunito_800ExtraBold`) for the display face used by headings and hero numerals
+- Fonts: @expo-google-fonts/noto-sans only — one face for body, headings, and hero numerals, separated by weight (headings are `NotoSans_700Bold`). The Nunito display face was removed with the Surface 3 home redesign; do not reintroduce a second family.
 - Backend: Supabase
 - State: TanStack Query for server state, Zustand for local state
 - Forms and validation: React Hook Form + Zod

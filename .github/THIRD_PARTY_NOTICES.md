@@ -52,11 +52,11 @@ Direct UI support dependencies:
 
 ## Bundled Fonts
 
-The app bundles Noto Sans via `@expo-google-fonts/noto-sans` (body text) and Nunito via `@expo-google-fonts/nunito` (the `Nunito_800ExtraBold` display face). Both fonts are licensed under the SIL Open Font License 1.1 (OFL-1.1); the npm package wrappers are MIT.
+The app bundles Noto Sans via `@expo-google-fonts/noto-sans` (all text). The font is licensed under the SIL Open Font License 1.1 (OFL-1.1); the npm package wrapper is MIT.
 
-Sources: https://fonts.google.com/noto/specimen/Noto+Sans and https://fonts.google.com/specimen/Nunito
+Source: https://fonts.google.com/noto/specimen/Noto+Sans
 
-License: SIL Open Font License 1.1 - see the full text shipped with each package at `node_modules/@expo-google-fonts/noto-sans/LICENSE` and `node_modules/@expo-google-fonts/nunito/LICENSE`.
+License: SIL Open Font License 1.1 - see the full text shipped with the package at `node_modules/@expo-google-fonts/noto-sans/LICENSE`.
 
 ## Google Sign-In Branding
 
