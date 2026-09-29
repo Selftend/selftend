@@ -1,12 +1,14 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook } from "@testing-library/react-native";
 import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
 import { router } from "expo-router";
 
+import { UNDER_FLOOR_BLOCK_KEY } from "@/src/features/auth/under-floor-block";
 import { useStartAsGuest } from "@/src/features/auth/use-start-as-guest";
 import { captureError } from "@/src/lib/sentry";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => "/",
 }));
 
@@ -22,6 +24,7 @@ jest.mock("@/src/lib/supabase", () => ({
 }));
 
 const mockPush = router.push as jest.MockedFunction<typeof router.push>;
+const mockReplace = router.replace as jest.MockedFunction<typeof router.replace>;
 const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>;
 
 async function start() {
@@ -32,8 +35,10 @@ async function start() {
 }
 
 describe("useStartAsGuest", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    jest.restoreAllMocks();
     jest.clearAllMocks();
+    await AsyncStorage.clear();
     mockSignInAnonymously.mockResolvedValue({
       data: { session: { user: { id: "guest-1" } }, user: { id: "guest-1" } },
       error: null,
@@ -110,5 +115,41 @@ describe("useStartAsGuest", () => {
 
     expect(mockCaptureError).toHaveBeenCalledWith(unexpected);
     expect(mockPush).toHaveBeenCalledWith("/(auth)/sign-up");
+  });
+
+  // #2826: the web twin of SessionProvider's native guard (#1765, spec #227
+  // §3). Inside an under-floor block window a press must not mint an anonymous
+  // auth user that the block would only strand. The person is taken to the
+  // block screen - ProtectedLayout renders it signed out - without one.
+  describe("inside an under-floor block window", () => {
+    it("creates no guest and goes to the block screen instead", async () => {
+      await AsyncStorage.setItem(UNDER_FLOOR_BLOCK_KEY, String(Date.now() + 60 * 60 * 1000));
+
+      await start();
+
+      expect(mockSignInAnonymously).not.toHaveBeenCalled();
+      expect(mockReplace).toHaveBeenCalledWith("/(app)");
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it("an expired window does not over-block: the guest is created as usual", async () => {
+      await AsyncStorage.setItem(UNDER_FLOOR_BLOCK_KEY, String(Date.now() - 1));
+
+      await start();
+
+      expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    // Same as native: the flag fails open, so a storage fault can never leave
+    // a device with no way to get a session.
+    it("an unreadable flag fails open, exactly as the native guest path does", async () => {
+      jest.spyOn(AsyncStorage, "getItem").mockRejectedValue(new Error("storage unavailable"));
+
+      await start();
+
+      expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
   });
 });

@@ -650,13 +650,20 @@ property cannot be quietly re-exported.
   block holds without this, but every launch inside the window would otherwise
   create an anonymous user purely so the exit screen could delete it again.
 
-  ☠️ Neither consumer treats the flag as authority to delete anything. It
+- The web landing's **Start now** action (`use-start-as-guest.ts`), the same
+  rule on the web guest path (#2826). A press inside the window goes to the
+  exit screen signed out instead of calling `signInAnonymously`, so no
+  anonymous user is minted for the block to strand. Like `SessionProvider` it
+  fails open: an unreadable flag lets the guest through.
+
+  ☠️ No consumer treats the flag as authority to delete anything. It
   answers one question — may this device open the app — and the account the
   erasure may act on comes from the verdict, not from the flag (#2195).
 
 - Nothing else. In particular the **public marketing landing is not blocked**:
   the flag prevents entry, not reading, and blocking a public page would be
-  over-reach. A web visitor inside the window can therefore sign up again — and
+  over-reach. Its Start-now button consults the flag (above), but its sign-up
+  and sign-in links do not. A web visitor inside the window can therefore sign up again — and
   meets the gate again, and is deleted again. The floor holds; only the speed
   bump is thinner there, and that is a deliberate line rather than an oversight.
 
