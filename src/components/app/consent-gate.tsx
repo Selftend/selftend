@@ -19,6 +19,7 @@ import { contactEmails } from "@/src/lib/env";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
+import { useGateBottomClearance } from "@/src/stores/layered-inset-store";
 
 interface ConsentCheckboxProps {
   checked: boolean;
@@ -98,6 +99,10 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
   // at the root, so without the Origin the way out of one lands on Home rather
   // than returning to the gate the user still has to clear.
   const pushWithOrigin = usePushWithOrigin();
+  // The web cookie banner's measured edge (#2825). Padded onto the CONTENT
+  // container so `justify-center` re-centres the card above the banner, and so
+  // a card too tall for what is left overflows into a scroll rather than under it.
+  const bannerClearance = useGateBottomClearance();
 
   const handleAccept = async () => {
     // ☠️ The both-ticked invariant restated where the WRITE is, not only on the
@@ -118,7 +123,10 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow items-center justify-center p-6">
+      <ScrollView
+        contentContainerClassName="grow items-center justify-center p-6"
+        contentContainerStyle={bannerClearance > 0 ? { paddingBottom: bannerClearance } : undefined}
+      >
         <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>{t("consent.title")}</CardTitle>
