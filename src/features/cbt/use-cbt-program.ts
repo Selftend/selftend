@@ -7,31 +7,21 @@ import { deriveCbtProgram, type CbtProgramView } from "@/src/features/cbt/derive
 import { useHierarchies } from "@/src/features/exposure/queries";
 import { useGoals } from "@/src/features/goals/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
+import { CBT_PROGRAM_KEYS } from "@/src/features/modules/program-patches";
+import { useProgramActions, type ProgramActions } from "@/src/features/modules/use-program-actions";
 import { useMoodHistory } from "@/src/features/mood/queries";
-import {} from "@/src/features/modules/types";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { useValuesProfile } from "@/src/features/values/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-interface UseCbtProgramResult {
+interface UseCbtProgramResult extends ProgramActions {
   program: CbtProgramView;
   isLoading: boolean;
-  startProgram: () => void;
-  dismissProgramPrompt: () => void;
-  showProgramPrompt: () => void;
-  abandonProgram: () => void;
-  replayProgram: () => void;
-  advancePhase: () => void;
-  dismissGraduation: () => void;
-  promptDismissedAt: string | null;
-  graduationDismissedAt: string | null;
-  isUpdating: boolean;
 }
 
 export function useCbtProgram(userId: string | null): UseCbtProgramResult {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
   const { selectedDate } = useSelectedDate();
 
   const goals = useGoals(userId);
@@ -81,118 +71,14 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
     ],
   );
 
-  const advancePhase = () => {
-    if (!preferences) return;
-    const idx = preferences.cbtProgramPhaseIndex ?? 0;
-    const last = program.totalPhases - 1;
-    void updatePreferences
-      .mutateAsync(
-        idx >= last
-          ? { cbtProgramCompletedAt: new Date().toISOString() }
-          : {
-              cbtProgramPhaseIndex: idx + 1,
-              cbtProgramPhaseStartedAt: new Date().toISOString(),
-            },
-      )
-      .catch(() => undefined);
-  };
-
-  const startProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtProgramStartedAt: new Date().toISOString(),
-        // ☠️ `cbtProgramCompletedAt` is deliberately NOT nulled here. It means
-        // the last time this person finished CBT, and the fresh `startedAt`
-        // above retires it by itself (ADR-0012, #2530).
-        cbtProgramPromptDismissedAt: null,
-        cbtGraduationDismissedAt: null,
-        cbtProgramPhaseIndex: 0,
-        cbtProgramPhaseStartedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const dismissProgramPrompt = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtProgramPromptDismissedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const showProgramPrompt = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtProgramPromptDismissedAt: null,
-      })
-      .catch(() => undefined);
-  };
-
-  /**
-   * ☠️ **What this payload leaves out is the point.** `cbtProgramPhaseIndex` and
-   * `cbtProgramPhaseStartedAt` stay exactly where they were, and that pair
-   * surviving beside a null `cbtProgramStartedAt` is the ONLY record that this
-   * run ever existed and how far it got - the **fossil** (ADR-0012, #2530).
-   *
-   * ⚠️ So do not "finish the job" by nulling them. It reads like a tidy-up and
-   * it is the whole of #2386: someone who reached phase 4 and stopped would
-   * become indistinguishable from someone who never opened the module, with no
-   * way to recover the difference afterwards. #2530 refused to keep the dates a
-   * run would otherwise carry, and that refusal only holds because this survives.
-   *
-   * `test/programme-fossil-contract.test.ts` fails if anything nulls it.
-   */
-  const abandonProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtProgramStartedAt: null,
-        // ☠️ `cbtProgramCompletedAt` is deliberately NOT nulled: leaving a
-        // programme must not erase that you once finished it (ADR-0012).
-        cbtProgramPromptDismissedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const replayProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtProgramStartedAt: new Date().toISOString(),
-        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
-        // is a new run, not a retraction of the one that finished (ADR-0012).
-        cbtProgramPromptDismissedAt: null,
-        cbtGraduationDismissedAt: null,
-        cbtProgramPhaseIndex: 0,
-        cbtProgramPhaseStartedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const dismissGraduation = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        cbtGraduationDismissedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
+  // The seven transitions, their payloads and their failure handling live in
+  // useProgramActions/program-patches (#2810, ADR-0012) - one copy for the
+  // three programmes.
+  const actions = useProgramActions(userId, CBT_PROGRAM_KEYS, program.totalPhases);
 
   return {
     program,
     isLoading: prefsLoading,
-    startProgram,
-    dismissProgramPrompt,
-    showProgramPrompt,
-    abandonProgram,
-    replayProgram,
-    advancePhase,
-    dismissGraduation,
-    promptDismissedAt: preferences?.cbtProgramPromptDismissedAt ?? null,
-    graduationDismissedAt: preferences?.cbtGraduationDismissedAt ?? null,
-    isUpdating: updatePreferences.isPending,
+    ...actions,
   };
 }
