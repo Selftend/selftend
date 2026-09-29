@@ -226,6 +226,7 @@
     "indexTitle": "Habit building - core ideas",
     "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
     "backToHabits": "Back to habits",
+    "sourceLine": "These cards summarise ideas from James Clear's Atomic Habits.",
     "cards": {
       "compounding": {
         "title": "The 1% compounding effect",
