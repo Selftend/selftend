@@ -34,7 +34,21 @@ async function expectClearOfBanner(page: Page, control: Locator) {
   const banner = page.getByTestId("cookie-consent-banner");
   await expect(banner).toBeVisible();
 
-  await control.scrollIntoViewIfNeeded();
+  // Scroll the gate the way a person would: a wheel over the card, to its end.
+  // ☠️ Not `scrollIntoViewIfNeeded` - a control sitting UNDER the banner is
+  // already inside the viewport, so that call is a no-op exactly when it
+  // matters. Before #2825 this wheel moved nothing (the gate had no overflow);
+  // where the card plus the banner no longer fit - bg's consent gate - it now
+  // brings the control up above the banner.
+  await page.mouse.move(195, 200);
+  await page.mouse.wheel(0, 2_000);
+  await expect
+    .poll(async () => {
+      const box = await control.boundingBox();
+      return box ? box.y + box.height : Number.POSITIVE_INFINITY;
+    })
+    .toBeLessThanOrEqual((await banner.boundingBox())?.y ?? 0);
+
   const controlBox = await control.boundingBox();
   const bannerBox = await banner.boundingBox();
   expect(controlBox).not.toBeNull();
