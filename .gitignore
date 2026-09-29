@@ -5,8 +5,10 @@ node_modules/
 
 # Web / builds
 dist/
-dist-e2e/
-dist-e2e-*/
+# Covers dist-e2e/, the port-scoped dist-e2e-<port>/ exports
+# (scripts/e2e-web-server.js), and ad-hoc exports like the dist-surface3/
+# that #2811 found sitting lintable at the repo root.
+dist-*/
 build/
 build-artifacts/
 local-builds/
