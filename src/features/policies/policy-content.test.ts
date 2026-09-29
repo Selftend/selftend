@@ -326,9 +326,40 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // place when the correction leaves their consent valid, and bump to a fresh version
 // instead when it does not. The window is real; it is no longer unconditional, and
 // the condition is whether the cohort's consent survives the edit.
+//
+// ⚠️ #2805 is the SEVENTH digest-only move, and the first made after the
+// window above closed for good: `origin/main` carries
+// `2026-09-18-programme-retention` (checked 2026-09-29), so this reading has
+// to stand on its own. It does, on #2707's own test - the correction leaves
+// every existing consent valid.
+//
+// accountDeletion §"What deletion does" opened its enumeration with a
+// CBT-only era inventory: "your profile, preferences, all thought records
+// (including archived ones), and authentication credentials". The colon list
+// reads as the complete answer while the app now also stores journal entries,
+// mood check-ins, gratitude, sleep logs, habits, meditation sessions,
+// grounding history, routines, ACT and DBT records - none named. It now says
+// "all thought records and other self-help entries you create", the same
+// hedge privacy §2 has carried all along.
+//
+// Nothing DISCLOSED changed. The operative promise - "Deleting your account
+// permanently removes ALL DATA associated with it" - opens the sentence and
+// survives word for word, and deletion behaviour is untouched: it always
+// removed everything. Not a processor, not a data field, not retention, not
+// a right, not eligibility, not liability. What moved is an ILLUSTRATION of
+// that promise, from under-inclusive to the §2 hedge - strictly more
+// accurate, the same shape as #1616's "strictly more protective than what it
+// replaced". Everyone who accepted the old text consented to total deletion;
+// the new text only stops the example list understating it. Re-gating every
+// user over a corrected example is precisely how a consent gate teaches
+// people to click through it.
+//
+// ☠️ The bg correction in the same change moves nothing here, and that is
+// correct rather than an oversight: English only is hashed, deliberately,
+// per the note at the top of this block.
 const pinnedPolicyRelease = {
   version: "2026-09-18-programme-retention",
-  englishDigest: "20a015a41b02a167cda7a3dbb3fc822e74c9e7cf988b942e56ab3c25031ea72c",
+  englishDigest: "1cbcc8809e7b8b89e7017177cb86470df50e45da569dc53de918a99e1472c132",
 };
 
 describe("policy content - version pinning", () => {
