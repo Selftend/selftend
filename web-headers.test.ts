@@ -95,4 +95,33 @@ describe("public/_headers caching", () => {
     expect(headerFor("/journal", "content-security-policy")).toContain("default-src 'self'");
     expect(headerFor("/journal", "x-frame-options")).toBe("DENY");
   });
+
+  // connect-src is pinned as an exact token set, for the same reason
+  // test/theme-web-surfaces.test.ts pins script-src that way: a substring check
+  // cannot see what has been ADDED, and a widened connect-src is an
+  // exfiltration channel. The set also guards the other direction - the Sentry
+  // ingest host went missing from this list once, and every error envelope
+  // from production web was refused by the browser at exactly the moment an
+  // error occurred, so web errors never reached Sentry at all (#2804). The
+  // Sentry entry is the DSN's exact host rather than a *.sentry.io wildcard:
+  // the bundle only talks to its own org, and anything wider would let
+  // injected code report into an attacker's org. If EXPO_PUBLIC_SENTRY_DSN
+  // ever moves org or region, this list and public/_headers move with it.
+  it("lets the web bundle reach exactly its own backends - nothing else", () => {
+    const csp = headerFor("/journal", "content-security-policy") ?? "";
+    const connectSrc = csp
+      .split(";")
+      .map((directive) => directive.trim())
+      .filter((directive) => /^connect-src(\s|$)/.test(directive));
+    expect(connectSrc).toHaveLength(1);
+
+    expect(connectSrc[0].split(/\s+/).slice(1).sort()).toEqual(
+      [
+        "'self'",
+        "https://*.supabase.co",
+        "https://accounts.google.com",
+        "https://o4511690053386240.ingest.de.sentry.io",
+      ].sort(),
+    );
+  });
 });
