@@ -76,9 +76,9 @@ function emptyList() {
   return { data: [], isLoading: false } as unknown as ReturnType<typeof useDbtSessions>;
 }
 
-function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
+function setupBaseMocks(mutate: jest.Mock, isPending = false) {
   mockUseUpdateUserPreferences.mockReturnValue({
-    mutateAsync,
+    mutate,
     isPending,
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
 
@@ -119,14 +119,14 @@ describe("useDbtProgram - the writers", () => {
   });
 
   it("startProgram sets a fresh start, phase 0 and a phase start, and clears the prompt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences({ dbtProgramPromptDismissedAt: "2026-05-22T09:00:00.000Z" });
 
     const { result } = renderHook(() => useDbtProgram("user-1"));
     act(() => result.current.startProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         dbtProgramStartedAt: expect.any(String),
         dbtProgramPromptDismissedAt: null,
@@ -137,12 +137,12 @@ describe("useDbtProgram - the writers", () => {
     );
     // ☠️ ADR-0012: starting again must not erase that you once finished. The
     // fresh `startedAt` retires the old completion by itself.
-    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
+    expect(mutate.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
   });
 
   it("abandonProgram clears the start and hides the prompt, and touches nothing else", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences({
       dbtProgramStartedAt: STARTED_AT,
       dbtProgramCompletedAt: COMPLETED_AT,
@@ -153,14 +153,14 @@ describe("useDbtProgram - the writers", () => {
     const { result } = renderHook(() => useDbtProgram("user-1"));
     act(() => result.current.abandonProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         dbtProgramStartedAt: null,
         dbtProgramPromptDismissedAt: expect.any(String),
       }),
     );
 
-    const payload = mutateAsync.mock.calls[0][0];
+    const payload = mutate.mock.calls[0][0];
     // ☠️ ADR-0012: leaving must not erase that you once finished it.
     expect(payload).not.toHaveProperty("dbtProgramCompletedAt");
     // ☠️ The fossil. `dbtProgramPhaseStartedAt` and `dbtProgramPhaseIndex` are
@@ -171,8 +171,8 @@ describe("useDbtProgram - the writers", () => {
   });
 
   it("replayProgram restarts at phase 0 without retracting the completion", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences({
       dbtProgramStartedAt: STARTED_AT,
       dbtProgramCompletedAt: COMPLETED_AT,
@@ -183,7 +183,7 @@ describe("useDbtProgram - the writers", () => {
     const { result } = renderHook(() => useDbtProgram("user-1"));
     act(() => result.current.replayProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         dbtProgramStartedAt: expect.any(String),
         dbtProgramPromptDismissedAt: null,
@@ -194,12 +194,12 @@ describe("useDbtProgram - the writers", () => {
     );
     // ☠️ ADR-0012: replaying is a new run, not a retraction of the one that
     // finished. This is the half of #2386 that was fixed rather than refused.
-    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
+    expect(mutate.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
   });
 
   it("advancePhase increments the phase and stamps a new phase start, mid-programme", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences({
       dbtProgramStartedAt: STARTED_AT,
       dbtProgramPhaseIndex: 0,
@@ -209,18 +209,18 @@ describe("useDbtProgram - the writers", () => {
     const { result } = renderHook(() => useDbtProgram("user-1"));
     act(() => result.current.advancePhase());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         dbtProgramPhaseIndex: 1,
         dbtProgramPhaseStartedAt: expect.any(String),
       }),
     );
-    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
+    expect(mutate.mock.calls[0][0]).not.toHaveProperty("dbtProgramCompletedAt");
   });
 
   it("advancePhase on the last phase writes only the completion", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences({
       dbtProgramStartedAt: STARTED_AT,
       dbtProgramPhaseIndex: 3,
@@ -230,7 +230,7 @@ describe("useDbtProgram - the writers", () => {
     const { result } = renderHook(() => useDbtProgram("user-1"));
     act(() => result.current.advancePhase());
 
-    const payload = mutateAsync.mock.calls[0][0];
+    const payload = mutate.mock.calls[0][0];
     expect(payload).toEqual(expect.objectContaining({ dbtProgramCompletedAt: expect.any(String) }));
     // ☠️ This is what makes `completedAt >= startedAt` exact rather than a
     // heuristic: graduating writes the completion and NEVER touches
@@ -240,26 +240,26 @@ describe("useDbtProgram - the writers", () => {
   });
 
   it("dismisses and restores the start prompt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     withPreferences();
 
     const { result } = renderHook(() => useDbtProgram("user-1"));
 
     act(() => result.current.dismissProgramPrompt());
-    expect(mutateAsync).toHaveBeenLastCalledWith(
+    expect(mutate).toHaveBeenLastCalledWith(
       expect.objectContaining({ dbtProgramPromptDismissedAt: expect.any(String) }),
     );
 
     act(() => result.current.showProgramPrompt());
-    expect(mutateAsync).toHaveBeenLastCalledWith(
+    expect(mutate).toHaveBeenLastCalledWith(
       expect.objectContaining({ dbtProgramPromptDismissedAt: null }),
     );
   });
 
   it("writes nothing at all when preferences have not loaded", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     mockUseUserPreferences.mockReturnValue({
       data: undefined,
       isLoading: true,
@@ -272,14 +272,14 @@ describe("useDbtProgram - the writers", () => {
     act(() => result.current.replayProgram());
     act(() => result.current.advancePhase());
 
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
   });
 });
 
 describe("useDbtProgram - the derived status", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    setupBaseMocks(jest.fn().mockResolvedValue(undefined));
+    setupBaseMocks(jest.fn());
   });
 
   it("is graduated while the completion belongs to the current run", () => {

@@ -1,6 +1,20 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
+import {
+  ACT_PROGRAM_KEYS,
+  CBT_PROGRAM_KEYS,
+  DBT_PROGRAM_KEYS,
+  abandonProgramPatch,
+  advancePhasePatch,
+  dismissGraduationPatch,
+  dismissProgramPromptPatch,
+  replayProgramPatch,
+  showProgramPromptPatch,
+  startProgramPatch,
+  type ProgramPreferenceKeys,
+} from "@/src/features/modules/program-patches";
+
 const ROOT = join(__dirname, "..");
 const SRC = join(ROOT, "src");
 const APP = join(ROOT, "app");
@@ -17,10 +31,11 @@ const APP = join(ROOT, "app");
  * the module, and no report can tell them apart afterwards.
  *
  * ⚠️ **It exists today by omission, not by design** — `abandonProgram` simply
- * never cleared it. An omission is exactly what a tidy-up removes: the three
- * abandon bodies null `started_at` right beside it, and "finish the job" is the
- * obvious-looking edit. This guard is what makes the omission a contract, and
- * the ADR says in as many words that without it the ruling is a comment.
+ * never cleared it. An omission is exactly what a tidy-up removes: the abandon
+ * payload (`abandonProgramPatch` since #2810) nulls `started_at` right beside
+ * it, and "finish the job" is the obvious-looking edit. This guard is what
+ * makes the omission a contract, and the ADR says in as many words that
+ * without it the ruling is a comment.
  *
  * ⚠️ A behavioural test over the three hooks would pin only the writers that
  * exist today. This is a source-level scan of every file the app ships, so a
@@ -110,34 +125,53 @@ describe("the programme fossil is a contract, not an accident", () => {
   });
 
   /**
-   * The positive half: the three abandon bodies null `started_at` and leave the
-   * fossil standing. The scan above proves nothing clears it; this proves the
-   * abandon path is still the thing that creates it.
+   * The positive half: abandoning nulls `started_at` and leaves the fossil
+   * standing. The scan above proves nothing ELSE clears the column; since
+   * #2810 the three hooks build every payload through the shared
+   * `program-patches.ts` builders, so the one writer is pinned here as data.
+   *
+   * ⚠️ `toEqual` on the whole patch, not `toHaveProperty` per column: the
+   * builders assemble payloads from computed keys the regex sweep above cannot
+   * see, so an added `phaseStartedAt: null` inside a builder would slip a
+   * property-by-property check that forgot to list it. An exact shape cannot
+   * be widened silently.
    */
-  it("still has all three abandon paths nulling the start and nothing else", () => {
-    for (const module of ["cbt", "act", "dbt"] as const) {
-      const source = readFileSync(
-        join(SRC, "features", module, `use-${module}-program.ts`),
-        "utf8",
-      );
-      const abandon = source.slice(source.indexOf("const abandonProgram"));
-      // ⚠️ Comments stripped first. Each abandon body NAMES the columns it
-      // deliberately leaves alone, so matching raw source here would read the
-      // explanation as the thing it warns against.
-      const body = abandon
-        .slice(0, abandon.indexOf("};"))
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("//"))
-        .join("\n");
+  const PROGRAM_KEYS: [string, ProgramPreferenceKeys][] = [
+    ["cbt", CBT_PROGRAM_KEYS],
+    ["act", ACT_PROGRAM_KEYS],
+    ["dbt", DBT_PROGRAM_KEYS],
+  ];
+  const NOW = "2026-09-29T00:00:00.000Z";
 
-      // A write is the identifier followed by a colon; a mention is not.
-      const writes = (column: string) => new RegExp(`${module}Program${column}\\s*:`);
+  it.each(PROGRAM_KEYS)(
+    "%s: abandon nulls the start, hides the prompt, and writes nothing else",
+    (_module, keys) => {
+      expect(abandonProgramPatch(keys, NOW)).toEqual({
+        [keys.startedAt]: null,
+        [keys.promptDismissedAt]: NOW,
+        // Absent on purpose, and the absences ARE the contract: `phaseIndex`
+        // and `phaseStartedAt` are the fossil, `completedAt` is the finish
+        // that leaving must not erase (ADR-0012).
+      });
+    },
+  );
 
-      expect(body).toMatch(new RegExp(`${module}ProgramStartedAt\\s*:\\s*null`));
-      expect(body).not.toMatch(writes("PhaseStartedAt"));
-      expect(body).not.toMatch(writes("PhaseIndex"));
-      // ADR-0012 again: leaving must not erase that you once finished either.
-      expect(body).not.toMatch(writes("CompletedAt"));
+  it.each(PROGRAM_KEYS)("%s: no patch builder ever nulls the fossil", (_module, keys) => {
+    const patches = [
+      startProgramPatch(keys, NOW),
+      replayProgramPatch(keys, NOW),
+      dismissProgramPromptPatch(keys, NOW),
+      showProgramPromptPatch(keys),
+      abandonProgramPatch(keys, NOW),
+      dismissGraduationPatch(keys, NOW),
+      advancePhasePatch(keys, 0, 5, NOW),
+      advancePhasePatch(keys, 4, 5, NOW),
+    ];
+
+    for (const patch of patches) {
+      if (keys.phaseStartedAt in patch) {
+        expect(patch[keys.phaseStartedAt]).not.toBeNull();
+      }
     }
   });
 });
