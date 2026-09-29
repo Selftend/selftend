@@ -6,11 +6,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/tools/check-in/new";
 
 jest.mock("expo-router", () => ({
-  router: { replace: jest.fn(), push: jest.fn() },
+  router: { replace: jest.fn(), push: jest.fn(), dismissTo: jest.fn() },
   usePathname: () => mockPathname,
 }));
 
-const { router } = jest.requireMock("expo-router") as { router: { replace: jest.Mock } };
+const { router } = jest.requireMock("expo-router") as { router: { dismissTo: jest.Mock } };
 
 describe("ScreenTopBar", () => {
   beforeEach(() => {
@@ -63,8 +63,8 @@ describe("ScreenTopBar", () => {
 
     fireEvent.press(screen.getByLabelText("Close"));
 
-    // `replace`, not `push`: climbing the hierarchy must not stack another entry.
-    expect(router.replace).toHaveBeenCalledWith("/tools/check-in");
+    // `dismissTo`, not `push`: climbing the hierarchy must not stack another entry.
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/check-in");
   });
 
   // G1 (#1250): exactly one Escape, rendered unconditionally.

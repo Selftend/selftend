@@ -14,7 +14,7 @@ let mockPathname = "/legal";
 jest.mock("expo-router", () => ({
   // The site footer on every policy page is made of LinkButtons (#2467).
   Link: require("@/test/expo-router-link-mock").MockLink,
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: () => mockPathname,
   // The privacy page's cross-links are anchors (#2476): the mock forwards the
 }));
@@ -108,7 +108,7 @@ describe("policy cross-links record the page they were left from", () => {
 
     expect(screen.getByText("Legal")).toBeTruthy();
     fireEvent.press(screen.getByLabelText("Back to Legal"));
-    expect(router.replace).toHaveBeenCalledWith("/legal");
+    expect(router.dismissTo).toHaveBeenCalledWith("/legal");
   });
 
   /**
@@ -128,6 +128,6 @@ describe("policy cross-links record the page they were left from", () => {
     renderWithProviders(<ScreenEscape />);
 
     fireEvent.press(screen.getByLabelText("Go back"));
-    expect(router.replace).toHaveBeenCalledWith("/security");
+    expect(router.dismissTo).toHaveBeenCalledWith("/security");
   });
 });
