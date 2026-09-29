@@ -30,6 +30,11 @@ describe("HabitsLearnIndexScreen", () => {
     // One card row per entry in the source-of-truth list, plus the breadcrumb
     // back button (#495).
     expect(screen.getAllByRole("button")).toHaveLength(HABITS_LEARN_CARDS.length + 1);
+    // #2807: the framework is named as Atomic Habits' framework wherever the
+    // cards render - the shared body carries the line for this index too.
+    expect(
+      screen.getByText("These cards summarise ideas from James Clear's Atomic Habits."),
+    ).toBeTruthy();
   });
 
   it("navigates to the article when a card is pressed", () => {
@@ -49,10 +54,15 @@ describe("HabitsLearnDetailScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the article", () => {
+  it("renders the article with its source line", () => {
     renderWithProviders(<HabitsLearnDetailScreen slug="two-minute-rule" />);
 
     expect(screen.getByRole("heading", { name: "The two-minute rule" })).toBeTruthy();
+    // #2807: the article bodies are where the near-verbatim sentences sit, so
+    // the attribution stands beside each one, not only on the index.
+    expect(
+      screen.getByText("These cards summarise ideas from James Clear's Atomic Habits."),
+    ).toBeTruthy();
   });
 
   it("falls back to the index for an unknown slug", () => {

@@ -144,7 +144,7 @@ This module follows the contract in `tools.md`:
 - Route group: `/modules/gratitude/*` (see §6). Existing `/tools/gratitude-log/*` routes become compatibility redirects.
 - New `user_preferences` fields:
   - `gratitudeOnboardingCompleted: boolean` (default `false`)
-- No reminder fields - reminders remain out of scope for this module.
+- Reminder fields shipped later through the shared reminders system (`docs/reminders.md`): the `gratitude` target in `src/features/notifications/registry.ts` reads `gratitudeRemindersEnabled` / `gratitudeReminderHour` / `gratitudeReminderMinute` / `gratitudeReminderTimezone`, off by default (default slot 20:00).
 - Settings does not reset a gratitude onboarding flag. The current client opens the introduction explicitly; the legacy column remains temporarily for compatibility with supported mobile builds.
 
 ---
@@ -218,7 +218,7 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 
 ## 9. Non-Goals
 
-- Push reminders or daily notifications.
+- Push reminders or daily notifications (as specified; an opt-in daily reminder later shipped through the shared reminders system - `docs/reminders.md`. Default-on reminders remain a non-goal).
 - Streaks, badges, progress bars, or missed-day language.
 - AI prompts, sentiment analysis, or recommendations.
 - Social sharing, public posting, or peer interaction.
