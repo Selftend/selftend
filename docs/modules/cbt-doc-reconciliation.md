@@ -1,8 +1,11 @@
 # CBT Doc Reconciliation — `cbt.md` vs `cbt-gillihan-made-simple.md`
 
-**Status:** Recommendation (drafted) — the `cbt.md` edits recommended below are still
-un-applied. The one exception is "Where shipped copy deliberately diverges from the
-spec", appended later as a live record of decisions that have shipped.
+**Status:** Applied — the `cbt.md` edits recommended below landed on 2026-09-29
+([#2813](https://github.com/Selftend/selftend/issues/2813), owner-approved on
+[#2781](https://github.com/Selftend/selftend/issues/2781)): the retitle + pointer
+block, the "Known deltas" section, and the `/modules/cbt/saved/[id]` route entry.
+"Where shipped copy deliberately diverges from the spec" was appended earlier as a
+live record of decisions that have shipped.
 **Author:** doc-reconciliation follow-up
 **Date:** 2026-07-11 (divergence record appended 2026-08-21)
 

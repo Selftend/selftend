@@ -1,4 +1,12 @@
-# CBT Module Spec
+# CBT Module — As-Built Reference
+
+> **Doc role:** This documents the CBT module **as currently implemented**
+> (routes, data shape, flows). For the canonical product/design target — the
+> 10-strategy Gillihan "Think-Act-Be" model — see
+> [`cbt-gillihan-made-simple.md`](./cbt-gillihan-made-simple.md).
+> Where the two differ, this file describes what ships **today**; the Gillihan
+> spec describes where the module is **headed**. Known deltas are listed at the
+> bottom of this file.
 
 ## Purpose
 
@@ -144,6 +152,7 @@ Key CBT screens (under the protected app shell at `/modules/cbt`):
 - `/modules/cbt`
 - `/modules/cbt/learn`
 - `/modules/cbt/new`
+- `/modules/cbt/saved/[id]` (backs the post-save confirmation screen)
 - `/modules/cbt/history`, `/modules/cbt/history/[id]`
 - `/modules/cbt/goals`, `/modules/cbt/goals/new`, `/modules/cbt/goals/[id]`
 - `/modules/cbt/activities`, `/modules/cbt/activities/new`, `/modules/cbt/activities/[id]`
@@ -177,3 +186,20 @@ This module is only ready to widen after:
 - reminder defaults stay quiet
 - accessibility baseline is acceptable
 - tests cover the core logic and validation
+
+## Known deltas vs the canonical Gillihan spec
+
+These are intentional/known differences between what ships today and
+`cbt-gillihan-made-simple.md`. Reconcile deliberately, not by editing docs to match.
+
+- Thought record: implemented as an 8-step flow with negative automatic thoughts
+  (per-thought belief rating + hot-thought marking) and array-typed evidence
+  (`evidenceFor[]` / `evidenceAgainst[]`). The spec's Strategy 3 describes a 5-step
+  flow with a single `automaticThought` string and string-typed evidence.
+- Mood tool uses a CBT-column shape (situation / thoughts / behaviours / bodily
+  sensations) at `/tools/check-in`, not the spec's `moodScore` 1-10 model.
+- Program scaffold is a 5-phase model (assessment → formulation → thinking →
+  behavioural → resilience), not the spec's Week 1 / 2-4 / 4-8 / 8-12 milestones.
+- Onboarding concern→strategy assessment, strategy recommendation, distortion
+  pre-selection, and auto pattern-detection (spec §10, §4) are not yet surfaced;
+  the personalization scaffolding is retained but dormant.

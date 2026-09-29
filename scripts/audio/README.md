@@ -270,8 +270,16 @@ machine, per #1159:
   from its master directly.
 
 ☠️ Everything seedless — two bells, three Sound Effects beds, three library WAVs
-— is one `Downloads` cleanup from gone. The three noises come from
-`synth-noise.mjs` and `SYNTH_SEED`, and the voices are re-renderable.
+— **was** one `Downloads` cleanup from gone. Since 2026-09-28 a byte-verified
+second copy lives at `C:\Users\vasil\My Drive\Selftend\audio-masters\` —
+`round-A\` (all 8 Round A bell files: the 4 takes plus their mp3 siblings),
+`round-B\` (the full 123-file, 455 MB mirror, `manifest.jsonl` and
+`choices.jsonl` included) and `library-0830\` (the 18-file library mirror) —
+which the Drive client syncs off this machine. **Copied, not moved: `Downloads`
+stays the canonical location per the #1159 ruling**, and the copy was verified
+file-count- and byte-total-identical, with the shipped bell's master compared
+byte-for-byte. The three noises still come from `synth-noise.mjs` and
+`SYNTH_SEED`, and the voices are re-renderable.
 
 Regenerating the committed file truthfully was the other route on #1702 and was
 not taken. It needs the 455 MB copied into `audio-masters/round-B/`, an
