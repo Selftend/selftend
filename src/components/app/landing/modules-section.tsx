@@ -8,16 +8,21 @@ import { modulesAreBeta } from "@/src/lib/module-visibility";
 import { cn } from "@/lib/utils";
 
 /**
- * The two guided modules. They used to arrive on the landing page each in its
- * own tinted card - CBT violet, ACT green - explicitly so that the signed-out
- * page carried the same module identity the signed-in app did.
+ * The guided modules. CBT and ACT used to arrive on the landing page each in
+ * its own tinted card - CBT violet, ACT green - explicitly so that the
+ * signed-out page carried the same module identity the signed-in app did.
  *
- * It still does; the identity just stopped being a colour (#587). Both cards are
- * the same neutral card now, and what tells CBT from ACT here is what tells them
- * apart inside the app: a different glyph, a different kicker, a different name.
- * Leaving the landing page hued would have been the loudest possible
- * inconsistency - it is the first screen anyone sees, and every screen behind it
- * is neutral.
+ * It still does; the identity just stopped being a colour (#587). Every card is
+ * the same neutral card now, and what tells the modules apart here is what
+ * tells them apart inside the app: a different glyph, a different kicker, a
+ * different name. Leaving the landing page hued would have been the loudest
+ * possible inconsistency - it is the first screen anyone sees, and every screen
+ * behind it is neutral.
+ *
+ * The DBT card arrived last (#2808): the section predates DBT's shipping
+ * (v0.18.0) and went on advertising two of the product's three modules. Its
+ * glyph is the one the app already binds to DBT (the reminders registry's
+ * `balance`).
  */
 export function ModulesSection() {
   const { t } = useTranslation("auth");
@@ -46,6 +51,13 @@ export function ModulesSection() {
         kicker={t("landingPage.actKicker")}
         title={t("landingPage.actTitle")}
         body={t("landingPage.actBody")}
+        beta={t("landingPage.moduleBeta")}
+      />
+      <ModuleCard
+        icon="balance"
+        kicker={t("landingPage.dbtKicker")}
+        title={t("landingPage.dbtTitle")}
+        body={t("landingPage.dbtBody")}
         beta={t("landingPage.moduleBeta")}
       />
     </View>
