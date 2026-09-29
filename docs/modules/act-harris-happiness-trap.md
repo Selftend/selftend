@@ -91,19 +91,19 @@ Audit of the second-edition tools against the implemented module (`src/features/
 
 | Tool (book ch.)                                        | Status  | Disposition                                               |
 | ------------------------------------------------------ | ------- | --------------------------------------------------------- |
-| Choice Point - toward/away, hooks, OBEY/STRUGGLE (2)   | Missing | Add primer + fillable map (`act_choice_points`)           |
+| Choice Point - toward/away, hooks, OBEY/STRUGGLE (2)   | Have    | `act_choice_points` map + primer                          |
 | Happiness-trap myths (1, 3)                            | Partial | Reframe onboarding to 2nd-ed wording                      |
 | Creative hopelessness - tried / worked? / cost? (3, 4) | Missing | Add 3-prompt reflection in onboarding + revisitable entry |
 
 ### Be Present
 
-| Tool (book ch.)                             | Status  | Disposition                                             |
-| ------------------------------------------- | ------- | ------------------------------------------------------- |
-| Drop Anchor / **ACE** (5)                   | Missing | Add `dropAnchor` connection technique + guided ACE flow |
-| Noticing env / body / breath / sounds (16)  | Have    | `connection: noticeFiveThings, mindfulActivity`         |
-| Ten slow breaths (9)                        | Have    | `tenDeepBreaths`                                        |
-| Reinhabiting the body / body scan (17)      | Partial | Add `bodyScan`; link to meditation tools                |
-| Observing/Noticing Self, chessboard (9, 19) | Have    | `observing-self: observingFromBoard`                    |
+| Tool (book ch.)                             | Status | Disposition                                              |
+| ------------------------------------------- | ------ | -------------------------------------------------------- |
+| Drop Anchor / **ACE** (5)                   | Have   | `connection: dropAnchor`                                 |
+| Noticing env / body / breath / sounds (16)  | Have   | `connection: noticeFiveThings, mindfulActivity`          |
+| Ten slow breaths (9)                        | Have   | `tenDeepBreaths`                                         |
+| Reinhabiting the body / body scan (17)      | Have   | `connection: bodyScan`; meditation linked as shared tool |
+| Observing/Noticing Self, chessboard (9, 19) | Have   | `observing-self: observingFromBoard`                     |
 
 ### Open Up
 

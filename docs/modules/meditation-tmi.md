@@ -403,10 +403,10 @@ type TmiTechnique =
   | "effortlessness";
 ```
 
-### Tables (planned, not yet migrated)
+### Tables (shipped in `supabase/migrations/20260526_meditation_tmi.sql`)
 
 - `meditation_program_state` - one row per user; primary key `user_id`.
-- `meditation_sessions` - extended with `stage_at_session`, `mind_wandering_episodes`, `dullness_level`, `distraction_level`, `obstacle_tags TEXT[]`, `reflection`, `mood_after`, `technique_used`. Existing rows backfill `stage_at_session` to 1.
+- `meditation_sessions` - extended with `stage_at_session`, `mind_wandering_episodes`, `dullness_level`, `distraction_level`, `obstacle_tags TEXT[]`, `reflection`, `mood_after`, `technique_used`. Existing rows backfilled `stage_at_session` to 1.
 - `stage_practice_notes` - optional long-form notes tied to a Stage.
 
 All tables RLS owner-only, mirroring CBT.
