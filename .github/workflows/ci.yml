@@ -30,6 +30,41 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # ── Deno lane (#2812) ──────────────────────────────────────────────────
+      # The edge functions are the one corner of the repo `npm run verify`
+      # cannot see: eslint ignores `supabase/functions/**`, tsconfig excludes
+      # it, and the integration job starts Supabase with `-x edge-runtime` — so
+      # before this lane, the first type check of a function happened at
+      # `supabase functions deploy`, after merge.
+      #
+      # `deno check` walks every function entry point (the `*/index.ts` glob
+      # picks up a third function automatically) and everything it imports,
+      # including the reaches back into src/ (locale JSON,
+      # `reminder-rollout.ts`) — a React Native import smuggled into that
+      # shared file now goes red here instead of at deploy. The
+      # `_shared/*.test.ts` files are JEST tests (they resolve `@/` through the
+      # app toolchain), so `deno check` never sees them; `deno lint` still
+      # covers them.
+      #
+      # `--config` is explicit because Deno discovers config from the CWD, and
+      # at the repo root it finds tsconfig.json (React Native jsx options Deno
+      # rejects). That config also switches off `no-import-prefix`: inline
+      # `npm:` specifiers are the Supabase-idiomatic import style, and moving
+      # them into an import map would change deploy-time resolution — a
+      # separate decision from getting coverage at all.
+      - name: Set up Deno
+        # Version pinned like the Supabase CLI below (#264): a floating
+        # version lets CI go red with nothing in the diff to explain it.
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.3
+
+      - name: Type-check edge functions
+        run: deno check --config supabase/functions/deno.json supabase/functions/*/index.ts
+
+      - name: Lint edge functions
+        run: deno lint --config supabase/functions/deno.json supabase/functions/
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22.23.1
