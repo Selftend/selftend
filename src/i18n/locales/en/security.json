@@ -39,12 +39,12 @@
       {
         "title": "You're in control",
         "body": [
-          "You can export all your data as a JSON file at any time from Settings → Account.",
+          "You can export all your data as a JSON file at any time from Settings → Your data.",
           "You can permanently delete your account and all associated data from Settings → Account. Deletion takes effect immediately on our live systems and is irreversible."
         ]
       },
       {
-        "title": "Can anyone at Self-tend read my entries?",
+        "title": "Can anyone at Selftend read my entries?",
         "body": [
           "No - not in ordinary operation. We do not read your records except to fulfil a verified privacy request, investigate a security incident, or satisfy a legal obligation.",
           "See the full Privacy Policy for the complete picture."
