@@ -240,9 +240,7 @@ describe("useCbtProgram - advancePhase", () => {
         cbtProgramCompletedAt: expect.any(String),
       }),
     );
-    expect(mutate).not.toHaveBeenCalledWith(
-      expect.objectContaining({ cbtProgramPhaseIndex: 5 }),
-    );
+    expect(mutate).not.toHaveBeenCalledWith(expect.objectContaining({ cbtProgramPhaseIndex: 5 }));
   });
 
   it("startProgram sets cbtProgramPhaseIndex: 0 and cbtProgramPhaseStartedAt", () => {
