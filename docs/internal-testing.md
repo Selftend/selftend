@@ -22,7 +22,7 @@ Production iOS bundle identifier: org.vasilyoshev.selftend
 Production native scheme: selftend
 ```
 
-For Google Play closed testing, use the `production` profile to create an Android App Bundle. iOS TestFlight/App Store work is deferred out of the current launch path until Apple Developer Program funding or legal organization/nonprofit enrollment is realistic. The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
+For Google Play closed testing, use the `production` profile to create an Android App Bundle. iOS goes through the same release path: the Apple Developer Program enrolment is done and the app is live on the App Store since 0.21.0 (see the iOS TestFlight note below). The `preview` and `production` profiles use matching EAS environments and fail at app-config evaluation if `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is missing.
 
 Manual GitHub Actions workflows are available for maintainer-triggered releases from `main`:
 
@@ -33,7 +33,7 @@ These workflows are manual by design. CI still validates pushes and pull request
 
 ## Minimum internal verification before widening scope
 
-New accounts receive the Home recommendation wizard once after consent. Finishing applies only the reviewed widgets; skipping leaves Home empty. An empty Home offers manual addition and suggestions, while resetting educational onboarding in Settings does not replace an existing widget layout.
+Home needs no per-account setup to verify: the recommendation wizard and its reviewed-widget layout were removed, and every account gets the same Home surface (greeting, Favourites, Tools, Modules).
 
 ### Auth
 
@@ -176,13 +176,13 @@ Before publishing a preview or production build to testers:
 
 The release scripts are no longer omitted: `ios-release.yml` exists and is wired into the release orchestrator. It stays **inert** behind the `IOS_RELEASE_ENABLED` variable, so no release reaches Apple and no Apple service is contacted while that variable is unset.
 
-What remains before iOS builds flow is the one-time Apple setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — App Store Connect app record, ASC API key, one **interactive** `eas credentials` run to mint the distribution certificate (CI cannot do this), then the variables. Note that the `submit.production.ios` profile is deliberately **absent** from `eas.json`: the workflow writes `ascAppId` and `appleTeamId` in at submit time, because eas-cli does not interpolate those two fields from the environment.
+iOS builds flow: the one-time Apple setup in [`docs/releasing.md`](releasing.md#one-time-apple-setup-before-flipping-the-switch) — App Store Connect app record, ASC API key, the **interactive** `eas credentials` run to mint the distribution certificate, then the variables — is complete, and that section stands as its historical runbook. Note that the `submit.production.ios` profile is deliberately **absent** from `eas.json`: the workflow writes `ascAppId` and `appleTeamId` in at submit time, because eas-cli does not interpolate those two fields from the environment.
 
 TestFlight distribution here is **internal testers only**. External testing needs Beta App Review, which engages Guideline 4.8 against the app's Google sign-in, and is out of scope until that is resolved.
 
-## Store-readiness note
+## Store-readiness note (historical - the app is in store production)
 
-Do not widen closed testing or move to store production yet. Finish:
+Pre-launch note, kept as the record of what the first store release waited on. The app has since moved to store production on both stores (App Store live on 0.21.0). What the release finished first:
 
 - production public route smoke testing
 - CSP verification against the real Expo web build
@@ -194,6 +194,6 @@ Do not widen closed testing or move to store production yet. Finish:
 - internal device testing
 - icon/screenshot/store copy polish
 
-Web push VAPID keys, Edge Function secrets, cron scheduling, and cross-browser web-push verification are deferred reminder infrastructure. They do not block the first public web test.
+Web push VAPID keys, Edge Function secrets, and cron scheduling were deferred reminder infrastructure at the time; they have since shipped (`supabase/functions/send-web-reminders`, `supabase/migrations/20260508000000_web_push_notifications.sql`).
 
 See [deployment.md](deployment.md), [self-hosting.md](self-hosting.md), [android-closed-testing.md](android-closed-testing.md), and [policies.md](policies.md) for launch-specific checklists.
