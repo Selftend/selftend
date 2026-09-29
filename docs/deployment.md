@@ -245,6 +245,8 @@ Two things to keep straight after that change:
 
 If profile photo upload or Google photo restore reports success in production but the image does not render, verify the deployed `img-src` directive first.
 
+`connect-src` names every backend the web bundle talks to: `'self'`, `https://*.supabase.co` (the API), `https://accounts.google.com` (Google sign-in), and `https://o4511690053386240.ingest.de.sentry.io` — the Sentry DSN's exact ingest host, deliberately not a `*.sentry.io` wildcard, since anything wider would let injected code report into an attacker's Sentry org. The host was missing until [#2804](https://github.com/Selftend/selftend/issues/2804): the browser refused every error envelope from production web at exactly the moment an error occurred, so web errors never reached Sentry at all. If the Sentry DSN ever moves org or region, this host moves with it; [web-headers.test.ts](../web-headers.test.ts) pins the `connect-src` token set so drift fails CI instead of silently re-blinding web error reporting.
+
 ### Caching
 
 Two directories hold content-hashed build output, and both are cached for a year as `immutable`:
