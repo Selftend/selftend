@@ -10,7 +10,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 const beforeRemoveListeners: ((event: { preventDefault: () => void }) => void)[] = [];
 
 jest.mock("expo-router", () => ({
-  router: { replace: jest.fn() },
+  router: { replace: jest.fn(), dismissTo: jest.fn() },
   useNavigation: () => ({
     addListener: (name: string, listener: (event: { preventDefault: () => void }) => void) => {
       if (name === "beforeRemove") beforeRemoveListeners.push(listener);
@@ -99,7 +99,7 @@ describe("GroundingFlow", () => {
         expect.objectContaining({ stepsCompleted: 1, stepsTotal: 4 }),
       ),
     );
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
+    await waitFor(() => expect(router.dismissTo).toHaveBeenCalledWith("/tools/grounding"));
     expect(queryByText("Grounding complete")).toBeNull();
   });
 
@@ -119,7 +119,7 @@ describe("GroundingFlow", () => {
       ),
     );
     await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
-    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.dismissTo).not.toHaveBeenCalled();
   });
 
   it("saves the furthest reached step after navigating back within the session", async () => {
@@ -172,7 +172,7 @@ describe("GroundingFlow", () => {
     expect(getByText("Cold water · 1 min · saved to your history")).toBeTruthy();
 
     fireEvent.press(getByText("Done"));
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
+    await waitFor(() => expect(router.dismissTo).toHaveBeenCalledWith("/tools/grounding"));
   });
 
   it("offers a second, quieter path back to the technique picker", async () => {
@@ -184,7 +184,7 @@ describe("GroundingFlow", () => {
     await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
 
     fireEvent.press(getByText("Run another technique"));
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
+    await waitFor(() => expect(router.dismissTo).toHaveBeenCalledWith("/tools/grounding"));
   });
 
   it("lets a back exit through once the session is done", async () => {
@@ -201,10 +201,10 @@ describe("GroundingFlow", () => {
 
   // R1 (#1256): the shell hosts the Escape, so both phases carry exactly one —
   // never zero (the pre-#1256 state) and never two. In the running app it
-  // leaves through `router.replace`, which the flow's beforeRemove guard
-  // intercepts mid-session exactly like an OS back exit; that interplay lives
-  // in the navigator and is out of a unit test's reach, so what is pinned here
-  // is the affordance itself.
+  // leaves through `router.dismissTo`, which the flow's beforeRemove guard
+  // intercepts mid-session exactly like an OS back exit; that interplay needs a
+  // real navigator and is pinned in `test/escape-session-guard.test.tsx`, so
+  // what is pinned here is the affordance itself.
   it("carries exactly one Escape on the session and done phases", async () => {
     const { getAllByTestId, getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
     expect(getAllByTestId("screen-escape")).toHaveLength(1);

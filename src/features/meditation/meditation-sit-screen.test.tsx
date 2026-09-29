@@ -34,7 +34,12 @@ const focusHandle: { callback: (() => void | (() => void)) | null; cleanup: (() 
 jest.mock("expo-router", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
   return {
-    router: { replace: jest.fn(), push: jest.fn(), canGoBack: jest.fn(() => false) },
+    router: {
+      replace: jest.fn(),
+      dismissTo: jest.fn(),
+      push: jest.fn(),
+      canGoBack: jest.fn(() => false),
+    },
     useLocalSearchParams: () => mockParams,
     usePathname: () => "/tools/meditation/session",
     // Actually runs its callback, as focus does: the clock starts there, and
@@ -126,7 +131,9 @@ jest.mock("@/src/stores/toast-store", () => ({
     selector({ showToast: mockShowToast }),
 }));
 
-const { router } = jest.requireMock<{ router: { replace: jest.Mock } }>("expo-router");
+const { router } = jest.requireMock<{ router: { replace: jest.Mock; dismissTo: jest.Mock } }>(
+  "expo-router",
+);
 
 const START_AT = new Date("2026-08-11T10:00:00.000Z");
 
@@ -139,6 +146,7 @@ beforeEach(() => {
   mockProgramState.isError = false;
   beforeRemoveListeners.length = 0;
   router.replace.mockClear();
+  router.dismissTo.mockClear();
   mockPlayOneShot.mockClear();
   mockLane.play.mockClear();
   mockLane.setVolume.mockClear();
@@ -411,7 +419,7 @@ describe("Meditation sitting (7b)", () => {
     );
     // The user asked to leave: the recorded sit is honoured with an exit, not a
     // detour through the reflection they were leaving.
-    expect(router.replace).toHaveBeenCalledWith("/tools/meditation");
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/meditation");
   });
 
   it("holds a finished sit until the stage query settles, then saves the real stage", async () => {
@@ -485,7 +493,7 @@ describe("Meditation reflection (7b, after)", () => {
 
     expect(mockSaveMutateAsync).toHaveBeenCalledTimes(1);
     expect(mockUpdateMutateAsync).not.toHaveBeenCalled();
-    expect(router.replace).toHaveBeenCalledWith("/tools/meditation");
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/meditation");
   });
 
   it("saves the reflection as an update of the already-recorded row", async () => {
@@ -507,7 +515,7 @@ describe("Meditation reflection (7b, after)", () => {
         reflection: "Settled after the first bell.",
       },
     });
-    expect(router.replace).toHaveBeenCalledWith("/tools/meditation");
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/meditation");
   });
 
   it("offers exactly the five drawn pulls, as accent-ink chips", async () => {

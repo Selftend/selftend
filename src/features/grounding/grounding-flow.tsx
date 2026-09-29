@@ -66,7 +66,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
       });
       finishingRef.current = true;
       if (exit === "leave") {
-        router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);
+        router.dismissTo("/tools/grounding" as Parameters<typeof router.dismissTo>[0]);
         return;
       }
       setSavedMinutes(durationMinutes);
@@ -78,7 +78,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
   });
 
   /**
-   * The shell's Escape (#1256) leaves through `router.replace`, so it lands
+   * The shell's Escape (#1256) leaves through `router.dismissTo`, so it lands
    * here with the OS back gesture and the web back button — every uninvited
    * exit passes this guard. Mid-session they ask — never a silent
    * discard — and confirming saves, then actually leaves (#928; it used to
@@ -147,9 +147,11 @@ export function GroundingFlow({ slug }: { slug: string }) {
         <GroundingDone
           techniqueTitle={title}
           durationMinutes={savedMinutes}
-          onDone={() => router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])}
+          onDone={() =>
+            router.dismissTo("/tools/grounding" as Parameters<typeof router.dismissTo>[0])
+          }
           onRunAnother={() =>
-            router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])
+            router.dismissTo("/tools/grounding" as Parameters<typeof router.dismissTo>[0])
           }
         />
       )}
