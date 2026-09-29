@@ -56,10 +56,10 @@ const actQueryMocks = [
   useValueEntries,
 ] as jest.MockedFunction<typeof useDefusionLogs>[];
 
-function setupBaseMocks(mutateAsync: jest.Mock) {
+function setupBaseMocks(mutate: jest.Mock) {
   mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24" });
   mockUseUpdateUserPreferences.mockReturnValue({
-    mutateAsync,
+    mutate,
     isPending: false,
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
   for (const queryMock of actQueryMocks) {
@@ -73,8 +73,8 @@ describe("useActProgram - graduation dismissal", () => {
   });
 
   it("dismissGraduation persists a non-null actGraduationDismissedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences },
       isLoading: false,
@@ -83,14 +83,14 @@ describe("useActProgram - graduation dismissal", () => {
     const { result } = renderHook(() => useActProgram("user-1"));
     act(() => result.current.dismissGraduation());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ actGraduationDismissedAt: expect.any(String) }),
     );
   });
 
   it("exposes graduationDismissedAt from preferences", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences, actGraduationDismissedAt: "2026-05-20T00:00:00.000Z" },
       isLoading: false,
@@ -101,8 +101,8 @@ describe("useActProgram - graduation dismissal", () => {
   });
 
   it("startProgram clears actGraduationDismissedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     mockUseUserPreferences.mockReturnValue({
       data: { ...defaultUserPreferences, actGraduationDismissedAt: "2026-05-20T00:00:00.000Z" },
       isLoading: false,
@@ -111,14 +111,14 @@ describe("useActProgram - graduation dismissal", () => {
     const { result } = renderHook(() => useActProgram("user-1"));
     act(() => result.current.startProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ actGraduationDismissedAt: null }),
     );
   });
 
   it("replayProgram clears actGraduationDismissedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate);
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
@@ -132,7 +132,7 @@ describe("useActProgram - graduation dismissal", () => {
     const { result } = renderHook(() => useActProgram("user-1"));
     act(() => result.current.replayProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ actGraduationDismissedAt: null }),
     );
   });

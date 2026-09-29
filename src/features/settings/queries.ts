@@ -32,7 +32,23 @@ export function useUserPreferences(userId: string | null) {
   });
 }
 
-export function useUpdateUserPreferences(userId: string | null) {
+interface UpdateUserPreferencesOptions {
+  /**
+   * Whether to keep query-client's global save-failed toast quiet. Defaults to
+   * true because most callers either surface errors themselves (notification
+   * cards, meditation onboarding) or are documented best-effort writes that
+   * deliberately swallow them (sounds-sheet, settings-sync). ⚠️ A caller with
+   * NO error surface of its own must pass `false`, or a failed write rolls
+   * back with no message and no retry - which is exactly how the programme
+   * hooks shipped for months (#2810; `useProgramActions` passes `false`).
+   */
+  suppressGlobalErrorToast?: boolean;
+}
+
+export function useUpdateUserPreferences(
+  userId: string | null,
+  { suppressGlobalErrorToast = true }: UpdateUserPreferencesOptions = {},
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -41,10 +57,8 @@ export function useUpdateUserPreferences(userId: string | null) {
     // captured at mount). Optimistically merge the patch into the cached row so a
     // rapid follow-up save reads THIS value instead of the stale pre-save snapshot.
     // Roll back on error; reconcile with the server on success.
-    // Callers that surface errors (notification cards, meditation onboarding) show their own
-    // toast; callers that don't (sounds-sheet, settings-sync) intentionally swallow errors.
     mutationFn: (patch: Partial<UserPreferences>) => updateUserPreferences(userId!, patch),
-    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
+    meta: { suppressGlobalErrorToast },
     onMutate: async (patch: Partial<UserPreferences>) => {
       if (!userId) return {};
       await queryClient.cancelQueries({ queryKey: preferenceKeys.detail(userId) });
