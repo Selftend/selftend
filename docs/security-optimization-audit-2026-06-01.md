@@ -25,6 +25,13 @@ Fixed, by area:
 3. **Remove `expo-system-ui`** - Expo may autolink it natively; removal must be validated against a preview/dev EAS build.
 4. **`useCbtInsights` → Postgres RPC** - the heavy 10-query Home fan-out; the _mitigations_ (indexes + memoization + bounded queries + shared mood cache) are applied, but moving aggregation server-side is a larger refactor left for a dedicated change.
 
+**Dispositions (decided 2026-09-29 on [#2829](https://github.com/Selftend/selftend/issues/2829), map #2779):**
+
+1. Filed as [#2830](https://github.com/Selftend/selftend/issues/2830). Re-verified at 6.1 MB across 18 PNGs — the wizard's images had already left, shrinking the ~11 MB above.
+2. Filed as [#2831](https://github.com/Selftend/selftend/issues/2831). Re-verified **worse**: the five byte-identical copies had grown to eight, only `moodcheckin.png` referenced (`app.config.ts`).
+3. **Killed - not actually unused.** `app.config.ts` sets `userInterfaceStyle: "automatic"`, which requires `expo-system-ui` to be installed on Android; the package is config-load-bearing with zero JS imports, and removing it would silently lock Android to light mode. Keep it.
+4. Accepted debt, parked behind evidence: revisit only on a measured Home-dashboard performance finding (from the walk, a user-test sitting, or Sentry), per the feature-order ruling on [#2783](https://github.com/Selftend/selftend/issues/2783).
+
 ## Executive summary
 
 This audit covers **35 confirmed findings** across two domains.
