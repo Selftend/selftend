@@ -295,10 +295,10 @@ module.exports = [
       "node_modules/**",
       ".expo/**",
       "dist/**",
-      "dist-e2e/**",
-      // The e2e server writes a port-scoped export per non-default port (see
-      // scripts/e2e-web-server.js); .gitignore already ignores them.
-      "dist-e2e-*/**",
+      // dist-e2e/, the port-scoped dist-e2e-<port>/ exports (see
+      // scripts/e2e-web-server.js), and any ad-hoc dist-<name>/ export;
+      // .gitignore ignores the same pattern.
+      "dist-*/**",
       "build/**",
       "build-artifacts/**",
       "web-build/**",
