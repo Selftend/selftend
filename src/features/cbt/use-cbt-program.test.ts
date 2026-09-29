@@ -139,11 +139,11 @@ const allCompleteData = {
   recoveryPlan: { updatedAt: AFTER, personalSlogan: "Onward" },
 };
 
-function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
+function setupBaseMocks(mutate: jest.Mock, isPending = false) {
   mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY });
 
   mockUseUpdateUserPreferences.mockReturnValue({
-    mutateAsync,
+    mutate,
     isPending,
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
 
@@ -185,8 +185,8 @@ describe("useCbtProgram - advancePhase", () => {
   });
 
   it("advancePhase when not on last phase increments cbtProgramPhaseIndex and sets cbtProgramPhaseStartedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -203,21 +203,21 @@ describe("useCbtProgram - advancePhase", () => {
 
     act(() => result.current.advancePhase());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramPhaseIndex: 1,
         cbtProgramPhaseStartedAt: expect.any(String),
       }),
     );
     // Should NOT set completedAt
-    expect(mutateAsync).not.toHaveBeenCalledWith(
+    expect(mutate).not.toHaveBeenCalledWith(
       expect.objectContaining({ cbtProgramCompletedAt: expect.any(String) }),
     );
   });
 
   it("advancePhase on the last phase sets cbtProgramCompletedAt instead of incrementing", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     // Last phase index = totalPhases - 1 = 4 (CBT_PROGRAM has 5 entries)
     mockUseUserPreferences.mockReturnValue({
@@ -235,19 +235,19 @@ describe("useCbtProgram - advancePhase", () => {
 
     act(() => result.current.advancePhase());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramCompletedAt: expect.any(String),
       }),
     );
-    expect(mutateAsync).not.toHaveBeenCalledWith(
+    expect(mutate).not.toHaveBeenCalledWith(
       expect.objectContaining({ cbtProgramPhaseIndex: 5 }),
     );
   });
 
   it("startProgram sets cbtProgramPhaseIndex: 0 and cbtProgramPhaseStartedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -261,7 +261,7 @@ describe("useCbtProgram - advancePhase", () => {
 
     act(() => result.current.startProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramPromptDismissedAt: null,
         cbtProgramStartedAt: expect.any(String),
@@ -274,12 +274,12 @@ describe("useCbtProgram - advancePhase", () => {
     // finished - the fresh `startedAt` retires the old completion by itself. The
     // key's ABSENCE is the contract, so assert that rather than dropping the
     // assertion.
-    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
+    expect(mutate.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
   });
 
   it("replayProgram resets cbtProgramPhaseIndex to 0 and sets cbtProgramPhaseStartedAt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -296,7 +296,7 @@ describe("useCbtProgram - advancePhase", () => {
 
     act(() => result.current.replayProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramStartedAt: expect.any(String),
         cbtProgramPromptDismissedAt: null,
@@ -308,7 +308,7 @@ describe("useCbtProgram - advancePhase", () => {
     // that replaying clears `completedAt` - the exact behaviour #2386 filed as a
     // defect, since a graduate who replayed stopped counting as having finished.
     // Replaying is a new run, not a retraction of the one that finished.
-    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
+    expect(mutate.mock.calls[0][0]).not.toHaveProperty("cbtProgramCompletedAt");
   });
 });
 
@@ -318,8 +318,8 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
   });
 
   it("dismisses and restores the start-program prompt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -331,14 +331,14 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
     const { result } = renderHook(() => useCbtProgram("user-1"));
 
     act(() => result.current.dismissProgramPrompt());
-    expect(mutateAsync).toHaveBeenLastCalledWith(
+    expect(mutate).toHaveBeenLastCalledWith(
       expect.objectContaining({
         cbtProgramPromptDismissedAt: expect.any(String),
       }),
     );
 
     act(() => result.current.showProgramPrompt());
-    expect(mutateAsync).toHaveBeenLastCalledWith(
+    expect(mutate).toHaveBeenLastCalledWith(
       expect.objectContaining({
         cbtProgramPromptDismissedAt: null,
       }),
@@ -346,8 +346,8 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
   });
 
   it("abandons the program and hides the start prompt", () => {
-    const mutateAsync = jest.fn().mockResolvedValue(undefined);
-    setupBaseMocks(mutateAsync, false);
+    const mutate = jest.fn();
+    setupBaseMocks(mutate, false);
 
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -362,7 +362,7 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
 
     act(() => result.current.abandonProgram());
 
-    expect(mutateAsync).toHaveBeenCalledWith(
+    expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         cbtProgramPromptDismissedAt: expect.any(String),
         cbtProgramStartedAt: null,
@@ -371,7 +371,7 @@ describe("useCbtProgram - dismiss / show / abandon", () => {
     // ☠️ CHANGED DELIBERATELY (#2530, ADR-0012). The abandon payload used to
     // null `completedAt`. Leaving a programme must not erase that you once
     // finished it.
-    const payload = mutateAsync.mock.calls[0][0];
+    const payload = mutate.mock.calls[0][0];
     expect(payload).not.toHaveProperty("cbtProgramCompletedAt");
     // ☠️ And the fossil: `cbtProgramPhaseStartedAt` is absent here too, which is
     // the only record that this run ever existed. That omission is load-bearing

@@ -12,28 +12,18 @@ import {
   useValueEntries,
 } from "@/src/features/act/queries";
 import { deriveActProgram, type ActProgramView } from "@/src/features/act/derive-act-program";
-import {} from "@/src/features/modules/types";
-import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { ACT_PROGRAM_KEYS } from "@/src/features/modules/program-patches";
+import { useProgramActions, type ProgramActions } from "@/src/features/modules/use-program-actions";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-interface UseActProgramResult {
+interface UseActProgramResult extends ProgramActions {
   program: ActProgramView;
   isLoading: boolean;
-  startProgram: () => void;
-  dismissProgramPrompt: () => void;
-  showProgramPrompt: () => void;
-  abandonProgram: () => void;
-  replayProgram: () => void;
-  advancePhase: () => void;
-  dismissGraduation: () => void;
-  promptDismissedAt: string | null;
-  graduationDismissedAt: string | null;
-  isUpdating: boolean;
 }
 
 export function useActProgram(userId: string | null): UseActProgramResult {
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
   const { selectedDate } = useSelectedDate();
 
   const choicePoints = useChoicePoints(userId);
@@ -82,114 +72,14 @@ export function useActProgram(userId: string | null): UseActProgramResult {
     ],
   );
 
-  const advancePhase = () => {
-    if (!preferences) return;
-    const idx = preferences.actProgramPhaseIndex ?? 0;
-    const last = program.totalPhases - 1;
-    void updatePreferences
-      .mutateAsync(
-        idx >= last
-          ? { actProgramCompletedAt: new Date().toISOString() }
-          : {
-              actProgramPhaseIndex: idx + 1,
-              actProgramPhaseStartedAt: new Date().toISOString(),
-            },
-      )
-      .catch(() => undefined);
-  };
-
-  const startProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        actProgramStartedAt: new Date().toISOString(),
-        // ☠️ `actProgramCompletedAt` is deliberately NOT nulled here. It means
-        // the last time this person finished ACT, and the fresh `startedAt`
-        // above retires it by itself (ADR-0012, #2530).
-        actProgramPromptDismissedAt: null,
-        actProgramPhaseIndex: 0,
-        actProgramPhaseStartedAt: new Date().toISOString(),
-        actGraduationDismissedAt: null,
-      })
-      .catch(() => undefined);
-  };
-
-  const dismissProgramPrompt = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        actProgramPromptDismissedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const showProgramPrompt = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({ actProgramPromptDismissedAt: null })
-      .catch(() => undefined);
-  };
-
-  /**
-   * ☠️ **What this payload leaves out is the point.** `actProgramPhaseIndex` and
-   * `actProgramPhaseStartedAt` stay exactly where they were, and that pair
-   * surviving beside a null `actProgramStartedAt` is the ONLY record that this
-   * run ever existed and how far it got - the **fossil** (ADR-0012, #2530).
-   *
-   * ⚠️ So do not "finish the job" by nulling them. It reads like a tidy-up and
-   * it is the whole of #2386: someone who reached phase 4 and stopped would
-   * become indistinguishable from someone who never opened the module, with no
-   * way to recover the difference afterwards. #2530 refused to keep the dates a
-   * run would otherwise carry, and that refusal only holds because this survives.
-   *
-   * `test/programme-fossil-contract.test.ts` fails if anything nulls it.
-   */
-  const abandonProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        actProgramStartedAt: null,
-        // ☠️ `actProgramCompletedAt` is deliberately NOT nulled: leaving a
-        // programme must not erase that you once finished it (ADR-0012).
-        actProgramPromptDismissedAt: new Date().toISOString(),
-      })
-      .catch(() => undefined);
-  };
-
-  const replayProgram = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({
-        actProgramStartedAt: new Date().toISOString(),
-        // ☠️ Same as `startProgram`: the previous completion stays. Replaying
-        // is a new run, not a retraction of the one that finished (ADR-0012).
-        actProgramPromptDismissedAt: null,
-        actProgramPhaseIndex: 0,
-        actProgramPhaseStartedAt: new Date().toISOString(),
-        actGraduationDismissedAt: null,
-      })
-      .catch(() => undefined);
-  };
-
-  const dismissGraduation = () => {
-    if (!preferences) return;
-    void updatePreferences
-      .mutateAsync({ actGraduationDismissedAt: new Date().toISOString() })
-      .catch(() => undefined);
-  };
+  // The seven transitions, their payloads and their failure handling live in
+  // useProgramActions/program-patches (#2810, ADR-0012) - one copy for the
+  // three programmes.
+  const actions = useProgramActions(userId, ACT_PROGRAM_KEYS, program.totalPhases);
 
   return {
     program,
     isLoading: prefsLoading,
-    startProgram,
-    dismissProgramPrompt,
-    showProgramPrompt,
-    abandonProgram,
-    replayProgram,
-    advancePhase,
-    dismissGraduation,
-    promptDismissedAt: preferences?.actProgramPromptDismissedAt ?? null,
-    graduationDismissedAt: preferences?.actGraduationDismissedAt ?? null,
-    isUpdating: updatePreferences.isPending,
+    ...actions,
   };
 }
