@@ -6,7 +6,7 @@ import { useStartAsGuest } from "@/src/features/auth/use-start-as-guest";
 import { captureError } from "@/src/lib/sentry";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn() },
   usePathname: () => "/",
 }));
 
@@ -21,7 +21,13 @@ jest.mock("@/src/lib/supabase", () => ({
   },
 }));
 
+const mockReadUnderFloorBlock = jest.fn();
+jest.mock("@/src/features/auth/under-floor-block", () => ({
+  readUnderFloorBlock: (...args: unknown[]) => mockReadUnderFloorBlock(...args),
+}));
+
 const mockPush = router.push as jest.MockedFunction<typeof router.push>;
+const mockReplace = router.replace as jest.MockedFunction<typeof router.replace>;
 const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>;
 
 async function start() {
@@ -34,10 +40,30 @@ async function start() {
 describe("useStartAsGuest", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Fails open, like the real read: no block unless a test says so.
+    mockReadUnderFloorBlock.mockResolvedValue(false);
     mockSignInAnonymously.mockResolvedValue({
       data: { session: { user: { id: "guest-1" } }, user: { id: "guest-1" } },
       error: null,
     });
+  });
+
+  // ☠️ An under-floor device does not get a guest (#2826, mirroring the native
+  // rule from #1765): the press must not reach auth at all, and the person
+  // still lands on the block surface (ProtectedLayout renders it session-less).
+  it("inside a block window: mints nothing and hands entry to the block surface", async () => {
+    mockReadUnderFloorBlock.mockResolvedValue(true);
+    const { result } = renderHook(() => useStartAsGuest());
+    await act(async () => {
+      await result.current.startAsGuest();
+    });
+
+    expect(mockSignInAnonymously).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith("/(app)");
+    expect(mockPush).not.toHaveBeenCalled();
+    // Still pending: the replace is about to unmount the landing, and
+    // re-enabling first would open a second-press window.
+    expect(result.current.pending).toBe(true);
   });
 
   it("creates the guest and navigates nowhere - the session redirect owns entry", async () => {
@@ -48,6 +74,7 @@ describe("useStartAsGuest", () => {
 
     expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
     expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
     expect(mockCaptureError).not.toHaveBeenCalled();
     // Still pending: the landing is about to unmount via the session
     // redirect, and re-enabling first would let a second press mint a
