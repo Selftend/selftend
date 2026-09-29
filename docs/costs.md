@@ -24,7 +24,7 @@ These are planning estimates, not guarantees. Pricing, verification rules, and l
 
 - Planning baseline: `$10-$20/year` for a basic `.org` or similar domain
 - This varies by registrar and TLD, so treat it as an estimate rather than a locked price.
-- Current production-domain decision: buy `selftend.org` if available and use it as the canonical web and app-store policy domain.
+- Production domain: `selftend.org` is owned and in production as the canonical web and app-store policy domain (`wrangler.toml`; registrar Porkbun, DNS on Cloudflare - [deployment.md](deployment.md)).
 
 ## Monthly operating cost scenarios
 

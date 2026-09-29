@@ -189,6 +189,41 @@ describe("useUpdateUserPreferences - invalidation", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it("suppresses the global save-failed toast by default", async () => {
+    // Most callers show their own error UI or are documented best-effort
+    // writes; the default must not double-toast them.
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useUpdateUserPreferences("u1"), {
+      wrapper: makeWrapper(client),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ theme: "dark" });
+    });
+
+    expect(client.getMutationCache().getAll()[0]?.meta).toEqual({
+      suppressGlobalErrorToast: true,
+    });
+  });
+
+  it("lets a caller with no error surface opt back into the toast (#2810)", async () => {
+    // The programme hooks' shared actions pass this: without it a failed
+    // start/advance/abandon rolled back with no message and no retry.
+    const client = createTestQueryClient();
+    const { result } = renderHook(
+      () => useUpdateUserPreferences("u1", { suppressGlobalErrorToast: false }),
+      { wrapper: makeWrapper(client) },
+    );
+
+    await act(async () => {
+      await result.current.mutateAsync({ theme: "dark" });
+    });
+
+    expect(client.getMutationCache().getAll()[0]?.meta).toEqual({
+      suppressGlobalErrorToast: false,
+    });
+  });
+
   it("does not roll back on error when userId is null", async () => {
     mockUpdateUserPreferences.mockRejectedValue(new Error("boom"));
 
