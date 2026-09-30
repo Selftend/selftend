@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
+import { router } from "expo-router";
 
+import { readUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { captureError } from "@/src/lib/sentry";
 import { supabase } from "@/src/lib/supabase";
@@ -29,6 +31,23 @@ export function useStartAsGuest() {
       return;
     }
     setPending(true);
+
+    // ☠️ An under-floor device does not get a guest (#2826) - the web twin of
+    // SessionProvider's native guard (#1765, spec #227 §3), reading the same
+    // flag through the same function so the two cannot drift. Without it the
+    // block still holds (ProtectedLayout renders the exit screen before its
+    // `!session` branch), but every press inside the window would mint an
+    // anonymous auth user that nothing ever uses or deletes. Instead the press
+    // goes straight to that screen, signed out: the block owns the surface and
+    // no account is created for it to strand. Fails open like native - an
+    // unreadable store answers `false`. Stays pending, like the success path
+    // below: the replace is about to unmount the landing, and re-enabling the
+    // CTA first would open a second-press window.
+    if (await readUnderFloorBlock(new Date())) {
+      router.replace("/(app)");
+      return;
+    }
+
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error || !data.session) {
       if (
