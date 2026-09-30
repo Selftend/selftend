@@ -351,7 +351,7 @@ export function MeditationSitScreen() {
         techniqueUsed: null,
       });
       if (exit === "leave") {
-        router.replace("/tools/meditation");
+        router.dismissTo("/tools/meditation");
         return;
       }
       setSavedSession(session);
@@ -437,7 +437,7 @@ export function MeditationSitScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, paused, focused]);
 
-  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // Shell B's Escape (#1256) leaves through `router.dismissTo`, so it lands here
   // with the OS back gesture and the web back button - every uninvited exit
   // passes this guard. Mid-sit they pause the clock and ask (#777) -
   // confirming finishes and saves, then honours the exit rather than detouring
@@ -515,14 +515,14 @@ export function MeditationSitScreen() {
         note={note}
         onChangeNote={setNote}
         isPending={updateMutation.isPending}
-        onSkip={() => router.replace("/tools/meditation")}
+        onSkip={() => router.dismissTo("/tools/meditation")}
         onSave={async () => {
           try {
             await updateMutation.mutateAsync({
               sessionId: savedSession.id,
               patch: { obstacleTags: pulls, reflection: note },
             });
-            router.replace("/tools/meditation");
+            router.dismissTo("/tools/meditation");
           } catch {
             showToast({ title: t("common:feedback.problem"), tone: "error" });
           }

@@ -8,7 +8,7 @@ import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: jest.fn(),
 }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
@@ -50,10 +50,10 @@ describe("ScreenEscape - an off-trail Origin", () => {
     const { getByLabelText } = render(<ScreenEscape />);
 
     fireEvent.press(getByLabelText("Back to CBT"));
-    // Up from Reminders is the root; the Origin overrides it. `replace` for both
+    // Up from Reminders is the root; the Origin overrides it. `dismissTo` for both
     // destinations (R4) - the Origin is typically already in the stack, where a
     // push would mount a second copy of it.
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
+    expect(router.dismissTo).toHaveBeenCalledWith("/modules/cbt");
   });
 
   it("wears the Origin's name beside the arrow, not a bare glyph", () => {
@@ -70,7 +70,7 @@ describe("ScreenEscape - an off-trail Origin", () => {
     expect(getByLabelText("Back to Home")).toBeTruthy();
     expect(queryByText("CBT")).toBeNull();
     fireEvent.press(getByLabelText("Back to Home"));
-    expect(router.replace).toHaveBeenCalledWith("/");
+    expect(router.dismissTo).toHaveBeenCalledWith("/");
   });
 
   /**
@@ -132,7 +132,7 @@ describe("ScreenEscape - an off-trail Origin", () => {
     expect(getByLabelText("Back to CBT")).toBeTruthy();
     expect(queryByText("CBT")).toBeNull();
     fireEvent.press(getByLabelText("Back to CBT"));
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
+    expect(router.dismissTo).toHaveBeenCalledWith("/modules/cbt");
   });
 
   it("shows Up when the Origin is this screen's Up but carries no crumb", () => {
@@ -181,7 +181,7 @@ describe("ScreenEscape - an off-trail Origin", () => {
     expect(getByLabelText("Close")).toBeTruthy();
     expect(queryByText("CBT")).toBeNull();
     fireEvent.press(getByLabelText("Close"));
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
+    expect(router.dismissTo).toHaveBeenCalledWith("/modules/cbt");
   });
 
   /**
@@ -200,7 +200,7 @@ describe("ScreenEscape - an off-trail Origin", () => {
 
     expect(getByLabelText("Go back")).toBeTruthy();
     fireEvent.press(getByLabelText("Go back"));
-    expect(router.replace).toHaveBeenCalledWith("/routines/3f9a-uuid");
+    expect(router.dismissTo).toHaveBeenCalledWith("/routines/3f9a-uuid");
   });
 
   it("shows no borrowed name for an Origin it cannot name", () => {

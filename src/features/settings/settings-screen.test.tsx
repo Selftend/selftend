@@ -21,6 +21,7 @@ jest.mock("expo-router", () => ({
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
     replace: jest.fn(),
+    dismissTo: jest.fn(),
   },
   usePathname: () => "/settings",
 }));
@@ -771,8 +772,8 @@ describe("SettingsScreen structure", () => {
     expect(screen.getAllByText("Settings")).toHaveLength(1);
 
     fireEvent.press(screen.getByLabelText("Back to Home"));
-    // `replace`, not `push`: an Escape is a leave, not a drill-down.
-    expect(router.replace).toHaveBeenCalledWith("/");
+    // `dismissTo`, not `push`: an Escape is a leave, not a drill-down.
+    expect(router.dismissTo).toHaveBeenCalledWith("/");
   });
 
   it("navigates rather than acting in place on the chevron rows", async () => {

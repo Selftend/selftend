@@ -13,7 +13,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/modules/cbt";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: () => mockPathname,
 }));
 

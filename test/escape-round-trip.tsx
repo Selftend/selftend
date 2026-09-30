@@ -46,5 +46,5 @@ export function expectEscapeReturnsTo({ arriveAt, destination, name, origin }: E
 
   expect(screen.getByText(name)).toBeTruthy();
   fireEvent.press(screen.getByLabelText(`Back to ${name}`));
-  expect(router.replace).toHaveBeenCalledWith(origin);
+  expect(router.dismissTo).toHaveBeenCalledWith(origin);
 }
