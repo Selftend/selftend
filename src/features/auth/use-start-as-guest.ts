@@ -40,10 +40,11 @@ export function useStartAsGuest() {
     // anonymous auth user that nothing ever uses or deletes. Instead the press
     // goes straight to that screen, signed out: the block owns the surface and
     // no account is created for it to strand. Fails open like native - an
-    // unreadable store answers `false`.
+    // unreadable store answers `false`. Stays pending, like the success path
+    // below: the replace is about to unmount the landing, and re-enabling the
+    // CTA first would open a second-press window.
     if (await readUnderFloorBlock(new Date())) {
       router.replace("/(app)");
-      setPending(false);
       return;
     }
 

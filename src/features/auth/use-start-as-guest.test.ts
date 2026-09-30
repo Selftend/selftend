@@ -125,11 +125,17 @@ describe("useStartAsGuest", () => {
     it("creates no guest and goes to the block screen instead", async () => {
       await AsyncStorage.setItem(UNDER_FLOOR_BLOCK_KEY, String(Date.now() + 60 * 60 * 1000));
 
-      await start();
+      const { result } = renderHook(() => useStartAsGuest());
+      await act(async () => {
+        await result.current.startAsGuest();
+      });
 
       expect(mockSignInAnonymously).not.toHaveBeenCalled();
       expect(mockReplace).toHaveBeenCalledWith("/(app)");
       expect(mockPush).not.toHaveBeenCalled();
+      // Still pending, like the success path: the replace is about to unmount
+      // the landing, and re-enabling first would open a second-press window.
+      expect(result.current.pending).toBe(true);
     });
 
     it("an expired window does not over-block: the guest is created as usual", async () => {
