@@ -80,7 +80,10 @@ export function HabitsLearnCardsBody({ presentation }: { presentation: "links" |
  * every renderer of the ten cards carries it by construction - the public
  * `/habits` page and the gated index cannot drift apart on it. The detail
  * screen renders the same component beside its article, because the article
- * bodies are where the near-verbatim sentences actually sit.
+ * bodies are where the near-verbatim sentences actually sit. The onboarding
+ * wizard renders it too, beside its welcome cards - `docs/modules/habits.md`
+ * § 5 Step 1 has required that attribution since the spec, and the wizard
+ * quotes the systems line verbatim.
  */
 export function HabitsLearnSourceLine() {
   const { t } = useTranslation("habits");

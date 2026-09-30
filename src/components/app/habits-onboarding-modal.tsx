@@ -5,6 +5,7 @@ import { OnboardingInfoRow, RichOnboardingShell } from "@/src/components/app/ric
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { HabitsLearnSourceLine } from "@/src/features/habits/habits-learn-cards-body";
 
 const imgGrowth = require("../../../assets/images/onboarding/habits_compounding_path.png");
 const imgTracker = require("../../../assets/images/onboarding/habits_loop_two_minute_rule.png");
@@ -64,6 +65,7 @@ export function HabitsOnboarding({
             <Text variant="muted">{t("onboarding.welcome.systemsBody")}</Text>
           </CardContent>
         </Card>
+        <HabitsLearnSourceLine />
       </View>
 
       <View className="gap-3">
