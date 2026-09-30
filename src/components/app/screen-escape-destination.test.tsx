@@ -7,7 +7,7 @@ import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
 import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: jest.fn(),
 }));
 

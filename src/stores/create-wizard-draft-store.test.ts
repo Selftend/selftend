@@ -291,3 +291,46 @@ describe("createWizardDraftStore - persistence", () => {
     expect(await AsyncStorage.getItem(storageKey("prefix-parity-flow"))).toBeNull();
   });
 });
+
+// #2809: web server rendering evaluates every route module in Node, where
+// there is no `window`. AsyncStorage's web build reads `window.localStorage`,
+// so touching it there rejects - and the write that follows the failed
+// rehydrate was an unhandled rejection that killed `expo start --web`.
+describe("createWizardDraftStore in a web server render (no window)", () => {
+  let descriptor: PropertyDescriptor | undefined;
+
+  const loadForServerRender = () => {
+    descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+    jest.resetModules();
+    const RN = require("react-native") as typeof import("react-native");
+    Object.defineProperty(RN.Platform, "OS", { configurable: true, get: () => "web" });
+    delete (globalThis as { window?: unknown }).window;
+    // The AsyncStorage jest mock is a CommonJS module with no `default`.
+    const asyncStorageModule = require("@react-native-async-storage/async-storage") as
+      typeof AsyncStorage | { default: typeof AsyncStorage };
+    const storage =
+      "default" in asyncStorageModule ? asyncStorageModule.default : asyncStorageModule;
+    const mod =
+      require("@/src/stores/create-wizard-draft-store") as typeof import("@/src/stores/create-wizard-draft-store");
+    return { storage, createStore: mod.createWizardDraftStore };
+  };
+
+  afterEach(() => {
+    if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
+    jest.resetModules();
+  });
+
+  it("settles hydrated and writes nothing, without touching AsyncStorage", async () => {
+    const { storage, createStore } = loadForServerRender();
+    const getItem = jest.spyOn(storage, "getItem");
+    const setItem = jest.spyOn(storage, "setItem");
+
+    const store = createStore<Values>("ssr-flow");
+    store.getState().setValues({ name: "never persisted on the server" });
+    await flushPersistWrites();
+
+    expect(store.getState().hydrated).toBe(true);
+    expect(getItem).not.toHaveBeenCalled();
+    expect(setItem).not.toHaveBeenCalled();
+  });
+});

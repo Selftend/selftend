@@ -284,8 +284,9 @@ The route an off-trail arrival came from — off-trail meaning it is not on the 
 own breadcrumb trail. When an arrival carries one, the Escape leads to the Origin instead of Up,
 because Up would land somewhere the user has never been. It is always an explicitly carried value
 and is **never** inferred from navigation history: `dangerouslySingular` replaces history entries
-rather than adding them, and the Escape itself navigates with `replace`, so history here does not
-describe where the user came from.
+rather than adding them, and the Escape itself navigates with `dismissTo` - popping to the
+destination where it is already mounted, replacing the current route where it is not (#2824) - so
+history here does not describe where the user came from.
 
 It is carried in memory — `navigation-origin-store.ts`, recorded through `usePushWithOrigin` (a
 push) or `useRecordOrigin` (the record alone, for an anchor that navigates as a `Link`, #2476) and

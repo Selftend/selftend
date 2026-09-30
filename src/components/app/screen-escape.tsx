@@ -51,10 +51,18 @@ interface ScreenEscapeProps {
  * it was written for: the bell on the CBT module home lands on Reminders, whose
  * Up is Home, and the user loses their place.
  *
- * `replace`, not `push`, for both destinations: an Escape is a leave, not a
- * drill-down, so it must not stack another entry to climb back out of - and the
- * Origin is typically already in the stack, where a push would mount a second
- * copy (the defect #1027/#989 fixed).
+ * `dismissTo`, not `push` and not `replace`, for both destinations (#2824). An
+ * Escape is a leave, not a drill-down, so it must not stack another entry to
+ * climb back out of - which is why it used to `replace`. But the destination is
+ * typically already in the stack, and REPLACE always creates a fresh route: from
+ * a policy page opened off the consent gate it swapped `/privacy` for a SECOND
+ * `(app)` while the first still sat below it, double-mounting `ProtectedLayout`
+ * for the rest of the session - the #1027/#989 duplicate, reached by a replace.
+ * POP_TO pops back to the copy already mounted, and where there is none (a deep
+ * link, a new tab) it replaces the current route instead - exactly the old
+ * behaviour, so direct entry is unchanged. `dangerouslySingular`, #989's
+ * treatment for the panel, cannot do this: REPLACE ignores it, and a singular
+ * NAVIGATE would keep the policy page mounted underneath Home.
  */
 export function ScreenEscape({ glyph = "arrow-back", consumeOrigin = true }: ScreenEscapeProps) {
   const { t } = useTranslation("navigation");
@@ -131,7 +139,7 @@ export function ScreenEscape({ glyph = "arrow-back", consumeOrigin = true }: Scr
       }
       accessibilityRole="button"
       hitSlop={8}
-      onPress={() => router.replace(escapeHref as never)}
+      onPress={() => router.dismissTo(escapeHref as never)}
       testID="screen-escape"
       className="shrink flex-row items-center gap-1 active:opacity-70"
     >
