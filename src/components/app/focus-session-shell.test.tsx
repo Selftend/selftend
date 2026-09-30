@@ -7,7 +7,7 @@ import type { SupportedLanguage } from "@/src/i18n";
 import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: jest.fn(),
 }));
 
@@ -57,7 +57,7 @@ describe("FocusSessionShell", () => {
   });
 
   // The announcement follows the destination on both routes the ticket names
-  // (R6), and the hop is a `replace` - a leave, not a drill-down (R4).
+  // (R6), and the hop is a `dismissTo` - a leave, not a drill-down (R4).
   describe.each([
     {
       language: "en" as SupportedLanguage,
@@ -84,14 +84,14 @@ describe("FocusSessionShell", () => {
       mockUsePathname.mockReturnValue("/tools/grounding/54321");
       const { getByLabelText } = renderShell();
       fireEvent.press(getByLabelText(copy.grounding));
-      expect(router.replace).toHaveBeenCalledWith("/tools/grounding");
+      expect(router.dismissTo).toHaveBeenCalledWith("/tools/grounding");
     });
 
     it("on /tools/meditation/session, leads up to Meditation", () => {
       mockUsePathname.mockReturnValue("/tools/meditation/session");
       const { getByLabelText } = renderShell();
       fireEvent.press(getByLabelText(copy.meditation));
-      expect(router.replace).toHaveBeenCalledWith("/tools/meditation");
+      expect(router.dismissTo).toHaveBeenCalledWith("/tools/meditation");
     });
   });
 });

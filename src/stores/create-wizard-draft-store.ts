@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 
 import { registerDraftStore, WIZARD_DRAFT_STORAGE_PREFIX } from "@/src/stores/draft-store-registry";
 
@@ -97,6 +98,28 @@ function isUsablePersistedDraft<TValues>(
   return Date.now() - draft.updatedAt <= WIZARD_DRAFT_TTL_MS;
 }
 
+// Web server rendering (the dev server's SSR) evaluates route modules in
+// Node, where there is no
+// `window`. AsyncStorage's web build reads `window.localStorage`, so every
+// call rejects there - and the rejected write that follows the failed
+// rehydrate (`onRehydrateStorage` sets `hydrated`) is an unhandled rejection
+// that kills the whole `expo start --web` process (#2809). A server render
+// has no draft to restore and nowhere to keep one, so it gets a storage that
+// holds nothing; the browser's own copy of the store hydrates for real.
+// Async on purpose, like AsyncStorage: a synchronous getItem makes zustand
+// finish rehydrating inside `create()`, before `store` below is assigned, so
+// `onRehydrateStorage` would hit the TDZ and `hydrated` would never settle.
+const serverRenderStorage: StateStorage = {
+  getItem: () => Promise.resolve(null),
+  setItem: () => Promise.resolve(),
+  removeItem: () => Promise.resolve(),
+};
+
+function draftStorage(): StateStorage {
+  if (Platform.OS === "web" && typeof window === "undefined") return serverRenderStorage;
+  return AsyncStorage;
+}
+
 /**
  * Wizard draft store, persisted to AsyncStorage so an accidental refresh or
  * app kill mid-wizard does not lose several steps of writing.
@@ -172,7 +195,7 @@ export function createWizardDraftStore<TValues>(flowKey: string) {
       {
         name: `${WIZARD_DRAFT_STORAGE_PREFIX}${flowKey}`,
         version: WIZARD_DRAFT_PERSIST_VERSION,
-        storage: createJSONStorage(() => AsyncStorage),
+        storage: createJSONStorage(draftStorage),
         partialize: (state): PersistedWizardDraft<TValues> => ({
           mode: state.mode,
           entityId: state.entityId,

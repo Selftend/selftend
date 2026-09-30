@@ -6,12 +6,12 @@ import { renderWithProviders } from "@/test/render-with-providers";
 let mockPathname = "/definitely-not-a-route";
 
 jest.mock("expo-router", () => ({
-  router: { replace: jest.fn(), push: jest.fn() },
+  router: { replace: jest.fn(), push: jest.fn(), dismissTo: jest.fn() },
   usePathname: () => mockPathname,
 }));
 
 const { router } = jest.requireMock("expo-router") as {
-  router: { replace: jest.Mock };
+  router: { dismissTo: jest.Mock };
 };
 
 describe("NotFoundScreen", () => {
@@ -42,7 +42,7 @@ describe("NotFoundScreen", () => {
     // One crumb, so the trail hides and the hop is the root.
     fireEvent.press(screen.getByLabelText("Back to Home"));
 
-    expect(router.replace).toHaveBeenCalledWith("/");
+    expect(router.dismissTo).toHaveBeenCalledWith("/");
   });
 
   it("escapes to the deepest real ancestor of the attempted path", () => {
@@ -59,7 +59,7 @@ describe("NotFoundScreen", () => {
     // rather than discarding the user's place with a jump to Home.
     fireEvent.press(screen.getByLabelText("Back to CBT"));
 
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
+    expect(router.dismissTo).toHaveBeenCalledWith("/modules/cbt");
   });
 
   // The AC is "replaced, not kept alongside" (R1 - two exits are two

@@ -30,8 +30,9 @@ import { useAccentHsl } from "@/src/lib/theme-palette";
 // only exit the shell ever withheld was the one that keeps the user's place.
 // What an OS/web back action does mid-session (pause + finish-or-continue) is
 // still the screen's job, not the shell's: the Escape leaves through
-// `router.replace`, so the screens' `beforeRemove` guards catch it exactly
-// like every other uninvited exit.
+// `router.dismissTo`, which removes the session route like any other pop, so
+// the screens' `beforeRemove` guards catch it exactly like every other
+// uninvited exit.
 export const FOCUS_WASH_ALPHA = { light: 0.04, dark: 0.07 } as const;
 export const FOCUS_WASH_BASE = { light: "--card", dark: "--background" } as const;
 
