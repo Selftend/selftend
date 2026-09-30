@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useState } from "react";
-import { Dimensions, type View } from "react-native";
+import { Dimensions, Platform, type View } from "react-native";
 import { create } from "zustand";
 
 /**
@@ -89,6 +89,34 @@ export function insetBelowLayer(edges: InsetEdges, layer: InsetLayer): number {
  */
 export function useInsetBelow(layer: InsetLayer): number {
   return useLayeredInsetStore((state) => insetBelowLayer(state.edges, layer));
+}
+
+/**
+ * The bottom room a full-screen legal gate must leave on web (#2825): the
+ * highest edge on the ground layers, less the keyboard height the gate has
+ * already padded for itself.
+ *
+ * The gates render in place of the shell, so while one stands nothing else on
+ * layer 1 is mounted and the edge is the cookie banner's - `fixed bottom-0`
+ * page chrome that overlays the gate's only forward control at 390x844 (in bg,
+ * whose copy wraps taller, on the age gate itself). The banner's MEASURED edge
+ * is the number, never a constant: a pad sized for one locale is the bug in the
+ * other.
+ *
+ * Maxed with the keyboard rather than added to it, because the banner sits
+ * under the web keyboard, not above it - the visible floor is whichever top
+ * edge is higher. `alreadyPadded` is the web keyboard inset the caller applies
+ * elsewhere, so the two pads never count the keyboard twice.
+ *
+ * Web only. Native has no cookie banner, and its keyboard - which layer 0
+ * carries on native too - already has each gate's own path.
+ */
+export function useGateBottomClearance(alreadyPadded = 0): number {
+  const ground = useInsetBelow(INSET_LAYER.floater);
+  if (Platform.OS !== "web") {
+    return 0;
+  }
+  return Math.max(0, ground - alreadyPadded);
 }
 
 /**

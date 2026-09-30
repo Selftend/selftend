@@ -27,6 +27,7 @@ import {
 } from "@/src/features/auth/age-attestation";
 import { useRecordAgeAttestation } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { useGateBottomClearance } from "@/src/stores/layered-inset-store";
 
 interface AgeGateProps {
   /** The verdict passed and is stored; the app is now reachable. */
@@ -84,6 +85,11 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
   // because they solve the same problem on platforms that expose it
   // differently, and neither is ever non-zero on the other's platform.
   const nativeKeyboardInset = useKeyboardInset();
+  // The web cookie banner's measured edge (#2825), less the web keyboard the
+  // KeyboardAvoidingView below already pads for. Zero on native, so it never
+  // meets `nativeKeyboardInset` - the max below just picks whichever is live.
+  const bannerClearance = useGateBottomClearance(keyboardInset);
+  const contentPadding = Math.max(nativeKeyboardInset, bannerClearance);
 
   const setField = (field: keyof AttestationDraft) => (value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -194,9 +200,7 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
             fine; see the hook. */}
         <KeyboardAwareScrollView
           contentContainerClassName="grow items-center justify-center p-6"
-          contentContainerStyle={
-            nativeKeyboardInset > 0 ? { paddingBottom: nativeKeyboardInset } : undefined
-          }
+          contentContainerStyle={contentPadding > 0 ? { paddingBottom: contentPadding } : undefined}
           keyboardShouldPersistTaps="handled"
         >
           <Card className="w-full max-w-lg">

@@ -54,6 +54,7 @@ export function CookieConsentBanner() {
     <View
       onLayout={onLayout}
       ref={attachHost}
+      testID="cookie-consent-banner"
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none"
     >
       <View className="mx-auto w-full max-w-2xl gap-3">
