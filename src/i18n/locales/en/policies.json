@@ -341,7 +341,7 @@
       {
         "title": "What deletion does",
         "body": [
-          "Deleting your account permanently removes all data associated with it: your profile, preferences, all thought records (including archived ones), and authentication credentials.",
+          "Deleting your account permanently removes all data associated with it: your profile, preferences, every entry and record you've created across the app's tools, and your authentication credentials.",
           "Deletion is irreversible. Once completed, your data cannot be recovered.",
           "Your data is removed from our live systems immediately. Backups created before deletion are automatically deleted within 90 days."
         ]
