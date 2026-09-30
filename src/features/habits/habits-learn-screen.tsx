@@ -12,6 +12,7 @@ import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import {
   HabitsLearnCardRow,
   HabitsLearnCardsBody,
+  HabitsLearnSourceLine,
 } from "@/src/features/habits/habits-learn-cards-body";
 import {
   findLearnCard,
@@ -57,6 +58,8 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
             <Text>{t(`${cardKey}.body` as Parameters<typeof t>[0])}</Text>
           </CardContent>
         </Card>
+
+        <HabitsLearnSourceLine />
 
         <RelatedCards activeSlug={card.slug} />
 

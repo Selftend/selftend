@@ -9,9 +9,13 @@ import { consumeConversionCollision } from "@/src/features/auth/conversion-colli
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockReplace = jest.fn();
+const mockDismissTo = jest.fn();
 
 jest.mock("expo-router", () => ({
-  router: { replace: (...args: unknown[]) => mockReplace(...args) },
+  router: {
+    replace: (...args: unknown[]) => mockReplace(...args),
+    dismissTo: (...args: unknown[]) => mockDismissTo(...args),
+  },
   // The Escape in the chrome bar reads the current pathname for its trail.
   usePathname: () => "/auth-callback",
 }));
@@ -228,10 +232,10 @@ describe("AuthCallbackScreen - the Escape (#1254)", () => {
 
     expect(await screen.findByText("Confirm your email")).toBeTruthy();
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    // A leaf off the root: the Escape names the root and replaces to it. The
+    // A leaf off the root: the Escape names the root and pops to it. The
     // trail itself stays hidden at one crumb, so no "Sign in" crumb appears.
     fireEvent.press(screen.getByLabelText("Back to Home"));
-    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(mockDismissTo).toHaveBeenCalledWith("/");
     expect(screen.queryByText("Sign in")).toBeNull();
   });
 

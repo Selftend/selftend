@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0](https://github.com/Selftend/selftend/compare/v0.24.0...v0.25.0) (2026-09-28)
+
+
+### Features
+
+* **design:** Nunito leaves the app surface - headings are Noto Sans 700 ([#2770](https://github.com/Selftend/selftend/issues/2770)) ([26bb69f](https://github.com/Selftend/selftend/commit/26bb69f468b997d7259a9d4872098d00478dbc4e))
+* **home:** the catalogue loses its cards - hairline rows, one item per line ([#2771](https://github.com/Selftend/selftend/issues/2771)) ([34c6bcc](https://github.com/Selftend/selftend/commit/34c6bcc41bbdcee03fa95c111cfbe1ab7c3b581d))
+* **releasing:** the r/Selftend post becomes a link to the GitHub Release, like Discord's #changelog ([#2761](https://github.com/Selftend/selftend/issues/2761)) ([41a0522](https://github.com/Selftend/selftend/commit/41a05227c9aab7411e7c5c119b51e61799f7e0bb))
+* **tools:** move session start CTA to the top of setup scroll order ([#2769](https://github.com/Selftend/selftend/issues/2769)) ([bcd16af](https://github.com/Selftend/selftend/commit/bcd16af3fcfb4525bb61d3b8956f78f22af80454))
+
+
+### Bug Fixes
+
+* **meditation:** fade the bell's tail to silence and gate bell tails from below ([#2777](https://github.com/Selftend/selftend/issues/2777)) ([edddb17](https://github.com/Selftend/selftend/commit/edddb17652307bd8f080a7362cc907043b1b884a))
+
 ## [0.24.0](https://github.com/Selftend/selftend/compare/v0.23.0...v0.24.0) (2026-09-25)
 
 

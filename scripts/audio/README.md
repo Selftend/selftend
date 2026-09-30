@@ -261,10 +261,25 @@ machine, per #1159:
 - The two Round A bells, in the `Downloads` root — chosen on #1159, rendered in
   the web composer rather than through `render.mjs`, so they have no manifest
   rows at all; `write --round A` reports two units and zero takes.
+  ⚠️ Since #2768 the shipped `meditation-bell.m4a` is **not** the bare master
+  through `postprocess run`: the master's render was cut at 7 s mid-ring, so a
+  tail fade rides in front of the pipeline. Reproduction is
+  `ffmpeg -i "A_single_struck_bron_#1-1787255898918.wav" -af "afade=t=out:st=5:d=2:curve=hsin" -c:a pcm_s16le faded.wav`
+  then `postprocess run faded.wav --clip meditation-bell` — fade chosen by the
+  owner's ear from four candidates on #2766. The temple block still reproduces
+  from its master directly.
 
 ☠️ Everything seedless — two bells, three Sound Effects beds, three library WAVs
-— is one `Downloads` cleanup from gone. The three noises come from
-`synth-noise.mjs` and `SYNTH_SEED`, and the voices are re-renderable.
+— **was** one `Downloads` cleanup from gone. Since 2026-09-28 a byte-verified
+second copy lives at `C:\Users\vasil\My Drive\Selftend\audio-masters\` —
+`round-A\` (all 8 Round A bell files: the 4 takes plus their mp3 siblings),
+`round-B\` (the full 123-file, 455 MB mirror, `manifest.jsonl` and
+`choices.jsonl` included) and `library-0830\` (the 18-file library mirror) —
+which the Drive client syncs off this machine. **Copied, not moved: `Downloads`
+stays the canonical location per the #1159 ruling**, and the copy was verified
+file-count- and byte-total-identical, with the shipped bell's master compared
+byte-for-byte. The three noises still come from `synth-noise.mjs` and
+`SYNTH_SEED`, and the voices are re-renderable.
 
 Regenerating the committed file truthfully was the other route on #1702 and was
 not taken. It needs the 455 MB copied into `audio-masters/round-B/`, an
@@ -562,9 +577,19 @@ case. Verified both ways against real ffmpeg: a natively looping bed measures
 0.00 ms lead and 0.00 ms tail at 30.000s, and 20 ms injected into a voice clip comes
 back **20.02 ms** through the full chain.
 
-⚠️ The **tail** is measured and printed but never gated. A bell is a long smooth
-decay "fading continuously to silence" by #1139's own brief, so gating it would fail
-the two clips whose entire character is a tail, for having one.
+⚠️ The **tail** is measured on every run and, **for bells only, gated from
+below** (#2767): a finished bell must end with **≥ 250 ms below −60 dBFS**
+(`BELL_TAIL_SILENCE_MIN_MS`). The old rule here — "gating the tail would fail the
+two clips whose entire character is a tail, for having one" — protected tails
+from being _trimmed_, and that half still stands: nothing gates a tail for being
+long. What it missed is that a tail must also _land_. A bell is a decay "fading
+continuously to silence" by #1139's own brief, and `meditation-bell` shipped
+ending **12.4 ms** below the floor — the render's hard cut, a click ~24 dB above
+the decayed ring around it, audible as the bell _stopping_ in a silent room
+(#2763). The limit is bracketed by measurement: the truncated bell's 12.4 ms
+below it, the faded bell's **795 ms** and the temple block's **858.6 ms** above
+it, so no re-encode can flake across the line. Beds (loop point, not a landing)
+and textures (end under a voice cue) stay ungated at the tail.
 
 ⚠️ A result carrying **no** edges fails too. A rule that was not measured is not a
 rule that passed, and reporting PASS there restores exactly the silence this check

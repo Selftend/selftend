@@ -7,7 +7,7 @@ import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() },
   usePathname: jest.fn(),
 }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
@@ -44,15 +44,15 @@ describe("ScreenEscape", () => {
     expect(getByLabelText("Back to Home")).toBeTruthy();
   });
 
-  it("climbs to the deepest ancestor crumb, replacing rather than pushing", () => {
+  it("climbs to the deepest ancestor crumb, popping rather than pushing", () => {
     mockUseBreadcrumbs.mockReturnValue([
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
     const { getByLabelText } = render(<ScreenEscape />);
     fireEvent.press(getByLabelText("Back to Gratitude log"));
-    // `replace`, not `push`: an Escape is a leave, not a drill-down (R4).
-    expect(router.replace).toHaveBeenCalledWith("/tools/gratitude-log");
+    // `dismissTo`, not `push`: an Escape is a leave, not a drill-down (R4, #2824).
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/gratitude-log");
   });
 
   it("escapes to the root when no crumb above the current one has an href", () => {
@@ -61,7 +61,7 @@ describe("ScreenEscape", () => {
     mockUseBreadcrumbs.mockReturnValue([{ label: "Reminders" }]);
     const { getByLabelText } = render(<ScreenEscape />);
     fireEvent.press(getByLabelText("Back to Home"));
-    expect(router.replace).toHaveBeenCalledWith("/");
+    expect(router.dismissTo).toHaveBeenCalledWith("/");
   });
 
   it("labels the close glyph 'Close', never the destination", () => {
@@ -84,7 +84,7 @@ describe("ScreenEscape", () => {
     ]);
     const { getByLabelText } = render(<ScreenEscape glyph="close" />);
     fireEvent.press(getByLabelText("Close"));
-    expect(router.replace).toHaveBeenCalledWith("/tools/gratitude-log");
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/gratitude-log");
   });
 });
 
@@ -136,7 +136,7 @@ describe("ScreenEscape - naming the destination", () => {
     ]);
     const { getByLabelText } = render(<ScreenEscape />);
     fireEvent.press(getByLabelText("Go back"));
-    expect(router.replace).toHaveBeenCalledWith("/tools/journal/3f9a-uuid");
+    expect(router.dismissTo).toHaveBeenCalledWith("/tools/journal/3f9a-uuid");
   });
 
   it("ignores an unresolved crumb that is not the destination", () => {

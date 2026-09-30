@@ -1,9 +1,10 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Platform } from "react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Platform, ScrollView } from "react-native";
 
 import { ConsentGate } from "./consent-gate";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { appEnv } from "@/src/lib/env";
+import { INSET_LAYER, useLayeredInsetStore } from "@/src/stores/layered-inset-store";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -277,5 +278,58 @@ describe("ConsentGate - explicit Art. 9 consent (#1766)", () => {
     } finally {
       setPlatform("ios");
     }
+  });
+});
+
+// #2825. At 390x844 the web cookie banner - `fixed bottom-0`, root-level chrome
+// outside the shell - overlaid "Accept and continue" (y 677-717 under a banner
+// top of ~660), and the gate's content fit the viewport, so there was nothing
+// to scroll. The banner already publishes its MEASURED top edge into layer 1 of
+// the inset ladder; the gate reads that rather than a guessed height, which is
+// the only way it holds in bg, whose banner copy wraps taller.
+describe("ConsentGate - clears the cookie banner (#2825)", () => {
+  const BANNER_EDGE = 184;
+
+  /** The style on the scroll view the gate renders its card into. */
+  function contentContainerStyle() {
+    return screen.UNSAFE_getAllByType(ScrollView)[0].props.contentContainerStyle;
+  }
+
+  beforeEach(() => {
+    useLayeredInsetStore.setState({ edges: {} });
+  });
+
+  afterEach(() => {
+    // In act: the gate is still mounted here and subscribes to the store.
+    act(() => useLayeredInsetStore.setState({ edges: {} }));
+    setPlatform("ios");
+  });
+
+  it("pads the content container by the banner's measured edge on web", () => {
+    setPlatform("web");
+    useLayeredInsetStore.getState().publishInset("banner", INSET_LAYER.strip, BANNER_EDGE);
+    renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
+
+    expect(contentContainerStyle()).toEqual({ paddingBottom: BANNER_EDGE });
+  });
+
+  it("gives the room back once the banner is answered", () => {
+    setPlatform("web");
+    useLayeredInsetStore.getState().publishInset("banner", INSET_LAYER.strip, BANNER_EDGE);
+    renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
+
+    act(() => {
+      useLayeredInsetStore.getState().clearInset("banner");
+    });
+
+    expect(contentContainerStyle()).toBeUndefined();
+  });
+
+  it("pads nothing on native, where there is no cookie banner", () => {
+    setPlatform("ios");
+    useLayeredInsetStore.getState().publishInset("banner", INSET_LAYER.strip, BANNER_EDGE);
+    renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
+
+    expect(contentContainerStyle()).toBeUndefined();
   });
 });

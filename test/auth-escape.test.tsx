@@ -31,9 +31,14 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/sign-in";
 const mockReplace = jest.fn();
+const mockDismissTo = jest.fn();
 
 jest.mock("expo-router", () => ({
-  router: { replace: (...args: unknown[]) => mockReplace(...args), push: jest.fn() },
+  router: {
+    replace: (...args: unknown[]) => mockReplace(...args),
+    dismissTo: (...args: unknown[]) => mockDismissTo(...args),
+    push: jest.fn(),
+  },
   usePathname: () => mockPathname,
   Redirect: () => null,
 }));
@@ -92,9 +97,9 @@ describe.each(ROUTES)("the %s route", (pathname, Screen, crumbLabel) => {
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
     expect(screen.getByTestId("auth-form")).toBeTruthy();
 
-    // T3: a leaf off the root - the Escape names the root and `replace`s to it.
+    // T3: a leaf off the root - the Escape names the root and pops to it.
     fireEvent.press(screen.getByLabelText("Back to Home"));
-    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(mockDismissTo).toHaveBeenCalledWith("/");
 
     // T3: an Escape but no trail - a one-crumb screen's crumb stays hidden, so
     // the route's own name never appears as a crumb beside the arrow.

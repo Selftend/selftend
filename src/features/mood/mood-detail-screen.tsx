@@ -189,7 +189,7 @@ export default function MoodDetailScreen() {
                   its content, so without it the title block refuses to shrink
                   and pushes the actions off-screen instead (#885). */}
               <View className="min-w-0 flex-1 gap-0.5">
-                <Text className="font-display text-2xl font-bold tracking-tight">
+                <Text className="text-2xl font-bold tracking-tight">
                   {t(`checkin.scaleLabels.${entry.moodScore}`)} · {entry.moodScore}
                 </Text>
                 {/* The logged-at card folds into this line - a timestamp is not a

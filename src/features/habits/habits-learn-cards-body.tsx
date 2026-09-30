@@ -54,6 +54,7 @@ export function HabitsLearnCardsBody({ presentation }: { presentation: "links" |
         {HABITS_LEARN_CARDS.map((card) => (
           <HabitsLearnArticleCard key={card.slug} card={card} />
         ))}
+        <HabitsLearnSourceLine />
       </View>
     );
   }
@@ -63,7 +64,34 @@ export function HabitsLearnCardsBody({ presentation }: { presentation: "links" |
       {HABITS_LEARN_CARDS.map((card) => (
         <HabitsLearnCardRow key={card.slug} card={card} />
       ))}
+      <HabitsLearnSourceLine />
     </View>
+  );
+}
+
+/**
+ * The line that names where the ten ideas come from (#2807): the framework is
+ * James Clear's *Atomic Habits* - the four laws by name, the two-minute rule,
+ * "never miss twice" - and a page teaching it without naming it presents it as
+ * house material, which is both a close-paraphrase exposure and the opposite of
+ * "describe it as an idea or pattern, not as original invention" (AGENTS.md).
+ *
+ * It lives INSIDE the body rather than in either surface's chrome so that
+ * every renderer of the ten cards carries it by construction - the public
+ * `/habits` page and the gated index cannot drift apart on it. The detail
+ * screen renders the same component beside its article, because the article
+ * bodies are where the near-verbatim sentences actually sit. The onboarding
+ * wizard renders it too, beside its welcome cards - `docs/modules/habits.md`
+ * § 5 Step 1 has required that attribution since the spec, and the wizard
+ * quotes the systems line verbatim.
+ */
+export function HabitsLearnSourceLine() {
+  const { t } = useTranslation("habits");
+
+  return (
+    <Text variant="muted" className="text-sm">
+      {t("learn.sourceLine")}
+    </Text>
   );
 }
 

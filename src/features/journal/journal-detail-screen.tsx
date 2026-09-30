@@ -138,7 +138,7 @@ export default function JournalDetailScreen() {
                 <Text
                   role="heading"
                   aria-level={1}
-                  className="flex-1 font-display text-[26px] font-bold leading-tight tracking-tight"
+                  className="flex-1 text-[26px] font-bold leading-tight tracking-tight"
                 >
                   {heading}
                 </Text>

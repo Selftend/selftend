@@ -54,9 +54,17 @@ interface ItemCardProps {
 const MARK_COLUMN = "w-8 shrink-0";
 
 /**
- * THE ONE CARD (#1887, #1955): `mark → name / what-it-is / what-you-have → star`,
- * rendered identically in Favourites and in the catalogue beneath it. A favourited item
- * simply appears twice, unmarked.
+ * THE ONE ROW (#1887, #1955; hairline rows since Surface 3): `mark → name / what-it-is /
+ * what-you-have → star`, rendered identically in Favourites and in the catalogue beneath
+ * it. A favourited item simply appears twice, unmarked.
+ *
+ * One item per line at every width, separated by a rule rather than boxed in a card —
+ * the same #1386 reasoning that shaped `HairlineRow` and took Settings' cards away
+ * (#1800). The rule is drawn on the TOP of every row; `ItemCardRow` closes the run with
+ * a bottom rule, so the section reads as one list rather than a stack of panels. The
+ * name "card" survives in the component and its testIDs on purpose: the e2e suites
+ * (`module-mark-column`, `favorites-star`) and this file's history are keyed to it, and
+ * a rename would churn every one of them for a presentation change.
  *
  * Structure, and both halves are load-bearing (#1386, #1887):
  *
@@ -65,12 +73,12 @@ const MARK_COLUMN = "w-8 shrink-0";
  *    `role="button"` on react-native-web, with the outer press firing on every star tap.
  *    (`arrange-row.tsx`'s shape; that file went with the dashboard in #1959, so the shape
  *    was copied, not imported.) The PRESS wash covers the navigating region only — it is
- *    what the press does. The web HOVER wash belongs to the CARD (#2407): a wash on the
- *    inner region alone is inset by the card's padding, has a smaller radius than the
- *    card, and stops short of the star, so it read as a box drawn inside the box. On the
- *    outer box it fills the card to its border; the star's own, darker circle layers on
- *    top and still marks it as a separate target. NativeWind's `hover:` is plain CSS
- *    `:hover`, so it takes on the inert `View`.
+ *    what the press does. The web HOVER wash belongs to the whole ROW (#2407, reasoned
+ *    for the card this used to be and carried over): a wash on the inner region alone
+ *    stops short of the star, so it read as a box drawn inside the row. On the outer
+ *    View it fills the full width; the star's own, darker circle layers on top and
+ *    still marks it as a separate target. NativeWind's `hover:` is plain CSS `:hover`,
+ *    so it takes on the inert `View`.
  * 2. The navigating region carries NO `accessibilityLabel` and NO `accessibilityHint`.
  *    The hint is a prop react-native-web never implements, and an explicit label hides
  *    the rendered children from assistive tech on the web — which would make the stat
@@ -107,7 +115,7 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
   return (
     <View
       className={cn(
-        "min-w-[260px] flex-1 basis-[260px] flex-row items-start gap-1 rounded-2xl border border-border bg-card p-4",
+        "w-full flex-row items-center gap-1 border-t border-border py-3.5",
         Platform.select({ web: "hover:bg-accent/40" }),
       )}
     >
@@ -117,23 +125,19 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         testID={`card-${item.kind}-${item.key}`}
         onPress={() => pushWithOrigin(item.href)}
-        className="min-w-0 flex-1 flex-row items-start gap-3 rounded-xl active:bg-accent/40"
+        className="min-w-0 flex-1 flex-row items-center gap-3 rounded-xl active:bg-accent/40"
       >
         {item.kind === "tool" ? (
           <View
             testID={`card-mark-${item.kind}-${item.key}`}
-            className={cn("mt-px items-center", MARK_COLUMN)}
+            className={cn("items-center", MARK_COLUMN)}
           >
             <Icon name={item.icon} className={cn("size-6", CHROME_MARK)} />
           </View>
         ) : (
           <Text
             testID={`card-mark-${item.kind}-${item.key}`}
-            className={cn(
-              "mt-0.5 text-center text-sm font-bold tracking-wider",
-              MARK_COLUMN,
-              CHROME_TEXT,
-            )}
+            className={cn("text-center text-sm font-bold tracking-wider", MARK_COLUMN, CHROME_TEXT)}
           >
             {item.abbreviation}
           </Text>
@@ -150,9 +154,8 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
            * did. Putting it in the empty stat slot would still have been the wrong shape,
            * because that slot means "what this holds for you".
            *
-           * Wrapping row rather than a fixed pair: the card reflows at 260px and the
-           * longest module name plus the mark must be allowed to drop rather than
-           * truncate.
+           * Wrapping row rather than a fixed pair: at narrow widths the longest
+           * module name plus the mark must be allowed to drop rather than truncate.
            */}
           <View className="flex-row flex-wrap items-center gap-x-2 gap-y-0.5">
             <Text className="text-[15px] font-semibold leading-snug">{name}</Text>
@@ -222,7 +225,9 @@ function FavoriteStar({
       testID={`card-star-${item.kind}-${item.key}`}
       onPress={() => toggle.mutate(!favorite)}
       className={cn(
-        "-mr-2 -mt-2 size-11 shrink-0 items-center justify-center rounded-full active:bg-accent/60",
+        // Negative vertical margins so the 44px target never sets a short row's
+        // height - the row stays text-sized, the target stays full-sized.
+        "-my-2 -mr-2 size-11 shrink-0 items-center justify-center rounded-full active:bg-accent/60",
         Platform.select({ web: "hover:bg-accent/60" }),
       )}
     >
@@ -235,10 +240,12 @@ function FavoriteStar({
 }
 
 /**
- * One section body: the wrapping row `/tools` already shipped. Cards are
- * `min-w-[260px] flex-1 basis-[260px]`, so they go one per row under ~560px and fill
- * the 720px column two-up above it; a mixed row stretches to its tallest card, which the
- * spec accepts.
+ * One section body: a single column of hairline rows (Surface 3), replacing the
+ * two-up wrapping card grid. Every row draws its own TOP rule, so the list needs no
+ * "last child" case; this container contributes the closing BOTTOM rule, which is what
+ * makes the section read as one ruled list rather than an open-ended run. Each row
+ * grows to its own content — names and what-it-is lines wrap inside a full-width row,
+ * so there is no row-height matching between neighbours.
  */
 export function ItemCardRow({
   items,
@@ -250,7 +257,7 @@ export function ItemCardRow({
   favorites: readonly Favorite[] | undefined;
 }) {
   return (
-    <View className="flex-row flex-wrap gap-3">
+    <View className="border-b border-border">
       {items.map((item) => (
         <ItemCard
           key={`${item.kind}-${item.key}`}

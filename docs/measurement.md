@@ -295,14 +295,14 @@ Neither number is invented: the **5** is § 3's own detection target, and the **
 
 ## 10. The build, in dependency order
 
-Ready for `/to-tickets`. Items 1–3 are one coherent change; 4 and 5 are independent of it and of each other.
+All built. Items 1–3 landed as one coherent change; 4 and 5 were independent of it and of each other.
 
-1. **Migration** — add `account_origin` with its `CHECK` and a `comment on column` explaining the gate-order constraint; redeclare `export_user_data()` from the newest declaration with the column in the `preferences` list.
-2. **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ **This item predicted a `PREFERENCE_COLUMNS` entry, and that part of it is wrong.** The guard is a conditional `update(...).is("account_origin", null)`, atomic where a read-then-write would race; a patch-map entry would exist only to let `updateUserPreferences` overwrite a value that must never change. The write plumbing the item is really asking for is the third argument to `recordAgeAttestation`.
-3. **Tests** — the § 4 derivation table, the converted-guest case, and whatever the export-completeness suite demands.
+1. ✅ **Migration** — add `account_origin` with its `CHECK` and a `comment on column` explaining the gate-order constraint; redeclare `export_user_data()` from the newest declaration with the column in the `preferences` list. Built: `supabase/migrations/20260914000000_account_origin.sql`.
+2. ✅ **Client write** — derive and write the value at `AgeGate`, guarded on null. ⚠️ **This item predicted a `PREFERENCE_COLUMNS` entry, and that part of it is wrong.** The guard is a conditional `update(...).is("account_origin", null)`, atomic where a read-then-write would race; a patch-map entry would exist only to let `updateUserPreferences` overwrite a value that must never change. The write plumbing the item is really asking for is the third argument to `recordAgeAttestation`. Built that corrected way: `stampAccountOrigin` in `src/features/settings/repository.ts`, wired through `recordAgeAttestation`.
+3. ✅ **Tests** — the § 4 derivation table, the converted-guest case, and whatever the export-completeness suite demands. Built: `test/account-origin-check-parity.test.ts`, `src/components/app/age-gate.test.tsx`, `src/features/settings/repository.test.ts`.
 4. ✅ **The tagged store constant** — built on [#2324](https://github.com/Selftend/selftend/issues/2324). `src/lib/store-links.ts` carries § 5's `utm_source` / `ct` separately from `appEnv.playStoreUrl` / `appStoreUrl`, and the bare constants stay bare with two guards keeping them that way. ⚠️ **It wired four surfaces, not three** — the Get-the-app section has two mount points with different audiences. The hand-written links in § 5's vocabulary are still a human's job.
-5. **Harden the CSP test** (§ 9) to an exact `script-src` token-set allowlist, with a comment naming the beacon incident as the reason.
-6. **Documentation** — `CONTEXT.md` § _Accounts_ gains the **account origin** glossary entry; an ADR records the beacon incident and its lesson.
+5. ✅ **Harden the CSP test** (§ 9) to an exact `script-src` token-set allowlist, with a comment naming the beacon incident as the reason. Built: the token-set parse in `test/theme-web-surfaces.test.ts`.
+6. ✅ **Documentation** — `CONTEXT.md` § _Accounts_ gains the **account origin** glossary entry; an ADR records the beacon incident and its lesson. Built: the `CONTEXT.md` entry and [ADR-0007](adr/0007-a-vendor-setting-can-break-a-promise-the-repo-makes.md).
 
 ⚠️ **Not a build item: the § 7.1 aggregate.** It is the content of a reopening that has not triggered.
 

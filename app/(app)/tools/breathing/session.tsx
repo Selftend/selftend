@@ -302,7 +302,7 @@ export default function BreathingSessionScreen() {
         durationSeconds: elapsedSeconds,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/tools/breathing" as Parameters<typeof router.replace>[0]);
+      router.dismissTo("/tools/breathing" as Parameters<typeof router.dismissTo>[0]);
     } catch {
       finishingRef.current = false;
       showToast({ title: t("common:feedback.problem"), tone: "error" });
@@ -378,7 +378,7 @@ export default function BreathingSessionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenPhase, paused, resolved]);
 
-  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // Shell B's Escape (#1256) leaves through `router.dismissTo`, so it lands here
   // with the OS back gesture and the web back button - every uninvited exit
   // passes this guard. Mid-session they pause the clock and ask - a calm
   // finish-or-continue, never a silent discard (#777). Setup has nothing to
@@ -676,6 +676,10 @@ export default function BreathingSessionScreen() {
             ) : null}
           </View>
 
+          <Button disabled={!selectedCycles} onPress={handleStart}>
+            <Text>{t("breathing.start")}</Text>
+          </Button>
+
           <View className="gap-3 border-y border-border py-5">
             <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
               {t("breathing.setup.eachCycle")}
@@ -726,10 +730,6 @@ export default function BreathingSessionScreen() {
               last
             />
           </View>
-
-          <Button disabled={!selectedCycles} onPress={handleStart}>
-            <Text>{t("breathing.start")}</Text>
-          </Button>
         </View>
       </ScrollView>
     </SafeAreaView>

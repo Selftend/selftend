@@ -25,7 +25,7 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
 
-const { indexSubtitle, indexTitle } = enHabits.learn;
+const { indexSubtitle, indexTitle, sourceLine } = enHabits.learn;
 const cards = enHabits.learn.cards;
 
 /** Every heading's text, in tree order, whatever its level. */
@@ -90,6 +90,18 @@ describe("/habits - the public explainer page", () => {
       expect(screen.getByText(card.short)).toBeTruthy();
       expect(screen.getByText(card.body)).toBeTruthy();
     }
+  });
+
+  /**
+   * #2807: the ten cards are James Clear's Atomic Habits framework, near
+   * verbatim in places, and this public page must name that source. The line
+   * renders out of the shared body, so the gated surfaces carry it too -
+   * asserted in habits-learn-screen.test.tsx.
+   */
+  it("attributes the framework to its source", () => {
+    renderWithProviders(<HabitsScreen />);
+
+    expect(screen.getByText(sourceLine)).toBeTruthy();
   });
 
   /**

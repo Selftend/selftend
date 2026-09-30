@@ -17,11 +17,13 @@
  * takes to the `notifications` locale JSON), and jest loads it for both sides.
  * Keep it a plain constant - never an env flag the app could read differently
  * per build. That rule is a TEST, not just this sentence
- * (`reminder-rollout.test.ts`, "the edge function can load it"): nothing else in
- * the repo can see the breakage - eslint ignores `supabase/functions/**`, CI runs
- * no Deno, and tsc and jest both resolve a React Native import happily, so the
- * first one added here would surface at `supabase functions deploy`, after the
- * merge.
+ * (`reminder-rollout.test.ts`, "the edge function can load it") - and, since
+ * #2812, a CI lane: the verify job runs `deno check` over the function entry
+ * points, which import this file, so a React Native import added here goes
+ * red pre-merge. eslint still ignores `supabase/functions/**`, and tsc and
+ * jest both resolve a React Native import happily - the test and the Deno
+ * lane are all that stand between that import and `supabase functions
+ * deploy`.
  *
  * Lifting a target is a release step, not a code comment: `docs/releasing.md`,
  * "Post-release: lift held-out reminder targets". The tests that pin this list

@@ -2,7 +2,7 @@
 
 **Status:** Legacy lightweight spec. The current canonical module spec is [gratitude.md](gratitude.md), which expands this log into the gratitude module, three-level onboarding education, and Favorite Moments collection.
 
-Private one-to-three item gratitude entries. Lightweight by design: notice something, save it, come back later if useful. Separate from journaling, mood check-ins, and CBT self-care logs. No streaks, no required daily cadence, no reminders.
+Private one-to-three item gratitude entries. Lightweight by design: notice something, save it, come back later if useful. Separate from journaling, mood check-ins, and CBT self-care logs. No streaks, no required daily cadence; an opt-in daily reminder later shipped through the shared reminders system (`docs/reminders.md`), off by default.
 
 ## User Problem
 
@@ -63,7 +63,7 @@ Indexed by `(user_id, logged_at desc)`.
 
 ## Reminders
 
-None. The tool can appear in navigation and the tools overview, but it must not schedule notifications or create daily pressure.
+As specified here: none. An opt-in daily reminder later shipped through the shared reminders system (`docs/reminders.md`) - off by default, default slot 20:00. The boundary that stands: nothing schedules notifications the person did not turn on, and nothing creates daily pressure.
 
 ## Acceptance Criteria
 

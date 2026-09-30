@@ -2,8 +2,7 @@ node_modules/
 .expo/
 .expo-shared/
 dist/
-dist-e2e/
-dist-e2e-*/
+dist-*/
 build/
 build-artifacts/
 web-build/

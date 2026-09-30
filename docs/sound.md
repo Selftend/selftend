@@ -342,7 +342,10 @@ during a fade-out; `setVolume` applies at once when nothing ramps; a fade-in
 landing after `play` awaited setup targets the slider's value; a superseded
 `play` is never adopted (the `playGen` guard); one-shots start at full volume and
 are cut, not faded; the ramp is a plain `setInterval` with no React owner and so
-outlives an unmount.
+outlives an unmount. A one-shot that should _sound_ like it fades carries the
+fade in its file, never in a runtime ramp — the meditation bell's tail fade is
+baked into `meditation-bell.m4a` by the pipeline (#2764), and this invariant is
+why.
 
 On web, "player" now reads "source node and its gain": the two existing web cases
 assert on `gain.gain.value` and `source.stop()` instead of `el.volume` and

@@ -4,6 +4,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, ScrollView } from "react-nati
 import { AgeGate } from "./age-gate";
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import enAuth from "@/src/i18n/locales/en/auth.json";
+import { INSET_LAYER, useLayeredInsetStore } from "@/src/stores/layered-inset-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockMutateAsync = jest.fn();
@@ -268,6 +269,54 @@ describe("AgeGate", () => {
     // scoping exists to avoid, so the absence is the assertion.
     it("leaves Android alone", () => {
       setPlatform("android");
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      expect(contentContainerStyle()).toBeUndefined();
+    });
+  });
+
+  // #2825. In bg the cookie banner's copy wraps taller (top ~600 at 390x844)
+  // and covered "Продължаване" (y 596-636) on this, the first screen of first
+  // run, with nothing to scroll. The banner's own measured edge is the number,
+  // never a constant: a pad sized for en would repeat the bug in bg.
+  describe("keeps Continue clear of the cookie banner (#2825)", () => {
+    const BANNER_EDGE = 244;
+
+    function contentContainerStyle() {
+      return screen.UNSAFE_getAllByType(ScrollView)[0].props.contentContainerStyle;
+    }
+
+    beforeEach(() => {
+      useLayeredInsetStore.setState({ edges: {} });
+    });
+
+    afterEach(() => {
+      // In act: the gate is still mounted here and subscribes to the store.
+      act(() => useLayeredInsetStore.setState({ edges: {} }));
+    });
+
+    it("pads the content container by the banner's measured edge on web", () => {
+      setPlatform("web");
+      useLayeredInsetStore.getState().publishInset("banner", INSET_LAYER.strip, BANNER_EDGE);
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      expect(contentContainerStyle()).toEqual({ paddingBottom: BANNER_EDGE });
+    });
+
+    it("pads nothing on web once the banner is answered", () => {
+      setPlatform("web");
+      renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
+
+      expect(contentContainerStyle()).toBeUndefined();
+    });
+
+    // Native has no cookie banner, and its keyboard already has its own path
+    // (the iOS content pad above, Android's KeyboardAvoidingView). The ladder's
+    // layer 0 carries that same keyboard, so reading it here too would pad it
+    // twice.
+    it("leaves native to its keyboard path", () => {
+      setPlatform("android");
+      useLayeredInsetStore.getState().publishInset("keyboard", INSET_LAYER.keyboard, 300);
       renderWithProviders(<AgeGate onAttested={jest.fn()} onUnderFloor={jest.fn()} />);
 
       expect(contentContainerStyle()).toBeUndefined();
