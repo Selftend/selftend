@@ -17,4 +17,11 @@ describe("ModulesSection", () => {
     expect(screen.getByText("ACT module")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Act on your values" })).toBeTruthy();
   });
+
+  it("renders the DBT module card", () => {
+    renderWithProviders(<ModulesSection />);
+
+    expect(screen.getByText("DBT module")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Get through intense moments" })).toBeTruthy();
+  });
 });
