@@ -118,8 +118,8 @@ describe("the index list ↔ the route tree", () => {
  * along, labelled beta, so "are modules visible" has no single answer - and the
  * pages are bound to the surface where a module is currently unreachable.
  *
- * ⚠️ The landing-card half of § 7.5 is already guarded by the two-link
- * assertion in `modules-section.test.tsx`; nothing is duplicated here.
+ * ⚠️ The landing-card half of § 7.5 is already guarded by the per-card
+ * assertions in `modules-section.test.tsx`; nothing is duplicated here.
  */
 describe("the module explainers ↔ the module gate", () => {
   const MODULE_EXPLAINERS = ["/cbt", "/dbt", "/act"];
