@@ -25,6 +25,13 @@ Fixed, by area:
 3. **Remove `expo-system-ui`** - Expo may autolink it natively; removal must be validated against a preview/dev EAS build.
 4. **`useCbtInsights` → Postgres RPC** - the heavy 10-query Home fan-out; the _mitigations_ (indexes + memoization + bounded queries + shared mood cache) are applied, but moving aggregation server-side is a larger refactor left for a dedicated change.
 
+### Deferred-item dispositions - 2026-09-29 (decided on [#2829](https://github.com/Selftend/selftend/issues/2829))
+
+1. **WebP conversion** - **filed** as [#2838](https://github.com/Selftend/selftend/issues/2838): the 2026-06-01 tooling blocker no longer applies to an agent session.
+2. **Widget-preview art** - **split**. The mechanical half is filed as [#2839](https://github.com/Selftend/selftend/issues/2839): the set had grown to eight byte-identical 639 KB PNGs while `app.config.ts` points every widget at the same `moodcheckin.png`, so seven files are dead and the one referenced preview just needs compression. Purpose-specific per-widget art is **accepted debt** until design capacity exists.
+3. **Remove `expo-system-ui`** - **killed; the package stays.** `app.config.ts` sets `userInterfaceStyle: "automatic"`, and standalone Android builds need `expo-system-ui` for the app to follow the system light/dark switch - zero imports does not mean unused. Do not re-propose the removal.
+4. **`useCbtInsights` → Postgres RPC** - **parked behind evidence.** The mitigations are applied and nothing shows Home latency in practice. It files only if the walk ([#2772](https://github.com/Selftend/selftend/issues/2772)) or the [#2446](https://github.com/Selftend/selftend/issues/2446) user-test sittings surface Home latency; absent that, it converts to accepted debt at the 2026-12-10 standings reading.
+
 ## Executive summary
 
 This audit covers **35 confirmed findings** across two domains.
