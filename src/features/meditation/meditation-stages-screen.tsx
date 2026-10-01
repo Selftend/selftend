@@ -9,6 +9,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { MeditationSourceLine } from "@/src/features/meditation/meditation-framework-body";
 import { STAGES } from "@/src/features/meditation/stages";
 import {
   useMeditationProgramState,
@@ -125,6 +126,13 @@ export default function MeditationStagesScreen() {
               );
             })}
           </View>
+
+          {/* The shared source line (#2860): this spine reproduces the book's
+              own taxonomy - the stage names and the milestone grouping - so
+              the page that carries it most directly names it too, through the
+              same component and key as the home overview and both learn
+              surfaces. */}
+          <MeditationSourceLine />
         </View>
       </ScrollView>
     </SafeAreaView>

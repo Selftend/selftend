@@ -36,6 +36,20 @@ describe("MeditationLearnScreen", () => {
     expect(screen.getByRole("heading", { name: "The path is not linear" })).toBeTruthy();
   });
 
+  // #2860: the framework is named as The Mind Illuminated's wherever it is
+  // taught - same remedy as the habits learn surfaces' Atomic Habits line
+  // (#2807). The line lives in the shared body, so this screen and the public
+  // `/meditation` page cannot drift apart on it.
+  it("names The Mind Illuminated as the framework's source", () => {
+    renderWithProviders(<MeditationLearnScreen />);
+
+    expect(
+      screen.getByText(
+        "The stages, milestones, and practices taught here summarise ideas from The Mind Illuminated by Culadasa (John Yates).",
+      ),
+    ).toBeTruthy();
+  });
+
   // INVERTED by #588, and these two used to be a matched pair: one asserted the
   // attention callout wore the room's iris, the other that the `be` and `act`
   // cards beside it stayed their own colours as "untouched guests". Both encoded
