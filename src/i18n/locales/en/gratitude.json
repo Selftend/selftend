@@ -17,8 +17,7 @@
     "entries_other": "entries",
     "favorites_one": "favourite",
     "favorites_other": "favourites",
-    "thisWeek": "this week",
-    "loadingValue": "—"
+    "thisWeek": "this week"
   },
   "stats": {
     "last": "last logged {{when}}",
