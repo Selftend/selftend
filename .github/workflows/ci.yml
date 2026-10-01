@@ -88,6 +88,18 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      # Generate expo-router's typed routes before `npm run verify` typechecks.
+      # `experiments.typedRoutes` makes `tsc` validate every href against the
+      # real route set - but only once `.expo/types` exists, which `expo start`
+      # writes as a side effect. Without this step CI typechecked the loose
+      # fallback `Href` while a contributor's machine checked the strict one,
+      # and the two disagreed about what compiles (#2849). `expo customize
+      # tsconfig.json` is the CLI's one-shot path to the same generator the dev
+      # server runs - no Metro, no watcher, no tracked-file changes; measured at
+      # ~10s against this job's ~3 minutes, with `tsc` itself no slower.
+      - name: Generate expo-router typed routes
+        run: npx expo customize tsconfig.json
+
       - name: Verify
         run: npm run verify
 

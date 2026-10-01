@@ -150,11 +150,14 @@ describe("targetPathname", () => {
   });
 
   it("substitutes a catch-all segment", () => {
+    // Hypothetical route - the app has no catch-all screen, and this is a
+    // pure-function test of the `[...param]` branch, so the cast goes through
+    // `unknown` to satisfy expo-router's generated typed routes (#2849).
     expect(
       targetPathname({
         pathname: "/tools/habits/learn/[...rest]",
         params: { rest: ["a", "b"] },
-      } as Href),
+      } as unknown as Href),
     ).toBe("/tools/habits/learn/a/b");
   });
 
@@ -176,7 +179,9 @@ describe("targetPathname", () => {
   });
 
   it("strips a group that appears mid-path", () => {
-    expect(targetPathname("/(app)/(tabs)/tools/journal")).toBe("/tools/journal");
+    // Hypothetical again - no route here nests two groups, but stripping must
+    // not depend on the group being the first segment (#2849).
+    expect(targetPathname("/(app)/(tabs)/tools/journal" as unknown as Href)).toBe("/tools/journal");
   });
 
   it("keeps the root a root when the group was the whole path", () => {
