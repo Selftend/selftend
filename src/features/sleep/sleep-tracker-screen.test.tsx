@@ -106,6 +106,44 @@ describe("SleepTrackerScreen", () => {
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
+  it("claims nothing while the history is still in flight - no zero count, no empty states", () => {
+    // A cold open: every read `undefined` (in flight, or failed with no cache).
+    // The screen used to render the ENTIRE empty state here - "0 sleep entries",
+    // three "Log a few sleep entries to see this." charts and "No sleep logged
+    // yet" - so a returning user's real history read as erased for the fetch
+    // window (#2854, ADR-0009 clause 1). An unloaded history is empty without
+    // being a fact; these surfaces must draw nothing instead.
+    mockUseSleepLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useSleepLogs>);
+    // Count and stats stay `undefined` from beforeEach.
+
+    renderWithProviders(<SleepTrackerScreen />);
+
+    // The fabricated hero zero: `totalNights ?? allLogs.length` over no data.
+    expect(screen.queryByText("0")).toBeNull();
+    expect(screen.queryByText("0 sleep entries")).toBeNull();
+    // The three chart empty states and the list's.
+    expect(screen.queryAllByText("Log a few sleep entries to see this.")).toHaveLength(0);
+    expect(screen.queryByText(/^No sleep logged yet\./)).toBeNull();
+    // The section eyebrows stay - they are true in every state.
+    expect(screen.getByRole("heading", { name: "Recent entries" })).toBeTruthy();
+  });
+
+  it("shows the zero count and the empty states once an empty history has actually loaded", () => {
+    // The counterpart that keeps #2854's gate from overcorrecting: a LOADED
+    // empty history is a fact, and a brand-new user still gets the calm
+    // empty states rather than a blank page.
+    mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
+
+    renderWithProviders(<SleepTrackerScreen />);
+
+    expect(screen.getByText("0")).toBeTruthy();
+    expect(screen.getByText("0 sleep entries")).toBeTruthy();
+    expect(screen.getAllByText("Log a few sleep entries to see this.")).toHaveLength(3);
+    expect(screen.getByText(/^No sleep logged yet\./)).toBeTruthy();
+  });
+
   // -------------------------------------------------------------------------
   // #256: every summary on this screen used to be computed from the 50-log list
   // query, so each was really a "newest 50 logs" figure. These cover the
