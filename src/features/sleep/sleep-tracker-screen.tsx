@@ -48,6 +48,15 @@ export default function SleepTrackerScreen() {
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
   const allLogs = logs ?? [];
+  // `logs`, `totalNights` and `stats` are each `undefined` while loading and after a
+  // failed fetch with no cache - never a user with no nights. Only an actually-loaded
+  // (possibly empty) history may claim a count or draw an empty state, or a returning
+  // user's whole history reads as erased for the fetch window (ADR-0009 clause 1,
+  // #2854). Each surface below gates on the first of its own sources to answer, and
+  // draws nothing until then - the check-in and habits overviews' pattern.
+  const logsLoaded = logs !== undefined;
+  const countLoaded = totalNights !== undefined || logsLoaded;
+  const summariesLoaded = stats !== undefined || logsLoaded;
   // The loaded logs stand in only until the server stats arrive (`undefined` while
   // loading); once they do they win, including a genuine null for "no nights in that
   // window", which is not the same as a zero-hour average.
@@ -105,10 +114,17 @@ export default function SleepTrackerScreen() {
                   value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
                   label: t("hero.quality"),
                 },
-                {
-                  value: String(totalNights ?? allLogs.length),
-                  label: t("hero.entries", { count: totalNights ?? allLogs.length }),
-                },
+                // Omitted until either count source has answered (habits' two-week-
+                // ticks pattern): `totalNights ?? allLogs.length` is a fabricated "0"
+                // while both queries are still in flight (#2854).
+                ...(countLoaded
+                  ? [
+                      {
+                        value: String(totalNights ?? allLogs.length),
+                        label: t("hero.entries", { count: totalNights ?? allLogs.length }),
+                      },
+                    ]
+                  : []),
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),
@@ -134,9 +150,16 @@ export default function SleepTrackerScreen() {
               so the column's gap-6 would compound into an asymmetric 48px
               band above every divider (same fix as grounding/gratitude).
             */}
+            {/*
+              Each chart and the recent list draw NOTHING until the data they quote
+              has loaded (#2854): their "Log a few sleep entries…" / "No sleep logged
+              yet" empty states branch on emptiness, and an unloaded history is empty
+              without being a fact. Only a loaded-and-empty history may say so - the
+              section eyebrows stay, because they are true in every state.
+            */}
             <View>
               <Section title={t("chart.duration14")}>
-                <SleepDurationChart nights={nights14} />
+                {logsLoaded ? <SleepDurationChart nights={nights14} /> : null}
                 {longest !== null && shortest !== null ? (
                   <View className="flex-row flex-wrap items-center gap-y-1">
                     <Text variant="muted" className="text-[13px] tabular-nums">
@@ -157,11 +180,11 @@ export default function SleepTrackerScreen() {
               </Section>
 
               <Section title={t("chart.qualityMix")}>
-                <SleepQualityMix distribution={distribution} />
+                {summariesLoaded ? <SleepQualityMix distribution={distribution} /> : null}
               </Section>
 
               <Section title={t("chart.weekdayAvg")}>
-                <SleepWeekdayChart averages={weekly} />
+                {summariesLoaded ? <SleepWeekdayChart averages={weekly} /> : null}
               </Section>
 
               <Section
@@ -172,7 +195,7 @@ export default function SleepTrackerScreen() {
                   <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
                 }
               >
-                <SleepRecentList logs={allLogs} />
+                {logsLoaded ? <SleepRecentList logs={allLogs} /> : null}
               </Section>
             </View>
           </View>
