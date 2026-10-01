@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { ToolKey } from "@/src/features/favorites/items";
@@ -49,8 +48,11 @@ import { useHomeToolStats } from "@/src/features/home/tool-stats-queries";
  *   lines on Home, a worse surface than the shift. The rule is not waived here; it simply
  *   does not reach a slot that cannot tell the two apart. Give the hook a state that can, and
  *   clause 2 reaches this line the same day.
- * - **loaded and empty** → the shared `home.rows.empty`. One key for every tool: the card's
- *   own name already supplies the noun.
+ * - **loaded and empty** → `null` too, BY RULING rather than by ignorance (#2865): the
+ *   fresh frames draw no stat line until there is something to state, and the owner ruled
+ *   their silence wins over the "Nothing yet" the card used to print. Loaded-empty is a
+ *   fact the surface may state; it chooses not to. The two nulls mean different things
+ *   and render the same on purpose.
  * - **nothing scheduled today** → its own string. A user with seven habits and none due
  *   has a full record and an empty day; those are different facts.
  *
@@ -85,7 +87,13 @@ function joinClauses(first: string | null, second: string | null): string | null
   return kept.length > 0 ? kept.join(" · ") : null;
 }
 
-const emptyStat = (t: TFunction) => t("home.rows.empty");
+/**
+ * Loaded-and-empty, resolved: no stat line at all (owner ruling #2865 — the frames'
+ * silence won over "Nothing yet"). A named function rather than eight inline `null`s so
+ * the ruling keeps one home, the way the shared key it replaces had one, and so the
+ * branch still reads as "this tool's record is empty" rather than as a loading state.
+ */
+const emptyStat = (): null => null;
 
 // --- 1. mood-checkin -------------------------------------------------------
 // The two clauses use DIFFERENT windows on purpose: `this week` is a calendar Mon-Sun
@@ -112,7 +120,7 @@ export function useMoodStat(userId: string | null): string | null {
     const average = mood.avg7 === null ? null : roundTo1(mood.avg7);
     stat =
       mood.lifetimeCount === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.thisWeek", { value: mood.thisWeekCount }),
             average === null
@@ -136,7 +144,7 @@ export function useJournalStat(userId: string | null): string | null {
   if (journal !== undefined) {
     stat =
       journal.entries === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.entries", { count: journal.entries }),
             t("home.rows.words", { count: journal.words }),
@@ -157,7 +165,7 @@ export function useGratitudeStat(userId: string | null): string | null {
   if (gratitude !== undefined) {
     stat =
       gratitude.entries === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.entries", { count: gratitude.entries }),
             t("home.rows.thisWeek", { value: gratitude.thisWeek }),
@@ -176,7 +184,7 @@ export function useBreathingStat(userId: string | null): string | null {
   if (breathing !== undefined) {
     stat =
       breathing.sessions === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.sessions", { count: breathing.sessions }),
             t("home.rows.minutes", { count: breathing.minutes }),
@@ -198,7 +206,7 @@ export function useGroundingStat(userId: string | null): string | null {
   if (grounding !== undefined) {
     stat =
       grounding.sessions === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.sessions", { count: grounding.sessions }),
             grounding.lastCompletedAt
@@ -231,7 +239,7 @@ export function useMeditationStat(userId: string | null): string | null {
     const median = meditation.medianMinutes === null ? null : Math.round(meditation.medianMinutes);
     stat =
       meditation.sits === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             t("home.rows.sits", { count: meditation.sits }),
             // null means no sessions at all, which the sits clause already said.
@@ -260,7 +268,7 @@ export function useSleepStat(userId: string | null): string | null {
     const quality = sleep.avgQuality7 === null ? null : roundTo1(sleep.avgQuality7);
     stat =
       sevenDay === null && quality === null
-        ? emptyStat(t)
+        ? emptyStat()
         : joinClauses(
             sevenDay === null
               ? null
@@ -289,7 +297,7 @@ export function useHabitsStat(userId: string | null): string | null {
   if (habits !== undefined) {
     stat =
       habits.active === 0
-        ? emptyStat(t)
+        ? emptyStat()
         : habits.dueToday === 0
           ? t("home.rows.nothingScheduled")
           : t("home.rows.doneToday", { done: habits.doneToday, total: habits.dueToday });
@@ -312,7 +320,8 @@ const TOOL_STAT_HOOKS: Record<ToolKey, StatHook> = {
 /**
  * The card's "what you have" line. Renders NOTHING (not an empty node, not a dash) until
  * the stat resolves — a loading surface never claims emptiness, and `null` from the hook
- * is exactly that state.
+ * covers that state. Since #2865 it also covers a loaded-and-empty record: the card
+ * draws no stat line at all rather than "Nothing yet", by owner ruling.
  *
  * `toolKey` never changes for a mounted card, so the hook picked from the table is
  * stable for the component's lifetime and the rules of hooks hold.
