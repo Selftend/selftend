@@ -597,16 +597,25 @@ export default function ProtectedLayout() {
                 destinations `SharedToolsRow` links to from the CBT home: pushing one from
                 a module while it already sat deeper in the stack mounted it TWICE (#1216).
 
-                So the list is COMPLETE now - every route file appears here, and
-                `nav-singular.test.ts` fails until a new one does. Absence used to be a
-                silent default; it is now a build error.
+                So the list is COMPLETE now - every route file THIS navigator owns appears
+                here, and `nav-singular.test.ts` fails until a new one does. Absence used
+                to be a silent default; it is now a build error.
+
+                ☠️ "Owns" is the other half of that guard (#2847). The modules subtree sits
+                behind its own layout since #2579, so its 80 screens are children of THAT
+                navigator, not this one - and a declaration left here matched nothing:
+                expo-router warned `[Layout children]: No route named …` ~80 times on every
+                mount of this shell, and every option those declarations carried was
+                silently dead. They live in `app/(app)/modules/_layout.tsx` now, and the
+                guard fails on any declaration naming a route outside this navigator.
 
                 ⚠️ That completeness added a THIRD exception the other two cannot derive:
                 a screen holding the user's unsaved WORK must remount, or singular hands
                 them back a half-finished exercise. `useState` is not the test - plenty of
-                overview screens below hold benign view state and reuse it happily. One
-                screen qualifies (urge surfing); it is marked plain inline and the guard's
-                `MUST_REMOUNT` keeps it honest. The values check-in used to be the second:
+                overview screens below hold benign view state and reuse it happily. The
+                screens that qualify (urge surfing, the DBT pause/edit/session flows) sit
+                under the modules navigator, marked plain there, and the guard's
+                `MUST_REMOUNT` keeps them honest. The values check-in used to be another:
                 folding it onto the single-instance values screen (#1379) took the choice
                 away, so its ratings moved to a draft store instead - reuse hands the user
                 back their OWN numbers, and sign-out clears them.
@@ -616,89 +625,21 @@ export default function ProtectedLayout() {
                 oversight. */}
             <Stack.Screen name="index" dangerouslySingular />
             <Stack.Screen name="settings" dangerouslySingular />
-            <Stack.Screen name="modules/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/learn" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/history/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/history/[id]" />
-            <Stack.Screen name="modules/cbt/new" />
-            <Stack.Screen name="modules/cbt/[id]" />
-            <Stack.Screen name="modules/cbt/goals/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/goals/new" />
-            <Stack.Screen name="modules/cbt/goals/[id]" />
-            <Stack.Screen name="modules/cbt/activities/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/activities/new" />
-            <Stack.Screen name="modules/cbt/activities/[id]" />
-            <Stack.Screen name="modules/cbt/values" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/weekly-review" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/beliefs/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/beliefs/new" />
-            <Stack.Screen name="modules/cbt/beliefs/[id]" />
-            <Stack.Screen name="modules/cbt/exposure/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/exposure/new" />
-            <Stack.Screen name="modules/cbt/exposure/[id]" />
-            <Stack.Screen name="modules/cbt/worry/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/worry/new" />
-            <Stack.Screen name="modules/cbt/tasks/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/tasks/new" />
-            <Stack.Screen name="modules/cbt/tasks/[id]" />
-            <Stack.Screen name="modules/cbt/anger/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/anger/new" />
-            <Stack.Screen name="modules/cbt/anger/[id]" />
-            <Stack.Screen name="modules/cbt/self-care" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/recovery" dangerouslySingular />
-            <Stack.Screen name="modules/act/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/choice-point/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/choice-point/new" />
-            <Stack.Screen name="modules/act/choice-point/[id]" />
-            <Stack.Screen name="modules/act/committed-action/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/committed-action/new" />
-            <Stack.Screen name="modules/act/committed-action/[id]" />
-            <Stack.Screen name="modules/act/connection/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/connection/drop-anchor" dangerouslySingular />
-            <Stack.Screen name="modules/act/connection/new" />
-            <Stack.Screen name="modules/act/connection/[id]" />
-            <Stack.Screen name="modules/act/defusion/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/defusion/new" />
-            <Stack.Screen name="modules/act/defusion/[id]" />
-            <Stack.Screen name="modules/act/expansion/index" dangerouslySingular />
-            {/* Plain: a nine-state exercise, mid-practice. See HOLDS_UNSAVED_WORK. */}
-            <Stack.Screen name="modules/act/expansion/urge-surfing/index" />
-            <Stack.Screen name="modules/act/expansion/urge-surfing/[id]" />
-            <Stack.Screen name="modules/act/expansion/new" />
-            <Stack.Screen name="modules/act/expansion/[id]" />
-            <Stack.Screen name="modules/act/observing-self/index" dangerouslySingular />
-            <Stack.Screen name="modules/act/observing-self/new" />
-            <Stack.Screen name="modules/act/observing-self/[id]" />
-            <Stack.Screen name="modules/act/values/index" dangerouslySingular />
-            {/* A `<Redirect>` stub since #1379 - marked like `tools/act`, the other
-                pure redirect here. It never stays mounted, so singular is inert on it;
-                it is stated rather than left blank so the guard's marking rules cover
-                the route rather than excusing it. */}
-            <Stack.Screen name="modules/act/values/bulls-eye" dangerouslySingular />
-            <Stack.Screen name="modules/act/values/[domain]" />
-            <Stack.Screen name="modules/dbt/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/learn/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/learn/[group]" />
-            <Stack.Screen name="modules/dbt/coping-plan/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/coping-plan/edit" />
-            <Stack.Screen name="modules/dbt/pause" />
-            <Stack.Screen name="modules/dbt/sessions/muscle-relaxation" />
-            <Stack.Screen name="modules/dbt/emotions/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/emotions/new" />
-            <Stack.Screen name="modules/dbt/emotions/[id]" />
-            <Stack.Screen name="modules/dbt/wise-mind/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/wise-mind/new" />
-            <Stack.Screen name="modules/dbt/wise-mind/[id]" />
-            <Stack.Screen name="modules/dbt/judgements/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/judgements/new" />
-            <Stack.Screen name="modules/dbt/judgements/[id]" />
-            <Stack.Screen name="modules/dbt/opposite-action/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/opposite-action/new" />
-            <Stack.Screen name="modules/dbt/opposite-action/[id]" />
-            <Stack.Screen name="modules/dbt/scripts/index" dangerouslySingular />
-            <Stack.Screen name="modules/dbt/scripts/new" />
-            <Stack.Screen name="modules/dbt/scripts/[id]" />
+            {/* The modules subtree's ONE child here (#2847). `app/(app)/modules/_layout.tsx`
+                (the module gate, #2579) makes `modules` a navigator boundary: its 80
+                screens are that navigator's children and are declared there, where their
+                options actually apply - declared here they matched nothing and expo-router
+                warned on every mount.
+
+                ☠️ Deliberately PLAIN, not `dangerouslySingular`. The entry holds a whole
+                nested stack, and that stack is per-visit state by construction - a
+                half-written record or mid-practice exercise can live anywhere inside it -
+                so singular's reuse is exactly the hazard `MUST_REMOUNT` exists for.
+                Plain also IS the current behaviour: the declarations that named these
+                routes have been dead since #2579, so no cross-boundary dedup is being
+                given up (#989 already records that screen-level singular never crossed a
+                group boundary anyway). */}
+            <Stack.Screen name="modules" />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
             <Stack.Screen name="tools/meditation/index" />
@@ -755,8 +696,6 @@ export default function ProtectedLayout() {
             <Stack.Screen name="routines/[id]/index" />
             <Stack.Screen name="routines/[id]/edit" />
             <Stack.Screen name="notifications" />
-            <Stack.Screen name="modules/cbt/saved/[id]" />
-            <Stack.Screen name="modules/cbt/worry/[id]" />
             <Stack.Screen name="support" dangerouslySingular />
             <Stack.Screen name="legal" dangerouslySingular />
             <Stack.Screen name="progress" dangerouslySingular />
