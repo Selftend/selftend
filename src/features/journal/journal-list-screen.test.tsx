@@ -96,6 +96,38 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText(/^last written /)).toBeNull();
   });
 
+  /**
+   * ADR-0009 clause 1 (#2853): the list and both server-side totals are all
+   * undefined while their reads are in flight, and the old `?? 0`-shaped
+   * fallbacks rendered that as "0 entries · 0 words" - telling a returning
+   * user, for the load window, that their writing is gone. Only an
+   * actually-loaded source may claim a number; until one arrives the hero
+   * states no counts at all, the same answer the check-in overview gives.
+   */
+  it("claims no entry or word count while the counts are still loading", () => {
+    mockEntries(undefined);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.queryAllByTestId("module-header-stat")).toHaveLength(0);
+    expect(screen.queryByText(/\bentries\b/)).toBeNull();
+    expect(screen.queryByText(/\bwords\b/)).toBeNull();
+  });
+
+  it("lets the loaded list stand in for the counts until the server totals arrive", () => {
+    mockEntries([
+      journalEntry("a", "2026-05-28", { body: "Three words here." }),
+      journalEntry("b", "2026-05-27", { body: "Two words." }),
+    ]);
+
+    renderWithProviders(<JournalListScreen />);
+
+    // 2 entries from the loaded list, 5 words summed from its bodies - real,
+    // loaded figures, not the unloaded totals' absence rendered as zero.
+    expect(screen.getByText("2 entries")).toBeTruthy();
+    expect(screen.getByText("5 words")).toBeTruthy();
+  });
+
   it("shows only five recent entries in captured-day groups with no partial group totals", () => {
     mockEntries([
       journalEntry("today", "2026-05-28", { title: "Morning pages" }),
