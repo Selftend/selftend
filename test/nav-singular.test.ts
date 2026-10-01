@@ -42,6 +42,14 @@ function declaredScreens(layoutFile: string): [string, string][] {
   return [...source.matchAll(/<Stack\.Screen name="([^"]+)"([^/]*)\/>/g)].map((m) => [m[1], m[2]]);
 }
 
+/**
+ * A child directory with its own `_layout.tsx` is a navigator BOUNDARY (#2847): the parent
+ * owns ONE route by the directory's name, and the nested layout owns everything below it.
+ * `app/(app)/modules` is that case since #2579 gave the module gate its own layout.
+ */
+const ownsItsOwnNavigator = (routesDir: string, name: string) =>
+  fs.existsSync(path.join(REPO, routesDir, name, "_layout.tsx"));
+
 /** The file backing a route name, following expo-router's `x` / `x/index` resolution. */
 function routeFile(routesDir: string, name: string): string | null {
   for (const candidate of [`${name}.tsx`, `${name}/index.tsx`]) {
@@ -87,33 +95,38 @@ function readsSearchParams(file: string, depth = 0): boolean {
  * every entry must be declared, and must actually be plain.
  */
 const MUST_REMOUNT: Record<string, string> = {
+  // ⚠️ Keys are screen names relative to the navigator that OWNS the screen (#2847): the
+  // module entries lost their `modules/` prefix when their declarations moved from
+  // protected-layout.tsx into `app/(app)/modules/_layout.tsx`, the navigator they are
+  // actually children of.
+  //
   // Nine pieces of state driving a timed practice; re-entering mid-surf is not a resume.
   // ⚠️ The route leaf became a directory in #1517 (it grew an `[id]` sibling for the detail
   // screen), so the screen name gained `/index`. The route PATH is unchanged; only the
   // Expo Router screen name moved, and this exception is keyed by the latter.
-  "modules/act/expansion/urge-surfing/index": "in-progress exercise",
-  // ⚠️ `modules/act/values/bulls-eye` used to be here, for exactly the reason this list
+  "act/expansion/urge-surfing/index": "in-progress exercise",
+  // ⚠️ `act/values/bulls-eye` used to be here, for exactly the reason this list
   // exists: it held four ratings the user had typed and not saved. #1379 folded that
-  // check-in onto `modules/act/values`, which is single-instance, so the entry is
+  // check-in onto `act/values`, which is single-instance, so the entry is
   // REMOVED rather than moved - the ratings now live in a draft store, where a reused
   // instance hands the user back their own numbers and sign-out clears them. The route
   // itself survives as a redirect stub, so the "points at a real route" assertion below
   // would have kept passing on a stale entry: it checks that an exception names a
   // declared route, not that the route still deserves excusing.
+  // The builder holds a whole coping plan the person has chosen and not yet
+  // saved; a reused instance hands it back half-edited, over the plan they
+  // did save. Seeded once from the query at mount, deliberately.
+  "dbt/coping-plan/edit": "unsaved plan",
+  // Four steps that record nothing: re-entering is starting again, and
+  // reuse would drop the person back on step three of a run they left.
+  "dbt/pause": "in-progress flow",
+  // A timed session with a running clock; re-entering mid-run is not a
+  // resume, and this session records on completion only.
+  "dbt/sessions/muscle-relaxation": "in-progress session",
   // ☠️ Reads the callback URL and completes the redirect behind a once-only `useRef` guard,
   // then scrubs the auth material from history. A reused instance would never process a
   // second, different code — and it reads `window.location.href`, not `useLocalSearchParams`,
   // so the query-keyed derivation above is blind to it.
-  // The builder holds a whole coping plan the person has chosen and not yet
-  // saved; a reused instance hands it back half-edited, over the plan they
-  // did save. Seeded once from the query at mount, deliberately.
-  "modules/dbt/coping-plan/edit": "unsaved plan",
-  // Four steps that record nothing: re-entering is starting again, and
-  // reuse would drop the person back on step three of a run they left.
-  "modules/dbt/pause": "in-progress flow",
-  // A timed session with a running clock; re-entering mid-run is not a
-  // resume, and this session records on completion only.
-  "modules/dbt/sessions/muscle-relaxation": "in-progress session",
   "auth-callback": "mount performs the auth callback",
 };
 
@@ -122,6 +135,9 @@ const LAYOUTS: [string, string][] = [
   ["src/components/app/protected-layout.tsx", "app/(app)"],
   ["src/components/app/app-shell.tsx", "app"],
   ["app/(auth)/_layout.tsx", "app/(auth)"],
+  // The modules navigator (#2847): its 80 screens moved here from protected-layout.tsx,
+  // which now declares only the `modules` boundary itself.
+  ["app/(app)/modules/_layout.tsx", "app/(app)/modules"],
 ];
 
 describe.each(LAYOUTS)("%s declares single-instance screens", (layoutFile, routesDir) => {
@@ -137,6 +153,10 @@ describe.each(LAYOUTS)("%s declares single-instance screens", (layoutFile, route
     const shouldBeMarked = screens.filter(([name]) => {
       // Groups route elsewhere and `index` is a landing/redirect route, never a push target.
       if (name.startsWith("(") || name === "index") return false;
+      // A navigator boundary stays plain: the entry holds a whole nested stack, and that
+      // stack is per-visit state by construction - a half-finished record can live
+      // anywhere inside it - so singular's reuse is the `MUST_REMOUNT` hazard writ large.
+      if (ownsItsOwnNavigator(routesDir, name)) return false;
       if (name.includes("[") || name.endsWith("/new")) return false;
       if (name in MUST_REMOUNT) return false;
       const file = routeFile(routesDir, name);
@@ -156,6 +176,9 @@ describe.each(LAYOUTS)("%s declares single-instance screens", (layoutFile, route
         if (!rest.includes("dangerouslySingular")) return false;
         if (name.includes("[") || name.endsWith("/new")) return true;
         if (name in MUST_REMOUNT) return true;
+        // Singular on a navigator boundary would reuse the nested stack and whatever
+        // per-visit state it holds - the same hazard `MUST_REMOUNT` names per screen.
+        if (ownsItsOwnNavigator(routesDir, name)) return true;
         const file = routeFile(routesDir, name);
         return file !== null && readsSearchParams(file);
       })
@@ -179,8 +202,14 @@ const routeNames = (routesDir: string, prefix = ""): string[] =>
   fs.readdirSync(path.join(REPO, routesDir, prefix), { withFileTypes: true }).flatMap((entry) => {
     const name = prefix ? `${prefix}/${entry.name}` : entry.name;
     // A `(group)` has its own layout and is declared by name as one entry, not walked into.
+    // The same goes for any directory with its own `_layout.tsx` (#2847): it is a navigator
+    // boundary, so the parent owns one route by its name and the nested layout - which must
+    // itself be in `LAYOUTS` - owns everything below it. Walking through the boundary is how
+    // this guard once demanded 80 `modules/*` declarations of a layout they were dead in.
     if (entry.isDirectory()) {
-      return entry.name.startsWith("(") ? [entry.name] : routeNames(routesDir, name);
+      if (entry.name.startsWith("(")) return [entry.name];
+      if (ownsItsOwnNavigator(routesDir, name)) return [name];
+      return routeNames(routesDir, name);
     }
     if (!entry.name.endsWith(".tsx")) return [];
     // `_layout` is configuration; `+not-found` is expo's catch-all, reached by failing to
@@ -200,6 +229,55 @@ describe.each(LAYOUTS)("%s declares every route it owns", (layoutFile, routesDir
   it("declares each of them", () => {
     expect(routes.filter((route) => !declared.has(route))).toEqual([]);
   });
+});
+
+/**
+ * ☠️ The INVERSE of completeness (#2847): a declared name that matches no child of the
+ * navigator is DEAD. expo-router resolves a declaration against the navigator's own
+ * children only (`route === name || route === `${name}/index``, `useScreens.tsx`), logs
+ * `[Layout children]: No route named "…" exists in nested children` for anything else on
+ * every mount, and silently applies NONE of the declaration's options. That is how #2579
+ * left 80 `modules/*` declarations - `dangerouslySingular` included - dead in
+ * protected-layout.tsx for weeks: the routes kept working off their files, so nothing
+ * visible failed, and ~80 warnings buried every console read.
+ */
+describe.each(LAYOUTS)("%s declares no route it does not own", (layoutFile, routesDir) => {
+  const owned = new Set(routeNames(routesDir));
+
+  it("has no dead declaration", () => {
+    const dead = declaredScreens(layoutFile)
+      .map(([name]) => name)
+      .filter((name) => !owned.has(name) && !owned.has(`${name}/index`));
+
+    expect(dead).toEqual([]);
+  });
+});
+
+/** Navigator boundaries under a routes dir: `(group)` dirs and dirs with a `_layout.tsx`. */
+const nestedNavigators = (routesDir: string, prefix = ""): string[] =>
+  fs.readdirSync(path.join(REPO, routesDir, prefix), { withFileTypes: true }).flatMap((entry) => {
+    if (!entry.isDirectory()) return [];
+    const name = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.name.startsWith("(") || ownsItsOwnNavigator(routesDir, name)) return [name];
+    return nestedNavigators(routesDir, name);
+  });
+
+/**
+ * ☠️ A navigator boundary that is not itself in `LAYOUTS` is a subtree NO assertion in
+ * this file sees: its routes are auto-registered with default options and nothing demands
+ * a singular/plain decision for them. #2579 opened exactly that hole - the day the module
+ * gate's `_layout.tsx` landed, the modules subtree stopped being protected-layout's to
+ * declare, every guard here kept passing against the dead declarations, and the next
+ * nested layout would do the same silently. This closes the loop: every boundary the
+ * walker stops at must appear in `LAYOUTS` as a routes dir of its own.
+ */
+it("lists every nested navigator in LAYOUTS, so no subtree escapes the guard", () => {
+  const covered = new Set(LAYOUTS.map(([, dir]) => dir));
+  const escaped = LAYOUTS.flatMap(([, routesDir]) =>
+    nestedNavigators(routesDir).map((name) => `${routesDir}/${name}`),
+  ).filter((dir) => !covered.has(dir));
+
+  expect(escaped).toEqual([]);
 });
 
 // A restated list rots the moment a route is renamed, and a stale key would silently stop
@@ -238,9 +316,12 @@ describe("every shared-tool destination is declared", () => {
       .matchAll(/const \w+_SHARED_TOOLS: SharedTool\[\] = \[([\s\S]*?)\n\];/g),
   ].flatMap((block) => [...block[1].matchAll(/route: "([^"]+)"/g)].map((m) => m[1]));
 
-  const declared = new Set(
-    declaredScreens("src/components/app/protected-layout.tsx").map(([name]) => name),
-  );
+  const declared = new Set([
+    ...declaredScreens("src/components/app/protected-layout.tsx").map(([name]) => name),
+    // Module destinations are declared by the modules navigator since #2847, under names
+    // relative to it; re-prefix them so the config's absolute routes resolve.
+    ...declaredScreens("app/(app)/modules/_layout.tsx").map(([name]) => `modules/${name}`),
+  ]);
 
   it("finds the rows' routes at all, so the assertion below cannot pass vacuously", () => {
     expect(toolRoutes.length).toBeGreaterThan(5);
