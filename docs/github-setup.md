@@ -39,7 +39,7 @@ This repo already includes:
 
 `CI` runs on pull requests and pushes to `main` with Node `22.23.1`.
 
-The main CI verification job checks linting, formatting, typechecking, and tests through `npm run verify`, and runs `deno check` + `deno lint` over the Supabase edge functions (`supabase/functions/`, config in `supabase/functions/deno.json`) — the one corner `npm run verify` cannot see, since eslint ignores that directory and tsconfig excludes it ([#2812](https://github.com/Selftend/selftend/issues/2812)). CI also runs integration and end-to-end jobs against local Supabase.
+The main CI verification job checks linting, formatting, typechecking, and tests through `npm run verify`, and runs `deno check` + `deno lint` over the Supabase edge functions (`supabase/functions/`, config in `supabase/functions/deno.json`) — the one corner `npm run verify` cannot see, since eslint ignores that directory and tsconfig excludes it ([#2812](https://github.com/Selftend/selftend/issues/2812)). Before typechecking it generates expo-router's typed routes with `npx expo customize tsconfig.json` (~2s in CI, measured 2026-10-01), so CI's `tsc` validates hrefs against the real route set the way a contributor's machine does once `expo start` has written `.expo/types` ([#2849](https://github.com/Selftend/selftend/issues/2849)). CI also runs integration and end-to-end jobs against local Supabase.
 
 The Husky pre-commit hook runs `lint-staged`, not the full CI suite. For staged JS/TS files, `lint-staged` runs `eslint --fix`, `prettier --write`, and related Jest tests. For staged JSON, Markdown, YAML, and CSS files, it runs `prettier --write`.
 
