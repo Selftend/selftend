@@ -6,12 +6,12 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { HelpSections } from "@/src/components/app/help-sections";
 import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 
-const pillarAct = require("../../../assets/images/onboarding/cbt_act_lead_with_action.png");
-const pillarThink = require("../../../assets/images/onboarding/cbt_think_challenge_patterns.png");
-const pillarBe = require("../../../assets/images/onboarding/cbt_be_mindful_presence.png");
-const toolBeliefs = require("../../../assets/images/onboarding/cbt_core_beliefs_schemas.png");
-const toolExposure = require("../../../assets/images/onboarding/cbt_exposure_door.png");
-const toolSleep = require("../../../assets/images/onboarding/cbt_sleep_target.png");
+const pillarAct = require("../../../assets/images/onboarding/cbt_act_lead_with_action.webp");
+const pillarThink = require("../../../assets/images/onboarding/cbt_think_challenge_patterns.webp");
+const pillarBe = require("../../../assets/images/onboarding/cbt_be_mindful_presence.webp");
+const toolBeliefs = require("../../../assets/images/onboarding/cbt_core_beliefs_schemas.webp");
+const toolExposure = require("../../../assets/images/onboarding/cbt_exposure_door.webp");
+const toolSleep = require("../../../assets/images/onboarding/cbt_sleep_target.webp");
 
 interface TableRowProps {
   condition: string;

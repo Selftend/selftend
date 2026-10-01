@@ -227,7 +227,7 @@ describe("resource shrinking keeps the require()d images (#2211)", () => {
     // raw asset - both are kept; a type it does not copy would not be.
     expect(requiredImages.map(({ asset }) => asset)).toEqual(
       expect.arrayContaining([
-        "assets/images/help/cbt_program.png",
+        "assets/images/help/cbt_program.webp",
         "assets/branding/google-logo.png",
         "assets/icon.png",
       ]),
