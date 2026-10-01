@@ -151,7 +151,6 @@
       "moreGoals_other": "+още {{count}} цели"
     },
     "rows": {
-      "empty": "Още нищо",
       "nothingScheduled": "Нищо насрочено за днес",
       "thisWeek": "{{value}} тази седмица",
       "avg7": "ср. за 7 дни {{value}}",

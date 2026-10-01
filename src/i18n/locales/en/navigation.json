@@ -151,7 +151,6 @@
       "moreGoals_other": "+{{count}} more goals"
     },
     "rows": {
-      "empty": "Nothing yet",
       "nothingScheduled": "Nothing scheduled today",
       "thisWeek": "{{value}} this week",
       "avg7": "7-day average {{value}}",

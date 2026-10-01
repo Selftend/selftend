@@ -44,7 +44,8 @@ const renderStat = (toolKey: ToolKey) =>
 
 /**
  * The card's whole stat line, including the ` · ` join, or `null` when the card draws
- * no stat node at all - which is what "loading" looks like from outside (#1955).
+ * no stat node at all - which is what loading (#1955) and, since the #2865 ruling, a
+ * loaded-and-empty record both look like from outside.
  */
 function statOf(toolKey: ToolKey): string | null {
   const node = screen.queryByTestId(`card-stat-tool-${toolKey}`);
@@ -81,10 +82,20 @@ describe("the three states", () => {
     expect(statOf("mood")).toBeNull();
   });
 
-  it("renders the one shared empty string when loaded with no record", () => {
+  it("draws no stat line at all when loaded with no record (#2865)", () => {
+    // Owner ruling: the frames' silence won over "Nothing yet". Loaded-empty is
+    // a fact the card may state; it chooses not to, so the slot stays empty.
     renderStat("journal");
 
-    expect(statOf("journal")).toBe("Nothing yet");
+    expect(statOf("journal")).toBeNull();
+  });
+
+  it("stays silent for a loaded-empty sleep record too, whose emptiness is null-shaped", () => {
+    // Sleep's empty branch is `null && null` rather than a zero count - the one
+    // hook whose loaded-empty check is not `=== 0`, so it gets its own pin.
+    renderStat("sleep");
+
+    expect(statOf("sleep")).toBeNull();
   });
 
   it("distinguishes an empty day from an empty record", () => {
@@ -245,10 +256,11 @@ describe("per-tool stats", () => {
   });
 
   it("drops grounding's recency clause when the tool has no sessions at all", () => {
-    // `lastCompletedAt` is null exactly when the count is zero, and the empty string
-    // already says so - the card must not render a dangling "Last ".
+    // `lastCompletedAt` is null exactly when the count is zero - the card must not
+    // render a dangling "Last ". Since #2865 the loaded-empty branch draws nothing
+    // at all, which subsumes the old shared empty string.
     renderStat("grounding");
 
-    expect(statOf("grounding")).toBe("Nothing yet");
+    expect(statOf("grounding")).toBeNull();
   });
 });

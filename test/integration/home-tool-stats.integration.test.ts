@@ -98,8 +98,9 @@ describe("home_tool_stats (integration)", () => {
   });
 
   it("reads as empty - never null - for a person with no records at all", async () => {
-    // The card renders `Nothing yet` off a zero. A missing row or a null count would
-    // reach the client as "not loaded" and draw nothing at all, forever.
+    // Off a zero the card now stays silent by ruling (#2865) - but the zero is still
+    // load-bearing: it is what lets the client tell a loaded-empty record from a
+    // missing row or a null count, which would read as "not loaded", forever.
     const byTool = await stats(alice);
 
     expect(num(byTool.mood.lifetimeCount)).toBe(0);
