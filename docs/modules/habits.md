@@ -145,7 +145,7 @@ Mirrors `src/components/app/gratitude-onboarding-modal.tsx` and `meditation-onbo
 
 **Step 1 - Welcome: Small Habits, Remarkable Results**
 
-- Hero illustration from the shared onboarding badge set. Asset path: `assets/images/onboarding/app-journey-growth-badge.png`.
+- Hero illustration from the shared onboarding illustration set. Asset path: `assets/images/onboarding/habits_compounding_path.webp`.
 - Two-sentence summary attributing the framework to _Atomic Habits_ by James Clear and explaining that the practice is about small, repeatable systems - not motivation spikes.
 - Two cards:
   - **The 1% Compounding Effect** - improving 1% daily compounds ~37× in a year; symmetrically, 1% worse decays toward zero.
@@ -166,7 +166,7 @@ Mirrors `src/components/app/gratitude-onboarding-modal.tsx` and `meditation-onbo
 
 **Step 4 - Never Miss Twice & The Two-Minute Rule**
 
-- Tracker illustration from the shared onboarding badge set. Asset path: `assets/images/onboarding/habits-tracker-garden-badge.png`.
+- Tracker illustration from the shared onboarding illustration set. Asset path: `assets/images/onboarding/habits_loop_two_minute_rule.webp`.
 - Two cards:
   - **The Two-Minute Rule** - scale the habit until it takes < 2 minutes to start. _"Read one page,"_ not _"Read for an hour."_ The new-habit form will ask for the two-minute version.
   - **Never Miss Twice** - missing once is data; missing twice starts a new habit. Selftend will never punish a missed day, but the home screen quietly notes when you're at risk of missing twice so you can choose to come back.
@@ -284,8 +284,8 @@ Phase 1 is ready to ship when:
 ## 13. Asset & Localisation Notes
 
 - Current onboarding illustrations:
-  - `assets/images/onboarding/app-journey-growth-badge.png` - welcome / compounding.
-  - `assets/images/onboarding/habits-tracker-garden-badge.png` - tracking / never miss twice.
+  - `assets/images/onboarding/habits_compounding_path.webp` - welcome / compounding.
+  - `assets/images/onboarding/habits_loop_two_minute_rule.webp` - tracking / never miss twice.
 - Both languages ship together. Translations land in `src/i18n/locales/{en,bg}/habits.json` and the relevant nav keys (`sidebar.habits`, `today.tools.habits`, `today.tools.habitsSub`) already exist. (There is no `badgeSoon` left to drop - #1020 took every status chip off the panel, and #2106 took the tool rows themselves.)
 
 ---
