@@ -118,11 +118,23 @@ export default function JournalListScreen() {
       : t("hero.never")
     : undefined;
 
+  // Only an actually-loaded source may claim a number (ADR-0009 clause 1,
+  // #2853): all three reads are undefined while in flight, and `?? 0`-shaped
+  // fallbacks rendered that as "0 entries · 0 words" - a returning user's
+  // writing reading as erased, for the load window, on the most personal
+  // record in the app. The loaded list may stand in for a total that has not
+  // arrived (see the comment on the count queries above), but an unloaded
+  // list stands in for nothing: until a count exists its stat is simply
+  // absent from the hero row, the same answer the subline gives for its own
+  // value and the check-in overview gives for its whole stat run.
+  const entryCount = totalEntries ?? entries?.length;
+  const wordCount = totalWords ?? (entries ? loadedWords : undefined);
+
   const recentSections = useMemo(() => groupRecentJournalEntries(entries), [entries]);
   // The section is earned by lifetime history, never by the selected range. A
   // thin range may empty the chart, but cannot unmount the control needed to
   // leave that range.
-  const hasAnyEntry = (totalEntries ?? allEntries.length) > 0;
+  const hasAnyEntry = (entryCount ?? 0) > 0;
   const hasWritingInRange = Boolean(writingBuckets?.some((bucket) => bucket.wordCount > 0));
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
@@ -150,14 +162,25 @@ export default function JournalListScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               stats={[
-                {
-                  value: String(totalEntries ?? allEntries.length),
-                  label: t("hero.entryLabel", { count: totalEntries ?? allEntries.length }),
-                },
-                {
-                  value: String(totalWords ?? loadedWords),
-                  label: t("hero.wordLabel", { count: totalWords ?? loadedWords }),
-                },
+                // Each count renders only once it exists (ADR-0009 clause 1 -
+                // see `entryCount`/`wordCount` above): no stat, rather than a
+                // false "0", while its reads are in flight.
+                ...(entryCount === undefined
+                  ? []
+                  : [
+                      {
+                        value: String(entryCount),
+                        label: t("hero.entryLabel", { count: entryCount }),
+                      },
+                    ]),
+                ...(wordCount === undefined
+                  ? []
+                  : [
+                      {
+                        value: String(wordCount),
+                        label: t("hero.wordLabel", { count: wordCount }),
+                      },
+                    ]),
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),
