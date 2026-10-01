@@ -121,7 +121,8 @@
     "sits_other": "седения",
     "typicalMinutes": "мин обичайно",
     "last": "последна сесия {{when}}",
-    "never": "още няма сесии"
+    "never": "още няма сесии",
+    "loading": "Зареждане"
   },
   "module": {
     "home": {
@@ -136,6 +137,7 @@
       "begin": "Започни",
       "practiceLabel": "Твоята практика",
       "stageRow": "Етап {{stage}} — {{name}}",
+      "stageRowUnknown": "Твоят етап",
       "stageRowSubtitle": "Къде си сега · десет етапа, четири етапни цели",
       "practicesRowSubtitle": "Стъпка по стъпка за всяка практика",
       "minutesSat": "Изседени минути",

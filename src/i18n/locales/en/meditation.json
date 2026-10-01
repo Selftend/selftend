@@ -43,7 +43,8 @@
     "sits_other": "sits",
     "typicalMinutes": "min typical",
     "last": "last sat {{when}}",
-    "never": "no sessions logged yet"
+    "never": "no sessions logged yet",
+    "loading": "Loading"
   },
   "module": {
     "home": {
@@ -58,6 +59,7 @@
       "begin": "Begin",
       "practiceLabel": "Your practice",
       "stageRow": "Stage {{stage}} — {{name}}",
+      "stageRowUnknown": "Your stage",
       "stageRowSubtitle": "Where you are now · ten stages, four milestones",
       "practicesRowSubtitle": "Step-by-step reference for each practice",
       "minutesSat": "Minutes sat",

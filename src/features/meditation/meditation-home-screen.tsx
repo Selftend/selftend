@@ -57,7 +57,16 @@ import { HOME_COLUMN } from "@/src/lib/layout";
 import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
-/** The pre-selected length when the user has no stored preference. */
+/**
+ * The pre-selected length when a LOADED account has no stored preference.
+ *
+ * Never a stand-in for a preference still in flight: the screen gates on the
+ * program-state read, so this only paints once that read has settled empty (a
+ * brand-new practice, where 12 genuinely is the default) or failed with
+ * nothing cached. Painting it mid-read presented 12 min as the user's own
+ * setting, and a Begin tapped in that window started a 12-minute sit over a
+ * stored 15 (#2859, ADR-0009 clause 1).
+ */
 const DEFAULT_DURATION = 12;
 
 /** Five rows and one link out - the overview lists, the all-sits screen holds (#696). */
@@ -72,7 +81,7 @@ export default function MeditationHomeScreen() {
   const { practice } = useLocalSearchParams<{ practice?: string }>();
 
   const { data: preferences, isLoading: prefsLoading } = useUserPreferences(userId);
-  const { data: programState } = useMeditationProgramState(userId);
+  const { data: programState, isLoading: programLoading } = useMeditationProgramState(userId);
   const { data: allSessions } = useMeditationSessions(userId, 200);
   // Exact lifetime total for the hero - the list above is capped at 200, so its length
   // would freeze the displayed "sits" count once a user passes that many.
@@ -89,8 +98,15 @@ export default function MeditationHomeScreen() {
   const [forceInfo, setForceInfo] = useState(false);
   const [forceWizard, setForceWizard] = useState(false);
 
-  const currentStage = (programState?.currentStage ?? 1) as StageNumber;
-  const stage = getStage(currentStage);
+  // `programState === undefined` is NOT loaded - the read in flight (held
+  // behind the whole-screen gate below) or failed with no cache - and claims
+  // no stage: "Stage 1" is also the genuine value for a brand-new account, so
+  // a returning meditator cannot tell "loading" from "your progress reset"
+  // (#2859, ADR-0009 clause 1). A loaded `null` row IS that brand-new
+  // account, and only it may read as Stage 1.
+  const currentStage =
+    programState === undefined ? null : ((programState?.currentStage ?? 1) as StageNumber);
+  const stage = currentStage === null ? null : getStage(currentStage);
   const preferredDuration = programState?.preferredDurationMinutes ?? null;
 
   // Null until the user picks, so a preference arriving after first paint still
@@ -153,12 +169,21 @@ export default function MeditationHomeScreen() {
    * `Stage 1 · 24 sits · 12 min typical · last today, 6:03 pm`, split so the
    * count is foreground ink and the noun is muted (#690).
    *
-   * The stage is there from the first second of an account, so it always shows.
-   * The other two are not: `0 sits · - typical` is the row of zeros #735 met a
-   * brand-new check-in user with, and there is no reason to repeat it here.
+   * A loaded account has a stage from its first second, but the READ does not
+   * (#2859): web keeps no persisted query cache (query-client.ts), so a cold
+   * load holds `undefined` for the full round trip, and painting the Stage-1
+   * default into that window told a Stage-3 meditator their progress had
+   * reset. The run says Loading instead, exactly as grounding's hero does for
+   * its count - normally unseen behind the whole-screen gate, but a failed
+   * fetch with no cache lands here too (ADR-0009 clause 1).
+   * The other two are not shown at zero: `0 sits · - typical` is the row of
+   * zeros #735 met a brand-new check-in user with, and there is no reason to
+   * repeat it here.
    */
   const statItems = [
-    { value: `${t("hero.stage")} ${stage.number}`, label: "" },
+    stage
+      ? { value: `${t("hero.stage")} ${stage.number}`, label: "" }
+      : { value: t("hero.loading"), label: "" },
     ...(sitCount > 0
       ? [
           { value: String(sitCount), label: t("hero.sits", { count: sitCount }) },
@@ -345,7 +370,14 @@ export default function MeditationHomeScreen() {
     return <Redirect href={{ pathname: "/tools/meditation/practices", params: { practice } }} />;
   }
 
-  if (prefsLoading) {
+  // The program-state read gates the screen exactly as the preferences read
+  // does: the setup card paints the stored stage and length as settled facts,
+  // and Begin hands the length to the sitting screen - a tap before the read
+  // landed started a 12-minute sit over a stored 15 (#2859). On web a cold
+  // load has no persisted cache to mask the round trip (query-client.ts). A
+  // whole-screen stand-in claims nothing and reserves the whole screen by
+  // construction, so nothing shifts when the read lands (ADR-0009, edge 6).
+  if (prefsLoading || programLoading) {
     return <ScreenLoading title={t("module.home.title")} />;
   }
 
@@ -523,10 +555,19 @@ export default function MeditationHomeScreen() {
               <View>
                 <PracticeRow
                   icon="stairs"
-                  title={t("module.home.stageRow", {
-                    stage: stage.number,
-                    name: t(stage.shortTitleKey as Parameters<typeof t>[0]),
-                  })}
+                  // With the stage unknown (a failed fetch with no cache - the
+                  // in-flight case never gets this far), the row stays a door
+                  // to the stages screen under a title that claims no number:
+                  // "Stage 1 — Establishing a practice" here read as a reset
+                  // to a Stage-3 meditator (#2859).
+                  title={
+                    stage
+                      ? t("module.home.stageRow", {
+                          stage: stage.number,
+                          name: t(stage.shortTitleKey as Parameters<typeof t>[0]),
+                        })
+                      : t("module.home.stageRowUnknown")
+                  }
                   subtitle={t("module.home.stageRowSubtitle")}
                   onPress={() => pushWithOrigin("/tools/meditation/stages")}
                 />
