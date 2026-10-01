@@ -6,7 +6,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 /**
  * The meditation framework's three pieces of context - attention and peripheral
  * awareness, the gardener's mindset, the path is not linear - with no chrome of
- * any kind (#2469, docs/brand-result.md § 4).
+ * any kind (#2469, docs/brand-result.md § 4), closed by the source line that
+ * names the framework's book (#2860).
  *
  * **One body, two renderers.** `meditation-learn-screen.tsx` renders it inside
  * the gated screen's safe area, scroll column and header; `app/meditation.tsx`
@@ -57,6 +58,33 @@ export function MeditationFrameworkBody() {
           <Text variant="muted">{t("module.learn.nonLinearBody")}</Text>
         </CardContent>
       </Card>
+
+      <MeditationSourceLine />
     </>
+  );
+}
+
+/**
+ * The line that names where the module's framework comes from (#2860): the ten
+ * stages and their names, the four milestones, the attention / peripheral
+ * awareness distinction and the stage self-assessment are Culadasa (John
+ * Yates)'s *The Mind Illuminated* - and a module teaching that taxonomy without
+ * naming it presents it as house material, which is both a close-paraphrase
+ * exposure and the opposite of "describe it as an idea or pattern, not as
+ * original invention" (AGENTS.md). Same remedy as the habits modules' Atomic
+ * Habits line (#2807 → `HabitsLearnSourceLine`).
+ *
+ * It renders at the end of this shared body, so the gated learn screen and the
+ * public `/meditation` page carry it by construction - and it is exported so
+ * the module's other surfaces (the home overview, the stages spine) render the
+ * SAME component and the same key, rather than wording that can drift.
+ */
+export function MeditationSourceLine() {
+  const { t } = useTranslation("meditation");
+
+  return (
+    <Text variant="muted" className="text-sm">
+      {t("sourceLine")}
+    </Text>
   );
 }

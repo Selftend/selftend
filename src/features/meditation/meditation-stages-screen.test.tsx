@@ -70,6 +70,21 @@ describe("MeditationStagesScreen", () => {
     for (const n of [1, 5, 10]) expect(screen.getByText(String(n))).toBeTruthy();
   });
 
+  // #2860: this spine reproduces the book's own taxonomy - the stage names and
+  // the milestone grouping - so the page that carries it most directly names
+  // it too, through the same shared component and key as the home overview and
+  // both learn surfaces (precedent: the habits modules' Atomic Habits line,
+  // #2807).
+  it("names The Mind Illuminated as the source of the ten-stage spine", () => {
+    renderWithProviders(<MeditationStagesScreen />);
+
+    expect(
+      screen.getByText(
+        "The stages, milestones, and practices taught here summarise ideas from The Mind Illuminated by Culadasa (John Yates).",
+      ),
+    ).toBeTruthy();
+  });
+
   it("tells nobody they are behind", () => {
     renderWithProviders(<MeditationStagesScreen />);
 

@@ -91,6 +91,20 @@ describe("/meditation - the public explainer page", () => {
     expect(screen.getByText(enMeditation.module.learn.attentionBody)).toBeTruthy();
   });
 
+  /**
+   * #2860: the module's framework is Culadasa (John Yates)'s The Mind
+   * Illuminated - the ten stages by name, the four milestones, the attention /
+   * peripheral-awareness distinction - and a page teaching it without naming
+   * it presents it as house material. Same remedy as `/habits` (#2807): the
+   * line renders from the shared body, so the public page and the gated learn
+   * screen carry it by construction.
+   */
+  it("names The Mind Illuminated as the framework's source", () => {
+    renderWithProviders(<MeditationScreen />);
+
+    expect(screen.getByText(enMeditation.sourceLine)).toBeTruthy();
+  });
+
   it("titles the page with the module's name, never the learn screen's instruction", () => {
     renderWithProviders(<MeditationScreen />);
 

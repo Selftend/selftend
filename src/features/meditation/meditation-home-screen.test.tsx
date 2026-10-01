@@ -804,6 +804,20 @@ describe("MeditationHomeScreen", () => {
       expect(screen.getByText("Stage 3 — Overcoming forgetting")).toBeTruthy();
       expect(screen.getByText("Learn the framework")).toBeTruthy();
     });
+
+    // #2860: the overview names the framework ("ten stages, four milestones"),
+    // so it names the framework's book too - the same shared component and key
+    // the stages spine and both learn surfaces render, so the surfaces cannot
+    // drift apart on the attribution (precedent: #2807's Atomic Habits line).
+    it("names The Mind Illuminated as the framework's source", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(
+        screen.getByText(
+          "The stages, milestones, and practices taught here summarise ideas from The Mind Illuminated by Culadasa (John Yates).",
+        ),
+      ).toBeTruthy();
+    });
   });
 
   /**

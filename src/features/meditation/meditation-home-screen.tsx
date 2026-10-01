@@ -30,6 +30,7 @@ import { DurationSlider } from "@/src/features/meditation/duration-slider";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
+import { MeditationSourceLine } from "@/src/features/meditation/meditation-framework-body";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import {
   buildMinutesWindow,
@@ -586,6 +587,11 @@ export default function MeditationHomeScreen() {
                   ruled
                 />
               </View>
+              {/* The shared source line (#2860), under the rows that name the
+                  framework ("ten stages, four milestones"): the same component
+                  and key the stages spine and both learn surfaces render, so
+                  the surfaces cannot drift apart on the attribution. */}
+              <MeditationSourceLine />
             </Section>
 
             {/*
