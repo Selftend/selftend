@@ -10,6 +10,7 @@ import { TimeField } from "@/src/components/app/time-field";
 import { formatHHmm, parseHHmm } from "@/src/utils/time";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { MeditationSourceLine } from "@/src/features/meditation/meditation-framework-body";
 import { suggestStageFromAssessment } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
 import { useRovingFocus } from "@/src/lib/roving-focus";
@@ -149,6 +150,12 @@ export function MeditationOnboarding({
                   <Text className="text-center">{t("onboarding.welcome.body")}</Text>
                 </CardContent>
               </Card>
+              {/* The shared source line (#2879, completing #2860): the wizard
+                  teaches the framework - attention vs awareness, the gardener's
+                  mindset, the stage self-assessment - so its first panel names
+                  the framework's book, exactly as the habits wizard names
+                  Atomic Habits beside its welcome cards (#2827). */}
+              <MeditationSourceLine />
               <Button onPress={goNext}>
                 <Text>{t("onboarding.welcome.continue")}</Text>
               </Button>

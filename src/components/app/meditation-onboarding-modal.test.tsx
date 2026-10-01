@@ -21,6 +21,23 @@ describe("MeditationOnboarding", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  // #2879, completing #2860: the wizard teaches the framework - attention vs
+  // awareness, the gardener's mindset, the stage self-assessment - so its
+  // first panel names the framework's book, exactly as the habits wizard names
+  // Atomic Habits beside its welcome cards (#2827). The same shared component
+  // and key as the module's other surfaces, so the wording cannot drift.
+  it("names The Mind Illuminated on the welcome panel", () => {
+    renderWithProviders(
+      <MeditationOnboarding visible onComplete={jest.fn()} onDismiss={jest.fn()} />,
+    );
+
+    expect(
+      screen.getByText(
+        "The stages, milestones, and practices taught here summarise ideas from The Mind Illuminated by Culadasa (John Yates).",
+      ),
+    ).toBeTruthy();
+  });
+
   it("keeps the welcome CTA advancing the wizard, not closing it", () => {
     const onDismiss = jest.fn();
     renderWithProviders(

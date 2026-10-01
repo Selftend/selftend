@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { MeditationSourceLine } from "@/src/features/meditation/meditation-framework-body";
 import { MeditationPracticesSection } from "@/src/features/meditation/meditation-practices-section";
 import { cn } from "@/lib/utils";
 import { FORM_COLUMN } from "@/src/lib/layout";
@@ -31,6 +32,11 @@ export default function MeditationPracticesScreen() {
             <Text variant="muted">{t("practices.subtitle")}</Text>
           </View>
           <MeditationPracticesSection initialPractice={practice} />
+          {/* The shared source line (#2879, completing #2860): the practices
+              reference teaches the framework's own exercises, so it names the
+              framework's book through the same component and key as the
+              module's other surfaces. */}
+          <MeditationSourceLine />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -30,6 +30,19 @@ describe("MeditationPracticesScreen", () => {
     expect(screen.getByText("Observing thoughts")).toBeTruthy();
   });
 
+  // #2879, completing #2860: the practices reference teaches the framework's
+  // own exercises, so it names the framework's book - the same shared
+  // component and key the module's other surfaces render.
+  it("names The Mind Illuminated as the practices' source", () => {
+    renderWithProviders(<MeditationPracticesScreen />);
+
+    expect(
+      screen.getByText(
+        "The stages, milestones, and practices taught here summarise ideas from The Mind Illuminated by Culadasa (John Yates).",
+      ),
+    ).toBeTruthy();
+  });
+
   it("pre-opens the practice a ?practice= deep link names", () => {
     // The links used to aim at the overview; the overview forwards them here.
     mockParams.mockReturnValue({ practice: "body-scan" });
