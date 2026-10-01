@@ -97,6 +97,21 @@ describe("GratitudeHomeScreen", () => {
     expect(screen.getByText("Add one small thing you appreciated today.")).toBeTruthy();
   });
 
+  it("draws no stat row and no dash while the counts are in flight (ADR-0009 clause 1)", () => {
+    mockUseGratitudeEntryCount.mockReturnValue({ data: undefined } as never);
+    mockUseFavoriteGratitudeEntryCount.mockReturnValue({ data: undefined } as never);
+    mockUseGratitudeEntryCountSinceDayKey.mockReturnValue({ data: undefined } as never);
+
+    renderWithProviders(<GratitudeHomeScreen />);
+
+    // The hero used to paint "— entries · — this week · — favourites" here —
+    // the dash ADR-0009 clause 1 forbids by name (#2855). An unsettled count
+    // claims nothing: its stat is omitted, and with all three pending the
+    // header renders no stat row at all.
+    expect(screen.queryAllByText("—")).toHaveLength(0);
+    expect(screen.queryByTestId("module-header-stats")).toBeNull();
+  });
+
   it("renders thirty bars and keeps zero days at a two-pixel stub", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 

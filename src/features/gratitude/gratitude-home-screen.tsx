@@ -82,21 +82,30 @@ export default function GratitudeHomeScreen() {
                 { type: "notifications", targetKey: "gratitude" },
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
+              // Never a dash while a count is in flight (ADR-0009 clause 1):
+              // a stat whose read has not settled is omitted, the pattern the
+              // habits hero ships. `ModuleHomeHeader` renders no row at all
+              // for an empty array, so nothing stands in for the numbers.
               stats={[
-                {
-                  value: totalEntries === undefined ? t("hero.loadingValue") : String(totalEntries),
-                  label: t("hero.entries", { count: totalEntries ?? 0 }),
-                },
-                {
-                  value:
-                    thisWeekCount === undefined ? t("hero.loadingValue") : String(thisWeekCount),
-                  label: t("hero.thisWeek"),
-                },
-                {
-                  value:
-                    favoriteCount === undefined ? t("hero.loadingValue") : String(favoriteCount),
-                  label: t("hero.favorites", { count: favoriteCount ?? 0 }),
-                },
+                ...(totalEntries === undefined
+                  ? []
+                  : [
+                      {
+                        value: String(totalEntries),
+                        label: t("hero.entries", { count: totalEntries }),
+                      },
+                    ]),
+                ...(thisWeekCount === undefined
+                  ? []
+                  : [{ value: String(thisWeekCount), label: t("hero.thisWeek") }]),
+                ...(favoriteCount === undefined
+                  ? []
+                  : [
+                      {
+                        value: String(favoriteCount),
+                        label: t("hero.favorites", { count: favoriteCount }),
+                      },
+                    ]),
               ]}
             />
             <Button
