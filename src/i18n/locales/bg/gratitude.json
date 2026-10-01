@@ -17,8 +17,7 @@
     "entries_other": "записа",
     "favorites_one": "любим",
     "favorites_other": "любими",
-    "thisWeek": "тази седмица",
-    "loadingValue": "—"
+    "thisWeek": "тази седмица"
   },
   "stats": {
     "last": "последно записано {{when}}",
