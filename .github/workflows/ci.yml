@@ -96,7 +96,8 @@ jobs:
       # and the two disagreed about what compiles (#2849). `expo customize
       # tsconfig.json` is the CLI's one-shot path to the same generator the dev
       # server runs - no Metro, no watcher, no tracked-file changes; measured at
-      # ~10s against this job's ~3 minutes, with `tsc` itself no slower.
+      # 2s on this runner (2026-10-01, ~10s cold locally) against a verify job
+      # that was already ~10 minutes, with `tsc` itself no slower either way.
       - name: Generate expo-router typed routes
         run: npx expo customize tsconfig.json
 
