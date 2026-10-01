@@ -4,9 +4,9 @@ import { Card, CardContent, CardTitle } from "@/src/components/react-native-reus
 import { Text } from "@/src/components/react-native-reusables/text";
 import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 
-const actControlParadox = require("../../../assets/images/onboarding/act_control_paradox_thought_spiral.png");
-const actFourMyths = require("../../../assets/images/onboarding/act_four_myths_trap.png");
-const actValuesHeart = require("../../../assets/images/onboarding/act_values_rooted_heart.png");
+const actControlParadox = require("../../../assets/images/onboarding/act_control_paradox_thought_spiral.webp");
+const actFourMyths = require("../../../assets/images/onboarding/act_four_myths_trap.webp");
+const actValuesHeart = require("../../../assets/images/onboarding/act_values_rooted_heart.webp");
 
 // ─── Info modal (single page) ─────────────────────────────────────────────────
 

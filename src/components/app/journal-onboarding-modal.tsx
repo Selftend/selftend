@@ -4,7 +4,7 @@ import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-o
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const journalOnboardingImage = require("../../../assets/images/onboarding/journal_expressive_writing_heals.png");
+const journalOnboardingImage = require("../../../assets/images/onboarding/journal_expressive_writing_heals.webp");
 
 interface Props {
   visible: boolean;

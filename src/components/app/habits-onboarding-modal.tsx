@@ -7,8 +7,8 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsLearnSourceLine } from "@/src/features/habits/habits-learn-cards-body";
 
-const imgGrowth = require("../../../assets/images/onboarding/habits_compounding_path.png");
-const imgTracker = require("../../../assets/images/onboarding/habits_loop_two_minute_rule.png");
+const imgGrowth = require("../../../assets/images/onboarding/habits_compounding_path.webp");
+const imgTracker = require("../../../assets/images/onboarding/habits_loop_two_minute_rule.webp");
 
 interface Props {
   visible: boolean;

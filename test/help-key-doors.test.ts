@@ -105,7 +105,7 @@ describe("every help key has a door", () => {
         `Either give it a door - usually right={<HelpButton helpKey="${key}" />} in the ` +
         `screen's ScreenHeader - or delete it in all five places: the HELP_KEYS entry, ` +
         `the ${key} block in en/help.json AND bg/help.json, the HELP_IMAGES entry, and ` +
-        `the PNG in assets/images/help/.`,
+        `the WebP in assets/images/help/.`,
     );
 
     expect(orphans).toEqual([]);
@@ -196,7 +196,7 @@ describe.each([
  * ☠️ `tsc` forces a stale `HELP_IMAGES` entry out - the type is
  * `Partial<Record<HelpKey, …>>`, so an entry naming a deleted key is an excess property
  * (TS2353) - but it never touches the file on disk. Removing the `require()` is what
- * shrinks the bundle; the PNG survives in git until somebody deletes it deliberately.
+ * shrinks the bundle; the WebP survives in git until somebody deletes it deliberately.
  * The six orphan keys' images were 2.06 MiB, 32 % of the directory.
  *
  * The two inverses are deliberately NOT asserted: an entry with no key is the compile
@@ -208,22 +208,22 @@ describe("every help illustration is referenced", () => {
   const IMAGE_DIR = "assets/images/help";
   const REGISTRY = "src/features/help/help-images.ts";
 
-  const pngs = readdirSync(join(REPO, IMAGE_DIR)).filter((file) => file.endsWith(".png"));
+  const webps = readdirSync(join(REPO, IMAGE_DIR)).filter((file) => file.endsWith(".webp"));
 
   /**
    * ☠️ Exact filenames parsed out of the `require()` paths - NOT a substring search of the
-   * registry source. `source.includes("program.png")` is satisfied by `cbt_program.png`,
-   * so an orphaned `program.png` - the natural filename for the `program` key - would be
-   * masked by an entry it is no part of. The same collision hides `beliefs.png` behind
-   * `core_beliefs.png`, `exposure.png` behind `graded_exposure.png`, and `records.png`,
-   * `self.png` and `log.png` behind theirs: six of the eighteen, and the likeliest six.
+   * registry source. `source.includes("program.webp")` is satisfied by `cbt_program.webp`,
+   * so an orphaned `program.webp` - the natural filename for the `program` key - would be
+   * masked by an entry it is no part of. The same collision hides `beliefs.webp` behind
+   * `core_beliefs.webp`, `exposure.webp` behind `graded_exposure.webp`, and `records.webp`,
+   * `self.webp` and `log.webp` behind theirs: six of the eighteen, and the likeliest six.
    *
    * Comments are stripped, so a filename merely named in prose cannot count as a use.
    */
   const referenced = new Set(
     [
       ...stripComments(readFileSync(join(REPO, REGISTRY), "utf8")).matchAll(
-        /assets\/images\/help\/([\w.-]+\.png)/g,
+        /assets\/images\/help\/([\w.-]+\.webp)/g,
       ),
     ].map((match) => match[1]),
   );
@@ -231,14 +231,14 @@ describe("every help illustration is referenced", () => {
   // No floor pin here, deliberately. Images are optional, so the illustration count must
   // stay free to fall, and pinning it would fail a legal future for a reason this clause
   // has nothing to say about. Vacuity is structural instead: a regex that stopped matching
-  // empties `referenced` and reports every PNG at once, and a missing directory throws out
+  // empties `referenced` and reports every WebP at once, and a missing directory throws out
   // of `readdirSync` rather than reading as "no orphans found".
   it("names each of them in help-images.ts", () => {
-    const unreferenced = pngs
-      .filter((png) => !referenced.has(png))
+    const unreferenced = webps
+      .filter((webp) => !referenced.has(webp))
       .map(
-        (png) =>
-          `${IMAGE_DIR}/${png}: no require() in ${REGISTRY}. It ships in the repo ` +
+        (webp) =>
+          `${IMAGE_DIR}/${webp}: no require() in ${REGISTRY}. It ships in the repo ` +
           `reachable by nothing - delete the file, or add the HELP_IMAGES entry that was ` +
           `meant to use it.`,
       );

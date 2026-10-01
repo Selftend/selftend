@@ -12,7 +12,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { translatedLines } from "@/src/lib/translated-lines";
 
-const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding_sweet_spot_frequency.png");
+const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding_sweet_spot_frequency.webp");
 
 interface Props {
   visible: boolean;
