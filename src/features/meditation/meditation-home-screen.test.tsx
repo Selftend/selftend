@@ -208,6 +208,63 @@ describe("MeditationHomeScreen", () => {
     expect(screen.queryByText(/typical/)).toBeNull();
   });
 
+  describe("the program state read (#2859)", () => {
+    it("gates the whole screen while the read is in flight, instead of painting Stage 1 / 12 min", () => {
+      // The web cold read: no persisted cache (query-client.ts), so the full
+      // round trip is a visible window. The screen used to render `?? 1` /
+      // `?? DEFAULT_DURATION` into it - a returning Stage-3 meditator read
+      // "Stage 1", and a Begin tapped there started a 12-minute sit over a
+      // stored 15. The whole-screen stand-in claims neither and reserves the
+      // whole screen by construction, so nothing shifts when the read lands
+      // (ADR-0009, edge 6).
+      mockUseMeditationProgramState.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      } as unknown as ReturnType<typeof useMeditationProgramState>);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.getByText("Meditation")).toBeTruthy();
+      expect(screen.queryByText("Stage 1")).toBeNull();
+      expect(screen.queryByText("Begin")).toBeNull();
+      expect(screen.queryByTestId("sit-length-slider")).toBeNull();
+    });
+
+    it("claims no stage when the read has settled with nothing - undefined is not Stage 1", () => {
+      // Past the gate, `data === undefined` is a failed fetch with no cache,
+      // which ADR-0009 clause 1 also counts as "not loaded". "Stage 1" is the
+      // genuine value for a brand-new account too, so painting the default
+      // here tells a returning meditator their progress reset. Grounding's
+      // hero is the pattern: say Loading, claim nothing - and the practice row
+      // stays a door to the stages screen under a title with no number in it.
+      mockUseMeditationProgramState.mockReturnValue({ data: undefined } as unknown as ReturnType<
+        typeof useMeditationProgramState
+      >);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.queryByText("Stage 1")).toBeNull();
+      expect(screen.queryByText(/Establishing a practice/)).toBeNull();
+      expect(screen.getByText("Loading")).toBeTruthy();
+      expect(screen.getByText("Your stage")).toBeTruthy();
+    });
+
+    it("still meets a LOADED brand-new account as the genuine Stage 1", () => {
+      // `null` is a loaded answer - the account has no row yet - and for that
+      // account Stage 1 and the 12-minute default are the facts, not
+      // placeholders.
+      mockUseMeditationProgramState.mockReturnValue({ data: null } as unknown as ReturnType<
+        typeof useMeditationProgramState
+      >);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.getByText("Stage 1")).toBeTruthy();
+      expect(screen.getByText("Stage 1 — Establishing a practice")).toBeTruthy();
+      expect(within(screen.getByTestId("sit-length-slider")).getByText("12 min")).toBeTruthy();
+    });
+  });
+
   it("inks the stage badge and the all-sits link so they clear AA", () => {
     setSessions([session()]);
 
