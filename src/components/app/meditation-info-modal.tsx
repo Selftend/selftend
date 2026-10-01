@@ -4,8 +4,8 @@ import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell"
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const meditationPath = require("../../../assets/images/onboarding/mind_illuminated_ten_stage_path.png");
-const meditationCircles = require("../../../assets/images/onboarding/mind_illuminated_breath_focus.png");
+const meditationPath = require("../../../assets/images/onboarding/mind_illuminated_ten_stage_path.webp");
+const meditationCircles = require("../../../assets/images/onboarding/mind_illuminated_breath_focus.webp");
 
 interface MeditationInfoProps {
   visible: boolean;

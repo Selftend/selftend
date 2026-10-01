@@ -9,7 +9,7 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
-const moodOnboardingImage = require("../../../assets/images/onboarding/mood_emotional_weather.png");
+const moodOnboardingImage = require("../../../assets/images/onboarding/mood_emotional_weather.webp");
 
 interface Props {
   visible: boolean;

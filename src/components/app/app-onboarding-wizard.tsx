@@ -6,7 +6,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { isGuestAccount } from "@/src/features/profile/guest";
 import { useSession } from "@/src/providers/session-provider";
 
-const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
+const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.webp");
 
 /**
  * The app's first-run introduction: ONE panel (#1958, spec #1885 §5).
