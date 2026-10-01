@@ -109,11 +109,24 @@ export default function SleepTrackerScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               stats={[
-                { value: formatHours(sevenDayDuration, i18n.language, t), label: t("hero.avg") },
-                {
-                  value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
-                  label: t("hero.quality"),
-                },
+                // Never a dash while the reads are in flight (ADR-0009 clause 1,
+                // #2874): both stats quote `stats` with the loaded logs standing
+                // in, so until either source answers they are omitted - the
+                // gratitude hero's shape (#2855). The "-" the loaded branches
+                // keep is a different statement: a LOADED "no nights in that
+                // window", which is a fact, not a placeholder.
+                ...(summariesLoaded
+                  ? [
+                      {
+                        value: formatHours(sevenDayDuration, i18n.language, t),
+                        label: t("hero.avg"),
+                      },
+                      {
+                        value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
+                        label: t("hero.quality"),
+                      },
+                    ]
+                  : []),
                 // Omitted until either count source has answered (habits' two-week-
                 // ticks pattern): `totalNights ?? allLogs.length` is a fabricated "0"
                 // while both queries are still in flight (#2854).

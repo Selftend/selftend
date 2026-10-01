@@ -123,6 +123,12 @@ describe("SleepTrackerScreen", () => {
     // The fabricated hero zero: `totalNights ?? allLogs.length` over no data.
     expect(screen.queryByText("0")).toBeNull();
     expect(screen.queryByText("0 sleep entries")).toBeNull();
+    // The hero dashes ADR-0009 clause 1 forbids by name (#2874): "- 7-day avg ·
+    // - quality" claimed "no data in the window" over reads still in flight.
+    // Their stats are omitted, and with every stat pending the header renders
+    // no stat row at all (the gratitude hero's shape, #2855).
+    expect(screen.queryAllByText("-")).toHaveLength(0);
+    expect(screen.queryByTestId("module-header-stats")).toBeNull();
     // The three chart empty states and the list's.
     expect(screen.queryAllByText("Log a few sleep entries to see this.")).toHaveLength(0);
     expect(screen.queryByText(/^No sleep logged yet\./)).toBeNull();
@@ -140,6 +146,9 @@ describe("SleepTrackerScreen", () => {
 
     expect(screen.getByText("0")).toBeTruthy();
     expect(screen.getByText("0 sleep entries")).toBeTruthy();
+    // The loaded-empty dashes STAY (#2874): over a loaded history, "-" states
+    // "no nights in that window" - a fact, not a loading placeholder.
+    expect(screen.getAllByText("-")).toHaveLength(2);
     expect(screen.getAllByText("Log a few sleep entries to see this.")).toHaveLength(3);
     expect(screen.getByText(/^No sleep logged yet\./)).toBeTruthy();
   });
