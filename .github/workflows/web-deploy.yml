@@ -204,7 +204,7 @@ jobs:
       # (found at control-tower#68 verification). The whole job runs on 22 now,
       # so no per-step Node switch is needed.
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
