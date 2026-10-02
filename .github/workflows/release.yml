@@ -71,7 +71,7 @@ jobs:
         # regressed - this is the same CLI the green runs already used. Bump
         # deliberately - test/workflow-supabase-cli-pin.test.ts holds every
         # workflow to one concrete pin.
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: 2.109.1
 
@@ -141,7 +141,7 @@ jobs:
 
       - name: Set up Supabase CLI
         # Pinned, not `latest` - see the migrate-prod job for why (#264).
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: 2.109.1
 
